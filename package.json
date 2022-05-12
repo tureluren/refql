@@ -3,7 +3,7 @@
   "author": "Rafael Tureluren <rafaelbeltu@gmail.com>",
   "description": "A Node.js library for retrieving data from a PostgreSQL database with an interesting query language included.",
   "license": "MIT",
-  "main": "build/index.ts",
+  "main": "build/index.js",
   "types": "build/index.d.ts",
   "version": "1.0.0",
   "scripts": {
