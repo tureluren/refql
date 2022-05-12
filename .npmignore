@@ -1,0 +1,8 @@
+*.spec.js
+*.spec.ts
+*.test.js
+*.test.ts
+.npmignore
+test/
+workbench.js
+soccer.d.ts
