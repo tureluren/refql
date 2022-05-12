@@ -1,7 +1,6 @@
 import Tokenizer from ".";
-import getType from "../more/getType";
 
 const isTokenizer = (value): value is Tokenizer =>
-  getType (value) === "Tokenizer";
+  value instanceof Tokenizer;
 
 export default isTokenizer;

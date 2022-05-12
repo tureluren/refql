@@ -8,11 +8,11 @@ import Tokenizer from "../Tokenizer";
 import validateKeywords from "./validateKeywords";
 import convertCase from "../more/convertCase";
 import {
-  ASTType, BelongsTo, BooleanLiteral,
+  AST, ASTType, BelongsTo, BooleanLiteral,
   Call, CaseType, HasMany, Identifier, Keywords,
   Literal, ManyToMany, NullLiteral, NumericLiteral,
   OptCaseType, Plurals, RQLValue, StringLiteral,
-  Subselect, TableType, Token, Variable
+  Subselect, Token, Variable
 } from "../types";
 
 class Parser {
@@ -37,18 +37,18 @@ class Parser {
     this.keyIdx = 0;
   }
 
-  parse(string: string, keys: RQLValue[]) {
+  parse(string: string, keys: RQLValue[]): AST {
     this.string = string;
     this.keys = keys;
     this.keyIdx = 0;
     this.tokenizer.init (string);
     this.lookahead = this.tokenizer.getNextToken ();
 
-    return this.Table ();
+    return this.AST ();
   };
 
-  Table(pluralizable = false) {
-    let table = <TableType><unknown> this.Identifier (pluralizable);
+  AST(pluralizable = false) {
+    let table = <AST><unknown> this.Identifier (pluralizable);
 
     if (this.lookahead.type === "(") {
       this.eat ("(");
@@ -131,7 +131,7 @@ class Parser {
       this.eat (")");
     }
 
-    table.type = "Table";
+    table.type = "AST";
     table.members = this.Members ();
 
     return table;
@@ -140,17 +140,17 @@ class Parser {
   grabVariable() {
     const variable = this.keys[this.keyIdx];
 
-  this.keys.splice (this.keyIdx, 1);
-  this.eat ("VARIABLE");
+    this.keys.splice (this.keyIdx, 1);
+    this.eat ("VARIABLE");
 
-  return variable;
+    return variable;
   }
 
   HasMany(): HasMany {
     this.eat ("<");
     return {
       type: "HasMany",
-      include: this.Table (true)
+      include: this.AST (true)
     };
   };
 
@@ -158,7 +158,7 @@ class Parser {
     this.eat ("-");
     return {
       type: "BelongsTo",
-      include: this.Table ()
+      include: this.AST ()
     };
   };
 
@@ -166,7 +166,7 @@ class Parser {
     this.eat ("x");
     return {
       type: "ManyToMany",
-      include: this.Table (true)
+      include: this.AST (true)
     };
   };
 

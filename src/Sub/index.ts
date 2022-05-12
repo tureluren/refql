@@ -1,15 +1,13 @@
-import { SQLTag_, Sub } from "../types";
+import { SQLTag_ } from "../types";
 
-const prototype: Omit<Sub, "as" | "tag"> = {
-  constructor: Sub,
-  "@@rql/type": "Sub"
-};
+class Sub {
+  as: string;
+  tag: SQLTag_;
 
-function Sub(as: string, tag: SQLTag_): Sub {
-  const sub = Object.create (prototype);
-  sub.as = as;
-  sub.tag = tag;
-  return sub;
+  constructor(as: string, tag: SQLTag_) {
+    this.as = as;
+    this.tag = tag;
+  }
 }
 
 export default Sub;

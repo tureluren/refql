@@ -1,6 +1,6 @@
-import getType from "../more/getType";
+import Parser from ".";
 
 const isParser = (value): value is Parser =>
-  getType (value) === "Parser";
+  value instanceof Parser;
 
 export default isParser;

@@ -18,7 +18,7 @@ class JBOInterpreter {
 
   interpret(exp: ASTType, env: Environment = new Environment ({}, null)) {
     // root
-    if (exp.type === "Table") {
+    if (exp.type === "AST") {
       const { name, as, members, id, limit, offset } = exp;
 
       const memberEnv = new Environment ({
@@ -314,7 +314,7 @@ class JBOInterpreter {
         const arr =
           Object.keys (tableLinks)
             .filter (key => {
-            // <table>/n
+              // <table>/n
               const match = key.match (new RegExp ("^" + col + "/\\d+"));
               return match != null;
             })

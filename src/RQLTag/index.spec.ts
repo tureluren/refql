@@ -6,7 +6,7 @@ describe ("RQLTag type", () => {
   test ("create RQLTag", () => {
     const string = "player { id lastName $ }";
     const keys = [sql`where id = 1`];
-    const rqlTag = RQLTag (string, keys);
+    const rqlTag = new RQLTag (string, keys);
 
     expect (rqlTag.string).toEqual (string);
     expect (rqlTag.keys).toEqual (keys);

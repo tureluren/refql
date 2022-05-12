@@ -2,10 +2,11 @@ import Parser from ".";
 import Raw from "../Raw";
 import sql from "../SQLTag/sql";
 import Tokenizer from "../Tokenizer";
+import { ASTType, OptCaseType } from "../types";
 
 const parseFn = (typeCaseDB: OptCaseType, typeCaseJS: OptCaseType, pluralize) => (text, ...keys) => {
   const string = text.join ("$");
-  const parser = Parser (
+  const parser = new Parser (
     typeCaseDB, typeCaseJS, pluralize, { player: "teammates" }
   );
   return parser.parse (string, keys);
@@ -13,7 +14,7 @@ const parseFn = (typeCaseDB: OptCaseType, typeCaseJS: OptCaseType, pluralize) =>
 
 describe ("Parser type", () => {
   test ("init Parser", () => {
-    const parser = Parser ("snake", "camel", true, { player: "teammates" });
+    const parser = new Parser ("snake", "camel", true, { player: "teammates" });
 
     expect (parser.string).toBe ("");
     expect (parser.caseTypeJS).toBe ("camel");
@@ -21,7 +22,7 @@ describe ("Parser type", () => {
     expect (parser.pluralize).toBe (true);
     expect (parser.keyIdx).toBe (0);
     expect (parser.keys).toEqual ([]);
-    expect (parser.tokenizer).toEqual (Tokenizer ());
+    expect (parser.tokenizer).toEqual (new Tokenizer ());
     expect (parser.plurals).toEqual ({ player: "teammates" });
   });
 
@@ -33,7 +34,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -53,7 +54,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -73,7 +74,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -97,7 +98,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -105,7 +106,7 @@ describe ("Parser type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "team",
             members: [
@@ -116,7 +117,7 @@ describe ("Parser type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "position",
             as: "position",
             members: [
@@ -174,7 +175,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player_table",
       members: [
@@ -183,7 +184,7 @@ describe ("Parser type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "points",
             links: [["player_id", "id"]],
@@ -196,7 +197,7 @@ describe ("Parser type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             xTable: "player_game",
@@ -251,7 +252,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player_table",
       members: [
@@ -260,7 +261,7 @@ describe ("Parser type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "points",
             links: [["playerId", "id"]],
@@ -273,7 +274,7 @@ describe ("Parser type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "game",
             xTable: "playerGame",
@@ -329,7 +330,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player_table",
       members: [
@@ -338,7 +339,7 @@ describe ("Parser type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "points",
             links: [["playerId", "id"]],
@@ -351,7 +352,7 @@ describe ("Parser type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             xTable: "playerGame",
@@ -406,7 +407,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player_table",
       members: [
@@ -415,7 +416,7 @@ describe ("Parser type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "points",
             links: [[ "playerId", "id"]],
@@ -428,7 +429,7 @@ describe ("Parser type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "game",
             xTable: "playerGame",
@@ -467,7 +468,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "team",
       as: "team",
       id: 1,
@@ -477,7 +478,7 @@ describe ("Parser type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "player",
             as: "teammates",
             orderBy: orderByLastName,
@@ -534,7 +535,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "teammate",
       members: [
@@ -543,7 +544,7 @@ describe ("Parser type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             // goals overruled by points
             as: "points",
@@ -556,7 +557,7 @@ describe ("Parser type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "assist",
             // pluralized because pluralize = true
             as: "assists",
@@ -569,7 +570,7 @@ describe ("Parser type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "team",
             members: [
@@ -578,7 +579,7 @@ describe ("Parser type", () => {
               {
                 type: "HasMany",
                 include: {
-                  type: "Table",
+                  type: "AST",
                   name: "player",
                   // because of provided plurals
                   as: "teammates",
@@ -607,14 +608,14 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "goals",
             members: [
@@ -642,14 +643,14 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "goals",
             links: [["player_id", "id"]],
@@ -678,14 +679,14 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "team",
             members: [
@@ -713,14 +714,14 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "team",
             links: [["team_id", "id"]],
@@ -749,14 +750,14 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             members: [
@@ -784,14 +785,14 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             xTable: "player_game",
@@ -827,7 +828,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -875,7 +876,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -914,7 +915,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -923,7 +924,7 @@ describe ("Parser type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "ownGoals",
             members: [
@@ -952,7 +953,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -982,7 +983,7 @@ describe ("Parser type", () => {
   test ("function calls with raw variables", () => {
     const parse = parseFn ("snake", "camel", true);
 
-    const birthday = Raw ("birthday");
+    const birthday = new Raw ("birthday");
 
     const ast = parse`
       player {
@@ -992,7 +993,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1024,7 +1025,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1098,7 +1099,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1159,7 +1160,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1168,7 +1169,7 @@ describe ("Parser type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "team",
             members: [
@@ -1177,7 +1178,7 @@ describe ("Parser type", () => {
               {
                 type: "HasMany",
                 include: {
-                  type: "Table",
+                  type: "AST",
                   name: "player",
                   as: "teammates",
                   members: [
@@ -1192,7 +1193,7 @@ describe ("Parser type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "goals",
             members: [
@@ -1201,7 +1202,7 @@ describe ("Parser type", () => {
               {
                 type: "BelongsTo",
                 include: {
-                  type: "Table",
+                  type: "AST",
                   name: "game",
                   as: "game",
                   members: [
@@ -1209,7 +1210,7 @@ describe ("Parser type", () => {
                     {
                       type: "BelongsTo",
                       include: {
-                        type: "Table",
+                        type: "AST",
                         name: "team",
                         as: "homeTeam",
                         links: [["home_team_id", "id"]],
@@ -1222,7 +1223,7 @@ describe ("Parser type", () => {
                     {
                       type: "BelongsTo",
                       include: {
-                        type: "Table",
+                        type: "AST",
                         name: "team",
                         as: "awayTeam",
                         links: [["away_team_id", "id"]],
@@ -1235,7 +1236,7 @@ describe ("Parser type", () => {
                     {
                       type: "ManyToMany",
                       include: {
-                        type: "Table",
+                        type: "AST",
                         name: "player",
                         as: "teammates",
                         xTable: "player_game",
@@ -1254,7 +1255,7 @@ describe ("Parser type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             members: [
@@ -1263,7 +1264,7 @@ describe ("Parser type", () => {
               {
                 type: "BelongsTo",
                 include: {
-                  type: "Table",
+                  type: "AST",
                   name: "league",
                   as: "league",
                   members: [
@@ -1296,7 +1297,7 @@ describe ("Parser type", () => {
   });
 
   test ("Unknown Literal", () => {
-    const parser = Parser ("snake", "camel", true, {});
+    const parser = new Parser ("snake", "camel", true, {});
     parser.lookahead = <any>{ type: "DOUBLE", value: 3.14 };
 
     expect (() => parser.Literal ())
@@ -1321,7 +1322,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       limit: 30,
@@ -1354,7 +1355,7 @@ describe ("Parser type", () => {
     `;
 
     const expected: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       id: 1,

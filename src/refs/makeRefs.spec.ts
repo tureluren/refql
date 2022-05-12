@@ -1,5 +1,5 @@
 import refQLConfig from "../test/refQLConfig";
-import { DBRef } from "../types";
+import { DBRef, Refs } from "../types";
 import makeRefs from "./makeRefs";
 
 const dbRefs: DBRef[] = [

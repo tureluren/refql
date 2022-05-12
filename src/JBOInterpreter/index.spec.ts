@@ -11,16 +11,16 @@ describe ("JBOInterpreter type", () => {
       player: { team: [["playerId", "id"]] }
     };
 
-    const interpreter = JBOInterpreter (refs, true);
+    const interpreter = new JBOInterpreter (refs, true);
 
     expect (interpreter.refs).toBe (refs);
   });
 
   test ("table and members", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -29,6 +29,7 @@ describe ("JBOInterpreter type", () => {
       ]
     };
 
+    // @ts-ignore
     const [query, values] = interpreter.interpret (ast);
 
     expect (query).toBe (format (`
@@ -40,10 +41,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("identifier cast", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -63,10 +64,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("has many - invalid clause", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -75,7 +76,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "points",
             orderBy: <any>"order by name",
@@ -93,10 +94,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("has many - links guessed", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -105,7 +106,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "points",
             orderBy: t => sql`order by ${t}.minute`,
@@ -137,13 +138,13 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("has many - links provided to interpreter", () => {
-    const interpreter = JBOInterpreter (
+    const interpreter = new JBOInterpreter (
       { goal: { player: [["player_id_2", "id_2"]] } },
       true
     );
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -152,7 +153,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "points",
             members: [
@@ -184,13 +185,13 @@ describe ("JBOInterpreter type", () => {
 
 
   test ("has many - links provided in TL", () => {
-    const interpreter = JBOInterpreter (
+    const interpreter = new JBOInterpreter (
       { goal: { player: [["player_id_2", "id_2"]] } },
       true
     );
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -199,7 +200,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "points",
             links: [["player_id_3", "id_3"]],
@@ -231,10 +232,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("belongs to - links guessed", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -243,7 +244,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "squad",
             members: [
@@ -273,13 +274,13 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("belongs to - links provided to interpreter", () => {
-    const interpreter = JBOInterpreter (
+    const interpreter = new JBOInterpreter (
       { player: { team: [["team_id_2", "id_2"]] } },
       true
     );
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -288,7 +289,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "squad",
             members: [
@@ -319,13 +320,13 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("belongs to - links provided in TL", () => {
-    const interpreter = JBOInterpreter (
+    const interpreter = new JBOInterpreter (
       { player: { team: [["team_id_2", "id_2"]] } },
       true
     );
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -334,7 +335,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "squad",
             links: [["team_id_3", "id_3"]],
@@ -367,7 +368,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("belongs to - links provided to interpreter found by alias", () => {
-    const interpreter = JBOInterpreter ({
+    const interpreter = new JBOInterpreter ({
       game: {
         "team/1": [["home_team_id", "id"]],
         "team/2": [["away_team_id", "id"]]
@@ -375,7 +376,7 @@ describe ("JBOInterpreter type", () => {
     }, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "game",
       as: "game",
       members: [
@@ -383,7 +384,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "homeTeam",
             members: [
@@ -395,7 +396,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "away_team",
             members: [
@@ -434,16 +435,16 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("many to many - invalid clause", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [{
         type: "ManyToMany",
         include: {
-          type: "Table",
+          type: "AST",
           name: "game",
           as: "games",
           orderBy: <any>"order by result",
@@ -456,13 +457,13 @@ describe ("JBOInterpreter type", () => {
       .toThrowError (new Error ("`orderBy` should be a sql snippet or a function that returns a sql snippet"));
 
     const ast2: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [{
         type: "ManyToMany",
         include: {
-          type: "Table",
+          type: "AST",
           name: "game",
           as: "games",
           orderBy: <any>(_t => "order by result"),
@@ -476,10 +477,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("many to many - links guessed - x guessed", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -488,7 +489,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             orderBy: t => sql`order by ${t}.result`,
@@ -522,12 +523,12 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("many to many - refs provided to interpreter", () => {
-    const interpreter = JBOInterpreter ({
+    const interpreter = new JBOInterpreter ({
       lineup: { player: [["player_id_2", "id_p_2"]], game: [["game_id_2", "id_g_2"]] }
     }, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -536,7 +537,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             xTable: "lineup",
@@ -570,12 +571,12 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("many to many - refs provided in TL", () => {
-    const interpreter = JBOInterpreter ({
+    const interpreter = new JBOInterpreter ({
       lineup: { player: [["player_id_2", "id_p_2"]], game: [["game_id_2", "id_g_2"]] }
     }, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -584,7 +585,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             xTable: "lineup",
@@ -619,7 +620,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("many to many - refs provided to interpreter found by reversing guessed x", () => {
-    const interpreter = JBOInterpreter ({
+    const interpreter = new JBOInterpreter ({
       player_game: {
         player: [["player_id_2", "id_2"]],
         game: [["game_id_2", "id_2"]]
@@ -628,7 +629,7 @@ describe ("JBOInterpreter type", () => {
 
     // guessed x = game_player
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "game",
       as: "game",
       members: [
@@ -636,7 +637,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "player",
             as: "teammates",
             members: [
@@ -669,10 +670,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("many to many - x provided in TL", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -681,7 +682,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             xTable: "lineup",
@@ -716,7 +717,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("many to many - refs provided to interpreter found by reversing provided x in TL", () => {
-    const interpreter = JBOInterpreter ({
+    const interpreter = new JBOInterpreter ({
       player_game: {
         player: [["player_id_2", "id_2"]],
         game: [["game_id_2", "id_2"]]
@@ -725,7 +726,7 @@ describe ("JBOInterpreter type", () => {
 
     // guessed x = game_player
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "game",
       as: "game",
       members: [
@@ -733,7 +734,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "player",
             as: "teammates",
             xTable: "player_game",
@@ -767,10 +768,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("relation combo", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "p",
       members: [
@@ -779,7 +780,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "points",
             members: [
@@ -791,7 +792,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "squad",
             members: [
@@ -803,7 +804,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             xTable: "lineup",
@@ -850,10 +851,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("nested relations", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -862,7 +863,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "BelongsTo",
           include: {
-            type: "Table",
+            type: "AST",
             name: "team",
             as: "team",
             members: [
@@ -871,7 +872,7 @@ describe ("JBOInterpreter type", () => {
               {
                 type: "HasMany",
                 include: {
-                  type: "Table",
+                  type: "AST",
                   name: "player",
                   as: "teammates",
                   members: [
@@ -886,7 +887,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "goals",
             members: [
@@ -895,7 +896,7 @@ describe ("JBOInterpreter type", () => {
               {
                 type: "BelongsTo",
                 include: {
-                  type: "Table",
+                  type: "AST",
                   name: "game",
                   as: "game",
                   members: [
@@ -903,7 +904,7 @@ describe ("JBOInterpreter type", () => {
                     {
                       type: "BelongsTo",
                       include: {
-                        type: "Table",
+                        type: "AST",
                         name: "team",
                         as: "homeTeam",
                         links: [["home_team_id", "id"]],
@@ -916,7 +917,7 @@ describe ("JBOInterpreter type", () => {
                     {
                       type: "BelongsTo",
                       include: {
-                        type: "Table",
+                        type: "AST",
                         name: "team",
                         as: "awayTeam",
                         links: [["away_team_id", "id"]],
@@ -929,7 +930,7 @@ describe ("JBOInterpreter type", () => {
                     {
                       type: "ManyToMany",
                       include: {
-                        type: "Table",
+                        type: "AST",
                         name: "player",
                         as: "teammates",
                         xTable: "player_game",
@@ -948,7 +949,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "ManyToMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "game",
             as: "games",
             members: [
@@ -957,7 +958,7 @@ describe ("JBOInterpreter type", () => {
               {
                 type: "BelongsTo",
                 include: {
-                  type: "Table",
+                  type: "AST",
                   name: "league",
                   as: "league",
                   members: [
@@ -1050,7 +1051,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("finding has many links", () => {
-    const interpreter = JBOInterpreter ({
+    const interpreter = new JBOInterpreter ({
       goal: { player: [["player_id", "id"]] }
     }, true);
 
@@ -1072,7 +1073,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("finding belongs to links", () => {
-    const interpreter = JBOInterpreter ({
+    const interpreter = new JBOInterpreter ({
       player: { team: [["team_id", "id"]] },
       game: {
         "team/1": [["home_team_id", "id"]],
@@ -1106,7 +1107,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("not finding belongs to links - useSmartAlias = false", () => {
-    const interpreter = JBOInterpreter ({
+    const interpreter = new JBOInterpreter ({
       player: { team: [["team_id", "id"]] },
       game: {
         "team/1": [["home_team_id", "id"]],
@@ -1136,7 +1137,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("finding many to many links", () => {
-    const interpreter = JBOInterpreter ({
+    const interpreter = new JBOInterpreter ({
       player_game: {
         player: [["player_id", "id"]],
         game: [["game_id", "id"]]
@@ -1161,7 +1162,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("subselecting", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const subselect = t => sql`
       select count(*) 
@@ -1170,7 +1171,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1196,7 +1197,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("subselecting with variables", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const subselect = t => sql`
       select count(*) 
@@ -1206,7 +1207,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1232,7 +1233,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("invalid subselect", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const subselect: any = t => `
       select count(*) 
@@ -1241,7 +1242,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1264,7 +1265,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast2: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1282,10 +1283,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("function calls", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1323,12 +1324,12 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("function calls with raw variables", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const birthday = raw ("birthday");
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1353,12 +1354,12 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("nested function calls and variables", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const positionSnippet = t => sql`(select name from position where id = ${t}.position_id)`;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1427,14 +1428,14 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("invalid Variables", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const rqlSnippet1 = rql`
       x game { id result }
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1452,7 +1453,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast2: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1471,7 +1472,7 @@ describe ("JBOInterpreter type", () => {
       "x game { id result }";
 
     const ast3: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1486,7 +1487,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("SQL tag variable", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const sqlSnippet = sql`
       offset 0
@@ -1494,7 +1495,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1519,7 +1520,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("function that returns SQL tag variable", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const sqlSnippet = t => sql`
       where ${t}.team_id = ${1}
@@ -1528,7 +1529,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1554,7 +1555,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("limit and offset can't be used in relation", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const sqlSnippet = t => sql`
       where ${t}.team_id = ${1}
@@ -1563,7 +1564,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1572,7 +1573,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "goals",
             members: [
@@ -1590,7 +1591,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("variables inside SQL Tag", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const sqlSnippet = t => sql`
       where ${t}.team_id = ${1}
@@ -1599,7 +1600,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1625,7 +1626,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("nested SQL Tag", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const sqlSnippet = t => sql`
       where ${t}.team_id = ${1}
@@ -1639,7 +1640,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1667,7 +1668,7 @@ describe ("JBOInterpreter type", () => {
 
 
   test ("not root limit in nested SQL tag", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const sqlSnippet = t => sql`
       where ${t}.team_id = ${1}
@@ -1678,7 +1679,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1687,7 +1688,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "goals",
             members: [
@@ -1705,12 +1706,12 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("raw variables", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const rawSnippet = raw (`, 'teamId', "player".team_id`);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1733,7 +1734,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("raw variables in sql tag", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const sqlSnippet = t => sql`
       where ${t}.team_id = ${1}
@@ -1745,7 +1746,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1772,7 +1773,7 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("regular variables", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ownGoalSnippet = t => sql`
       where ${t}.own_goal = ${true} 
@@ -1784,7 +1785,7 @@ describe ("JBOInterpreter type", () => {
     `;
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1793,7 +1794,7 @@ describe ("JBOInterpreter type", () => {
         {
           type: "HasMany",
           include: {
-            type: "Table",
+            type: "AST",
             name: "goal",
             as: "ownGoals",
             members: [
@@ -1826,10 +1827,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("variable cast", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1859,10 +1860,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("literals", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1908,10 +1909,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("Unimplemented type", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       members: [
@@ -1927,10 +1928,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("limit and offset", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       limit: 30,
@@ -1957,10 +1958,10 @@ describe ("JBOInterpreter type", () => {
   });
 
   test ("by id", () => {
-    const interpreter = JBOInterpreter ({}, true);
+    const interpreter = new JBOInterpreter ({}, true);
 
     const ast: ASTType = {
-      type: "Table",
+      type: "AST",
       name: "player",
       as: "player",
       id: 1,

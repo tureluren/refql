@@ -1,9 +1,11 @@
 {
+  "name": "refql",
   "author": "Rafael Tureluren <rafaelbeltu@gmail.com>",
   "description": "A Node.js library for retrieving data from a PostgreSQL database with an interesting query language included.",
   "license": "MIT",
-  "typings": "build/index.d.ts",
   "main": "build/index.ts",
+  "types": "build/index.d.ts",
+  "version": "1.0.0",
   "scripts": {
     "start": "NODE_ENV=development nodemon src/workbench.ts",
     "test": "NODE_ENV=test jest --setupFiles dotenv/config --watch --detectOpenHandles",
@@ -11,7 +13,10 @@
     "seed": "node -r dotenv/config ./db/seedDB.js",
     "setup": "./bin/create-db.sh && sleep 5 && yarn migrate && yarn seed",
     "cover": "NODE_ENV=test jest --setupFiles dotenv/config --coverage",
-    "build": "tsc --build"
+    "build": "rm -rf build && tsc --build",
+    "lint": "eslint ./src --ext .js,.ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run lint"
   },
   "devDependencies": {
     "@babel/core": "^7.16.12",
@@ -35,6 +40,23 @@
     "pg": "^8.7.1",
     "pluralize": "^8.0.0"
   },
+  "repository": {
+     "type": "git",
+     "url": "git+https://github.com/tureluren/refql.git"
+   },
+  "bugs": {
+    "url": "https://github.com/tureluren/refql/issues"
+  },
+  "homepage": "https://github.com/tureluren/refql#readme",
+  "files": [
+    "build/**/*"
+  ],
+  "keywords": [
+    "nodejs",
+    "postgresql",
+    "query-language",
+    "sql"
+  ],
   "jest": {
     "roots": [
       "<rootDir>/src"

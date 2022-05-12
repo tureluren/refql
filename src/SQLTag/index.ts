@@ -1,18 +1,9 @@
 import convertObject from "../more/convertObject";
 import isRel from "../Rel/isRel";
 import isSub from "../Sub/isSub";
-import { RefQLConfig, TableType, Values } from "../types";
+import { AST, RefQLConfig, Values } from "../types";
 import compileSQLTag from "./compileSQLTag";
 import isSQLTag from "./isSQLTag";
-
-// const prototype: Omit<SQLTag, "strings" | "keys"> = {
-//   // @ts-ignore
-//   constructor: SQLTag,
-//   "@@rql/type": "SQLTag",
-//   include,
-//   interpret,
-//   compile
-// };
 
 class SQLTag {
   strings: TemplateStringsArray;
@@ -51,15 +42,15 @@ class SQLTag {
     return new SQLTag (nextStrings, nextKeys);
   };
 
-  interpret(): [string, Values] {
+  interpret() {
     return compileSQLTag (this, 0);
   };
 
-  compile(_config): [string, Values, TableType?] {
+  compile(_config): [string, Values, AST?] {
     return this.interpret ();
   };
 
-  static transform = function<T> (config: RefQLConfig, rows: T[]) {
+  static transform<T>(config: RefQLConfig, rows: T[]) {
     return rows.map (r => convertObject (config.caseTypeJS, r));
   };
 }

@@ -1,17 +1,13 @@
-import { Rel, RQLTag } from "../types";
+import RQLTag from "../RQLTag";
 
-const prototype: Omit<Rel, "symbol" | "tag"> = {
-  constructor: Rel,
-  "@@rql/type": "Rel"
-};
+class Rel {
+  symbol: string;
+  tag: RQLTag;
 
-function Rel(symbol: string) {
-  return (tag: RQLTag): Rel => {
-    const rel = Object.create (prototype);
-    rel.symbol = symbol;
-    rel.tag = tag;
-    return rel;
-  };
-};
+  constructor(symbol: string, tag: RQLTag) {
+    this.symbol = symbol;
+    this.tag = tag;
+  }
+}
 
 export default Rel;

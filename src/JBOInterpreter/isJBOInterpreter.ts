@@ -1,7 +1,6 @@
-import getType from "../more/getType";
-import { JBOInterpreter } from "../types";
+import JBOInterpreter from ".";
 
 const isJBOInterpreter = (value): value is JBOInterpreter =>
-  getType (value) === "JBOInterpreter";
+  value instanceof JBOInterpreter;
 
 export default isJBOInterpreter;

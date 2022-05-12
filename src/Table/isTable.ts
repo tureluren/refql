@@ -1,7 +1,6 @@
 import Table from ".";
-import getType from "../more/getType";
 
 const isTable = (value): value is Table =>
-  getType (value) === "Table";
+  value instanceof Table;
 
 export default isTable;

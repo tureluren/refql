@@ -1,7 +1,6 @@
-import getType from "../more/getType";
-import { Rel } from "../types";
+import Rel from ".";
 
 const isRel = (value): value is Rel =>
-  getType (value) === "Rel";
+  value instanceof Rel;
 
 export default isRel;

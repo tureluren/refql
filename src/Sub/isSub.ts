@@ -1,7 +1,6 @@
-import getType from "../more/getType";
-import { Sub } from "../types";
+import Sub from ".";
 
 const isSub = (value): value is Sub =>
-  getType (value) === "Sub";
+  value instanceof Sub;
 
 export default isSub;

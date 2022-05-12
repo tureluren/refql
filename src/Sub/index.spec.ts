@@ -7,7 +7,7 @@ describe ("Sub type", () => {
       select * from "goal" "goal"
       where "goal".player_id = ${t}.id 
     `;
-    const snippet = Sub ("goals", includeGoals);
+    const snippet = new Sub ("goals", includeGoals);
 
     expect (snippet.as).toBe ("goals");
     expect (snippet.tag).toBe (includeGoals);

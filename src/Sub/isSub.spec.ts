@@ -8,7 +8,7 @@ describe ("Sub `isSub` - detects if a given value is a Sub", () => {
       select * from "goal" "goal"
       where "goal".player_id = ${t}.id 
     `;
-    const snippet = Sub ("goals", includeGoals);
+    const snippet = new Sub ("goals", includeGoals);
 
     expect (isSub (snippet)).toBe (true);
   });

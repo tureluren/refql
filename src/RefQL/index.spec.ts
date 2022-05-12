@@ -40,7 +40,7 @@ describe ("RefQL", () => {
       expect (values).toEqual ([1]);
 
       expect (ast).toEqual ({
-        type: "Table",
+        type: "AST",
         name: "player",
         as: "player",
         members: [

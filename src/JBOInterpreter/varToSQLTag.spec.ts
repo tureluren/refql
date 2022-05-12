@@ -5,7 +5,7 @@ import varToSQLTag from "./varToSQLTag";
 
 describe ("JBOInterpreter `varToSQLTag` - tranforms a variable into a SQLTag", () => {
   test ("variable is SQLTag", () => {
-    const table = Table ("player", "player");
+    const table = new Table ("player", "player");
 
     const tag = sql`
       select *
@@ -17,7 +17,7 @@ describe ("JBOInterpreter `varToSQLTag` - tranforms a variable into a SQLTag", (
   });
 
   test ("variable is function that returns a SQLTag", () => {
-    const table = Table ("player", "player");
+    const table = new Table ("player", "player");
 
     const tag = t => sql`
       select *
@@ -35,7 +35,7 @@ describe ("JBOInterpreter `varToSQLTag` - tranforms a variable into a SQLTag", (
   });
 
   test ("variable can't be transformed into SQLTag", () => {
-    const table = Table ("player", "player");
+    const table = new Table ("player", "player");
 
     expect (varToSQLTag ("player", table)).toBe (null);
 

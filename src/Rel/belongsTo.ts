@@ -1,5 +1,5 @@
-import Rel from ".";
+import rel from "./rel";
 
-const belongsTo = Rel ("-");
+const belongsTo = rel ("-");
 
 export default belongsTo;

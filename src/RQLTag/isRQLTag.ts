@@ -1,7 +1,6 @@
-import getType from "../more/getType";
-import { RQLTag } from "../types";
+import RQLTag from ".";
 
 const isRQLTag = (value): value is RQLTag =>
-  getType (value) === "RQLTag";
+  value instanceof RQLTag;
 
 export default isRQLTag;

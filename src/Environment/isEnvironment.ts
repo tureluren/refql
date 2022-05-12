@@ -1,7 +1,6 @@
-import getType from "../more/getType";
-import { Environment } from "../types";
+import Environment from ".";
 
 const isEnvironment = (value): value is Environment =>
-  getType (value) === "Environment";
+  value instanceof Environment;
 
 export default isEnvironment;

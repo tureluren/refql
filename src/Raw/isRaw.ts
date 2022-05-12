@@ -1,7 +1,6 @@
 import Raw from ".";
-import getType from "../more/getType";
 
 const isRaw = (value): value is Raw =>
-  getType (value) === "Raw";
+  value instanceof Raw;
 
 export default isRaw;

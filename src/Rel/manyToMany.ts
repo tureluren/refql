@@ -1,5 +1,5 @@
-import Rel from ".";
+import rel from "./rel";
 
-const manyToMany = Rel ("x");
+const manyToMany = rel ("x");
 
 export default manyToMany;

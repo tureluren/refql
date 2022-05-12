@@ -1,5 +1,5 @@
-import Rel from ".";
+import rel from "./rel";
 
-const hasMany = Rel ("<");
+const hasMany = rel ("<");
 
 export default hasMany;
