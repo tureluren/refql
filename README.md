@@ -15,7 +15,7 @@ npm install refql
 
 ## Getting started
 ```ts
-import RefQL, { rql, sql } from "RefQL";
+import { RefQL, rql, sql } from "refql";
 
 const config = {
   user: "test",
@@ -810,7 +810,7 @@ const player = await query1<Player> (rql`
 With the Raw data type it is possible to inject values as raw text into the query. These values are not passed as parameters to [node-postgres](https://github.com/brianc/node-postgres).
 
 ```ts
-import { raw } from "RefQL";
+import { raw } from "refql";
 
 // dynamic properties
 const idField = "id";
@@ -881,7 +881,7 @@ RefQL provides a number of helper functions to combine independent query compone
 import { 
   belongsTo, hasMany, manyToMany,
   raw, rql, sql, tag, subselect
-} from "RefQL";
+} from "refql";
 
 const paginate = (offset, limit) => sql`
   offset ${offset}
