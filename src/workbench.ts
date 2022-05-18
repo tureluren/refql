@@ -1,6 +1,5 @@
 import { Pool } from "pg";
-import { RefQL, rql } from ".";
-import { Player } from "./soccer";
+import { RefQL, rql, sql } from ".";
 
 const pool = new Pool ({
   user: "test",
@@ -14,48 +13,57 @@ const querier = (query, values) =>
   pool.query (query, values).then (({ rows }) => rows);
 
 const refQL = RefQL ({
-  pluralize: true,
-  plurals: {},
-  caseTypeJS: "camel",
   caseTypeDB: "snake",
+  caseTypeJS: "camel",
+  debug: (query, _values, _ast) => {
+    console.log (query);
+    // console.log (_values);
+    // console.log (_ast);
+  },
   detectRefs: true,
-  refs: {},
   onSetupError: err => {
     console.error (err.message);
   },
-  debug: (_query, _values, _ast) => {
-    console.log (_query);
-    // console.log (_values);
-    // console.log (_ast);
-  }
+  pluralize: true,
+  plurals: {},
+  refs: {}
 }, querier);
 
-const { query1 } = refQL;
+const {
+  query1, // get one result
+  query // get multiple results
+} = refQL;
 
-async function exec() {
-
-  try {
-    const begin = performance.now ();
-
-    const player = await query1<Player> (rql`
-      player (id: 3) {
+async function getPlayer() {
+  const player = await query1 (rql`
+    player (id: 1) {
+      id
+      lastName
+      - team {
         id
-        lastName
-        x game {
-          id
-          result
-        }
+        name
       }
-    `);
+    }
+  `);
 
-    const end = performance.now ();
+  const alternative = await query1 (rql`
+    player {
+      id
+      lastName
+      - team {
+        id
+        name
+      }
+      ${t => sql`
+        where ${t}.id = 1 
+      `}
+    }
+  `);
 
-    console.log (player);
-
-    console.log ("performance: total " + (end - begin));
-  } catch (e) {
-    console.log (e);
-  }
+  // { id: 1, lastName: "Buckley", team: { id: 1, name: "FC Wuharazi" } }
+  console.log (player);
+  // { id: 1, lastName: "Buckley", team: { id: 1, name: "FC Wuharazi" } }
+  console.log (alternative);
 }
 
-exec ();
+getPlayer ();

@@ -47,7 +47,7 @@ const refQL = RefQL ({
 const { 
   query1, // get one result
   query, // get multiple results
-} = refQL (config);
+} = refQL;
 
 async function getPlayer() {
   const player = await query1<Player> (rql`
