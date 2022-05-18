@@ -100,4 +100,16 @@ describe ("RefQL `validateConfig` - validate config object passed by user", () =
     expect (() => validateConfig (defaultConfig ({ refs: { team: [["team_id", "id"]] } })))
       .toThrowError (new TypeError ('`refs` should be of type { tableFrom: { tableTo: [["tableFromCol", "tableToCol"]] } }'));
   });
+
+  test ("`onSetupError` validated", () => {
+    expect (validateConfig (defaultConfig ({ onSetupError: () => null }))).toBe (true);
+    expect (validateConfig (defaultConfig ({ onSetupError: null }))).toBe (true);
+    expect (validateConfig (defaultConfig ({ onSetupError: undefined }))).toBe (true);
+
+    expect (() => validateConfig (defaultConfig (({ onSetupError: "" }))))
+      .toThrowError (new TypeError ("`onSetupError` should be of type Function"));
+
+    expect (() => validateConfig (defaultConfig (({ onSetupError: 1 }))))
+      .toThrowError (new TypeError ("`onSetupError` should be of type Function"));
+  });
 });

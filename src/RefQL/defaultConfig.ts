@@ -3,9 +3,9 @@ import { RefQLConfig } from "../types";
 const defaults: RefQLConfig = {
   detectRefs: true,
   pluralize: true,
-  useSmartAlias: true,
   plurals: {},
-  refs: {}
+  refs: {},
+  useSmartAlias: true
 };
 
 const defaultConfig = (config: Partial<RefQLConfig>) => {

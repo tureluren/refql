@@ -1,5 +1,4 @@
-import { Pool } from "pg";
-import { DBRef } from "../types";
+import { DBRef, Querier } from "../types";
 
 const refsQuery = `
   select conrelid::regclass as "tableFrom",
@@ -9,9 +8,7 @@ const refsQuery = `
   and connamespace = 'public'::regnamespace
 `;
 
-const readRefs = (pool: Pool): Promise<DBRef[]> =>
-  pool
-    .query (refsQuery)
-    .then (({ rows }) => rows);
+const readRefs = (querier: Querier): Promise<DBRef[]> =>
+  querier (refsQuery, []);
 
 export default readRefs;

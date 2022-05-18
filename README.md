@@ -4,8 +4,6 @@ A Node.js library for retrieving data from a PostgreSQL database with an interes
 ## Introduction
 RefQL is about retrieving referenced data in an elegant, non-painful and no-nosense way (see [relationships](#Relationships)). If you are a fan of simple, traditional REST API endpoints and not of GraphQL, but you do want that GraphQL feeling when querying a database, RefQL is for you. 
 
-> Note that for now RefQL only works with PostgreSQL. The [node-postgres](https://github.com/brianc/node-postgres) library is used to communicate with your PostgresSQL database. 
-
 ## Installation
 ```bash
 yarn install refql
@@ -15,21 +13,41 @@ npm install refql
 
 ## Getting started
 ```ts
+import { Pool } from "pg";
 import { RefQL, rql, sql } from "refql";
 
-const config = {
+const pool = new Pool ({
   user: "test",
   host: "localhost",
   database: "soccer",
   password: "test",
   port: 5432
-};
+});
+
+const querier = (query, values) =>
+  pool.query (query, values).then (({ rows }) => rows);
+
+const refQL = RefQL ({
+  caseTypeDB: "snake",
+  caseTypeJS: "camel",
+  debug: (query, _values, _ast) => {
+    console.log (query);
+    // console.log (_values);
+    // console.log (_ast);
+  },
+  detectRefs: true,
+  onSetupError: err => {
+    console.error (err.message);
+  },
+  pluralize: true,
+  plurals: {},
+  refs: {}
+}, querier);
 
 const { 
   query1, // get one result
   query, // get multiple results
-  pool // node-postgres pool
-} = RefQL (config);
+} = refQL (config);
 
 async function getPlayer() {
   const player = await query1<Player> (rql`
@@ -68,6 +86,7 @@ getPlayer();
 ```
 ## Table of contents
 * [Options](#Options)
+* [Querier](#Querier)
 * [Relationships](#Relationships)
 * [Keywords](#Keywords)
 * [Subselects](#Subselects)
@@ -84,16 +103,6 @@ getPlayer();
 ## Options
 ```ts
 const refQL = RefQL ({
-  // ------ node-postgres config -------
-  user: "test",
-  host: "localhost",
-  database: "soccer",
-  password: "test",
-  port: 5432,
-  // ... other node-postgres config
-
-  // ------ RefQL config ---------------
-
   // JavaScript case type
   caseTypeJS: "camel",
 
@@ -110,6 +119,11 @@ const refQL = RefQL ({
   // automatically detect references between tables
   detectRefs: true,
 
+  // do something with the error that occured while setting up RefQL
+  onSetupError: err => {
+    console.error (err.message);
+  },
+
   // automatically convert keys to plural for "has many" and "many to many" relationships
   pluralize: true,
 
@@ -121,7 +135,7 @@ const refQL = RefQL ({
 
   // find links through aliases 
   useSmartAlias: true
-});
+}, querier);
 ```
 
 ### caseTypeDB option (CaseType, default `undefined`)
@@ -277,6 +291,24 @@ const alternative = await query1<Game> (rql`
 // };
 ```
 
+## Querier
+The querier should be passed as the second argument to the RefQL creator function. It should have the type signature `(query: string, values: any[]) => Promise<any[]>`. This function is a necessary in-between piece to make RefQL independent from database clients. This allows you to choose your own client.
+
+```ts
+import { Pool } from "pg";
+import { RefQL, rql, sql } from "refql";
+
+const pool = new Pool ({
+  user: "test",
+  host: "localhost",
+  database: "soccer",
+  password: "test",
+  port: 5432
+});
+
+const querier = (query, values) =>
+  pool.query (query, values).then (({ rows }) => rows);
+```
 
 ## Relationships
 This is where RefQL really shines. To include referenced data, you only need to pass a single query with relationship signs to the tag function ` rql`` ` and run it. Imagine doing this with SQL, using join clauses or running multiple queries and end up with data that isn't aggregated. With PostgreSQL you can always use the built-in JSON function [json_build_object](https://www.postgresql.org/docs/current/functions-json.html) in combination with [json_agg](https://www.postgresql.org/docs/9.5/functions-aggregate.html) to get a fully aggregated result with a single query. Though, writing these out can be very time-consuming, and you may find that they don't look so clean. Creating a query with the tag function ` rql`` ` will create a RQLTag object that will be parsed into an AST and interpreted into SQL.
@@ -807,7 +839,7 @@ const player = await query1<Player> (rql`
 ```
 
 ## Raw
-With the Raw data type it is possible to inject values as raw text into the query. These values are not passed as parameters to [node-postgres](https://github.com/brianc/node-postgres).
+With the Raw data type it is possible to inject values as raw text into the query.
 
 ```ts
 import { raw } from "refql";

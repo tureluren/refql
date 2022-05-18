@@ -1,16 +1,15 @@
-import { Pool, PoolConfig } from "pg";
 import compile from "../more/compile";
 import tag from "../more/tag";
 import makeRefs from "../refs/makeRefs";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
-import { ExtraEvents, RefQLConfig, Refs } from "../types";
-import branchConfig from "./branchConfig";
+import { Querier, RefQLConfig, Refs } from "../types";
+import defaultConfig from "./defaultConfig";
 import readRefs from "./readRefs";
 import validateConfig from "./validateConfig";
 
-const RefQL = (userConfig: PoolConfig & Partial<RefQLConfig>) => {
-  const [poolConfig, config] = branchConfig (userConfig);
+const RefQL = (userConfig: Partial<RefQLConfig>, querier: Querier) => {
+  const config = defaultConfig (userConfig);
 
   validateConfig (config);
 
@@ -18,21 +17,23 @@ const RefQL = (userConfig: PoolConfig & Partial<RefQLConfig>) => {
   let refs: Refs = {};
   let queue: ((refs: Refs) => void)[] = [];
 
-  const pool = <Pool & ExtraEvents> new Pool (poolConfig);
-
-  // stil read refs, even if detectRefs = false,
-  // just to make sure we're connected to the database
-  readRefs (pool)
-    .then (dbRefs => {
-      refs = makeRefs (config, dbRefs);
-      ready = true;
-      pool.emit ("ready", null);
-      queue.forEach (fn => fn (refs));
-      queue = [];
-    })
-    .catch (err => {
-      pool.emit ("error", err);
-    });
+  if (config.detectRefs) {
+    readRefs (querier)
+      .then (dbRefs => {
+        refs = makeRefs (config, dbRefs);
+        ready = true;
+        queue.forEach (fn => fn (refs));
+        queue = [];
+      })
+      .catch (err => {
+        if (config.onSetupError) {
+          config.onSetupError (err);
+        }
+      });
+  } else {
+    ready = true;
+    refs = config.refs;
+  }
 
   const query = <T>(...components: [RQLTag | SQLTag, ...any[]]): Promise<T[]> => {
     const t = tag (...components);
@@ -44,9 +45,8 @@ const RefQL = (userConfig: PoolConfig & Partial<RefQLConfig>) => {
           config.debug (query, values, ast);
         }
 
-        pool
-          .query (query, values)
-          .then (({ rows }) => {
+        querier (query, values)
+          .then (rows => {
             resolve (
               // @ts-ignore
               t.constructor.transform<T> (config, rows)
@@ -66,9 +66,7 @@ const RefQL = (userConfig: PoolConfig & Partial<RefQLConfig>) => {
   const query1 = <T>(...components: [RQLTag | SQLTag, ...any[]]): Promise<T> =>
     query<T> (...components).then (rows => rows[0]);
 
-  return {
-    query, query1, pool
-  };
+  return { query, query1 };
 };
 
 export default RefQL;

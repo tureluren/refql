@@ -10,6 +10,7 @@ export interface RefQLConfig {
   detectRefs: boolean;
   caseTypeDB?: CaseType;
   caseTypeJS?: CaseType;
+  onSetupError?: (err: Error) => void;
   pluralize: boolean;
   plurals: Plurals;
   refs: Refs;
@@ -150,9 +151,7 @@ export interface DBRef {
   constraint: string;
 }
 
-export interface ExtraEvents {
-  on: (event: "ready", listener: () => void) => this;
-}
-
 export type RQLValue = ((t: Table) => SQLTag) | string | number | boolean | TableRefsObject | Link[] | Keywords & object;
 export type Values = any[];
+
+export type Querier = (query: string, values: Values) => Promise<any[]>;

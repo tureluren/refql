@@ -54,7 +54,7 @@ const caseTypes: CaseType[] = ["camel", "snake"];
 const validateConfig = config => {
   const {
     pluralize, caseTypeJS, caseTypeDB,
-    debug, detectRefs, plurals, refs
+    debug, detectRefs, onSetupError, plurals, refs
   } = <RefQLConfig>config;
 
   if (!isBoolean (pluralize)) {
@@ -63,6 +63,10 @@ const validateConfig = config => {
 
   if (debug != null && !isFunction (debug)) {
     throw new TypeError ("`debug` should be of type Function");
+  }
+
+  if (onSetupError != null && !isFunction (onSetupError)) {
+    throw new TypeError ("`onSetupError` should be of type Function");
   }
 
   if (caseTypeJS != null && !caseTypes.includes (caseTypeJS)) {

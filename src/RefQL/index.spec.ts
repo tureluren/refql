@@ -1,12 +1,20 @@
+import { Pool } from "pg";
 import RefQL from ".";
 import rql from "../RQLTag/rql";
 import sql from "../SQLTag/sql";
 import format from "../test/format";
+import querier from "../test/querier";
 import userConfig from "../test/userConfig";
 
+const pool = new Pool (userConfig);
+
 describe ("RefQL", () => {
+  afterAll (async () => {
+    await pool.end ();
+  });
+
   test ("query multiple rows", async () => {
-    const { query, pool } = RefQL (userConfig);
+    const { query } = RefQL ({ detectRefs: false }, querier (pool));
 
     const res = await query (rql`
       player {
@@ -21,8 +29,6 @@ describe ("RefQL", () => {
 
     expect (player).toHaveProperty ("id");
     expect (player).toHaveProperty ("last_name");
-
-    await pool.end ();
   });
 
   test ("query one row", async () => {
@@ -51,12 +57,11 @@ describe ("RefQL", () => {
       });
     };
 
-    const { query1, pool } = RefQL ({
-      ...userConfig,
+    const { query1 } = RefQL ({
       caseTypeJS: "camel",
       caseTypeDB: "snake",
       debug
-    });
+    }, querier (pool));
 
     const player = await query1 (rql`
       player {
@@ -67,14 +72,12 @@ describe ("RefQL", () => {
 
     expect (player).toHaveProperty ("id");
     expect (player).toHaveProperty ("lastName");
-
-    await pool.end ();
   });
 
   test ("query errors", async () => {
     const byId = id => sql`where id = ${id}`;
 
-    const { query1, pool } = RefQL (userConfig);
+    const { query1 } = RefQL ({}, querier (pool));
 
     try {
       await query1 (rql`
@@ -86,40 +89,19 @@ describe ("RefQL", () => {
     } catch (err: any) {
       expect (err.message).toBe ("column player.name does not exist");
     }
-
-    await pool.end ();
   });
 
-  test ("connection error", done => {
-    const { pool } = RefQL ({ ...userConfig, database: "football" });
+  test ("connection error, `onSetupError` provided", done => {
+    const pool2 = new Pool ({ ...userConfig, database: "football" });
 
-    pool.on ("error", err => {
-      expect (err.message).toBe ('database "football" does not exist');
-
-      pool.end ().then (() => {
-        done ();
-      });
-    });
-  });
-
-  test ("query when ready", done => {
-    const byId = id => sql`where id = ${id}`;
-
-    const { pool, query1 } = RefQL (userConfig);
-
-    pool.on ("ready", () => {
-      query1 (rql`
-        player { id last_name ${byId (1)} }
-      `).then (player => {
-
-        expect (player).toHaveProperty ("id");
-        expect (player).toHaveProperty ("last_name");
-
-        pool.end ().then (() => {
+    RefQL ({
+      onSetupError: err => {
+        expect (err.message).toBe ('database "football" does not exist');
+        pool2.end ().then (() => {
           done ();
         });
-      });
+      }
+    }, querier (pool2));
 
-    });
   });
 });

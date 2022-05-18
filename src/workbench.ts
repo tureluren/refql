@@ -1,40 +1,36 @@
+import { Pool } from "pg";
 import { RefQL, rql } from ".";
 import { Player } from "./soccer";
-import SQLTag from "./SQLTag";
-import sql from "./SQLTag/sql";
 
-const refQL = RefQL ({
+const pool = new Pool ({
   user: "test",
   host: "localhost",
   database: "soccer",
   password: "test",
+  port: 5432
+});
+
+const querier = (query, values) =>
+  pool.query (query, values).then (({ rows }) => rows);
+
+const refQL = RefQL ({
   pluralize: true,
   plurals: {},
-  caseTypeJS: "snake",
+  caseTypeJS: "camel",
   caseTypeDB: "snake",
-
   detectRefs: true,
   refs: {},
-  debug: (_query, _variables, _ast) => {
+  onSetupError: err => {
+    console.error (err.message);
+  },
+  debug: (_query, _values, _ast) => {
     console.log (_query);
-    // console.log (_variables);
+    // console.log (_values);
     // console.log (_ast);
   }
-});
+}, querier);
 
-const { query, query1, pool } = refQL;
-
-pool.on ("error", err => {
-  console.log (err.message);
-  pool.end ().then (() => {
-    console.log ("pool has ended");
-    process.exit (-1);
-  });
-});
-
-pool.on ("ready", () => {
-  console.log ("ready");
-});
+const { query1 } = refQL;
 
 async function exec() {
 
@@ -63,7 +59,3 @@ async function exec() {
 }
 
 exec ();
-
-const tag = sql`
-  select 
-`;
