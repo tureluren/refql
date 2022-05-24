@@ -14,14 +14,7 @@
     "skipLibCheck": true
   },
   "include": ["src"],
-  "exclude": [
-    "node_modules", 
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "./src/test",
-    "./src/workbench.ts",
-    "./src/soccer.ts"
-  ],
+  "exclude": ["node_modules"],
   "ts-node": {
     "files": true
   }
