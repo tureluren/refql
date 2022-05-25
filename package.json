@@ -13,7 +13,9 @@
     "seed": "node -r dotenv/config ./db/seedDB.js",
     "setup": "./bin/create-db.sh && sleep 5 && yarn migrate && yarn seed",
     "cover": "NODE_ENV=test jest --setupFiles dotenv/config --coverage",
-    "build": "rm -rf build && tsc --project tsconfig.build.json",
+    "build:node": "tsc --project tsconfig.build.json",
+    "build:deno": "./bin/build-deno.sh",
+    "build": "rm -rf build && npm run build:node && npm run build:deno",
     "lint": "eslint ./src --ext .js,.ts",
     "prepare": "npm run build",
     "prepublishOnly": "npm run lint"

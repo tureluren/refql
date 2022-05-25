@@ -1,8 +1,8 @@
-const isLiteral = tokenType =>
-  tokenType === "NUMBER"
-    || tokenType === "STRING"
-    || tokenType === "true"
-    || tokenType === "false"
-    || tokenType === "null";
+const isLiteral = (value: any) =>
+  value === "NUMBER"
+    || value === "STRING"
+    || value === "true"
+    || value === "false"
+    || value === "null";
 
 export default isLiteral;

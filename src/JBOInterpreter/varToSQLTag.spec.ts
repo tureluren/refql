@@ -19,7 +19,7 @@ describe ("JBOInterpreter `varToSQLTag` - tranforms a variable into a SQLTag", (
   test ("variable is function that returns a SQLTag", () => {
     const table = new Table ("player", "player");
 
-    const tag = t => sql`
+    const tag = (t: Table) => sql`
       select *
       from ${t}
       where ${t}.id = 1
@@ -42,10 +42,10 @@ describe ("JBOInterpreter `varToSQLTag` - tranforms a variable into a SQLTag", (
     expect (() => varToSQLTag (rql`player { id lastName }`, table))
       .toThrowError (new Error ("You can't nest RQL tags"));
 
-    expect (() => varToSQLTag (_t => rql`player { id lastName }`, table))
+    expect (() => varToSQLTag ((_t: Table) => rql`player { id lastName }`, table))
       .toThrowError (new Error ("Only functions that return a sql snippet are allowed"));
 
-    expect (() => varToSQLTag (_t => "player { id lastName }", table))
+    expect (() => varToSQLTag ((_t: Table) => "player { id lastName }", table))
       .toThrowError (new Error ("Only functions that return a sql snippet are allowed"));
   });
 });

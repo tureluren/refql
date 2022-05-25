@@ -1,6 +1,6 @@
 import Environment from ".";
 
-const isEnvironment = (value): value is Environment =>
+const isEnvironment = (value: any): value is Environment =>
   value instanceof Environment;
 
 export default isEnvironment;

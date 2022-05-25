@@ -1,16 +1,18 @@
 import Parser from ".";
 import Raw from "../Raw";
 import sql from "../SQLTag/sql";
+import Table from "../Table";
 import Tokenizer from "../Tokenizer";
 import { ASTType, OptCaseType } from "../types";
 
-const parseFn = (typeCaseDB: OptCaseType, typeCaseJS: OptCaseType, pluralize) => (text, ...keys) => {
-  const string = text.join ("$");
-  const parser = new Parser (
-    typeCaseDB, typeCaseJS, pluralize, { player: "teammates" }
-  );
-  return parser.parse (string, keys);
-};
+const parseFn = (typeCaseDB: OptCaseType, typeCaseJS: OptCaseType, pluralize: boolean) =>
+  (text: any, ...keys: any[]) => {
+    const string = text.join ("$");
+    const parser = new Parser (
+      typeCaseDB, typeCaseJS, pluralize, { player: "teammates" }
+    );
+    return parser.parse (string, keys);
+  };
 
 describe ("Parser type", () => {
   test ("init Parser", () => {
@@ -453,7 +455,7 @@ describe ("Parser type", () => {
   test ("keywords - order by", () => {
     const parse = parseFn ("snake", "camel", true);
 
-    const orderByLastName = t =>
+    const orderByLastName = (t: Table) =>
       sql`order by ${t}.last_name`;
 
     const ast = parse`
@@ -815,7 +817,7 @@ describe ("Parser type", () => {
   test ("subselects", () => {
     const parse = parseFn ("snake", "camel", true);
 
-    const subselect = t => sql`
+    const subselect = (t: Table) => sql`
       select count(*)
       from goal
       where player_id = ${t}.id
@@ -893,11 +895,11 @@ describe ("Parser type", () => {
   test ("Sql tags as variables", () => {
     const parse = parseFn ("snake", "camel", true);
 
-    const ownGoalSnippet = t => sql`
+    const ownGoalSnippet = (t: Table) => sql`
       where ${t}.own_goal = ${true}
     `;
 
-    const whereSnippet = t => sql`
+    const whereSnippet = (t: Table) => sql`
       where ${t}.id = ${1}
       and ${t}.last_name = ${"Doe"}
     `;
@@ -1014,7 +1016,8 @@ describe ("Parser type", () => {
   test ("nested function calls and variables", () => {
     const parse = parseFn ("snake", "camel", true);
 
-    const positionSnippet = t => sql`(select name from position where id = ${t}.position_id)`;
+    const positionSnippet = (t: Table) =>
+      sql`(select name from position where id = ${t}.position_id)`;
 
     const ast = parse`
       player {

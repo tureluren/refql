@@ -4,7 +4,7 @@ import isString from "../predicate/isString";
 import isTableRefsObject from "../predicate/isTableRefsObject";
 import { Keywords } from "../types";
 
-const validateKeywords = keywords => {
+const validateKeywords = (keywords: any) => {
   const { as, links, refs, xTable, id, limit, offset } = <Keywords>keywords;
 
   if (as != null && !isString (as)) {

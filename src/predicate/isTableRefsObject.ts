@@ -2,7 +2,7 @@ import isLinkArray from "./isLinkArray";
 import isObject from "./isObject";
 
 // tableRefsObject: { tableTo: [["tableFromCol", "tableToCol"]] }
-const isTableRefsObject = refObj => {
+const isTableRefsObject = (refObj: any) => {
   let itIs = true;
 
   if (!isObject (refObj)) {

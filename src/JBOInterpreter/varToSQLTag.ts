@@ -2,8 +2,9 @@ import isFunction from "../predicate/isFunction";
 import isRQLTag from "../RQLTag/isRQLTag";
 import SQLTag from "../SQLTag";
 import isSQLTag from "../SQLTag/isSQLTag";
+import Table from "../Table";
 
-const varToSQLTag = (value, table): SQLTag | null => {
+const varToSQLTag = (value: any, table: Table): SQLTag | null => {
   if (isSQLTag (value)) {
     return value;
   }

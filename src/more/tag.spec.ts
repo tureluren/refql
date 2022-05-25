@@ -8,6 +8,7 @@ import subselect from "../Sub/subselect";
 import tag from "./tag";
 import refQLConfig from "../test/refQLConfig";
 import compile from "./compile";
+import Table from "../Table";
 
 describe ("more `tag` - tag a bunch of query related components (of type RQLTag, SQLTag, Raw, Rel or Table -> SQLTag)", () => {
   test ("tag into RQLTag", () => {
@@ -15,7 +16,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       player { id last_name }
     `;
 
-    const byTeamId = teamId => t => sql`
+    const byTeamId = (teamId: number) => (t: Table) => sql`
       where ${t}.team_id = ${teamId}
     `;
 
@@ -23,13 +24,13 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       and last_name like 'P%'
     `;
 
-    const getPlayers = teamId => tag (
+    const getPlayers = (teamId: number) => tag (
       getPlayer,
       byTeamId (teamId),
       andLastNameLikeP
     );
 
-    const expected = id => rql`
+    const expected = (id: number) => rql`
       player { 
         id 
         last_name
@@ -55,7 +56,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       from player
     `;
 
-    const byTeamId = teamId => sql`
+    const byTeamId = (teamId: number) => sql`
       where team_id = ${teamId}
     `;
 
@@ -63,13 +64,13 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       and last_name like 'P%'
     `;
 
-    const getPlayers = teamId => tag (
+    const getPlayers = (teamId: number) => tag (
       getPlayer,
       byTeamId (teamId),
       andLastNameLikeP
     );
 
-    const expected = id => sql`
+    const expected = (id: number) => sql`
       select id, last_name
       from player
       where team_id = ${id}
@@ -85,7 +86,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       "select id, last_name from player"
     );
 
-    const byTeamId = teamId => sql`
+    const byTeamId = (teamId: number) => sql`
       where team_id = ${teamId}
     `;
 
@@ -93,7 +94,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       and last_name like 'P%'
     `;
 
-    const getPlayers = teamId => tag (
+    const getPlayers = (teamId: number) => tag (
       <any>getPlayer,
       byTeamId (teamId),
       andLastNameLikeP
@@ -106,7 +107,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
   });
 
   test ("nested tagging", () => {
-    const paginate = (offset, limit) => tag (
+    const paginate = (offset: number, limit: number) => tag (
       sql`offset ${offset}`,
       sql`limit ${limit}`
     );
@@ -123,7 +124,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       game { id result }
     `;
 
-    const getGoalCount = t => sql`
+    const getGoalCount = (t: Table) => sql`
       select count(*) from "goal"
       where "goal".player_id = ${t}.id
     `;
@@ -132,7 +133,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       getTeam,
       hasMany (tag (
         getPlayer,
-        t => sql`where ${t}.position_id > 5`
+        (t: Table) => sql`where ${t}.position_id > 5`
       ))
     );
 
@@ -143,7 +144,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       belongsTo (getTeamAndTeammates)
     );
 
-    const byTeamId = teamId => t => sql`
+    const byTeamId = (teamId: number) => (t: Table) => sql`
       where ${t}.team_id = ${teamId}
     `;
 
@@ -151,7 +152,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       and last_name like 'P%'
     `;
 
-    const getPlayers = teamId => tag (
+    const getPlayers = (teamId: number) => tag (
       getPlayerAndTeam,
       byTeamId (teamId),
       andLastNameLikeA,
@@ -159,7 +160,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       manyToMany (getGame)
     );
 
-    const expected = id => rql`
+    const expected = (id: number) => rql`
       player { 
         id 
         last_name

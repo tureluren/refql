@@ -369,7 +369,7 @@ class JBOInterpreter {
     return [ref, foundByReversing];
   };
 
-  getOrderBy(orderBy, env: Environment) {
+  getOrderBy(orderBy: any, env: Environment) {
     if (!orderBy) return "";
 
     const orderBySql = this.getSQLIfSQLTag (orderBy, env);
@@ -383,7 +383,7 @@ class JBOInterpreter {
     return " " + orderBySql;
   };
 
-  getSQLIfSQLTag(value, env: Environment) {
+  getSQLIfSQLTag(value: any, env: Environment) {
     const sqlTag = varToSQLTag (value, env.lookup ("table"));
 
     if (sqlTag == null) {

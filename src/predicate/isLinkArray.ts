@@ -2,7 +2,7 @@ import isArray from "./isArray";
 import isString from "./isString";
 
 // linkArray: [["tableFromCol", "tableToCol"]]
-const isLinkArray = arr => {
+const isLinkArray = (arr: any) => {
   let itIs = true;
 
   if (!isArray (arr)) {

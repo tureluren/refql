@@ -2,6 +2,7 @@ import JBOInterpreter from ".";
 import raw from "../Raw/raw";
 import rql from "../RQLTag/rql";
 import sql from "../SQLTag/sql";
+import Table from "../Table";
 import format from "../test/format";
 import { ASTType, Refs } from "../types";
 
@@ -466,7 +467,7 @@ describe ("JBOInterpreter type", () => {
           type: "AST",
           name: "game",
           as: "games",
-          orderBy: <any>(_t => "order by result"),
+          orderBy: <any>((_t: Table) => "order by result"),
           members: [{ type: "Identifier", name: "id", as: "id" }]
         }
       }]
@@ -1164,7 +1165,7 @@ describe ("JBOInterpreter type", () => {
   test ("subselecting", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const subselect = t => sql`
+    const subselect = (t: Table) => sql`
       select count(*) 
       from goal
       where player_id = ${t}.id
@@ -1199,7 +1200,7 @@ describe ("JBOInterpreter type", () => {
   test ("subselecting with variables", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const subselect = t => sql`
+    const subselect = (t: Table) => sql`
       select count(*) 
       from goal
       where player_id = ${t}.id
@@ -1235,7 +1236,7 @@ describe ("JBOInterpreter type", () => {
   test ("invalid subselect", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const subselect: any = t => `
+    const subselect: any = (t: Table) => `
       select count(*) 
       from goal
       where player_id = ${t}.id
@@ -1356,7 +1357,8 @@ describe ("JBOInterpreter type", () => {
   test ("nested function calls and variables", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const positionSnippet = t => sql`(select name from position where id = ${t}.position_id)`;
+    const positionSnippet = (t: Table) =>
+      sql`(select name from position where id = ${t}.position_id)`;
 
     const ast: ASTType = {
       type: "AST",
@@ -1448,7 +1450,7 @@ describe ("JBOInterpreter type", () => {
     expect (() => interpreter.interpret (ast))
       .toThrowError (new Error ("You can't nest RQL tags"));
 
-    const rqlSnippet2 = _t => rql`
+    const rqlSnippet2 = (_t: Table) => rql`
       x game { id result }
     `;
 
@@ -1468,7 +1470,7 @@ describe ("JBOInterpreter type", () => {
         new Error ("Only functions that return a sql snippet are allowed")
       );
 
-    const stringSnippet = _t =>
+    const stringSnippet = (_t: Table) =>
       "x game { id result }";
 
     const ast3: ASTType = {
@@ -1522,7 +1524,7 @@ describe ("JBOInterpreter type", () => {
   test ("function that returns SQL tag variable", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const sqlSnippet = t => sql`
+    const sqlSnippet = (t: Table) => sql`
       where ${t}.team_id = ${1}
       offset 0
       limit 10 
@@ -1557,7 +1559,7 @@ describe ("JBOInterpreter type", () => {
   test ("limit and offset can't be used in relation", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const sqlSnippet = t => sql`
+    const sqlSnippet = (t: Table) => sql`
       where ${t}.team_id = ${1}
       offset 0
       limit 10 
@@ -1593,7 +1595,7 @@ describe ("JBOInterpreter type", () => {
   test ("variables inside SQL Tag", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const sqlSnippet = t => sql`
+    const sqlSnippet = (t: Table) => sql`
       where ${t}.team_id = ${1}
       offset ${0}
       limit ${10}
@@ -1628,7 +1630,7 @@ describe ("JBOInterpreter type", () => {
   test ("nested SQL Tag", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const sqlSnippet = t => sql`
+    const sqlSnippet = (t: Table) => sql`
       where ${t}.team_id = ${1}
       ${sql`
         order by ${t}.last_name 
@@ -1670,7 +1672,7 @@ describe ("JBOInterpreter type", () => {
   test ("not root limit in nested SQL tag", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const sqlSnippet = t => sql`
+    const sqlSnippet = (t: Table) => sql`
       where ${t}.team_id = ${1}
       ${sql`
         offset 0
@@ -1736,7 +1738,7 @@ describe ("JBOInterpreter type", () => {
   test ("raw variables in sql tag", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const sqlSnippet = t => sql`
+    const sqlSnippet = (t: Table) => sql`
       where ${t}.team_id = ${1}
       ${raw (`order by "${t.name}".last_name`)}
       ${sql`
@@ -1775,11 +1777,11 @@ describe ("JBOInterpreter type", () => {
   test ("regular variables", () => {
     const interpreter = new JBOInterpreter ({}, true);
 
-    const ownGoalSnippet = t => sql`
+    const ownGoalSnippet = (t: Table) => sql`
       where ${t}.own_goal = ${true} 
     `;
 
-    const whereSnippet = t => sql`
+    const whereSnippet = (t: Table) => sql`
       where ${t}.id = ${1} 
       and ${t}.last_name = ${"Doe"}
     `;

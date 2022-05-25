@@ -6,7 +6,7 @@ import compile from "./compile";
 
 describe ("more `compile` - compiles a RQLTag or a SQLTag to a query and values", () => {
   test ("RQLTag compiled", () => {
-    const getPlayer = id => rql`
+    const getPlayer = (id: number) => rql`
       player {
         id
         last_name
@@ -31,7 +31,7 @@ describe ("more `compile` - compiles a RQLTag or a SQLTag to a query and values"
   });
 
   test ("SQLTag compiled", () => {
-    const getPlayer = id => sql`
+    const getPlayer = (id: number) => sql`
       select id, last_name
       from player
       where id = ${id} 

@@ -1,4 +1,4 @@
-import { EnvRecord } from "../types";
+import { EnvRecord, Values } from "../types";
 
 class Environment {
   record: EnvRecord;
@@ -29,7 +29,7 @@ class Environment {
     return this.parent.resolve (name);
   };
 
-  addValues(newValues) {
+  addValues(newValues: Values) {
     const values = this.lookup ("values");
     let idx = this.lookup ("keyIdx");
     idx += newValues.length;
