@@ -12,7 +12,7 @@ import isSQLTag from "./isSQLTag";
 const compileSQLTag = (tag: SQLTag, keyIdx: number): [string, Values] => {
   const values: Values = [];
 
-  const go = sqlTag => {
+  const go = (sqlTag: SQLTag): string => {
     const { strings, keys } = sqlTag;
 
     return strings.reduce ((acc, str, idx) => {
@@ -45,7 +45,7 @@ const compileSQLTag = (tag: SQLTag, keyIdx: number): [string, Values] => {
 
         if (isArray (k)) {
           values.push (...k);
-          return k.reduce ((acc, _item, idx) => {
+          return k.reduce ((acc: string, _item: any, idx: number) => {
             const pre = idx === 0 ? "" : ",";
             return acc + pre + "$" + (keyIdx + idx + 1);
           }, acc + s);

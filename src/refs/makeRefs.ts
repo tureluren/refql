@@ -55,7 +55,7 @@ const makeRefs = (config: RefQLConfig, dbRefs: DBRef[]) => {
 
       // find next free number
       const itemNo = (start => {
-        const go = no => {
+        const go = (no: number): number => {
           if (getRefPath (tableFrom, tableTo + "/" + no, refs)) {
             return go (no + 1);
           }

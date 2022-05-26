@@ -14,7 +14,7 @@ class SQLTag {
     this.keys = keys;
   }
 
-  include(snip) {
+  include(snip: any) {
     if (isRel (snip)) {
       throw new Error ("You can't use a Rel inside SQL Tags");
     }

@@ -5,6 +5,7 @@ import sql from "../SQLTag/sql";
 import format from "../test/format";
 import querier from "../test/querier";
 import userConfig from "../test/userConfig";
+import { AST, Values } from "../types";
 
 const pool = new Pool (userConfig);
 
@@ -32,9 +33,9 @@ describe ("RefQL", () => {
   });
 
   test ("query one row", async () => {
-    const byId = id => sql`where id = ${id}`;
+    const byId = (id: number) => sql`where id = ${id}`;
 
-    const debug = (query, values, ast) => {
+    const debug = (query: string, values: Values, ast?: AST) => {
       expect (query).toBe (format (`
         select json_build_object(
           'id', "player".id,
@@ -75,7 +76,7 @@ describe ("RefQL", () => {
   });
 
   test ("query errors", async () => {
-    const byId = id => sql`where id = ${id}`;
+    const byId = (id: number) => sql`where id = ${id}`;
 
     const { query1 } = RefQL ({}, querier (pool));
 

@@ -6,7 +6,7 @@ import isTableRefsObject from "../predicate/isTableRefsObject";
 import { CaseType, RefQLConfig } from "../types";
 
 // configRefs: { tableFrom: { tableTo: [["tableFromCol", "tableToCol"]] } }
-const validConfigRefs = refs => {
+const validConfigRefs = (refs: any) => {
   if (!isObject (refs)) {
     return false;
   }
@@ -21,7 +21,7 @@ const validConfigRefs = refs => {
   return valid;
 };
 
-const validPlurals = plurals => {
+const validPlurals = (plurals: any) => {
   if (!isObject (plurals)) {
     return false;
   }
@@ -51,7 +51,7 @@ const caseTypes: CaseType[] = ["camel", "snake"];
  * plurals: { singular: "plural" }
  * refs: { tableFrom: { tableTo: [["tableFromCol", "tableToCol"]] } }
  */
-const validateConfig = config => {
+const validateConfig = (config: any) => {
   const {
     pluralize, caseTypeJS, caseTypeDB,
     debug, detectRefs, onSetupError, plurals, refs

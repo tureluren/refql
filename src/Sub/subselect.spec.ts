@@ -4,10 +4,11 @@ import rql from "../RQLTag/rql";
 import sql from "../SQLTag/sql";
 import refQLConfig from "../test/refQLConfig";
 import subselect from "./subselect";
+import Table from "../Table";
 
 describe ("Sub `subselect` - create an includable subselect", () => {
   test ("includable subselect created", () => {
-    const getGoalCount = t => sql`
+    const getGoalCount = (t: Table) => sql`
       select count(*) from "goal"
       where "goal".player_id = ${t}.id
     `;
@@ -20,7 +21,7 @@ describe ("Sub `subselect` - create an includable subselect", () => {
   });
 
   test ("includable subselect included", () => {
-    const getGoalCount = t => sql`
+    const getGoalCount = (t: Table) => sql`
       select count(*) from "goal"
       where "goal".player_id = ${t}.id
     `;

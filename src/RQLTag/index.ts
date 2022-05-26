@@ -16,7 +16,7 @@ class RQLTag {
     this.keys = keys;
   }
 
-  include(snip) {
+  include(snip: any) {
     let nextString, nextKeys;
 
     if (isRel (snip)) {
