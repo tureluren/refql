@@ -427,7 +427,7 @@ Keywords can be passed as arguments after a table declaration or by interpolatin
 interface Keywords {
   as?: string;
   links?: Link[];
-  refs?: TableRefsObject;
+  refs?: TableRefs;
   xTable?: string;
   orderBy?: SQLTag | ((t: Table) => SQLTag);
   id?: number | string;
