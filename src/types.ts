@@ -144,9 +144,9 @@ export interface EnvRecord {
 }
 
 export type TagFn = {
-  (baseTag: RQLTag, ...snippets): RQLTag;
-  (baseTag: SQLTag, ...snippets): SQLTag;
-  (baseTag: RQLTag | SQLTag, ...snippets): RQLTag | SQLTag;
+  (baseTag: RQLTag, ...snippets: any[]): RQLTag;
+  (baseTag: SQLTag, ...snippets: any[]): SQLTag;
+  (baseTag: RQLTag | SQLTag, ...snippets: any[]): RQLTag | SQLTag;
 };
 
 export interface DBRef {
@@ -154,7 +154,6 @@ export interface DBRef {
   constraint: string;
 }
 
-// Dict instead of object ?
 export type RQLValue = ((t: Table) => SQLTag) | string | number | boolean | TableRefs | Link[] | Keywords;
 export type Values = any[];
 

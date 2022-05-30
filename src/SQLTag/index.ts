@@ -39,14 +39,14 @@ class SQLTag {
       nextKeys = this.keys.concat (snip);
     }
 
-    return new SQLTag (nextStrings, nextKeys);
+    return new SQLTag (nextStrings as any, nextKeys);
   };
 
   interpret() {
     return compileSQLTag (this, 0);
   };
 
-  compile(_config): [string, Values, AST?] {
+  compile(_config: RefQLConfig): [string, Values, AST?] {
     return this.interpret ();
   };
 
