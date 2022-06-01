@@ -298,11 +298,11 @@ class JBOInterpreter {
     }
 
     throw new Error (`Unimplemented: ${JSON.stringify (exp)}`);
-  };
+  }
 
   findHasManyLinks(foreignTable: string, col: string) {
     return getRefPath (foreignTable, col, this.refs);
-  };
+  }
 
   findBelongsToLinks(foreignTable: string, col: string, as: string) {
     let ref = getRefPath (foreignTable, col, this.refs);
@@ -353,7 +353,7 @@ class JBOInterpreter {
     }
 
     return ref;
-  };
+  }
 
   findManyToManyLinks(foreignTable: string, col: string, reversed: string): [Link[] | undefined, boolean] {
     let ref = getRefPath (foreignTable, col, this.refs);
@@ -367,7 +367,7 @@ class JBOInterpreter {
     }
 
     return [ref, foundByReversing];
-  };
+  }
 
   getOrderBy(orderBy: any, env: Environment) {
     if (!orderBy) return "";
@@ -381,7 +381,7 @@ class JBOInterpreter {
     }
 
     return " " + orderBySql;
-  };
+  }
 
   getSQLIfSQLTag(value: any, env: Environment) {
     const sqlTag = varToSQLTag (value, env.lookup ("table"));
@@ -395,7 +395,7 @@ class JBOInterpreter {
     env.addValues (values);
 
     return sql;
-  };
+  }
 
   interpretEach(arr: ASTType[], env: Environment, moveSQL = false) {
     arr.forEach (exp => {
@@ -405,7 +405,7 @@ class JBOInterpreter {
         env.moveSQLToQuery ();
       }
     });
-  };
+  }
 }
 
 export default JBOInterpreter;

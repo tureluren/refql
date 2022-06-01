@@ -31,6 +31,7 @@
     }],
     "keyword-spacing": ["error"],
     "linebreak-style": ["error", "unix"],
+    "no-extra-semi": ["error"],
     "no-multi-spaces": ["error"],
     "no-trailing-spaces": ["error"],
     "object-curly-spacing": ["error", "always"],

@@ -21,11 +21,9 @@ describe ("Parser type", () => {
     expect (parser.string).toBe ("");
     expect (parser.caseTypeJS).toBe ("camel");
     expect (parser.caseTypeDB).toBe ("snake");
-    expect (parser.pluralize).toBe (true);
     expect (parser.keyIdx).toBe (0);
     expect (parser.keys).toEqual ([]);
     expect (parser.tokenizer).toEqual (new Tokenizer ());
-    expect (parser.plurals).toEqual ({ player: "teammates" });
   });
 
   test ("table declaration - typeCaseDB = 'snake'", () => {

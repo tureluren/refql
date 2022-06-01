@@ -40,19 +40,19 @@ class SQLTag {
     }
 
     return new SQLTag (nextStrings as any, nextKeys);
-  };
+  }
 
   interpret() {
     return compileSQLTag (this, 0);
-  };
+  }
 
   compile(_config: RefQLConfig): [string, Values, AST?] {
     return this.interpret ();
-  };
+  }
 
   static transform<T>(config: RefQLConfig, rows: T[]) {
     return rows.map (r => convertObject (config.caseTypeJS, r));
-  };
+  }
 }
 
 export default SQLTag;

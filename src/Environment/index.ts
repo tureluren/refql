@@ -13,11 +13,11 @@ class Environment {
   assign<T extends keyof EnvRecord>(name: T, value: EnvRecord[T]) {
     this.resolve (name).record[name] = value;
     return value;
-  };
+  }
 
   lookup<T extends keyof EnvRecord>(name: T) {
     return this.resolve (name).record[name]!;
-  };
+  }
 
   resolve(name: keyof EnvRecord): Environment {
     if (this.record.hasOwnProperty (name)) {
@@ -27,7 +27,7 @@ class Environment {
       throw new ReferenceError (`Variable "${name}" is undefined`);
     }
     return this.parent.resolve (name);
-  };
+  }
 
   addValues(newValues: Values) {
     const values = this.lookup ("values");
@@ -35,7 +35,7 @@ class Environment {
     idx += newValues.length;
     this.assign ("values", values.concat (newValues));
     this.assign ("keyIdx", idx);
-  };
+  }
 
   writeToQuery(value: string) {
     let query = this.lookup ("query");
@@ -49,7 +49,7 @@ class Environment {
     }
 
     this.assign ("query", query);
-  };
+  }
 
   writeToSQL(value: string) {
     let sql = this.lookup ("sql");
@@ -59,7 +59,7 @@ class Environment {
     } else {
       this.assign ("sql", value);
     }
-  };
+  }
 
   writeSQLToQuery(correctWhere: boolean) {
     let query = this.lookup ("query");
@@ -78,7 +78,7 @@ class Environment {
     query += " " + sql;
 
     this.assign ("query", query);
-  };
+  }
 
   moveSQLToQuery() {
     const sql = this.lookup ("sql");
@@ -88,7 +88,7 @@ class Environment {
 
       this.assign ("sql", "");
     }
-  };
+  }
 }
 
 export default Environment;

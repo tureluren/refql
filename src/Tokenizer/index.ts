@@ -49,11 +49,11 @@ class Tokenizer {
   init(string: string) {
     this.string = string;
     this.cursor = 0;
-  };
+  }
 
   hasMoreTokens() {
     return this.cursor < this.string.length;
-  };
+  }
 
   getNextToken(): Token {
     if (!this.hasMoreTokens ()) {
@@ -82,7 +82,7 @@ class Tokenizer {
     }
 
     throw new SyntaxError (`Unexpected token: "${string[0]}"`);
-  };
+  }
 
   match(regexp: RegExp, string: string) {
     const matched = regexp.exec (string);
@@ -93,7 +93,7 @@ class Tokenizer {
 
     this.cursor += matched[0].length;
     return matched[0];
-  };
+  }
 
 }
 export default Tokenizer;

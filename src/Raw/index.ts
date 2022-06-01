@@ -7,7 +7,7 @@ class Raw {
       throw TypeError ("Raw must wrap a String");
     }
     this.value = value;
-  };
+  }
 }
 
 export default Raw;

@@ -38,7 +38,7 @@ class RQLTag {
     }
 
     return new RQLTag (nextString, nextKeys);
-  };
+  }
 
   compile(config: RefQLConfig): [string, Values, AST] {
     const parser = new Parser (
@@ -54,11 +54,11 @@ class RQLTag {
     const [query, values] = interpreter.interpret (ast);
 
     return [query, values, ast];
-  };
+  }
 
   static transform<T>(_config: RefQLConfig, rows: JsonBuildObject<T>[]) {
     return rows.map (r => r.json_build_object);
-  };
+  }
 }
 
 export default RQLTag;

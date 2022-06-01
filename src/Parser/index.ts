@@ -1,4 +1,3 @@
-import toPlural from "pluralize";
 import isEmpty from "../predicate/isEmpty";
 import isLiteral from "../predicate/isLiteral";
 import isObject from "../predicate/isObject";
@@ -14,13 +13,13 @@ import {
   Subselect, Token, Variable
 } from "../types";
 import convertTableRefs from "../refs/convertTableRefs";
+import Pluralizer from "../Pluralizer";
 
 class Parser {
   caseTypeDB?: CaseType;
   caseTypeJS?: CaseType;
-  pluralize: boolean;
-  plurals: Plurals;
   tokenizer: Tokenizer;
+  pluralizer: Pluralizer;
   string: string;
   keys: RQLValue[];
   keyIdx: number;
@@ -29,8 +28,7 @@ class Parser {
   constructor(caseTypeDB: OptCaseType, caseTypeJS: OptCaseType, pluralize: boolean, plurals: Plurals) {
     this.caseTypeDB = caseTypeDB;
     this.caseTypeJS = caseTypeJS;
-    this.pluralize = pluralize;
-    this.plurals = plurals;
+    this.pluralizer = new Pluralizer (pluralize, plurals);
     this.tokenizer = new Tokenizer ();
     this.string = "";
     this.keys = [];
@@ -45,7 +43,7 @@ class Parser {
     this.lookahead = this.tokenizer.getNextToken ();
 
     return this.AST ();
-  };
+  }
 
   AST(pluralizable = false) {
     let table = <AST><unknown> this.Identifier (pluralizable);
@@ -135,7 +133,7 @@ class Parser {
     table.members = this.Members ();
 
     return table;
-  };
+  }
 
   grabVariable() {
     const variable = this.keys[this.keyIdx];
@@ -152,7 +150,7 @@ class Parser {
       type: "HasMany",
       include: this.AST (true)
     };
-  };
+  }
 
   BelongsTo(): BelongsTo {
     this.eat ("-");
@@ -160,7 +158,7 @@ class Parser {
       type: "BelongsTo",
       include: this.AST ()
     };
-  };
+  }
 
   ManyToMany(): ManyToMany {
     this.eat ("x");
@@ -168,7 +166,7 @@ class Parser {
       type: "ManyToMany",
       include: this.AST (true)
     };
-  };
+  }
 
   Subselect(): Subselect {
     this.eat ("&");
@@ -182,7 +180,7 @@ class Parser {
     subselect.type = "Subselect";
 
     return subselect;
-  };
+  }
 
   Identifier(pluralizable = false) {
     let name, as;
@@ -194,13 +192,7 @@ class Parser {
     as = convertCase (this.caseTypeJS, as);
 
     if (pluralizable) {
-      const selfProvided = this.plurals[as];
-
-      if (selfProvided) {
-        as = selfProvided;
-      } else if (this.pluralize) {
-        as = toPlural (as);
-      }
+      as = this.pluralizer.toPlural (as);
     }
 
     let identifier: Identifier = {
@@ -221,7 +213,7 @@ class Parser {
     }
 
     return identifier;
-  };
+  }
 
   Variable() {
     this.eat ("VARIABLE");
@@ -242,7 +234,7 @@ class Parser {
     }
 
     return variable;
-  };
+  }
 
   Call(callee: Identifier): Call {
     return {
@@ -250,7 +242,7 @@ class Parser {
       type: "Call",
       args: this.Arguments ()
     };
-  };
+  }
 
   Members() {
     this.eat ("{");
@@ -276,7 +268,7 @@ class Parser {
     this.eat ("}");
 
     return members;
-  };
+  }
 
   Arguments() {
     this.eat ("(");
@@ -301,7 +293,7 @@ class Parser {
     this.eat (")");
 
     return argumentList;
-  };
+  }
 
   Member(): ASTType {
     if (isLiteral (this.lookahead.type)) {
@@ -323,7 +315,7 @@ class Parser {
     }
 
     throw new SyntaxError (`Unknown Member Type: "${this.lookahead.type}"`);
-  };
+  }
 
   Argument(): ASTType {
     if (isLiteral (this.lookahead.type)) {
@@ -337,7 +329,7 @@ class Parser {
     }
 
     throw new SyntaxError (`Invalid Argument Type: "${this.lookahead.type}"`);
-  };
+  }
 
   Literal(): Literal {
     switch (this.lookahead.type) {
@@ -349,7 +341,7 @@ class Parser {
       default:
         throw new SyntaxError (`Unknown Literal: "${this.lookahead.type}"`);
     }
-  };
+  }
 
   BooleanLiteral(value: boolean): BooleanLiteral {
     let as = value ? "true" : "false";
@@ -365,7 +357,7 @@ class Parser {
       value,
       as
     };
-  };
+  }
 
   NullLiteral(): NullLiteral {
     this.eat ("null");
@@ -381,7 +373,7 @@ class Parser {
       value: null,
       as
     };
-  };
+  }
 
   StringLiteral(): StringLiteral {
     let value, as;
@@ -398,7 +390,7 @@ class Parser {
       value,
       as
     };
-  };
+  }
 
   NumericLiteral(): NumericLiteral {
     const token = this.eat ("NUMBER");
@@ -416,7 +408,7 @@ class Parser {
       value: Number (token.value),
       as
     };
-  };
+  }
 
   eat(tokenType: string) {
     const token = this.lookahead;
@@ -436,7 +428,7 @@ class Parser {
     this.lookahead = this.tokenizer.getNextToken ();
 
     return token;
-  };
+  }
 }
 
 export default Parser;

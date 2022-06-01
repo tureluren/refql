@@ -158,3 +158,5 @@ export type RQLValue = ((t: Table) => SQLTag) | string | number | boolean | Tabl
 export type Values = any[];
 
 export type Querier = (query: string, values: Values) => Promise<any[]>;
+
+export type Rules = [RegExp, string][];
