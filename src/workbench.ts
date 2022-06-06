@@ -4,10 +4,10 @@ const pluralizer = new Plurlizer (true, {});
 
 const begin = performance.now ();
 
-const plural = pluralizer.toPlural ("baby");
+const plural = pluralizer.toPlural ("photo");
 
 const end = performance.now ();
 
-console.log ("performance: total " + (end - begin));
-
 console.log (plural);
+
+console.log ("performance: total " + (end - begin));
