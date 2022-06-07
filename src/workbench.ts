@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { RefQL, rql, sql } from "./index";
+import { Player } from "./soccer";
 
 const pool = new Pool ({
   user: "test",
