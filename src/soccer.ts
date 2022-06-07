@@ -2,7 +2,7 @@ export interface League {
   id: number;
   name: string;
   teams: Team[];
-};
+}
 
 export interface Team {
   id: number;
@@ -14,7 +14,7 @@ export interface Team {
 export interface Position {
   id: number;
   name: string;
-};
+}
 
 export interface Player {
   id: number;
