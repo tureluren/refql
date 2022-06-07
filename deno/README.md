@@ -13,10 +13,10 @@ npm install refql
 
 ## Getting started
 ```ts
-import { Pool } from "pg";
-import { RefQL, rql, sql } from "refql";
+import postgres from "https://deno.land/x/postgresjs/mod.js";
+import { RefQL, rql, sql } from "https://deno.land/x/refql/mod.ts";
 
-const pool = new Pool ({
+const pool = postgres ({
   user: "test",
   host: "localhost",
   database: "soccer",
@@ -25,7 +25,7 @@ const pool = new Pool ({
 });
 
 const querier = (query: string, values: any[]) =>
-  pool.query (query, values).then (({ rows }) => rows);
+  pool.unsafe (query, values);
 
 const refQL = RefQL ({
   caseTypeDB: "snake",
@@ -295,10 +295,10 @@ const alternative = await query1<Game> (rql`
 The querier should be passed as the second argument to the RefQL creator function. It should have the type signature `(query: string, values: any[]) => Promise<any[]>`. This function is a necessary in-between piece to make RefQL independent from database clients. This allows you to choose your own client.
 
 ```ts
-import { Pool } from "pg";
-import { RefQL, rql, sql } from "refql";
+import postgres from "https://deno.land/x/postgresjs/mod.js";
+import { RefQL, rql, sql } from "https://deno.land/x/refql/mod.ts";
 
-const pool = new Pool ({
+const pool = postgres ({
   user: "test",
   host: "localhost",
   database: "soccer",
@@ -307,7 +307,7 @@ const pool = new Pool ({
 });
 
 const querier = (query: string, values: any[]) =>
-  pool.query (query, values).then (({ rows }) => rows);
+  pool.unsafe (query, values);
 ```
 
 ## Relationships
@@ -842,7 +842,7 @@ const player = await query1<Player> (rql`
 With the Raw data type it is possible to inject values as raw text into the query.
 
 ```ts
-import { raw } from "refql";
+import { raw } from "https://deno.land/x/refql/mod.ts";
 
 // dynamic properties
 const idField = "id";
@@ -913,7 +913,7 @@ RefQL provides a number of helper functions to combine independent query compone
 import { 
   belongsTo, hasMany, manyToMany,
   raw, rql, sql, tag, subselect
-} from "refql";
+} from "https://deno.land/x/refql/mod.ts";
 
 const paginate = (offset, limit) => sql`
   offset ${offset}
