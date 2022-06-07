@@ -2,7 +2,7 @@
 A Node.js library for retrieving data from a PostgreSQL database with an interesting query language included.
 
 ## Introduction
-RefQL is about retrieving referenced data in an elegant, non-painful and no-nosense way (see [relationships](#Relationships)). If you are a fan of simple, traditional REST API endpoints and not of GraphQL, but you do want that GraphQL feeling when querying a database, RefQL is for you. 
+RefQL is about retrieving referenced data in an elegant, non-painful and no-nosense way (see [relationships](#relationships)). If you are a fan of simple, traditional REST API endpoints and not of GraphQL, but you do want that GraphQL feeling when querying a database, RefQL is for you. 
 
 ## Installation
 ```bash
@@ -85,19 +85,19 @@ getPlayer();
 
 ```
 ## Table of contents
-* [Options](#Options)
-* [Querier](#Querier)
-* [Relationships](#Relationships)
-* [Keywords](#Keywords)
-* [Subselects](#Subselects)
-* [SQLTag](#SQLTag)
-* [Aliases](#Aliases)
-* [Casts](#Casts)
-* [Functions](#Functions)
-* [Raw](#Raw)
-* [Table](#Table)
-* [Literals](#Literals)
-* [Combining query components](#Combining-query-components)
+* [Options](#options)
+* [Querier](#querier)
+* [Relationships](#relationships)
+* [Keywords](#keywords)
+* [Subselects](#subselects)
+* [SQLTag](#sqltag)
+* [Aliases](#aliases)
+* [Casts](#casts)
+* [Functions](#functions)
+* [Raw](#raw)
+* [Table](#table)
+* [Literals](#literals)
+* [Combining query components](#combining-query-components)
 
 
 ## Options
