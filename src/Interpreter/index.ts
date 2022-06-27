@@ -1,13 +1,13 @@
-import Environment from "../Environment";
+import Environment from "../Environment2";
 import isRaw from "../Raw/isRaw";
 import associate from "../refs/associate";
 import getRefPath from "../refs/getRefPath";
 import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
 import { ASTType, Link, Refs } from "../types";
-import varToSQLTag from "./varToSQLTag";
+import varToSQLTag from "../JBOInterpreter/varToSQLTag";
 
-class JBOInterpreter {
+class Interpreter {
   refs: Refs;
   useSmartAlias: boolean;
 
@@ -24,8 +24,7 @@ class JBOInterpreter {
       const memberEnv = new Environment ({
         table: new Table (name, as),
         sql: "",
-        isRoot: true,
-        query: "select json_build_object(",
+        query: "select",
         keyIdx: 0,
         values: [],
         next: []
@@ -35,19 +34,19 @@ class JBOInterpreter {
 
       const hasId = id != null;
 
-      memberEnv.writeToQuery (`) from "${name}" "${as}"`
+      memberEnv.writeToQuery (`from "${name}" "${as}"`
         .concat (hasId ? ` where "${as}".id = ${id}` : "")
       );
 
-      if (limit != null) {
-        memberEnv.writeToSQL (`limit ${limit}`);
-      }
+      // if (limit != null) {
+      //   memberEnv.writeToSQL (`limit ${limit}`);
+      // }
 
-      if (offset != null) {
-        memberEnv.writeToSQL (`offset ${offset}`);
-      }
+      // if (offset != null) {
+      //   memberEnv.writeToSQL (`offset ${offset}`);
+      // }
 
-      memberEnv.writeSQLToQuery (hasId);
+      // memberEnv.writeSQLToQuery (hasId);
 
       return memberEnv.record;
     }
@@ -60,7 +59,7 @@ class JBOInterpreter {
 
       let sql = inFunction
         ? `"${table.as}".${name}`
-        : `'${as}', "${table.as}".${name}`;
+        : `"${table.as}".${name} as ${as}`;
 
       if (cast) {
         sql += "::" + cast;
@@ -116,25 +115,30 @@ class JBOInterpreter {
 
       const assoc = associate (table.as, as, columnLinks);
 
-      env.writeToQuery (
-        `'${as}', (select json_build_object(`
-      );
+      if (table) {
+        env.addToNext ({
+          exp,
+          pred: () => true
+        });
+        return;
+      }
 
       const memberEnv = new Environment ({
         table: new Table (name, as),
+        query: "select",
         sql: "",
+        keyIdx: 0,
+        values: [],
         next: []
       }, env);
 
       this.interpretEach (members, memberEnv);
 
-      env.writeToQuery (
-        `) from "${name}" "${as}" where ${assoc}`
+      memberEnv.writeToQuery (
+        `from "${name}" "${as}" where in`
       );
 
       memberEnv.writeSQLToQuery (true);
-
-      env.writeToQuery (")");
 
       return;
     }
@@ -240,17 +244,17 @@ class JBOInterpreter {
 
     if (exp.type === "Variable") {
       const { value, cast } = exp;
-      const { isRoot } = env.record;
+      // const { isRoot } = env.record;
 
       const sql = this.getSQLIfSQLTag (value, env);
 
       if (sql) {
-        if (!isRoot) {
-          const invalid = /\b(limit|offset)\b/i.test (sql);
-          if (invalid) {
-            throw new Error ("Limit and offset can't be used inside a relation");
-          }
-        }
+        // if (!isRoot) {
+        //   const invalid = /\b(limit|offset)\b/i.test (sql);
+        //   if (invalid) {
+        //     throw new Error ("Limit and offset can't be used inside a relation");
+        //   }
+        // }
 
         env.writeToSQL (sql);
       } else if (isRaw (value)) {
@@ -413,4 +417,4 @@ class JBOInterpreter {
   }
 }
 
-export default JBOInterpreter;
+export default Interpreter;

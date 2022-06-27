@@ -37,17 +37,6 @@ const {
 
 async function getPlayer() {
   const player = await query1<Player> (rql`
-    player (id: 1) {
-      id
-      lastName
-      - team {
-        id
-        name
-      }
-    }
-  `);
-
-  const alternative = await query1<Player> (rql`
     player {
       id
       lastName
@@ -55,16 +44,16 @@ async function getPlayer() {
         id
         name
       }
-      ${t => sql`
-        where ${t}.id = 1 
-      `}
+      - position {
+        id
+        name
+      }
     }
   `);
 
+
   // { id: 1, lastName: "Buckley", team: { id: 1, name: "FC Wuharazi" } }
   console.log (player);
-  // { id: 1, lastName: "Buckley", team: { id: 1, name: "FC Wuharazi" } }
-  console.log (alternative);
 }
 
 getPlayer ();

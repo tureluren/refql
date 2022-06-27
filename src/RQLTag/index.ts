@@ -1,9 +1,10 @@
 import JBOInterpreter from "../JBOInterpreter";
+import Interpreter from "../Interpreter";
 import Parser from "../Parser";
 import isRel from "../Rel/isRel";
 import isSub from "../Sub/isSub";
 import {
-  AST, JsonBuildObject,
+  AST, CompiledQuery, EnvRecord, JsonBuildObject,
   RefQLConfig, RQLValue, Values
 } from "../types";
 
@@ -40,7 +41,7 @@ class RQLTag {
     return new RQLTag (nextString, nextKeys);
   }
 
-  compile(config: RefQLConfig): [string, Values, AST] {
+  compile(config: RefQLConfig): CompiledQuery {
     const parser = new Parser (
       config.caseTypeDB,
       config.caseTypeJS,
@@ -48,16 +49,25 @@ class RQLTag {
       config.plurals
     );
     const ast = parser.parse (this.string, this.keys);
-    const interpreter = new JBOInterpreter (config.refs, config.useSmartAlias);
+    // const interpreter = new JBOInterpreter (config.refs, config.useSmartAlias);
+    const interpreter = new Interpreter (config.refs, config.useSmartAlias);
 
     // @ts-ignore
-    const [query, values] = interpreter.interpret (ast);
+    const interpreted: EnvRecord = interpreter.interpret (ast);
 
-    return [query, values, ast];
+    console.log (interpreted);
+
+    // return [query, values, ast];
+    return {
+      query: interpreted.query || "",
+      values: interpreted.values || [],
+      next: interpreted.next
+    };
   }
 
   static transform<T>(_config: RefQLConfig, rows: JsonBuildObject<T>[]) {
-    return rows.map (r => r.json_build_object);
+    // return rows.map (r => r.json_build_object);
+    return rows;
   }
 }
 

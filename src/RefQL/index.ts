@@ -3,10 +3,33 @@ import tag from "../more/tag";
 import makeRefs from "../refs/makeRefs";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
-import { Querier, RefQLConfig, Refs } from "../types";
+import { CompiledQuery, Querier, RefQLConfig, Refs } from "../types";
 import defaultConfig from "./defaultConfig";
 import readRefs from "./readRefs";
 import validateConfig from "./validateConfig";
+
+// const makeGo = (querier: Querier) => (compiledQuery: CompiledQuery) => {
+//   const go = <T>(compiled: CompiledQuery): Promise<T[]> => {
+//     return querier (compiled.query, compiled.values).then (rows => {
+//       const nextNext = compiled.next.map (c => {
+
+//       });
+//       return Promise.all (
+//         compiled.next.map (c => go (c))
+//       ).then (aggs => {
+//         return rows.map (row => {
+//           return aggs.reduce ((acc, agg, idx) => {
+//             const incl = compiled.next[idx];
+//             // const inclRes = agg.
+//             return acc;
+//           }, {} as T);
+//         });
+//       });
+//     });
+//   };
+
+//   return go (compiledQuery);
+// };
 
 const RefQL = (userConfig: Partial<RefQLConfig>, querier: Querier) => {
   const config = defaultConfig (userConfig);
@@ -35,14 +58,16 @@ const RefQL = (userConfig: Partial<RefQLConfig>, querier: Querier) => {
     refs = config.refs;
   }
 
+  // const go = makeGo (querier);
+
   const query = <T>(...components: [RQLTag | SQLTag, ...any[]]): Promise<T[]> => {
     const t = tag (...components);
     return new Promise ((resolve, reject) => {
       const run = (refs: Refs) => {
-        const [query, values, ast] = compile ({ ...config, refs }, t);
+        const { query, values } = compile ({ ...config, refs }, t);
 
         if (config.debug) {
-          config.debug (query, values, ast);
+          config.debug (query, values);
         }
 
         querier (query, values)

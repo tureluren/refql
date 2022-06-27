@@ -133,6 +133,11 @@ export type ASTType =
   AST | Identifier | HasMany | BelongsTo | ManyToMany |
   Subselect | Call | Variable | Literal;
 
+export interface Next {
+  exp: HasMany | BelongsTo | ManyToMany;
+  pred: () => boolean;
+}
+
 export interface EnvRecord {
   table?: Table;
   query?: string;
@@ -141,6 +146,13 @@ export interface EnvRecord {
   keyIdx?: number;
   inFunction?: boolean;
   isRoot?: boolean;
+  next: Next[];
+}
+
+export interface CompiledQuery {
+  query: string;
+  values: Values;
+  next: Next[];
 }
 
 export type TagFn = {
