@@ -130,7 +130,7 @@ class Parser {
     }
 
     table.type = "AST";
-    table.members = this.Members ();
+    table.members = this.members ();
 
     return table;
   }
@@ -244,23 +244,23 @@ class Parser {
     };
   }
 
-  Members() {
+  members() {
     this.eat ("{");
 
     if (this.lookahead.type === "}") {
-      throw new SyntaxError ("A table block should have at least one member");
+      throw new SyntaxError ("A table block should have at least one ASTNode");
     }
 
     const members: ASTType[] = [];
 
     do {
-      const member = this.Member ();
+      const ASTNode = this.ASTNode ();
 
       if (this.lookahead.type === "(") {
         // can only be an identifier
-        members.push (this.Call (<Identifier>member));
+        members.push (this.Call (<Identifier>ASTNode));
       } else {
-        members.push (member);
+        members.push (ASTNode);
       }
 
     } while (this.lookahead.type !== "}");
@@ -295,7 +295,7 @@ class Parser {
     return argumentList;
   }
 
-  Member(): ASTType {
+  ASTNode(): ASTType {
     if (isLiteral (this.lookahead.type)) {
       return this.Literal ();
     }
@@ -314,7 +314,7 @@ class Parser {
         return this.Subselect ();
     }
 
-    throw new SyntaxError (`Unknown Member Type: "${this.lookahead.type}"`);
+    throw new SyntaxError (`Unknown ASTNode Type: "${this.lookahead.type}"`);
   }
 
   Argument(): ASTType {

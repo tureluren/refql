@@ -1,7 +1,8 @@
 import convertObject from "../more/convertObject";
 import isRel from "../Rel/isRel";
 import isSub from "../Sub/isSub";
-import { AST, CompiledQuery, RefQLConfig, Values } from "../types";
+import Table from "../Table";
+import { CompiledQuery, RefQLConfig, Values } from "../types";
 import compileSQLTag from "./compileSQLTag";
 import isSQLTag from "./isSQLTag";
 
@@ -48,7 +49,7 @@ class SQLTag {
 
   compile(_config: RefQLConfig): CompiledQuery {
     const [query, values] = this.interpret ();
-    return { query, values, next: [] };
+    return { query, values, next: [], table: {} as Table };
   }
 
   static transform<T>(config: RefQLConfig, rows: T[]) {

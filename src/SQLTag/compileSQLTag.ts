@@ -1,4 +1,5 @@
 import SQLTag from ".";
+import arrayToParams from "../more/arrayToParams";
 import isArray from "../predicate/isArray";
 import isFunction from "../predicate/isFunction";
 import isRaw from "../Raw/isRaw";
@@ -45,10 +46,7 @@ const compileSQLTag = (tag: SQLTag, keyIdx: number): [string, Values] => {
 
         if (isArray (k)) {
           values.push (...k);
-          return k.reduce ((acc: string, _item: any, idx: number) => {
-            const pre = idx === 0 ? "" : ",";
-            return acc + pre + "$" + (keyIdx + idx + 1);
-          }, acc + s);
+          return arrayToParams (keyIdx, k, acc + s);
         }
 
         values.push (k);

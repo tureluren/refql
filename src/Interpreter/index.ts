@@ -4,8 +4,10 @@ import associate from "../refs/associate";
 import getRefPath from "../refs/getRefPath";
 import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
-import { ASTType, Link, Refs } from "../types";
+import { ASTRelation, ASTType, Link, ASTNode, Refs } from "../types";
 import varToSQLTag from "../JBOInterpreter/varToSQLTag";
+import arrayToParams from "../more/arrayToParams";
+import isFunction from "../predicate/isFunction";
 
 class Interpreter {
   refs: Refs;
@@ -16,12 +18,12 @@ class Interpreter {
     this.useSmartAlias = useSmartAlias;
   }
 
-  interpret(exp: ASTType, env: Environment = new Environment ({ next: [] }, null)) {
+  interpret<Input>(exp: ASTNode, params: Input, rows: any[], env: Environment = new Environment ({ next: [] }, null)) {
     // root
-    if (exp.type === "AST") {
-      const { name, as, members, id, limit, offset } = exp;
+    if (exp.type === "Root") {
+      const { name, as, members } = exp;
 
-      const memberEnv = new Environment ({
+      const membersEnv = new Environment ({
         table: new Table (name, as),
         sql: "",
         query: "select",
@@ -30,25 +32,28 @@ class Interpreter {
         next: []
       }, null);
 
-      this.interpretEach (members, memberEnv);
+      this.interpretEach (members, membersEnv);
 
-      const hasId = id != null;
+      // membersEnv.writeToQuery (`from "${name}" "${as}"`
+      //   .concat (hasId ? ` where "${as}".id = ${id}` : "")
+      // );
+      // const hasId = id != null;
 
-      memberEnv.writeToQuery (`from "${name}" "${as}"`
-        .concat (hasId ? ` where "${as}".id = ${id}` : "")
+      membersEnv.writeToQuery (`from "${name}" "${as}"`
+        // .concat (hasId ? ` where "${as}".id = ${id}` : "")
       );
 
       // if (limit != null) {
-      //   memberEnv.writeToSQL (`limit ${limit}`);
+      //   membersEnv.writeToSQL (`limit ${limit}`);
       // }
 
       // if (offset != null) {
-      //   memberEnv.writeToSQL (`offset ${offset}`);
+      //   membersEnv.writeToSQL (`offset ${offset}`);
       // }
 
-      // memberEnv.writeSQLToQuery (hasId);
+      // membersEnv.writeSQLToQuery (hasId);
 
-      return memberEnv.record;
+      return membersEnv.record;
     }
 
     if (exp.type === "Identifier") {
@@ -71,11 +76,11 @@ class Interpreter {
     }
 
     if (exp.type === "HasMany") {
-      const { name, as, members, links, orderBy } = exp.include;
+      const { name, as, members } = exp;
       const table = env.lookup ("table");
 
-      const columnLinks = links
-      || this.findHasManyLinks (name, table.name)
+      // convert naar specified caseTYpe
+      const columnLinks = this.findHasManyLinks (name, table.name)
       || [[table.name + "_id", "id"]];
 
       const assoc = associate (as, table.as, columnLinks);
@@ -84,21 +89,21 @@ class Interpreter {
         `'${as}', (select coalesce(json_agg(json_build_object(`
       );
 
-      const memberEnv = new Environment ({
+      const membersEnv = new Environment ({
         table: new Table (name, as),
         sql: "",
         next: []
       }, env);
 
-      this.interpretEach (members, memberEnv);
+      this.interpretEach (members, membersEnv);
 
-      const orderByPart = this.getOrderBy (orderBy, memberEnv);
+      // const orderByPart = this.getOrderBy (orderBy, membersEnv);
 
-      env.writeToQuery (
-        `)${orderByPart}), '[]'::json) from "${name}" "${as}" where ${assoc}`
-      );
+      // env.writeToQuery (
+      //   `)${orderByPart}), '[]'::json) from "${name}" "${as}" where ${assoc}`
+      // );
 
-      memberEnv.writeSQLToQuery (true);
+      membersEnv.writeSQLToQuery (true);
 
       env.writeToQuery (")");
 
@@ -106,16 +111,15 @@ class Interpreter {
     }
 
     if (exp.type === "BelongsTo") {
-      const { name, as, members, links } = exp.include;
+      const { name, as, members, keywords } = exp;
       const table = env.lookup ("table");
 
-      const columnLinks = links
-      || this.findBelongsToLinks (table.name, name, as)
+      const columnLinks = this.findBelongsToLinks (table.name, name, as)
       || [[name + "_id", "id"]];
 
       const assoc = associate (table.as, as, columnLinks);
 
-      if (table) {
+      if (!rows[0]) {
         env.addToNext ({
           exp,
           pred: () => true
@@ -123,7 +127,7 @@ class Interpreter {
         return;
       }
 
-      const memberEnv = new Environment ({
+      const membersEnv = new Environment ({
         table: new Table (name, as),
         query: "select",
         sql: "",
@@ -132,49 +136,65 @@ class Interpreter {
         next: []
       }, env);
 
-      this.interpretEach (members, memberEnv);
+      this.interpretEach (members, membersEnv);
 
-      memberEnv.writeToQuery (
-        `from "${name}" "${as}" where in`
+      // unique list
+      // doe join met player dan heb ik teamId nie nodig ?
+      /**
+       * select player.team_id, team.id, team.name
+       * from player player
+       * join team team on ...
+       * where player id in ()
+       *
+       * of voeg team_id dynamisch toe door map over next
+       * en haal het er dan terug vanaf als het er initieel nie was
+       */
+      membersEnv.writeToQuery (
+        `from "${name}" "${as}" where id in (${arrayToParams (membersEnv.lookup ("keyIdx"), rows, "")})`
       );
 
-      memberEnv.writeSQLToQuery (true);
+      membersEnv.addValues (rows.map (r => r.team_id));
+      console.log (membersEnv);
 
-      return;
+      membersEnv.writeSQLToQuery (true);
+
+      return membersEnv.record;
     }
 
     if (exp.type === "ManyToMany") {
-      const { name, as, members, refs, xTable, orderBy } = exp.include;
+      const { name, as, members, keywords } = exp;
+      const { xTable } = keywords;
       const table = env.lookup ("table");
       let _x = xTable || (table.name + "_" + name);
       const _xReversed = xTable || (name + "_" + table.name);
 
+      // convert naar specified caseTYpe
       let tableLinks: Link[] = [[name + "_id", "id"]];
 
-      if (refs && refs[name]) {
-        tableLinks = refs[name];
-      } else {
-        const [found, foundByReversing] = this.findManyToManyLinks (_x, name, _xReversed);
+      // if (refs && refs[name]) {
+      //   tableLinks = refs[name];
+      // } else {
+      const [found, foundByReversing] = this.findManyToManyLinks (_x, name, _xReversed);
 
-        if (found) {
-          tableLinks = found;
+      if (found) {
+        tableLinks = found;
 
-          if (foundByReversing) {
-            _x = _xReversed;
-          }
+        if (foundByReversing) {
+          _x = _xReversed;
         }
       }
+      // }
 
       let parentLinks: Link[] = [[table.name + "_id", "id"]];
 
-      if (refs && refs[table.name]) {
-        parentLinks = refs[table.name];
-      } else {
-        const [found] = this.findManyToManyLinks (_x, table.name, _xReversed);
-        if (found) {
-          parentLinks = found;
-        }
+      // if (refs && refs[table.name]) {
+      //   parentLinks = refs[table.name];
+      // } else {
+      const [found2] = this.findManyToManyLinks (_x, table.name, _xReversed);
+      if (found2) {
+        parentLinks = found2;
       }
+      // }
 
       const assoc = associate (_x, as, tableLinks);
       const parentAssoc = associate (_x, table.as, parentLinks);
@@ -183,21 +203,21 @@ class Interpreter {
         `'${as}', (select coalesce(json_agg(json_build_object(`
       );
 
-      const memberEnv = new Environment ({
+      const membersEnv = new Environment ({
         table: new Table (name, as),
         sql: "",
         next: []
       }, env);
 
-      this.interpretEach (members, memberEnv);
+      this.interpretEach (members, membersEnv);
 
-      const orderByPart = this.getOrderBy (orderBy, memberEnv);
+      // const orderByPart = this.getOrderBy (orderBy, membersEnv);
 
-      env.writeToQuery (
-        `)${orderByPart}), '[]'::json) from "${_x}" "${_x}" join "${name}" "${as}" on ${assoc} where ${parentAssoc}`
-      );
+      // env.writeToQuery (
+      //   `)${orderByPart}), '[]'::json) from "${_x}" "${_x}" join "${name}" "${as}" on ${assoc} where ${parentAssoc}`
+      // );
 
-      memberEnv.writeSQLToQuery (true);
+      membersEnv.writeSQLToQuery (true);
 
       env.writeToQuery (")");
 
@@ -406,9 +426,9 @@ class Interpreter {
     return sql;
   }
 
-  interpretEach(arr: ASTType[], env: Environment, moveSQL = false) {
+  interpretEach(arr: ASTNode[], env: Environment, moveSQL = false) {
     arr.forEach (exp => {
-      this.interpret (exp, env);
+      this.interpret (exp, {}, [], env);
 
       if (moveSQL) {
         env.moveSQLToQuery ();

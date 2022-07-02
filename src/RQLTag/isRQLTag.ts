@@ -1,6 +1,6 @@
 import RQLTag from ".";
 
-const isRQLTag = (value: any): value is RQLTag =>
+const isRQLTag = <Input, Output>(value: any): value is RQLTag<Input, Output> =>
   value instanceof RQLTag;
 
 export default isRQLTag;

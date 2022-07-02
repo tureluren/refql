@@ -8,7 +8,7 @@ describe ("SQLTag `formatSQLString` - formats a SQL string", () => {
     // cast after variable
     expect (formatSQLString ("where id = $ ::text")).toBe ("where id = $::text");
 
-    // table + member as variable
+    // table + ASTNode as variable
     expect (formatSQLString ("where id = player. $")).toBe ("where id = player.$");
 
     // replace single space + dot with a dot

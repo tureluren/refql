@@ -6,7 +6,8 @@ const defaults: RefQLConfig = {
   pluralize: true,
   plurals: {},
   refs: {},
-  useSmartAlias: true
+  useSmartAlias: true,
+  querier: () => Promise.resolve ([])
 };
 
 const defaultConfig = (config: Partial<RefQLConfig>): RefQLConfig => {

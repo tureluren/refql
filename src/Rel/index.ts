@@ -2,9 +2,9 @@ import RQLTag from "../RQLTag";
 
 class Rel {
   symbol: string;
-  tag: RQLTag;
+  tag: any;
 
-  constructor(symbol: string, tag: RQLTag) {
+  constructor(symbol: string, tag: any) {
     this.symbol = symbol;
     this.tag = tag;
   }

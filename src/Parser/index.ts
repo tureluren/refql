@@ -6,7 +6,7 @@ import Tokenizer from "../Tokenizer";
 import validateKeywords from "./validateKeywords";
 import convertCase from "../more/convertCase";
 import {
-  AST, ASTType, BelongsTo, BooleanLiteral,
+  ASTNode, ASTRelation, ASTType, BelongsTo, BooleanLiteral,
   Call, CaseType, HasMany, Identifier, Keywords,
   Literal, ManyToMany, NullLiteral, NumericLiteral,
   OptCaseType, Plurals, RQLValue, StringLiteral,
@@ -15,42 +15,49 @@ import {
 import convertTableRefs from "../refs/convertTableRefs";
 import Pluralizer from "../Pluralizer";
 
-class Parser {
-  caseTypeDB?: CaseType;
-  caseTypeJS?: CaseType;
+class Parser<Params> {
+  // caseTypeDB?: CaseType;
+  // caseTypeJS?: CaseType;
   tokenizer: Tokenizer;
-  pluralizer: Pluralizer;
+  // pluralizer: Pluralizer;
   string: string;
-  keys: RQLValue[];
+  keys: RQLValue<Params>[];
   keyIdx: number;
   lookahead!: Token;
 
-  constructor(caseTypeDB: OptCaseType, caseTypeJS: OptCaseType, pluralize: boolean, plurals: Plurals) {
-    this.caseTypeDB = caseTypeDB;
-    this.caseTypeJS = caseTypeJS;
-    this.pluralizer = new Pluralizer (pluralize, plurals);
+  // constructor(caseTypeDB: OptCaseType, caseTypeJS: OptCaseType, pluralize: boolean, plurals: Plurals) {
+  //   this.caseTypeDB = caseTypeDB;
+  //   this.caseTypeJS = caseTypeJS;
+  //   this.pluralizer = new Pluralizer (pluralize, plurals);
+  //   this.tokenizer = new Tokenizer ();
+  //   this.string = "";
+  //   this.keys = [];
+  //   this.keyIdx = 0;
+  // }
+
+  constructor() {
     this.tokenizer = new Tokenizer ();
     this.string = "";
     this.keys = [];
     this.keyIdx = 0;
   }
 
-  parse(string: string, keys: RQLValue[]): AST {
+  parse(string: string, keys: RQLValue<Params>[]): ASTRelation {
     this.string = string;
     this.keys = keys;
     this.keyIdx = 0;
     this.tokenizer.init (string);
     this.lookahead = this.tokenizer.getNextToken ();
 
-    return this.AST ();
+    return this.AST ("Root");
   }
 
-  AST(pluralizable = false) {
-    let table = <AST><unknown> this.Identifier (pluralizable);
+  AST(type: ASTType, pluralizable = false) {
+    let table = <ASTRelation><unknown> this.Identifier (pluralizable);
+    let keywords: Keywords = {};
 
     if (this.lookahead.type === "(") {
       this.eat ("(");
-      let keywords: Keywords = {};
 
       // @ts-ignore
       if (this.lookahead.type === "VARIABLE") {
@@ -81,56 +88,61 @@ class Parser {
             );
           }
 
+          // @ts-ignore
           keywords[identifier] = value;
 
         // @ts-ignore
         } while (this.lookahead.type === "," && this.eat (",") && this.lookahead.type !== ")");
       }
 
-      if (!isEmpty (keywords)) {
-        // `keywords.orderBy` is validated by the interpreter
-        validateKeywords (keywords);
+      // if (!isEmpty (keywords)) {
+      //   // `keywords.orderBy` is validated by the interpreter
+      //   validateKeywords (keywords);
 
-        // keys from keywords will overwrite identifier props
-        // null, undefined or ""
-        if (keywords.as) {
-          table.as = keywords.as;
-        }
+      //   // keys from keywords will overwrite identifier props
+      //   // null, undefined or ""
+      //   if (keywords.as) {
+      //     table.as = keywords.as;
+      //   }
 
-        if (keywords.id) {
-          table.id = keywords.id;
-        }
+      //   if (keywords.id) {
+      //     table.id = keywords.id;
+      //   }
 
-        if (keywords.limit) {
-          table.limit = keywords.limit;
-        }
+      //   if (keywords.limit) {
+      //     table.limit = keywords.limit;
+      //   }
 
-        if (keywords.offset) {
-          table.offset = keywords.offset;
-        }
+      //   if (keywords.offset) {
+      //     table.offset = keywords.offset;
+      //   }
 
-        if (keywords.orderBy) {
-          table.orderBy = keywords.orderBy;
-        }
+      //   if (keywords.orderBy) {
+      //     table.orderBy = keywords.orderBy;
+      //   }
 
-        if (keywords.links) {
-          table.links = convertLinks (this.caseTypeDB, keywords.links);
-        }
+      //   if (keywords.links) {
+      //     // table.links = convertLinks (this.caseTypeDB, keywords.links);
+      //     table.links = keywords.links;
+      //   }
 
-        if (keywords.refs) {
-          table.refs = convertTableRefs (this.caseTypeDB, keywords.refs);
-        }
+      //   if (keywords.refs) {
+      //     // table.refs = convertTableRefs (this.caseTypeDB, keywords.refs);
+      //     table.refs = keywords.refs;
+      //   }
 
-        if (keywords.xTable) {
-          table.xTable = convertCase (this.caseTypeDB, keywords.xTable);
-        }
-      }
+      //   if (keywords.xTable) {
+      //     // table.xTable = convertCase (this.caseTypeDB, keywords.xTable);
+      //     table.xTable = keywords.xTable;
+      //   }
+      // }
 
       this.eat (")");
     }
 
-    table.type = "AST";
-    table.members = this.Members ();
+    table.type = type;
+    table.members = this.members ();
+    table.keywords = keywords;
 
     return table;
   }
@@ -146,26 +158,17 @@ class Parser {
 
   HasMany(): HasMany {
     this.eat ("<");
-    return {
-      type: "HasMany",
-      include: this.AST (true)
-    };
+    return this.AST ("HasMany", true) as HasMany;
   }
 
   BelongsTo(): BelongsTo {
     this.eat ("-");
-    return {
-      type: "BelongsTo",
-      include: this.AST ()
-    };
+    return this.AST ("BelongsTo") as BelongsTo;
   }
 
   ManyToMany(): ManyToMany {
     this.eat ("x");
-    return {
-      type: "ManyToMany",
-      include: this.AST (true)
-    };
+    return this.AST ("ManyToMany", true) as ManyToMany;
   }
 
   Subselect(): Subselect {
@@ -188,12 +191,12 @@ class Parser {
 
     // can only be handled here
     // to give the user the possibility to overwrite `as`
-    name = convertCase (this.caseTypeDB, name);
-    as = convertCase (this.caseTypeJS, as);
+    // name = convertCase (this.caseTypeDB, name);
+    // as = convertCase (this.caseTypeJS, as);
 
-    if (pluralizable) {
-      as = this.pluralizer.toPlural (as);
-    }
+    // if (pluralizable) {
+    //   as = this.pluralizer.toPlural (as);
+    // }
 
     let identifier: Identifier = {
       type: "Identifier",
@@ -244,23 +247,23 @@ class Parser {
     };
   }
 
-  Members() {
+  members() {
     this.eat ("{");
 
     if (this.lookahead.type === "}") {
-      throw new SyntaxError ("A table block should have at least one member");
+      throw new SyntaxError ("A table block should have at least one ASTNode");
     }
 
-    const members: ASTType[] = [];
+    const members: ASTNode[] = [];
 
     do {
-      const member = this.Member ();
+      const ASTNode = this.ASTNode ();
 
       if (this.lookahead.type === "(") {
         // can only be an identifier
-        members.push (this.Call (<Identifier>member));
+        members.push (this.Call (<Identifier>ASTNode));
       } else {
-        members.push (member);
+        members.push (ASTNode);
       }
 
     } while (this.lookahead.type !== "}");
@@ -273,7 +276,7 @@ class Parser {
   Arguments() {
     this.eat ("(");
 
-    const argumentList: ASTType[] = [];
+    const argumentList: ASTNode[] = [];
 
     if (this.lookahead.type !== ")") {
 
@@ -295,7 +298,7 @@ class Parser {
     return argumentList;
   }
 
-  Member(): ASTType {
+  ASTNode(): ASTNode {
     if (isLiteral (this.lookahead.type)) {
       return this.Literal ();
     }
@@ -314,10 +317,10 @@ class Parser {
         return this.Subselect ();
     }
 
-    throw new SyntaxError (`Unknown Member Type: "${this.lookahead.type}"`);
+    throw new SyntaxError (`Unknown ASTNode Type: "${this.lookahead.type}"`);
   }
 
-  Argument(): ASTType {
+  Argument(): ASTNode {
     if (isLiteral (this.lookahead.type)) {
       return this.Literal ();
     }

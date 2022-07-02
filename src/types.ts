@@ -14,7 +14,7 @@ export type Keys<T> = {
 }[keyof T][];
 
 export interface RefQLConfig extends Dict {
-  debug?: (query: string, values: Values, ast?: AST) => void;
+  debug?: (query: string, values: Values, ast?: ASTNode) => void;
   detectRefs: boolean;
   caseTypeDB?: CaseType;
   caseTypeJS?: CaseType;
@@ -23,6 +23,7 @@ export interface RefQLConfig extends Dict {
   plurals: Plurals;
   refs: Refs;
   useSmartAlias: boolean;
+  querier: Querier;
 }
 
 export type Link = [string, string];
@@ -41,12 +42,15 @@ export type Token = {
   value: string;
 };
 
-export interface Keywords extends Dict {
+// niet dict extenden, dan is ieder soort object mogelijk als parameter voor sql
+export interface Keywords {
   as?: string;
-  links?: Link[];
-  refs?: TableRefs;
-  xTable?: string;
-  orderBy?: SQLTag_;
+  // deze moeten op voorhand gewete zijn
+  // links?: Link[];
+  // refs?: TableRefs;
+  // in case refs are not provided, u might need this when reversing x
+  x?: string;
+  // orderBy?: SQLTag_;
   id?: number | string;
   limit?: number;
   offset?: number;
@@ -95,25 +99,29 @@ export interface NumericLiteral extends Aliasable {
   value: number;
 }
 
-export interface AST extends Omit<Identifier, "type">, Omit<Keywords, "as"> {
-  type: "AST";
-  members: ASTType[];
+export interface Root extends Omit<Identifier, "type"> {
+  type: "Root";
+  members: ASTNode[];
+  // of params noemen ?
+  keywords: Keywords;
 }
 
-export interface Relation {
-  include: AST;
-}
-
-export interface HasMany extends Relation {
+export interface HasMany extends Omit<Identifier, "type"> {
   type: "HasMany";
+  members: ASTNode[];
+  keywords: Keywords;
 }
 
-export interface BelongsTo extends Relation {
+export interface BelongsTo extends Omit<Identifier, "type"> {
   type: "BelongsTo";
+  members: ASTNode[];
+  keywords: Keywords;
 }
 
-export interface ManyToMany extends Relation {
+export interface ManyToMany extends Omit<Identifier, "type"> {
   type: "ManyToMany";
+  members: ASTNode[];
+  keywords: Keywords;
 }
 
 export interface Subselect extends Omit<Identifier, "type"> {
@@ -123,14 +131,17 @@ export interface Subselect extends Omit<Identifier, "type"> {
 
 export interface Call extends Omit<Identifier, "type"> {
   type: "Call";
-  args: ASTType[];
+  args: ASTNode[];
 }
 
 export type Literal =
   StringLiteral | NumericLiteral | BooleanLiteral | NullLiteral;
 
-export type ASTType =
-  AST | Identifier | HasMany | BelongsTo | ManyToMany |
+export type ASTRelation =
+  Root | HasMany | BelongsTo | ManyToMany;
+
+export type ASTNode =
+  Identifier | ASTRelation |
   Subselect | Call | Variable | Literal;
 
 export interface Next {
@@ -152,13 +163,20 @@ export interface EnvRecord {
 export interface CompiledQuery {
   query: string;
   values: Values;
+  table: Table;
   next: Next[];
 }
 
+// export type TagFn = {
+//   (baseTag: RQLTag, ...snippets: any[]): RQLTag;
+//   (baseTag: SQLTag, ...snippets: any[]): SQLTag;
+//   (baseTag: RQLTag | SQLTag, ...snippets: any[]): RQLTag | SQLTag;
+// };
+
 export type TagFn = {
-  (baseTag: RQLTag, ...snippets: any[]): RQLTag;
+  (baseTag: any, ...snippets: any[]): any;
   (baseTag: SQLTag, ...snippets: any[]): SQLTag;
-  (baseTag: RQLTag | SQLTag, ...snippets: any[]): RQLTag | SQLTag;
+  (baseTag: any | SQLTag, ...snippets: any[]): any | SQLTag;
 };
 
 export interface DBRef {
@@ -166,9 +184,13 @@ export interface DBRef {
   constraint: string;
 }
 
-export type RQLValue = ((t: Table) => SQLTag) | string | number | boolean | TableRefs | Link[] | Keywords;
+export type Primitive = string | number | boolean;
+
+export type RQLValue<Input> = ((p: Input, t: Table) => any) | Primitive | TableRefs | Link[] | Keywords;
 export type Values = any[];
 
 export type Querier = (query: string, values: Values) => Promise<any[]>;
 
 export type Rules = [RegExp, string][];
+
+export type ASTType = "Root" | "HasMany" | "ManyToMany" | "BelongsTo";

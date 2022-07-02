@@ -21,7 +21,7 @@ class JBOInterpreter {
     if (exp.type === "AST") {
       const { name, as, members, id, limit, offset } = exp;
 
-      const memberEnv = new Environment ({
+      const membersEnv = new Environment ({
         table: new Table (name, as),
         sql: "",
         isRoot: true,
@@ -30,25 +30,25 @@ class JBOInterpreter {
         values: []
       }, null);
 
-      this.interpretEach (members, memberEnv);
+      this.interpretEach (members, membersEnv);
 
       const hasId = id != null;
 
-      memberEnv.writeToQuery (`) from "${name}" "${as}"`
+      membersEnv.writeToQuery (`) from "${name}" "${as}"`
         .concat (hasId ? ` where "${as}".id = ${id}` : "")
       );
 
       if (limit != null) {
-        memberEnv.writeToSQL (`limit ${limit}`);
+        membersEnv.writeToSQL (`limit ${limit}`);
       }
 
       if (offset != null) {
-        memberEnv.writeToSQL (`offset ${offset}`);
+        membersEnv.writeToSQL (`offset ${offset}`);
       }
 
-      memberEnv.writeSQLToQuery (hasId);
+      membersEnv.writeSQLToQuery (hasId);
 
-      return [memberEnv.record.query, memberEnv.record.values];
+      return [membersEnv.record.query, membersEnv.record.values];
     }
 
     if (exp.type === "Identifier") {
@@ -84,20 +84,20 @@ class JBOInterpreter {
         `'${as}', (select coalesce(json_agg(json_build_object(`
       );
 
-      const memberEnv = new Environment ({
+      const membersEnv = new Environment ({
         table: new Table (name, as),
         sql: ""
       }, env);
 
-      this.interpretEach (members, memberEnv);
+      this.interpretEach (members, membersEnv);
 
-      const orderByPart = this.getOrderBy (orderBy, memberEnv);
+      const orderByPart = this.getOrderBy (orderBy, membersEnv);
 
       env.writeToQuery (
         `)${orderByPart}), '[]'::json) from "${name}" "${as}" where ${assoc}`
       );
 
-      memberEnv.writeSQLToQuery (true);
+      membersEnv.writeSQLToQuery (true);
 
       env.writeToQuery (")");
 
@@ -118,18 +118,18 @@ class JBOInterpreter {
         `'${as}', (select json_build_object(`
       );
 
-      const memberEnv = new Environment ({
+      const membersEnv = new Environment ({
         table: new Table (name, as),
         sql: ""
       }, env);
 
-      this.interpretEach (members, memberEnv);
+      this.interpretEach (members, membersEnv);
 
       env.writeToQuery (
         `) from "${name}" "${as}" where ${assoc}`
       );
 
-      memberEnv.writeSQLToQuery (true);
+      membersEnv.writeSQLToQuery (true);
 
       env.writeToQuery (")");
 
@@ -176,20 +176,20 @@ class JBOInterpreter {
         `'${as}', (select coalesce(json_agg(json_build_object(`
       );
 
-      const memberEnv = new Environment ({
+      const membersEnv = new Environment ({
         table: new Table (name, as),
         sql: ""
       }, env);
 
-      this.interpretEach (members, memberEnv);
+      this.interpretEach (members, membersEnv);
 
-      const orderByPart = this.getOrderBy (orderBy, memberEnv);
+      const orderByPart = this.getOrderBy (orderBy, membersEnv);
 
       env.writeToQuery (
         `)${orderByPart}), '[]'::json) from "${_x}" "${_x}" join "${name}" "${as}" on ${assoc} where ${parentAssoc}`
       );
 
-      memberEnv.writeSQLToQuery (true);
+      membersEnv.writeSQLToQuery (true);
 
       env.writeToQuery (")");
 

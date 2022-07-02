@@ -85,7 +85,7 @@
     "@babel/helper-annotate-as-pure" "^7.16.7"
     "@babel/helper-environment-visitor" "^7.16.7"
     "@babel/helper-function-name" "^7.17.9"
-    "@babel/helper-member-expression-to-functions" "^7.17.7"
+    "@babel/helper-ASTNode-expression-to-functions" "^7.17.7"
     "@babel/helper-optimise-call-expression" "^7.16.7"
     "@babel/helper-replace-supers" "^7.16.7"
     "@babel/helper-split-export-declaration" "^7.16.7"
@@ -141,9 +141,9 @@
   dependencies:
     "@babel/types" "^7.16.7"
 
-"@babel/helper-member-expression-to-functions@^7.16.7", "@babel/helper-member-expression-to-functions@^7.17.7":
+"@babel/helper-ASTNode-expression-to-functions@^7.16.7", "@babel/helper-ASTNode-expression-to-functions@^7.17.7":
   version "7.17.7"
-  resolved "https://registry.yarnpkg.com/@babel/helper-member-expression-to-functions/-/helper-member-expression-to-functions-7.17.7.tgz#a34013b57d8542a8c4ff8ba3f747c02452a4d8c4"
+  resolved "https://registry.yarnpkg.com/@babel/helper-ASTNode-expression-to-functions/-/helper-ASTNode-expression-to-functions-7.17.7.tgz#a34013b57d8542a8c4ff8ba3f747c02452a4d8c4"
   integrity sha512-thxXgnQ8qQ11W2wVUObIqDL4p148VMxkt5T/qpN5k2fboRyzFGFmKsTGViquyM5QHKUy48OZoca8kw4ajaDPyw==
   dependencies:
     "@babel/types" "^7.17.0"
@@ -196,7 +196,7 @@
   integrity sha512-y9vsWilTNaVnVh6xiJfABzsNpgDPKev9HnAgz6Gb1p6UUwf9NepdlsV7VXGCftJM+jqD5f7JIEubcpLjZj5dBw==
   dependencies:
     "@babel/helper-environment-visitor" "^7.16.7"
-    "@babel/helper-member-expression-to-functions" "^7.16.7"
+    "@babel/helper-ASTNode-expression-to-functions" "^7.16.7"
     "@babel/helper-optimise-call-expression" "^7.16.7"
     "@babel/traverse" "^7.16.7"
     "@babel/types" "^7.16.7"
@@ -644,9 +644,9 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.16.7"
 
-"@babel/plugin-transform-member-expression-literals@^7.16.7":
+"@babel/plugin-transform-ASTNode-expression-literals@^7.16.7":
   version "7.16.7"
-  resolved "https://registry.yarnpkg.com/@babel/plugin-transform-member-expression-literals/-/plugin-transform-member-expression-literals-7.16.7.tgz#6e5dcf906ef8a098e630149d14c867dd28f92384"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-transform-ASTNode-expression-literals/-/plugin-transform-ASTNode-expression-literals-7.16.7.tgz#6e5dcf906ef8a098e630149d14c867dd28f92384"
   integrity sha512-mBruRMbktKQwbxaJof32LT9KLy2f3gH+27a5XSuXo6h7R3vqltl0PgZ80C8ZMKw98Bf8bqt6BEVi3svOh2PzMw==
   dependencies:
     "@babel/helper-plugin-utils" "^7.16.7"
@@ -852,7 +852,7 @@
     "@babel/plugin-transform-for-of" "^7.16.7"
     "@babel/plugin-transform-function-name" "^7.16.7"
     "@babel/plugin-transform-literals" "^7.16.7"
-    "@babel/plugin-transform-member-expression-literals" "^7.16.7"
+    "@babel/plugin-transform-ASTNode-expression-literals" "^7.16.7"
     "@babel/plugin-transform-modules-amd" "^7.16.7"
     "@babel/plugin-transform-modules-commonjs" "^7.17.9"
     "@babel/plugin-transform-modules-systemjs" "^7.17.8"
