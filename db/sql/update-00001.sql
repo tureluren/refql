@@ -36,13 +36,20 @@ create table "game" (
   primary key (id)
 );
 
+create table "player_game" (
+  player_id integer references "player"(id) on delete cascade,
+  game_id integer references "game"(id) on delete cascade,
+  primary key (player_id, game_id)
+);
+
 create table "goal" (
   id serial,
   game_id integer references "game"(id) on delete cascade,
   player_id integer references "player"(id) on delete cascade,
   own_goal boolean default false,
   minute integer,
-  primary key (id)
+  primary key (id),
+  CONSTRAINT FK_goal_player_goal FOREIGN KEY (player_id, game_id) REFERENCES player_game(player_id, game_id)
 );
 
 create table "assist" (
@@ -50,13 +57,8 @@ create table "assist" (
   game_id integer references "game"(id) on delete cascade,
   goal_id integer references "goal"(id) on delete cascade,
   player_id integer references "player"(id) on delete cascade,
-  primary key (id)
-);
-
-create table "player_game" (
-  player_id integer references "player"(id) on delete cascade,
-  game_id integer references "game"(id) on delete cascade,
-  primary key (player_id, game_id)
+  primary key (id),
+  CONSTRAINT FK_assist FOREIGN KEY (player_id, game_id) REFERENCES player_game(player_id, game_id)
 );
 
 begin work; 

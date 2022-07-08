@@ -10,14 +10,19 @@ import {
   RefQLConfig, RQLValue, Values, Dict, Querier
 } from "../types";
 
-const makeGo = (querier: Querier, interpreter: Interpreter) => (compiledQuery: CompiledQuery) => {
+const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (compiledQuery: CompiledQuery) => {
   const go = <T>(compiled: CompiledQuery): Promise<T[]> => {
     // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
-        console.log (c.exp);
-        const ip = interpreter.interpret (c.exp, {}, rows, new Environment ({ table: compiled.table, next: [] }));
-        return querier (ip?.query!, ip?.values!);
+        const ip = interpreter.interpret (c.exp, undefined, rows);
+
+        return go ({
+          next: ip?.next!,
+          query: ip?.query!,
+          values: ip?.values!,
+          table: ip?.table!
+        });
 
       });
       return Promise.all (
@@ -25,8 +30,19 @@ const makeGo = (querier: Querier, interpreter: Interpreter) => (compiledQuery: C
       ).then (aggs => {
         return rows.map (row => {
           return aggs.reduce ((acc, agg, idx) => {
-            const incl = compiled.next[idx];
-            acc["teams"] = agg[1];
+            const { exp, lkeys, rkeys } = compiled.next[idx];
+            if (exp.type === "BelongsTo") {
+              acc[exp.name || exp.as] = agg.find ((r: any) =>
+                rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
+              );
+
+              lkeys.forEach (lk => {
+                delete acc[lk];
+              });
+            }
+            // else {
+            //   acc[exp.name || exp.as] = agg.filter (r => pred (row, r));
+            // }
             // const inclRes = agg.
             return acc;
           }, row);
@@ -65,12 +81,12 @@ class RQLTag <Input, Output> {
 
   run(config: RefQLConfig, params: Input) {
 
-    const interpreter = new Interpreter (config.refs, config.useSmartAlias);
+    const interpreter = new Interpreter (config.caseType, config.useSmartAlias, params);
 
-    const go = makeGo (config.querier, interpreter);
+    const go = makeGo<Input> (config.querier, interpreter);
 
 
-    const interpreted = interpreter.interpret<Input> (this.ast, params, []);
+    const interpreted = interpreter.interpret (this.ast);
 
     return go ({
       next: interpreted?.next!,
@@ -110,7 +126,7 @@ class RQLTag <Input, Output> {
 
   // compile(config: RefQLConfig): CompiledQuery {
   //   const parser = new Parser (
-  //     // config.caseTypeDB,
+  //     // config.caseType,
   //     // config.caseTypeJS,
   //     // config.pluralize,
   //     // config.plurals

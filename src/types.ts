@@ -14,9 +14,11 @@ export type Keys<T> = {
 }[keyof T][];
 
 export interface RefQLConfig extends Dict {
+  // optie om aan te duiden $1 of ? ?
+  // 2 opties wss, symbol en enumarate ?
   debug?: (query: string, values: Values, ast?: ASTNode) => void;
   detectRefs: boolean;
-  caseTypeDB?: CaseType;
+  caseType?: CaseType;
   caseTypeJS?: CaseType;
   onSetupError?: (err: Error) => void;
   pluralize: boolean;
@@ -45,11 +47,13 @@ export type Token = {
 // niet dict extenden, dan is ieder soort object mogelijk als parameter voor sql
 export interface Keywords {
   as?: string;
-  // deze moeten op voorhand gewete zijn
-  // links?: Link[];
-  // refs?: TableRefs;
-  // in case refs are not provided, u might need this when reversing x
+  lkey?: string;
+  rkey?: string;
   x?: string;
+  lxkey?: string;
+  rxkey?: string;
+
+
   // orderBy?: SQLTag_;
   id?: number | string;
   limit?: number;
@@ -146,8 +150,10 @@ export type ASTNode =
 
 export interface Next {
   exp: HasMany | BelongsTo | ManyToMany;
-  pred: () => boolean;
+  lkeys: string[];
+  rkeys: string[];
 }
+
 
 export interface EnvRecord {
   table?: Table;
@@ -157,7 +163,8 @@ export interface EnvRecord {
   keyIdx?: number;
   inFunction?: boolean;
   isRoot?: boolean;
-  next: Next[];
+  next?: Next[];
+  required?: string[];
 }
 
 export interface CompiledQuery {

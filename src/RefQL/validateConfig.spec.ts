@@ -29,17 +29,17 @@ describe ("RefQL `validateConfig` - validate config object passed by user", () =
       .toThrowError (new TypeError ("caseTypeJS should be one of the following: camel, snake"));
   });
 
-  test ("`caseTypeDB` validated", () => {
-    expect (validateConfig (defaultConfig ({ caseTypeDB: "camel" }))).toBe (true);
-    expect (validateConfig (defaultConfig ({ caseTypeDB: "snake" }))).toBe (true);
-    expect (validateConfig (defaultConfig ({ caseTypeDB: null }))).toBe (true);
-    expect (validateConfig (defaultConfig ({ caseTypeDB: undefined }))).toBe (true);
+  test ("`caseType` validated", () => {
+    expect (validateConfig (defaultConfig ({ caseType: "camel" }))).toBe (true);
+    expect (validateConfig (defaultConfig ({ caseType: "snake" }))).toBe (true);
+    expect (validateConfig (defaultConfig ({ caseType: null }))).toBe (true);
+    expect (validateConfig (defaultConfig ({ caseType: undefined }))).toBe (true);
 
-    expect (() => validateConfig (defaultConfig (({ caseTypeDB: "" }))))
-      .toThrowError (new TypeError ("caseTypeDB should be one of the following: camel, snake"));
+    expect (() => validateConfig (defaultConfig (({ caseType: "" }))))
+      .toThrowError (new TypeError ("caseType should be one of the following: camel, snake"));
 
-    expect (() => validateConfig (defaultConfig (({ caseTypeDB: 1 }))))
-      .toThrowError (new TypeError ("caseTypeDB should be one of the following: camel, snake"));
+    expect (() => validateConfig (defaultConfig (({ caseType: 1 }))))
+      .toThrowError (new TypeError ("caseType should be one of the following: camel, snake"));
   });
 
   test ("`debug` validated", () => {

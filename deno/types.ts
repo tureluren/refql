@@ -16,7 +16,7 @@ export type Keys<T> = {
 export interface RefQLConfig extends Dict {
   debug?: (query: string, values: Values, ast?: AST) => void;
   detectRefs: boolean;
-  caseTypeDB?: CaseType;
+  caseType?: CaseType;
   caseTypeJS?: CaseType;
   onSetupError?: (err: Error) => void;
   pluralize: boolean;

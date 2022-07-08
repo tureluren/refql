@@ -20,7 +20,7 @@ describe ("Parser type", () => {
 
     expect (parser.string).toBe ("");
     expect (parser.caseTypeJS).toBe ("camel");
-    expect (parser.caseTypeDB).toBe ("snake");
+    expect (parser.caseType).toBe ("snake");
     expect (parser.keyIdx).toBe (0);
     expect (parser.keys).toEqual ([]);
     expect (parser.tokenizer).toEqual (new Tokenizer ());
@@ -141,7 +141,7 @@ describe ("Parser type", () => {
     expect (ast2).toEqual (expected);
   });
 
-  test ("keywords - pluralize = true; caseTypeDB = 'snake'; caseTypeJS = 'camel'", () => {
+  test ("keywords - pluralize = true; caseType = 'snake'; caseTypeJS = 'camel'", () => {
     const parse = parseFn ("snake", "camel", true);
 
     const ast = parse`
@@ -218,7 +218,7 @@ describe ("Parser type", () => {
     expect (ast2).toEqual (expected);
   });
 
-  test ("keywords - pluralize = false; caseTypeDB = 'camel'; caseTypeJS = 'snake'", () => {
+  test ("keywords - pluralize = false; caseType = 'camel'; caseTypeJS = 'snake'", () => {
     const parse = parseFn ("camel", "snake", false);
 
     const ast = parse`
@@ -296,7 +296,7 @@ describe ("Parser type", () => {
   });
 
 
-  test ("keywords - pluralize = true; caseTypeDB = undefined; caseTypeJS = 'camel'", () => {
+  test ("keywords - pluralize = true; caseType = undefined; caseTypeJS = 'camel'", () => {
     const parse = parseFn (undefined, "camel", true);
 
     const ast = parse`
@@ -373,7 +373,7 @@ describe ("Parser type", () => {
     expect (ast2).toEqual (expected);
   });
 
-  test ("keywords - pluralize = false; caseTypeDB = undefined; caseTypeJS = 'camel'", () => {
+  test ("keywords - pluralize = false; caseType = undefined; caseTypeJS = 'camel'", () => {
     const parse = parseFn (undefined, "camel", false);
 
     const ast = parse`

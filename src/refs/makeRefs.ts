@@ -77,7 +77,7 @@ const makeRefs = (config: RefQLConfig, dbRefs: DBRef[]) => {
 
   // overwrite detected refs with provided refs
   if (config.refs) {
-    const configRefs = convertRefs (config.caseTypeDB, config.refs);
+    const configRefs = convertRefs (config.caseType, config.refs);
 
     Object.keys (configRefs).forEach (tableFrom => {
       const ref = configRefs[tableFrom];

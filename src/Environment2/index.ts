@@ -34,6 +34,11 @@ class Environment {
     this.assign ("next", next.concat (nxt));
   }
 
+  addToRequired(req: string[]) {
+    const required = this.lookup ("required");
+    this.assign ("required", required.concat (req));
+  }
+
   addValues(newValues: Values) {
     const values = this.lookup ("values");
     let idx = this.lookup ("keyIdx");

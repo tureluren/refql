@@ -60,7 +60,7 @@ describe ("RefQL", () => {
 
     const { query1 } = RefQL ({
       caseTypeJS: "camel",
-      caseTypeDB: "snake",
+      caseType: "snake",
       debug
     }, querier (pool));
 

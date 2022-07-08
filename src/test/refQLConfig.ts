@@ -3,7 +3,7 @@ import { RefQLConfig } from "../types";
 const refQLConfig: RefQLConfig = {
   pluralize: true,
   caseTypeJS: "camel",
-  caseTypeDB: "snake",
+  caseType: "snake",
   detectRefs: true,
   plurals: {},
   refs: {},

@@ -4,21 +4,27 @@ import associate from "../refs/associate";
 import getRefPath from "../refs/getRefPath";
 import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
-import { ASTRelation, ASTType, Link, ASTNode, Refs } from "../types";
+import { ASTRelation, ASTType, Link, ASTNode, Refs, CaseType, OptCaseType } from "../types";
 import varToSQLTag from "../JBOInterpreter/varToSQLTag";
-import arrayToParams from "../more/arrayToParams";
+import parameterize from "../more/parameterize";
 import isFunction from "../predicate/isFunction";
+import convertCase from "../more/convertCase";
 
-class Interpreter {
-  refs: Refs;
+const splitKeys = (keys: string) =>
+  keys.split (",").map (s => s.trim ());
+
+class Interpreter<Input> {
+  caseType: OptCaseType;
   useSmartAlias: boolean;
+  params?: Input;
 
-  constructor(refs: Refs, useSmartAlias: boolean) {
-    this.refs = refs;
+  constructor(caseType: OptCaseType, useSmartAlias: boolean, params?: Input) {
+    this.caseType = caseType;
     this.useSmartAlias = useSmartAlias;
+    this.params = params;
   }
 
-  interpret<Input>(exp: ASTNode, params: Input, rows: any[], env: Environment = new Environment ({ next: [] }, null)) {
+  interpret(exp: ASTNode, env: Environment = new Environment ({}, null), rows?: any[]) {
     // root
     if (exp.type === "Root") {
       const { name, as, members } = exp;
@@ -29,7 +35,8 @@ class Interpreter {
         query: "select",
         keyIdx: 0,
         values: [],
-        next: []
+        next: [],
+        required: []
       }, null);
 
       this.interpretEach (members, membersEnv);
@@ -38,6 +45,10 @@ class Interpreter {
       //   .concat (hasId ? ` where "${as}".id = ${id}` : "")
       // );
       // const hasId = id != null;
+
+      membersEnv.lookup ("required").forEach (req => {
+        membersEnv.writeToQuery (req);
+      });
 
       membersEnv.writeToQuery (`from "${name}" "${as}"`
         // .concat (hasId ? ` where "${as}".id = ${id}` : "")
@@ -75,6 +86,64 @@ class Interpreter {
       return;
     }
 
+    if (exp.type === "BelongsTo") {
+      const { name, as, members, keywords } = exp;
+
+      const { lkey, rkey } = keywords;
+
+      const lkeys = splitKeys (lkey || convertCase (this.caseType, name + "_id"))
+        .map ((name, idx) => {
+          return {
+            name,
+            as: `${as || name}lkey${idx}`
+          };
+        });
+
+      const rkeys = splitKeys (rkey || "id");
+
+      const required = lkeys.map (lk => `${lk.name} as ${lk.as}`);
+
+      if (!rows) {
+        env.addToRequired (required);
+        env.addToNext ({
+          exp,
+          lkeys: lkeys.map (lk => lk.as),
+          rkeys
+        });
+        return;
+      }
+
+      const membersEnv = new Environment ({
+        table: new Table (name, as),
+        query: "select",
+        sql: "",
+        keyIdx: 0,
+        values: [],
+        next: []
+      }, env);
+
+      this.interpretEach (members, membersEnv);
+
+      // unique list
+      let wherePart = `from "${name}" "${as}" where`;
+
+      rkeys.forEach ((rk, idx) => {
+        const orOp = idx === 0 ? "" : "or ";
+
+        wherePart += ` ${orOp}${rk} in (${parameterize (membersEnv.lookup ("keyIdx"), rows.length, "")})`;
+      });
+
+      membersEnv.writeToQuery (wherePart);
+
+      lkeys.forEach (lk => {
+        membersEnv.addValues (rows.map (r => r[lk.as]));
+      });
+
+      membersEnv.writeSQLToQuery (true);
+
+      return membersEnv.record;
+    }
+
     if (exp.type === "HasMany") {
       const { name, as, members } = exp;
       const table = env.lookup ("table");
@@ -110,63 +179,13 @@ class Interpreter {
       return;
     }
 
-    if (exp.type === "BelongsTo") {
-      const { name, as, members, keywords } = exp;
-      const table = env.lookup ("table");
-
-      const columnLinks = this.findBelongsToLinks (table.name, name, as)
-      || [[name + "_id", "id"]];
-
-      const assoc = associate (table.as, as, columnLinks);
-
-      if (!rows[0]) {
-        env.addToNext ({
-          exp,
-          pred: () => true
-        });
-        return;
-      }
-
-      const membersEnv = new Environment ({
-        table: new Table (name, as),
-        query: "select",
-        sql: "",
-        keyIdx: 0,
-        values: [],
-        next: []
-      }, env);
-
-      this.interpretEach (members, membersEnv);
-
-      // unique list
-      // doe join met player dan heb ik teamId nie nodig ?
-      /**
-       * select player.team_id, team.id, team.name
-       * from player player
-       * join team team on ...
-       * where player id in ()
-       *
-       * of voeg team_id dynamisch toe door map over next
-       * en haal het er dan terug vanaf als het er initieel nie was
-       */
-      membersEnv.writeToQuery (
-        `from "${name}" "${as}" where id in (${arrayToParams (membersEnv.lookup ("keyIdx"), rows, "")})`
-      );
-
-      membersEnv.addValues (rows.map (r => r.team_id));
-      console.log (membersEnv);
-
-      membersEnv.writeSQLToQuery (true);
-
-      return membersEnv.record;
-    }
 
     if (exp.type === "ManyToMany") {
       const { name, as, members, keywords } = exp;
-      const { xTable } = keywords;
+      const { x } = keywords;
       const table = env.lookup ("table");
-      let _x = xTable || (table.name + "_" + name);
-      const _xReversed = xTable || (name + "_" + table.name);
+      let _x = x || (table.name + "_" + name);
+      const _xReversed = x || (name + "_" + table.name);
 
       // convert naar specified caseTYpe
       let tableLinks: Link[] = [[name + "_id", "id"]];
@@ -330,66 +349,69 @@ class Interpreter {
   }
 
   findHasManyLinks(foreignTable: string, col: string) {
-    return getRefPath (foreignTable, col, this.refs);
+    // return getRefPath (foreignTable, col, this.refs);
+    return getRefPath (foreignTable, col, {});
   }
 
-  findBelongsToLinks(foreignTable: string, col: string, as: string) {
-    let ref = getRefPath (foreignTable, col, this.refs);
+  // findBelongsToLinks(foreignTable: string, col: string, as: string) {
+  //   let ref = getRefPath (foreignTable, col, this.refs);
 
-    if (ref == null && this.useSmartAlias) {
-      const tableLinks = this.refs[foreignTable];
+  //   if (ref == null && this.useSmartAlias) {
+  //     const tableLinks = this.refs[foreignTable];
 
-      if (tableLinks) {
-        const arr =
-          Object.keys (tableLinks)
-            .filter (key => {
-              // <table>/n
-              const match = key.match (new RegExp ("^" + col + "/\\d+"));
-              return match != null;
-            })
-            .map (key => tableLinks[key]);
+  //     if (tableLinks) {
+  //       const arr =
+  //         Object.keys (tableLinks)
+  //           .filter (key => {
+  //             // <table>/n
+  //             const match = key.match (new RegExp ("^" + col + "/\\d+"));
+  //             return match != null;
+  //           })
+  //           .map (key => tableLinks[key]);
 
-        let idx = 0;
-        while (ref == null && idx < arr.length) {
-          const links = arr[idx];
-          const colnames = links.map (i => i[0]);
-          let jdx = 0;
+  //       let idx = 0;
+  //       while (ref == null && idx < arr.length) {
+  //         const links = arr[idx];
+  //         const colnames = links.map (i => i[0]);
+  //         let jdx = 0;
 
-          while (ref == null && jdx < colnames.length) {
+  //         while (ref == null && jdx < colnames.length) {
 
-            // only alphanumeric (letters, numbers, regardless of case) plus underscore (_)
-            // can get through the parse phase and therefore we only need to replace underscores
-            const colname = colnames[jdx]
-              .toLowerCase ()
-              .replace (/_/g, "");
+  //           // only alphanumeric (letters, numbers, regardless of case) plus underscore (_)
+  //           // can get through the parse phase and therefore we only need to replace underscores
+  //           const colname = colnames[jdx]
+  //             .toLowerCase ()
+  //             .replace (/_/g, "");
 
-            const fAs = as
-              .toLowerCase ()
-              .replace (/_/g, "");
+  //           const fAs = as
+  //             .toLowerCase ()
+  //             .replace (/_/g, "");
 
-            // "homeTeamId".startsWith ("homeTeam") === true
-            if (colname.startsWith (fAs)) {
-              ref = links;
-            }
+  //           // "homeTeamId".startsWith ("homeTeam") === true
+  //           if (colname.startsWith (fAs)) {
+  //             ref = links;
+  //           }
 
-            jdx += 1;
-          }
+  //           jdx += 1;
+  //         }
 
-          idx += 1;
-        }
+  //         idx += 1;
+  //       }
 
-      }
-    }
+  //     }
+  //   }
 
-    return ref;
-  }
+  //   return ref;
+  // }
 
   findManyToManyLinks(foreignTable: string, col: string, reversed: string): [Link[] | undefined, boolean] {
-    let ref = getRefPath (foreignTable, col, this.refs);
+    let ref = getRefPath (foreignTable, col, {});
+    // let ref = getRefPath (foreignTable, col, this.refs);
     let foundByReversing = false;
 
     if (ref == null) {
-      ref = getRefPath (reversed, col, this.refs);
+      // ref = getRefPath (reversed, col, this.refs);
+      ref = getRefPath (reversed, col, {});
       if (ref != null) {
         foundByReversing = true;
       }
@@ -428,7 +450,7 @@ class Interpreter {
 
   interpretEach(arr: ASTNode[], env: Environment, moveSQL = false) {
     arr.forEach (exp => {
-      this.interpret (exp, {}, [], env);
+      this.interpret (exp, env);
 
       if (moveSQL) {
         env.moveSQLToQuery ();

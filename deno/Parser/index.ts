@@ -16,7 +16,7 @@ import convertTableRefs from "../refs/convertTableRefs.ts";
 import Pluralizer from "../Pluralizer/index.ts";
 
 class Parser {
-  caseTypeDB?: CaseType;
+  caseType?: CaseType;
   caseTypeJS?: CaseType;
   tokenizer: Tokenizer;
   pluralizer: Pluralizer;
@@ -25,8 +25,8 @@ class Parser {
   keyIdx: number;
   lookahead!: Token;
 
-  constructor(caseTypeDB: OptCaseType, caseTypeJS: OptCaseType, pluralize: boolean, plurals: Plurals) {
-    this.caseTypeDB = caseTypeDB;
+  constructor(caseType: OptCaseType, caseTypeJS: OptCaseType, pluralize: boolean, plurals: Plurals) {
+    this.caseType = caseType;
     this.caseTypeJS = caseTypeJS;
     this.pluralizer = new Pluralizer (pluralize, plurals);
     this.tokenizer = new Tokenizer ();
@@ -114,15 +114,15 @@ class Parser {
         }
 
         if (keywords.links) {
-          table.links = convertLinks (this.caseTypeDB, keywords.links);
+          table.links = convertLinks (this.caseType, keywords.links);
         }
 
         if (keywords.refs) {
-          table.refs = convertTableRefs (this.caseTypeDB, keywords.refs);
+          table.refs = convertTableRefs (this.caseType, keywords.refs);
         }
 
         if (keywords.xTable) {
-          table.xTable = convertCase (this.caseTypeDB, keywords.xTable);
+          table.xTable = convertCase (this.caseType, keywords.xTable);
         }
       }
 
@@ -188,7 +188,7 @@ class Parser {
 
     // can only be handled here
     // to give the user the possibility to overwrite `as`
-    name = convertCase (this.caseTypeDB, name);
+    name = convertCase (this.caseType, name);
     as = convertCase (this.caseTypeJS, as);
 
     if (pluralizable) {

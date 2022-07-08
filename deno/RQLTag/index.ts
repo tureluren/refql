@@ -42,7 +42,7 @@ class RQLTag {
 
   compile(config: RefQLConfig): [string, Values, AST] {
     const parser = new Parser (
-      config.caseTypeDB,
+      config.caseType,
       config.caseTypeJS,
       config.pluralize,
       config.plurals

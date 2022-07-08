@@ -10,7 +10,7 @@ const caseTypes: CaseType[] = ["camel", "snake"];
 /**
  * pluralize: Boolean
  * caseTypeJS?: CaseType;
- * caseTypeDB?: CaseType;
+ * caseType?: CaseType;
  * debug?: Function
  * detectRefs: Boolean
  * plurals: { singular: "plural" }
@@ -18,7 +18,7 @@ const caseTypes: CaseType[] = ["camel", "snake"];
  */
 const validateConfig = (config: any) => {
   const {
-    pluralize, caseTypeJS, caseTypeDB,
+    pluralize, caseTypeJS, caseType,
     debug, detectRefs, onSetupError, plurals, refs
   } = <RefQLConfig>config;
 
@@ -38,8 +38,8 @@ const validateConfig = (config: any) => {
     throw new TypeError (`${`caseTypeJS`} should be one of the following: ${caseTypes.join (", ")}`);
   }
 
-  if (caseTypeDB != null && !caseTypes.includes (caseTypeDB)) {
-    throw new TypeError (`${`caseTypeDB`} should be one of the following: ${caseTypes.join (", ")}`);
+  if (caseType != null && !caseTypes.includes (caseType)) {
+    throw new TypeError (`${`caseType`} should be one of the following: ${caseTypes.join (", ")}`);
   }
 
   if (!isBoolean (detectRefs)) {

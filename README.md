@@ -28,7 +28,7 @@ const querier = (query: string, values: any[]) =>
   pool.query (query, values).then (({ rows }) => rows);
 
 const refQL = RefQL ({
-  caseTypeDB: "snake",
+  caseType: "snake",
   caseTypeJS: "camel",
   debug: (query, _values, _ast) => {
     console.log (query);
@@ -107,7 +107,7 @@ const refQL = RefQL ({
   caseTypeJS: "camel",
 
   // database case type
-  caseTypeDB: "snake",
+  caseType: "snake",
 
   // debug
   debug: (query, values, ast) => {
@@ -138,12 +138,12 @@ const refQL = RefQL ({
 }, querier);
 ```
 
-### caseTypeDB option (CaseType, default `undefined`)
+### caseType option (CaseType, default `undefined`)
 When defined, keys are automatically converted to the specified case type, that you use in your database, before a query is executed.
 
 ```ts
 
-// caseTypeDB = "snake"
+// caseType = "snake"
 player (id: 1) {
   id
   firstName
