@@ -99,7 +99,13 @@ class Interpreter<Input> {
           };
         });
 
-      const rkeys = splitKeys (rkey || "id");
+      const rkeys = splitKeys (rkey || "id")
+        .map ((name, idx) => {
+          return {
+            name,
+            as: `${as || name}rkey${idx}`
+          };
+        });
 
       const required = lkeys.map (lk => `${lk.name} as ${lk.as}`);
 
@@ -108,7 +114,7 @@ class Interpreter<Input> {
         env.addToNext ({
           exp,
           lkeys: lkeys.map (lk => lk.as),
-          rkeys
+          rkeys: rkeys.map (rk => rk.as)
         });
         return;
       }
@@ -119,10 +125,19 @@ class Interpreter<Input> {
         sql: "",
         keyIdx: 0,
         values: [],
-        next: []
+        next: [],
+        required: []
       }, env);
 
+      const requiredHere = rkeys.map (rk => `${rk.name} as ${rk.as}`);
+
+      membersEnv.addToRequired (requiredHere);
+
       this.interpretEach (members, membersEnv);
+
+      membersEnv.lookup ("required").forEach (req => {
+        membersEnv.writeToQuery (req);
+      });
 
       // unique list
       let wherePart = `from "${name}" "${as}" where`;
@@ -130,7 +145,7 @@ class Interpreter<Input> {
       rkeys.forEach ((rk, idx) => {
         const orOp = idx === 0 ? "" : "or ";
 
-        wherePart += ` ${orOp}${rk} in (${parameterize (membersEnv.lookup ("keyIdx"), rows.length, "")})`;
+        wherePart += ` ${orOp}${rk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), rows.length, "")})`;
       });
 
       membersEnv.writeToQuery (wherePart);
@@ -145,26 +160,86 @@ class Interpreter<Input> {
     }
 
     if (exp.type === "HasMany") {
-      const { name, as, members } = exp;
+      const { name, as, members, keywords } = exp;
+      const { lkey, rkey } = keywords;
+
       const table = env.lookup ("table");
 
-      // convert naar specified caseTYpe
-      const columnLinks = this.findHasManyLinks (name, table.name)
-      || [[table.name + "_id", "id"]];
+      const lkeys = splitKeys (lkey || "id")
+        .map ((name, idx) => {
+          return {
+            name,
+            as: `${as || name}lkey${idx}`
+          };
+        });
 
-      const assoc = associate (as, table.as, columnLinks);
+      const rkeys = splitKeys (rkey || convertCase (this.caseType, table.name + "_id"))
+        .map ((name, idx) => {
+          return {
+            name,
+            as: `${as || name}rkey${idx}`
+          };
+        });
 
-      env.writeToQuery (
-        `'${as}', (select coalesce(json_agg(json_build_object(`
-      );
+      const required = lkeys.map (lk => `${lk.name} as ${lk.as}`);
+
+      if (!rows) {
+        env.addToRequired (required);
+        env.addToNext ({
+          exp,
+          lkeys: lkeys.map (lk => lk.as),
+          rkeys: rkeys.map (rk => rk.as)
+        });
+        return;
+      }
+
+      // // convert naar specified caseTYpe
+      // const columnLinks = this.findHasManyLinks (name, table.name)
+      // || [[table.name + "_id", "id"]];
+
+      // const assoc = associate (as, table.as, columnLinks);
+
+      // env.writeToQuery (
+      //   `'${as}', (select coalesce(json_agg(json_build_object(`
+      // );
 
       const membersEnv = new Environment ({
         table: new Table (name, as),
+        query: "select",
         sql: "",
-        next: []
+        keyIdx: 0,
+        values: [],
+        next: [],
+        required: []
       }, env);
 
+      const requiredHere = rkeys.map (rk => `${rk.name} as ${rk.as}`);
+
+      membersEnv.addToRequired (requiredHere);
+
       this.interpretEach (members, membersEnv);
+
+      membersEnv.lookup ("required").forEach (req => {
+        membersEnv.writeToQuery (req);
+      });
+
+      let wherePart = `from "${name}" "${as}" where`;
+
+      rkeys.forEach ((rk, idx) => {
+        const orOp = idx === 0 ? "" : "or ";
+
+        wherePart += ` ${orOp}${rk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), rows.length, "")})`;
+      });
+
+      membersEnv.writeToQuery (wherePart);
+
+      lkeys.forEach (lk => {
+        membersEnv.addValues (rows.map (r => r[lk.as]));
+      });
+
+      membersEnv.writeSQLToQuery (true);
+
+      return membersEnv.record;
 
       // const orderByPart = this.getOrderBy (orderBy, membersEnv);
 
@@ -172,11 +247,11 @@ class Interpreter<Input> {
       //   `)${orderByPart}), '[]'::json) from "${name}" "${as}" where ${assoc}`
       // );
 
-      membersEnv.writeSQLToQuery (true);
+      // membersEnv.writeSQLToQuery (true);
 
-      env.writeToQuery (")");
+      // env.writeToQuery (")");
 
-      return;
+      // return;
     }
 
 

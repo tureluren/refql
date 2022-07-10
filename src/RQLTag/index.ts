@@ -15,7 +15,7 @@ const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (co
     // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
-        const ip = interpreter.interpret (c.exp, undefined, rows);
+        const ip = interpreter.interpret (c.exp, new Environment ({ table: compiled.table }, null), rows);
 
         return go ({
           next: ip?.next!,
@@ -32,7 +32,16 @@ const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (co
           return aggs.reduce ((acc, agg, idx) => {
             const { exp, lkeys, rkeys } = compiled.next[idx];
             if (exp.type === "BelongsTo") {
-              acc[exp.name || exp.as] = agg.find ((r: any) =>
+              acc[exp.as || exp.name] = agg.find ((r: any) =>
+                rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
+              );
+
+              lkeys.forEach (lk => {
+                delete acc[lk];
+              });
+
+            } else if (exp.type === "HasMany") {
+              acc[exp.as || exp.name] = agg.filter ((r: any) =>
                 rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
               );
 

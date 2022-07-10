@@ -72,8 +72,11 @@ const playerQuery = rql<{ id: number }, Player>`
     last_name
     team_id
     - team {
-      id
       name
+    }
+    < goal:goals {
+      id
+      minute
     }
   }
 `;
@@ -98,7 +101,7 @@ const query = playerQuery
 
 
 run (playerQuery, { id: 5, refs: {} })
-  .then (rows => console.log (rows[100]));
+  .then (rows => console.log (rows[9]));
 
 const refs = {
   player: {
