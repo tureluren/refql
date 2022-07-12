@@ -70,13 +70,8 @@ const playerQuery = rql<{ id: number }, Player>`
   player (id: 1) {
     id
     last_name
-    team_id
-    - team {
-      name
-    }
-    < goal:goals {
-      id
-      minute
+    x game {
+      result
     }
   }
 `;

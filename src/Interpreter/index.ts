@@ -50,7 +50,7 @@ class Interpreter<Input> {
         membersEnv.writeToQuery (req);
       });
 
-      membersEnv.writeToQuery (`from "${name}" "${as}"`
+      membersEnv.writeToQuery (`from "${name}" "${as || name}"`
         // .concat (hasId ? ` where "${as}".id = ${id}` : "")
       );
 
@@ -89,6 +89,8 @@ class Interpreter<Input> {
     if (exp.type === "BelongsTo") {
       const { name, as, members, keywords } = exp;
 
+      const table = env.lookup ("table");
+
       const { lkey, rkey } = keywords;
 
       const lkeys = splitKeys (lkey || convertCase (this.caseType, name + "_id"))
@@ -107,7 +109,7 @@ class Interpreter<Input> {
           };
         });
 
-      const required = lkeys.map (lk => `${lk.name} as ${lk.as}`);
+      const required = lkeys.map (lk => `"${table.as || table.name}".${lk.name} as ${lk.as}`);
 
       if (!rows) {
         env.addToRequired (required);
@@ -129,30 +131,30 @@ class Interpreter<Input> {
         required: []
       }, env);
 
-      const requiredHere = rkeys.map (rk => `${rk.name} as ${rk.as}`);
+      this.interpretEach (members, membersEnv);
+
+      const requiredHere = rkeys.map (rk => `"${as || name}".${rk.name} as ${rk.as}`);
 
       membersEnv.addToRequired (requiredHere);
-
-      this.interpretEach (members, membersEnv);
 
       membersEnv.lookup ("required").forEach (req => {
         membersEnv.writeToQuery (req);
       });
 
-      // unique list
       let wherePart = `from "${name}" "${as}" where`;
 
-      rkeys.forEach ((rk, idx) => {
-        const orOp = idx === 0 ? "" : "or ";
+      // lkeys length should equal rkeys length
+      lkeys.forEach ((lk, idx) => {
+        const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
+        const rk = rkeys[idx];
+        const andOp = idx === 0 ? "" : "and ";
 
-        wherePart += ` ${orOp}${rk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), rows.length, "")})`;
+        wherePart += ` ${andOp}${rk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), uniqRows.length, "")})`;
+
+        membersEnv.addValues (uniqRows);
       });
 
       membersEnv.writeToQuery (wherePart);
-
-      lkeys.forEach (lk => {
-        membersEnv.addValues (rows.map (r => r[lk.as]));
-      });
 
       membersEnv.writeSQLToQuery (true);
 
@@ -181,7 +183,7 @@ class Interpreter<Input> {
           };
         });
 
-      const required = lkeys.map (lk => `${lk.name} as ${lk.as}`);
+      const required = lkeys.map (lk => `"${table.as || table.name}".${lk.name} as ${lk.as}`);
 
       if (!rows) {
         env.addToRequired (required);
@@ -193,15 +195,95 @@ class Interpreter<Input> {
         return;
       }
 
-      // // convert naar specified caseTYpe
-      // const columnLinks = this.findHasManyLinks (name, table.name)
-      // || [[table.name + "_id", "id"]];
+      const membersEnv = new Environment ({
+        table: new Table (name, as),
+        query: "select",
+        sql: "",
+        keyIdx: 0,
+        values: [],
+        next: [],
+        required: []
+      }, env);
 
-      // const assoc = associate (as, table.as, columnLinks);
+      this.interpretEach (members, membersEnv);
 
-      // env.writeToQuery (
-      //   `'${as}', (select coalesce(json_agg(json_build_object(`
-      // );
+      const requiredHere = rkeys.map (rk => `"${as || name}".${rk.name} as ${rk.as}`);
+
+      membersEnv.addToRequired (requiredHere);
+
+      membersEnv.lookup ("required").forEach (req => {
+        membersEnv.writeToQuery (req);
+      });
+
+      let wherePart = `from "${name}" "${as}" where`;
+
+      lkeys.forEach ((lk, idx) => {
+        const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
+        const rk = rkeys[idx];
+        const andOp = idx === 0 ? "" : "and ";
+
+        wherePart += ` ${andOp}${rk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), uniqRows.length, "")})`;
+
+        membersEnv.addValues (uniqRows);
+      });
+
+      membersEnv.writeToQuery (wherePart);
+
+      membersEnv.writeSQLToQuery (true);
+
+      return membersEnv.record;
+    }
+
+    if (exp.type === "ManyToMany") {
+      const { name, as, members, keywords } = exp;
+      const { x, lkey, lxkey, rkey, rxkey } = keywords;
+      const table = env.lookup ("table");
+      const xTable = x || convertCase (this.caseType, `${table.name}_${name}`);
+
+      const lkeys = splitKeys (lkey || "id")
+        .map ((name, idx) => {
+          return {
+            name,
+            as: `${as || name}lkey${idx}`
+          };
+        });
+
+      const rkeys = splitKeys (rkey || "id")
+        .map ((name, idx) => {
+          return {
+            name,
+            as: `${as || name}rkey${idx}`
+          };
+        });
+
+      const lxkeys = splitKeys (lxkey || convertCase (this.caseType, table.name + "_id"))
+        .map ((name, idx) => {
+          return {
+            name,
+            as: `${as || name}lxkey${idx}`
+          };
+        });
+
+      const rxkeys = splitKeys (rxkey || convertCase (this.caseType, name + "_id"))
+        .map ((name, idx) => {
+          return {
+            name,
+            as: `${as || name}rxkey${idx}`
+          };
+        });
+
+      const required = lkeys.map (lk => `${lk.name} as ${lk.as}`);
+
+      if (!rows) {
+        env.addToRequired (required);
+        env.addToNext ({
+          exp,
+          lkeys: lkeys.map (lk => lk.as),
+          rkeys: lxkeys.map (lxk => lxk.as)
+        });
+        return;
+      }
+
 
       const membersEnv = new Environment ({
         table: new Table (name, as),
@@ -213,109 +295,53 @@ class Interpreter<Input> {
         required: []
       }, env);
 
-      const requiredHere = rkeys.map (rk => `${rk.name} as ${rk.as}`);
-
-      membersEnv.addToRequired (requiredHere);
-
       this.interpretEach (members, membersEnv);
+
+      const requiredHere = rkeys.map (rk => `"${as || name}".${rk.name} as ${rk.as}`);
+
+      const requiredHere2 = lxkeys.map (lxk => `"${xTable}".${lxk.name} as ${lxk.as}`);
+
+      const requiredHere3 = rxkeys.map (rxk => `"${xTable}".${rxk.name} as ${rxk.as}`);
+
+      membersEnv.addToRequired (requiredHere.concat (requiredHere2).concat (requiredHere3));
 
       membersEnv.lookup ("required").forEach (req => {
         membersEnv.writeToQuery (req);
       });
 
-      let wherePart = `from "${name}" "${as}" where`;
+      let wherePart = `from ${name} as "${as}" join ${xTable} as "${xTable}" on`;
+
+      /**
+       * select * from game
+       * join x on rxkey = rkey
+       * where lxkey = lkey
+       */
 
       rkeys.forEach ((rk, idx) => {
-        const orOp = idx === 0 ? "" : "or ";
+        const andOp = idx === 0 ? "" : "and ";
+        const rxk = rxkeys[idx];
 
-        wherePart += ` ${orOp}${rk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), rows.length, "")})`;
+        wherePart += ` ${andOp}"${xTable}".${rxk.name} = "${as || name}".${rk.name}`;
+      });
+
+      wherePart += " where";
+
+      // lkeys length should equal lxkeys length
+      lkeys.forEach ((lk, idx) => {
+        const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
+        const lxk = lxkeys[idx];
+        const andOp = idx === 0 ? "" : "and ";
+
+        wherePart += ` ${andOp}"${xTable}".${lxk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), uniqRows.length, "")})`;
+
+        membersEnv.addValues (uniqRows);
       });
 
       membersEnv.writeToQuery (wherePart);
 
-      lkeys.forEach (lk => {
-        membersEnv.addValues (rows.map (r => r[lk.as]));
-      });
-
       membersEnv.writeSQLToQuery (true);
 
       return membersEnv.record;
-
-      // const orderByPart = this.getOrderBy (orderBy, membersEnv);
-
-      // env.writeToQuery (
-      //   `)${orderByPart}), '[]'::json) from "${name}" "${as}" where ${assoc}`
-      // );
-
-      // membersEnv.writeSQLToQuery (true);
-
-      // env.writeToQuery (")");
-
-      // return;
-    }
-
-
-    if (exp.type === "ManyToMany") {
-      const { name, as, members, keywords } = exp;
-      const { x } = keywords;
-      const table = env.lookup ("table");
-      let _x = x || (table.name + "_" + name);
-      const _xReversed = x || (name + "_" + table.name);
-
-      // convert naar specified caseTYpe
-      let tableLinks: Link[] = [[name + "_id", "id"]];
-
-      // if (refs && refs[name]) {
-      //   tableLinks = refs[name];
-      // } else {
-      const [found, foundByReversing] = this.findManyToManyLinks (_x, name, _xReversed);
-
-      if (found) {
-        tableLinks = found;
-
-        if (foundByReversing) {
-          _x = _xReversed;
-        }
-      }
-      // }
-
-      let parentLinks: Link[] = [[table.name + "_id", "id"]];
-
-      // if (refs && refs[table.name]) {
-      //   parentLinks = refs[table.name];
-      // } else {
-      const [found2] = this.findManyToManyLinks (_x, table.name, _xReversed);
-      if (found2) {
-        parentLinks = found2;
-      }
-      // }
-
-      const assoc = associate (_x, as, tableLinks);
-      const parentAssoc = associate (_x, table.as, parentLinks);
-
-      env.writeToQuery (
-        `'${as}', (select coalesce(json_agg(json_build_object(`
-      );
-
-      const membersEnv = new Environment ({
-        table: new Table (name, as),
-        sql: "",
-        next: []
-      }, env);
-
-      this.interpretEach (members, membersEnv);
-
-      // const orderByPart = this.getOrderBy (orderBy, membersEnv);
-
-      // env.writeToQuery (
-      //   `)${orderByPart}), '[]'::json) from "${_x}" "${_x}" join "${name}" "${as}" on ${assoc} where ${parentAssoc}`
-      // );
-
-      membersEnv.writeSQLToQuery (true);
-
-      env.writeToQuery (")");
-
-      return;
     }
 
     if (exp.type === "Subselect") {

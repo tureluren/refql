@@ -12,6 +12,7 @@ import {
 
 const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (compiledQuery: CompiledQuery) => {
   const go = <T>(compiled: CompiledQuery): Promise<T[]> => {
+    console.log (compiled.query);
     // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
@@ -48,11 +49,11 @@ const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (co
               lkeys.forEach (lk => {
                 delete acc[lk];
               });
+            } else if (exp.type === "ManyToMany") {
+              acc[exp.as || exp.name] = agg.filter ((r: any) =>
+                rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
+              );
             }
-            // else {
-            //   acc[exp.name || exp.as] = agg.filter (r => pred (row, r));
-            // }
-            // const inclRes = agg.
             return acc;
           }, row);
         });
