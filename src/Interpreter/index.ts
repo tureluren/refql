@@ -4,14 +4,146 @@ import associate from "../refs/associate";
 import getRefPath from "../refs/getRefPath";
 import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
-import { ASTRelation, ASTType, Link, ASTNode, Refs, CaseType, OptCaseType } from "../types";
+import { ASTRelation, ASTType, Link, ASTNode, Refs, CaseType, OptCaseType, Dict, EnvRecord } from "../types";
 import varToSQLTag from "../JBOInterpreter/varToSQLTag";
 import parameterize from "../more/parameterize";
 import isFunction from "../predicate/isFunction";
 import convertCase from "../more/convertCase";
+import keys from "../more/keys";
+type SameLength<T extends any[]> = Extract<{ [K in keyof T]: any }, any[]>;
 
-const splitKeys = (keys: string) =>
+type Curried<A extends any[], R> =
+  <P extends Partial<A>>(...args: P) => P extends A ? R :
+    A extends [...SameLength<P>, ...infer S] ? S extends any[] ? Curried<S, R>
+    : never : never;
+
+function curry<A extends any[], R>(fn: (...args: A) => R): Curried<A, R> {
+  return (...args: any[]): any =>
+    args.length >= fn.length ? fn (...args as any) : curry ((fn as any).bind (undefined, ...args));
+}
+
+const concat = (obj1: Dict, obj2: Dict) => {
+  const result: Dict = {};
+  (Object.keys (obj2)).forEach (k => { result[k] = obj2[k]; });
+  (Object.keys (obj1)).forEach (k => { result[k] = obj1[k]; });
+  return result;
+};
+
+type IOverload = {
+  <T extends keyof EnvRecord>(prop: T, record: EnvRecord): NonNullable<EnvRecord[T]>;
+  <T extends keyof EnvRecord>(prop: T): (record: EnvRecord) => NonNullable<EnvRecord[T]>;
+};
+
+// const lookup = curry (<T extends keyof EnvRecord>(prop: T, record: EnvRecord): NonNullable<EnvRecord[T]> => {
+//   // @ts-ignore
+//   if (record.hasOwnProperty (prop)) {
+//     return record[prop]!;
+//   }
+//   throw new ReferenceError (`Variable "${prop}" is undefined`);
+// });
+
+const lookup: IOverload = curry ((prop, record) => {
+  // @ts-ignore
+  if (record.hasOwnProperty (prop)) {
+    return record[prop]!;
+  }
+  throw new ReferenceError (`Variable "${prop}" is undefined`);
+});
+
+
+const buh = lookup ("select") ({ select: ["djdj"] });
+
+
+const S_ = <A, B, R>(g: (r: R) => A, f: (a: A) => (r: R) => B) => (x: R) => f (g (x)) (x);
+
+// const objOf = (key: string, value: any) =>
+//   ({ [key]: value });
+
+const set = (key: string, value: any) => (obj: Dict) => {
+  return concat ({ [key]: value }, obj);
+};
+
+const over = <T extends keyof EnvRecord>(key: T, fn: (value: NonNullable<EnvRecord[T]>) => EnvRecord[T], obj: EnvRecord) => {
+  return concat ({ [key]: fn (lookup (key, obj)) }, obj);
+};
+
+type Transformations = {
+  [key in keyof EnvRecord]: (value: NonNullable<EnvRecord[key]>) => NonNullable<EnvRecord[key]>;
+};
+
+const evolve = <T extends keyof EnvRecord>(transformations: Transformations, obj: EnvRecord): EnvRecord => {
+  return (Object.keys (obj) as Array<T>).reduce ((acc, key) => {
+    const transformation = transformations[key];
+    if (transformation) {
+      acc[key] = transformation (lookup (key, obj));
+    } else {
+      acc[key] = obj[key];
+    }
+    return acc;
+  }, {} as EnvRecord);
+};
+
+// const over2 = <T1 extends keyof EnvRecord, T2 extends keyof EnvRecord>(key1: T1, key2: T2, fn: (value1: EnvRecord[T1], value) => EnvRecord[T]) => (obj: EnvRecord) => {
+//   return concat ({ [key]: fn (obj[key]) }, obj);
+// };
+
+
+
+const splitKeys = (keys: string = "") =>
   keys.split (",").map (s => s.trim ());
+
+interface Keys extends Dict {
+  lkey: string;
+  rkey: string;
+  lxkey?: string;
+  rxkey?: string;
+}
+
+interface NamedKeys {
+  name: string;
+  as: string;
+}
+
+interface Worked {
+  lkeys: NamedKeys[];
+  rkeys: NamedKeys[];
+  lxkeys: NamedKeys[];
+  rxkeys: NamedKeys[];
+}
+
+const workKeys = (tableAs: string, keys: Keys) => {
+  let res: Worked = {
+    lkeys: [],
+    rkeys: [],
+    lxkeys: [],
+    rxkeys: []
+  };
+
+  Object.keys (keys).forEach (key => {
+    res[key + "s" as keyof Worked] = splitKeys (keys[key])
+      .map ((name, idx) => {
+        return {
+          name,
+          as: `${tableAs}${key}${idx}`
+        };
+      });
+
+  });
+
+  return res;
+};
+
+const createEnv = (table: Table) => new Environment ({
+  table,
+  sql: "",
+  query: "select",
+  // valueIdx ?
+  keyIdx: 0,
+  values: [],
+  next: [],
+  select: []
+});
+
 
 class Interpreter<Input> {
   caseType: OptCaseType;
@@ -24,35 +156,47 @@ class Interpreter<Input> {
     this.params = params;
   }
 
-  interpret(exp: ASTNode, env: Environment = new Environment ({}, null), rows?: any[]) {
+  toCase(string: string) {
+    return convertCase (this.caseType, string);
+  }
+
+  interpret(exp: ASTNode, env: Environment = new Environment ({}), rows?: any[]): any {
     // root
     if (exp.type === "Root") {
       const { name, as, members } = exp;
 
-      const membersEnv = new Environment ({
-        table: new Table (name, as),
-        sql: "",
-        query: "select",
-        keyIdx: 0,
-        values: [],
-        next: [],
-        required: []
-      }, null);
+      const rootEnv = createEnv (new Table (name, as));
 
-      this.interpretEach (members, membersEnv);
+      return members
+        .reduce ((acc, mem) =>
+          acc.extend (env => this.interpret (mem, env)), rootEnv)
+
+        .map (record =>
+          over ("query", query => query + " " + lookup ("select", record).join (", "), record))
+
+        .map (record =>
+          over ("query", query => query + ` from "${name}" "${as || name}"`, record))
+
+        .record;
+
+
+
+
+      // this.interpretEach (members, membersEnv);
 
       // membersEnv.writeToQuery (`from "${name}" "${as}"`
       //   .concat (hasId ? ` where "${as}".id = ${id}` : "")
       // );
       // const hasId = id != null;
 
-      membersEnv.lookup ("required").forEach (req => {
-        membersEnv.writeToQuery (req);
-      });
+      // eachInterpreted.lookup ("required").forEach (req => {
+      //   eachInterpreted.writeToQuery (req);
+      // });
 
-      membersEnv.writeToQuery (`from "${name}" "${as || name}"`
-        // .concat (hasId ? ` where "${as}".id = ${id}` : "")
-      );
+
+      //  eachInterpreted.writeToQuery (`from "${name}" "${as || name}"`
+      //     // .concat (hasId ? ` where "${as}".id = ${id}` : "")
+      //   );
 
       // if (limit != null) {
       //   membersEnv.writeToSQL (`limit ${limit}`);
@@ -64,62 +208,56 @@ class Interpreter<Input> {
 
       // membersEnv.writeSQLToQuery (hasId);
 
-      return membersEnv.record;
     }
 
     if (exp.type === "Identifier") {
       const { name, as, cast } = exp;
-      const { inFunction } = env.record;
+      const { record } = env;
 
-      const table = env.lookup ("table");
+      const table = lookup ("table", record);
 
-      let sql = inFunction
-        ? `"${table.as}".${name}`
-        : `"${table.as}".${name} as ${as}`;
+      let sql = `"${table}".${name}`;
 
       if (cast) {
         sql += "::" + cast;
       }
 
-      env.writeToQuery (sql);
+      if (as) {
+        sql += " as " + as;
+      }
 
-      return;
+      return over ("select", select => select.concat (sql), record);
     }
 
     if (exp.type === "BelongsTo") {
       const { name, as, members, keywords } = exp;
+      const { record } = env;
 
-      const table = env.lookup ("table");
+      const table = lookup ("table", record);
 
       const { lkey, rkey } = keywords;
 
-      const lkeys = splitKeys (lkey || convertCase (this.caseType, name + "_id"))
-        .map ((name, idx) => {
-          return {
-            name,
-            as: `${as || name}lkey${idx}`
-          };
-        });
-
-      const rkeys = splitKeys (rkey || "id")
-        .map ((name, idx) => {
-          return {
-            name,
-            as: `${as || name}rkey${idx}`
-          };
-        });
+      const { lkeys, rkeys } = workKeys (as || name, {
+        lkey: lkey || this.toCase (name + "_id"),
+        rkey: rkey || "id"
+      });
 
       const required = lkeys.map (lk => `"${table.as || table.name}".${lk.name} as ${lk.as}`);
 
       if (!rows) {
-        env.addToRequired (required);
-        env.addToNext ({
-          exp,
-          lkeys: lkeys.map (lk => lk.as),
-          rkeys: rkeys.map (rk => rk.as)
-        });
-        return;
+        return evolve ({
+          select: select => select.concat (required),
+          // lookup on enrecord ipv env, werk met get, en gooi error alst er nie is?
+          // of meerdere types envrecord, table en call ? met alleen maar aanwezige velden
+          next: nxt => nxt.concat (
+            {
+              exp,
+              lkeys: lkeys.map (lk => lk.as),
+              rkeys: rkeys.map (rk => rk.as)
+            })
+        }, record);
       }
+      console.log ("hier");
 
       const membersEnv = new Environment ({
         table: new Table (name, as),
@@ -128,20 +266,20 @@ class Interpreter<Input> {
         keyIdx: 0,
         values: [],
         next: [],
-        required: []
-      }, env);
+        select: []
+      });
 
-      this.interpretEach (members, membersEnv);
+      const eachInterpreted = members.reduce ((acc, mem) => {
+        return acc.extend (env => this.interpret (mem, env));
+      }, membersEnv);
 
       const requiredHere = rkeys.map (rk => `"${as || name}".${rk.name} as ${rk.as}`);
 
-      membersEnv.addToRequired (requiredHere);
+      const almost = eachInterpreted.map (record =>
+        over ("query", query => query + " " + eachInterpreted.record.select?.concat (requiredHere).join (", ") + ",", record)
+      );
 
-      membersEnv.lookup ("required").forEach (req => {
-        membersEnv.writeToQuery (req);
-      });
-
-      let wherePart = `from "${name}" "${as}" where`;
+      let wherePart = ` from "${name}" "${as}" where`;
 
       // lkeys length should equal rkeys length
       lkeys.forEach ((lk, idx) => {
@@ -149,16 +287,19 @@ class Interpreter<Input> {
         const rk = rkeys[idx];
         const andOp = idx === 0 ? "" : "and ";
 
-        wherePart += ` ${andOp}${rk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), uniqRows.length, "")})`;
+        wherePart += ` ${andOp}${rk.name} in (${parameterize (almost.lookup ("keyIdx"), uniqRows.length, "")})`;
 
-        membersEnv.addValues (uniqRows);
+        almost.addValues (uniqRows);
       });
 
-      membersEnv.writeToQuery (wherePart);
+      const final = almost.map (record =>
+        // remove trailing comma
+        over ("query", query => query!.slice (0, -1) + `${wherePart}`, record)
+      );
 
-      membersEnv.writeSQLToQuery (true);
+      final.writeSQLToQuery (true);
 
-      return membersEnv.record;
+      return final.record;
     }
 
     if (exp.type === "HasMany") {
@@ -167,21 +308,10 @@ class Interpreter<Input> {
 
       const table = env.lookup ("table");
 
-      const lkeys = splitKeys (lkey || "id")
-        .map ((name, idx) => {
-          return {
-            name,
-            as: `${as || name}lkey${idx}`
-          };
-        });
-
-      const rkeys = splitKeys (rkey || convertCase (this.caseType, table.name + "_id"))
-        .map ((name, idx) => {
-          return {
-            name,
-            as: `${as || name}rkey${idx}`
-          };
-        });
+      const { lkeys, rkeys } = workKeys (as || name, {
+        lkey: lkey || "id",
+        rkey: rkey || this.toCase (table.name + "_id")
+      });
 
       const required = lkeys.map (lk => `"${table.as || table.name}".${lk.name} as ${lk.as}`);
 
@@ -202,8 +332,8 @@ class Interpreter<Input> {
         keyIdx: 0,
         values: [],
         next: [],
-        required: []
-      }, env);
+        select: []
+      });
 
       this.interpretEach (members, membersEnv);
 
@@ -211,7 +341,7 @@ class Interpreter<Input> {
 
       membersEnv.addToRequired (requiredHere);
 
-      membersEnv.lookup ("required").forEach (req => {
+      membersEnv.lookup ("select").forEach (req => {
         membersEnv.writeToQuery (req);
       });
 
@@ -238,39 +368,14 @@ class Interpreter<Input> {
       const { name, as, members, keywords } = exp;
       const { x, lkey, lxkey, rkey, rxkey } = keywords;
       const table = env.lookup ("table");
-      const xTable = x || convertCase (this.caseType, `${table.name}_${name}`);
+      const xTable = x || this.toCase (`${table.name}_${name}`);
 
-      const lkeys = splitKeys (lkey || "id")
-        .map ((name, idx) => {
-          return {
-            name,
-            as: `${as || name}lkey${idx}`
-          };
-        });
-
-      const rkeys = splitKeys (rkey || "id")
-        .map ((name, idx) => {
-          return {
-            name,
-            as: `${as || name}rkey${idx}`
-          };
-        });
-
-      const lxkeys = splitKeys (lxkey || convertCase (this.caseType, table.name + "_id"))
-        .map ((name, idx) => {
-          return {
-            name,
-            as: `${as || name}lxkey${idx}`
-          };
-        });
-
-      const rxkeys = splitKeys (rxkey || convertCase (this.caseType, name + "_id"))
-        .map ((name, idx) => {
-          return {
-            name,
-            as: `${as || name}rxkey${idx}`
-          };
-        });
+      const { lkeys, rkeys, lxkeys, rxkeys } = workKeys (as || name, {
+        lkey: lkey || "id",
+        rkey: rkey || "id",
+        lxkey: lxkey || this.toCase (table.name + "_id"),
+        rxkey: rxkey || this.toCase (name + "_id")
+      });
 
       const required = lkeys.map (lk => `${lk.name} as ${lk.as}`);
 
@@ -284,7 +389,6 @@ class Interpreter<Input> {
         return;
       }
 
-
       const membersEnv = new Environment ({
         table: new Table (name, as),
         query: "select",
@@ -292,8 +396,8 @@ class Interpreter<Input> {
         keyIdx: 0,
         values: [],
         next: [],
-        required: []
-      }, env);
+        select: []
+      });
 
       this.interpretEach (members, membersEnv);
 
@@ -305,7 +409,7 @@ class Interpreter<Input> {
 
       membersEnv.addToRequired (requiredHere.concat (requiredHere2).concat (requiredHere3));
 
-      membersEnv.lookup ("required").forEach (req => {
+      membersEnv.lookup ("select").forEach (req => {
         membersEnv.writeToQuery (req);
       });
 
@@ -366,7 +470,7 @@ class Interpreter<Input> {
         inFunction: true,
         sql: "",
         next: []
-      }, env);
+      });
 
       // nested
       if (inFunction) {
@@ -447,78 +551,6 @@ class Interpreter<Input> {
     }
 
     throw new Error (`Unimplemented: ${JSON.stringify (exp)}`);
-  }
-
-  findHasManyLinks(foreignTable: string, col: string) {
-    // return getRefPath (foreignTable, col, this.refs);
-    return getRefPath (foreignTable, col, {});
-  }
-
-  // findBelongsToLinks(foreignTable: string, col: string, as: string) {
-  //   let ref = getRefPath (foreignTable, col, this.refs);
-
-  //   if (ref == null && this.useSmartAlias) {
-  //     const tableLinks = this.refs[foreignTable];
-
-  //     if (tableLinks) {
-  //       const arr =
-  //         Object.keys (tableLinks)
-  //           .filter (key => {
-  //             // <table>/n
-  //             const match = key.match (new RegExp ("^" + col + "/\\d+"));
-  //             return match != null;
-  //           })
-  //           .map (key => tableLinks[key]);
-
-  //       let idx = 0;
-  //       while (ref == null && idx < arr.length) {
-  //         const links = arr[idx];
-  //         const colnames = links.map (i => i[0]);
-  //         let jdx = 0;
-
-  //         while (ref == null && jdx < colnames.length) {
-
-  //           // only alphanumeric (letters, numbers, regardless of case) plus underscore (_)
-  //           // can get through the parse phase and therefore we only need to replace underscores
-  //           const colname = colnames[jdx]
-  //             .toLowerCase ()
-  //             .replace (/_/g, "");
-
-  //           const fAs = as
-  //             .toLowerCase ()
-  //             .replace (/_/g, "");
-
-  //           // "homeTeamId".startsWith ("homeTeam") === true
-  //           if (colname.startsWith (fAs)) {
-  //             ref = links;
-  //           }
-
-  //           jdx += 1;
-  //         }
-
-  //         idx += 1;
-  //       }
-
-  //     }
-  //   }
-
-  //   return ref;
-  // }
-
-  findManyToManyLinks(foreignTable: string, col: string, reversed: string): [Link[] | undefined, boolean] {
-    let ref = getRefPath (foreignTable, col, {});
-    // let ref = getRefPath (foreignTable, col, this.refs);
-    let foundByReversing = false;
-
-    if (ref == null) {
-      // ref = getRefPath (reversed, col, this.refs);
-      ref = getRefPath (reversed, col, {});
-      if (ref != null) {
-        foundByReversing = true;
-      }
-    }
-
-    return [ref, foundByReversing];
   }
 
   getOrderBy(orderBy: any, env: Environment) {

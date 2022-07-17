@@ -12,11 +12,11 @@ import {
 
 const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (compiledQuery: CompiledQuery) => {
   const go = <T>(compiled: CompiledQuery): Promise<T[]> => {
-    console.log (compiled.query);
+    console.log (compiled);
     // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
-        const ip = interpreter.interpret (c.exp, new Environment ({ table: compiled.table }, null), rows);
+        const ip = interpreter.interpret (c.exp, new Environment ({ table: compiled.table }), rows);
 
         return go ({
           next: ip?.next!,

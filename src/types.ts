@@ -164,7 +164,7 @@ export interface EnvRecord {
   inFunction?: boolean;
   isRoot?: boolean;
   next?: Next[];
-  required?: string[];
+  select?: string[];
 }
 
 export interface CompiledQuery {

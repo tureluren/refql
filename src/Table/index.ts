@@ -6,6 +6,12 @@ class Table {
     this.name = name;
     this.as = as;
   }
+
+  [Symbol.toPrimitive](hint: string) {
+    if (hint == "string" || hint == "default") {
+      return this.as || this.name;
+    }
+  }
 }
 
 export default Table;

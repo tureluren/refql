@@ -2,12 +2,18 @@ import { EnvRecord, Next, Values } from "../types";
 
 class Environment {
   record: EnvRecord;
-  parent: Environment | null;
 
-  constructor(record: EnvRecord, parent: Environment | null = null) {
-    // making sure that record can't be mutated from the outside
+  constructor(record: EnvRecord) {
+    // assign nog nodig ? over functie maakt al een nieuw object
     this.record = Object.assign ({}, record);
-    this.parent = parent;
+  }
+
+  extend(fn: (env: Environment) => EnvRecord) {
+    return new Environment (fn (this));
+  }
+
+  map(fn: (record: EnvRecord) => EnvRecord) {
+    return new Environment (fn (this.record));
   }
 
   assign<T extends keyof EnvRecord>(name: T, value: EnvRecord[T]) {
@@ -23,10 +29,7 @@ class Environment {
     if (this.record.hasOwnProperty (name)) {
       return this;
     }
-    if (this.parent == null) {
-      throw new ReferenceError (`Variable "${name}" is undefined`);
-    }
-    return this.parent.resolve (name);
+    throw new ReferenceError (`Variable "${name}" is undefined`);
   }
 
   addToNext(nxt: Next) {
@@ -35,8 +38,8 @@ class Environment {
   }
 
   addToRequired(req: string[]) {
-    const required = this.lookup ("required");
-    this.assign ("required", required.concat (req));
+    const required = this.lookup ("select");
+    this.assign ("select", required.concat (req));
   }
 
   addValues(newValues: Values) {
@@ -52,9 +55,7 @@ class Environment {
     const prev = query.slice (-1);
     const next = value.slice (0, 1);
 
-    if (query === "select" || value.startsWith ("from")) {
-      query += " " + value;
-    } else if (prev === "(" || next === ")" || prev === "" || next === ",") {
+    if (prev === "(" || next === ")" || prev === "" || next === ",") {
       query += value;
     } else {
       query += ", " + value;

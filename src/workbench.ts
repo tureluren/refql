@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import { rql } from "./index";
 import RQLTag from "./RQLTag";
 import { Goal, Player } from "./soccer";
+import Table from "./Table";
 import { ASTNode, ASTRelation, RefQLConfig, Dict, Values, CaseType, Keywords } from "./types";
 
 const pool = new Pool ({
@@ -70,8 +71,8 @@ const playerQuery = rql<{ id: number }, Player>`
   player (id: 1) {
     id
     last_name
-    x game {
-      result
+    - team {
+      name
     }
   }
 `;
