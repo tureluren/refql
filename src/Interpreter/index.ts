@@ -161,7 +161,7 @@ class Interpreter<Input> {
 
       const callEnv = new Environment ({
         table: getTable (record),
-        query: `${name}(`,
+        query: ``,
         inFunction: true,
         sql: "", // sql can be used inside fns
         cols: []
@@ -187,7 +187,7 @@ class Interpreter<Input> {
           cols => overQuery (query => `${query}${cols.join (", ")}`))
         )
 
-        .map (overQuery (query => `${query})`))
+        .map (overQuery (query => `${name} (${query})`))
 
         .record;
 
@@ -240,7 +240,6 @@ class Interpreter<Input> {
             })
         }, record);
       }
-      console.log ("hier");
 
       const membersEnv = new Environment ({
         table: new Table (name, as),
@@ -482,15 +481,15 @@ class Interpreter<Input> {
 
     if (exp.type === "StringLiteral") {
       const { value, as } = exp;
-      const { inFunction } = env.record;
+      const { record } = env;
 
-      if (inFunction) {
-        env.writeToQuery (`'${value}'`);
-      } else {
-        env.writeToQuery (`'${as}', '${value}'`);
-      }
+      let sql = `'${value}'`;
 
-      return;
+      // if (as) {
+      //   sql += ` as ${as}`;
+      // }
+
+      return overCols (cols => cols.concat (sql)) (record);
     }
 
     if (
