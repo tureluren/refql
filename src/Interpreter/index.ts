@@ -15,10 +15,12 @@ import over from "../Environment2/over";
 import chain from "../more/chain";
 import evolve from "../Environment2/evolve";
 
-const overCols = over ("cols");
+const overCols = over ("comps");
 const overQuery = over ("query");
-const getCols = lookup ("cols");
+const overFn = over ("fn");
+const getCols = lookup ("comps");
 const getTable = lookup ("table");
+const getFn = lookup ("fn");
 
 
 
@@ -69,12 +71,12 @@ const workKeys = (tableAs: string, keys: Keys) => {
 const createEnv = (table: Table) => new Environment ({
   table,
   sql: "",
-  query: "select",
+  query: "",
   // valueIdx ?
   keyIdx: 0,
   values: [],
   next: [],
-  cols: []
+  comps: []
 });
 
 
@@ -106,10 +108,10 @@ class Interpreter<Input> {
 
         .map (chain (
           getCols,
-          cols => overQuery (query => `${query} ${cols.join (", ")}`))
+          comps => overQuery (query => `${query}${comps.join (", ")}`))
         )
 
-        .map (overQuery (query => `${query} from "${name}" "${as || name}"`))
+        .map (overQuery (query => `select ${query} from "${name}" "${as || name}"`))
 
         .record;
 
@@ -156,15 +158,15 @@ class Interpreter<Input> {
       //   keyIdx: 0,
       //   values: [],
       //   next: [],
-      //   cols: []
+      //   comps: []
       // });
 
       const callEnv = new Environment ({
         table: getTable (record),
-        query: ``,
+        fn: ``,
         inFunction: true,
         sql: "", // sql can be used inside fns
-        cols: []
+        comps: []
       });
 
       // nested
@@ -178,20 +180,20 @@ class Interpreter<Input> {
 
       // env.writeToQuery (`)${cast ? `::${cast}` : ""}`);
 
-      const thisResult = args
+      const thisRecord = args
         .reduce ((acc, arg) =>
           acc.extend (env => this.interpret (arg, env)), callEnv)
 
         .map (chain (
           getCols,
-          cols => overQuery (query => `${query}${cols.join (", ")}`))
+          comps => overFn (fn => `${fn}${comps.join (", ")}`))
         )
 
-        .map (overQuery (query => `${name} (${query})`))
+        .map (overFn (fn => `${name} (${fn})`))
 
         .record;
 
-      return overCols (cols => cols.concat ([thisResult.query!])) (record);
+      return overCols (comps => comps.concat ([getFn (thisRecord)])) (record);
     }
 
     if (exp.type === "Identifier") {
@@ -203,14 +205,14 @@ class Interpreter<Input> {
       let sql = `"${table}".${name}`;
 
       if (cast) {
-        sql += "::" + cast;
+        sql += `:: ${cast}`;
       }
 
       if (as) {
-        sql += " as " + as;
+        sql += ` as ${as}`;
       }
 
-      return overCols (cols => cols.concat (sql)) (record);
+      return overCols (comps => comps.concat (sql)) (record);
     }
 
     if (exp.type === "BelongsTo") {
@@ -230,7 +232,7 @@ class Interpreter<Input> {
 
       if (!rows) {
         return evolve ({
-          cols: cols => cols.concat (required),
+          comps: comps => comps.concat (required),
 
           next: nxt => nxt.concat (
             {
@@ -248,7 +250,7 @@ class Interpreter<Input> {
         keyIdx: 0,
         values: [],
         next: [],
-        cols: []
+        comps: []
       });
 
       const eachInterpreted = members.reduce ((acc, mem) => {
@@ -314,7 +316,7 @@ class Interpreter<Input> {
         keyIdx: 0,
         values: [],
         next: [],
-        cols: []
+        comps: []
       });
 
       this.interpretEach (members, membersEnv);
@@ -323,7 +325,7 @@ class Interpreter<Input> {
 
       membersEnv.addToRequired (requiredHere);
 
-      membersEnv.lookup ("cols").forEach (req => {
+      membersEnv.lookup ("comps").forEach (req => {
         membersEnv.writeToQuery (req);
       });
 
@@ -378,7 +380,7 @@ class Interpreter<Input> {
         keyIdx: 0,
         values: [],
         next: [],
-        cols: []
+        comps: []
       });
 
       this.interpretEach (members, membersEnv);
@@ -391,7 +393,7 @@ class Interpreter<Input> {
 
       membersEnv.addToRequired (requiredHere.concat (requiredHere2).concat (requiredHere3));
 
-      membersEnv.lookup ("cols").forEach (req => {
+      membersEnv.lookup ("comps").forEach (req => {
         membersEnv.writeToQuery (req);
       });
 
@@ -489,7 +491,7 @@ class Interpreter<Input> {
         sql += ` as ${as}`;
       }
 
-      return overCols (cols => cols.concat (sql)) (record);
+      return overCols (comps => comps.concat (sql)) (record);
     }
 
     if (

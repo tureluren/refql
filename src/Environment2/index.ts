@@ -37,8 +37,8 @@ class Environment {
   }
 
   addToRequired(req: string[]) {
-    const required = this.lookup ("cols");
-    this.assign ("cols", required.concat (req));
+    const required = this.lookup ("comps");
+    this.assign ("comps", required.concat (req));
   }
 
   addValues(newValues: Values) {

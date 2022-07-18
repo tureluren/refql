@@ -159,7 +159,8 @@ export interface EnvRecord {
   table?: Table;
   query?: string;
   sql?: string;
-  cols?: string[];
+  fn?: string;
+  comps?: string[];
   values?: Values;
   keyIdx?: number;
   inFunction?: boolean;
