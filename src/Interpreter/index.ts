@@ -10,82 +10,15 @@ import parameterize from "../more/parameterize";
 import isFunction from "../predicate/isFunction";
 import convertCase from "../more/convertCase";
 import keys from "../more/keys";
-type SameLength<T extends any[]> = Extract<{ [K in keyof T]: any }, any[]>;
+import lookup from "../Environment2/lookup";
+import over from "../Environment2/over";
+import chain from "../more/chain";
+import evolve from "../Environment2/evolve";
 
-type Curried<A extends any[], R> =
-  <P extends Partial<A>>(...args: P) => P extends A ? R :
-    A extends [...SameLength<P>, ...infer S] ? S extends any[] ? Curried<S, R>
-    : never : never;
-
-function curry<A extends any[], R>(fn: (...args: A) => R): Curried<A, R> {
-  return (...args: any[]): any =>
-    args.length >= fn.length ? fn (...args as any) : curry ((fn as any).bind (undefined, ...args));
-}
-
-const concat = (obj1: Dict, obj2: Dict) => {
-  const result: Dict = {};
-  (Object.keys (obj2)).forEach (k => { result[k] = obj2[k]; });
-  (Object.keys (obj1)).forEach (k => { result[k] = obj1[k]; });
-  return result;
-};
-
-type IOverload = {
-  <T extends keyof EnvRecord>(prop: T, record: EnvRecord): NonNullable<EnvRecord[T]>;
-  <T extends keyof EnvRecord>(prop: T): (record: EnvRecord) => NonNullable<EnvRecord[T]>;
-};
-
-// const lookup = curry (<T extends keyof EnvRecord>(prop: T, record: EnvRecord): NonNullable<EnvRecord[T]> => {
-//   // @ts-ignore
-//   if (record.hasOwnProperty (prop)) {
-//     return record[prop]!;
-//   }
-//   throw new ReferenceError (`Variable "${prop}" is undefined`);
-// });
-
-const lookup: IOverload = curry ((prop, record) => {
-  // @ts-ignore
-  if (record.hasOwnProperty (prop)) {
-    return record[prop]!;
-  }
-  throw new ReferenceError (`Variable "${prop}" is undefined`);
-});
-
-
-const buh = lookup ("select") ({ select: ["djdj"] });
-
-
-const S_ = <A, B, R>(g: (r: R) => A, f: (a: A) => (r: R) => B) => (x: R) => f (g (x)) (x);
-
-// const objOf = (key: string, value: any) =>
-//   ({ [key]: value });
-
-const set = (key: string, value: any) => (obj: Dict) => {
-  return concat ({ [key]: value }, obj);
-};
-
-const over = <T extends keyof EnvRecord>(key: T, fn: (value: NonNullable<EnvRecord[T]>) => EnvRecord[T], obj: EnvRecord) => {
-  return concat ({ [key]: fn (lookup (key, obj)) }, obj);
-};
-
-type Transformations = {
-  [key in keyof EnvRecord]: (value: NonNullable<EnvRecord[key]>) => NonNullable<EnvRecord[key]>;
-};
-
-const evolve = <T extends keyof EnvRecord>(transformations: Transformations, obj: EnvRecord): EnvRecord => {
-  return (Object.keys (obj) as Array<T>).reduce ((acc, key) => {
-    const transformation = transformations[key];
-    if (transformation) {
-      acc[key] = transformation (lookup (key, obj));
-    } else {
-      acc[key] = obj[key];
-    }
-    return acc;
-  }, {} as EnvRecord);
-};
-
-// const over2 = <T1 extends keyof EnvRecord, T2 extends keyof EnvRecord>(key1: T1, key2: T2, fn: (value1: EnvRecord[T1], value) => EnvRecord[T]) => (obj: EnvRecord) => {
-//   return concat ({ [key]: fn (obj[key]) }, obj);
-// };
+const overCols = over ("cols");
+const overQuery = over ("query");
+const getCols = lookup ("cols");
+const getTable = lookup ("table");
 
 
 
@@ -141,7 +74,7 @@ const createEnv = (table: Table) => new Environment ({
   keyIdx: 0,
   values: [],
   next: [],
-  select: []
+  cols: []
 });
 
 
@@ -161,7 +94,7 @@ class Interpreter<Input> {
   }
 
   interpret(exp: ASTNode, env: Environment = new Environment ({}), rows?: any[]): any {
-    // root
+
     if (exp.type === "Root") {
       const { name, as, members } = exp;
 
@@ -171,11 +104,12 @@ class Interpreter<Input> {
         .reduce ((acc, mem) =>
           acc.extend (env => this.interpret (mem, env)), rootEnv)
 
-        .map (record =>
-          over ("query", query => query + " " + lookup ("select", record).join (", "), record))
+        .map (chain (
+          getCols,
+          cols => overQuery (query => `${query} ${cols.join (", ")}`))
+        )
 
-        .map (record =>
-          over ("query", query => query + ` from "${name}" "${as || name}"`, record))
+        .map (overQuery (query => `${query} from "${name}" "${as || name}"`))
 
         .record;
 
@@ -210,11 +144,61 @@ class Interpreter<Input> {
 
     }
 
+    if (exp.type === "Call") {
+      const { args, name, as, cast } = exp;
+      const { record } = env;
+
+      // const createEnv = (table: Table) => new Environment ({
+      //   table,
+      //   sql: "",
+      //   query: "select",
+      //   // valueIdx ?
+      //   keyIdx: 0,
+      //   values: [],
+      //   next: [],
+      //   cols: []
+      // });
+
+      const callEnv = new Environment ({
+        table: getTable (record),
+        query: `${name}(`,
+        inFunction: true,
+        sql: "", // sql can be used inside fns
+        cols: []
+      });
+
+      // nested
+      // if (lookup ("inFunction") (record)) {
+      //   env.writeToQuery (`${name}(`);
+      // } else {
+      //   env.writeToQuery (`'${as}', ${name}(`);
+      // }
+
+      // this.interpretEach (args, argumentEnv, true);
+
+      // env.writeToQuery (`)${cast ? `::${cast}` : ""}`);
+
+      const thisResult = args
+        .reduce ((acc, arg) =>
+          acc.extend (env => this.interpret (arg, env)), callEnv)
+
+        .map (chain (
+          getCols,
+          cols => overQuery (query => `${query}${cols.join (", ")}`))
+        )
+
+        .map (overQuery (query => `${query})`))
+
+        .record;
+
+      return overCols (cols => cols.concat ([thisResult.query!])) (record);
+    }
+
     if (exp.type === "Identifier") {
       const { name, as, cast } = exp;
       const { record } = env;
 
-      const table = lookup ("table", record);
+      const table = getTable (record);
 
       let sql = `"${table}".${name}`;
 
@@ -222,18 +206,18 @@ class Interpreter<Input> {
         sql += "::" + cast;
       }
 
-      if (as) {
-        sql += " as " + as;
-      }
+      // if (as) {
+      //   sql += " as " + as;
+      // }
 
-      return over ("select", select => select.concat (sql), record);
+      return overCols (cols => cols.concat (sql)) (record);
     }
 
     if (exp.type === "BelongsTo") {
       const { name, as, members, keywords } = exp;
       const { record } = env;
 
-      const table = lookup ("table", record);
+      const table = getTable (record);
 
       const { lkey, rkey } = keywords;
 
@@ -246,9 +230,8 @@ class Interpreter<Input> {
 
       if (!rows) {
         return evolve ({
-          select: select => select.concat (required),
-          // lookup on enrecord ipv env, werk met get, en gooi error alst er nie is?
-          // of meerdere types envrecord, table en call ? met alleen maar aanwezige velden
+          cols: cols => cols.concat (required),
+
           next: nxt => nxt.concat (
             {
               exp,
@@ -266,7 +249,7 @@ class Interpreter<Input> {
         keyIdx: 0,
         values: [],
         next: [],
-        select: []
+        cols: []
       });
 
       const eachInterpreted = members.reduce ((acc, mem) => {
@@ -276,7 +259,7 @@ class Interpreter<Input> {
       const requiredHere = rkeys.map (rk => `"${as || name}".${rk.name} as ${rk.as}`);
 
       const almost = eachInterpreted.map (record =>
-        over ("query", query => query + " " + eachInterpreted.record.select?.concat (requiredHere).join (", ") + ",", record)
+        overQuery (query => query + " " + getCols (record).concat (requiredHere).join (", ") + ",") (record)
       );
 
       let wherePart = ` from "${name}" "${as}" where`;
@@ -294,7 +277,7 @@ class Interpreter<Input> {
 
       const final = almost.map (record =>
         // remove trailing comma
-        over ("query", query => query!.slice (0, -1) + `${wherePart}`, record)
+        overQuery (query => query.slice (0, -1) + `${wherePart}`) (record)
       );
 
       final.writeSQLToQuery (true);
@@ -332,7 +315,7 @@ class Interpreter<Input> {
         keyIdx: 0,
         values: [],
         next: [],
-        select: []
+        cols: []
       });
 
       this.interpretEach (members, membersEnv);
@@ -341,7 +324,7 @@ class Interpreter<Input> {
 
       membersEnv.addToRequired (requiredHere);
 
-      membersEnv.lookup ("select").forEach (req => {
+      membersEnv.lookup ("cols").forEach (req => {
         membersEnv.writeToQuery (req);
       });
 
@@ -396,7 +379,7 @@ class Interpreter<Input> {
         keyIdx: 0,
         values: [],
         next: [],
-        select: []
+        cols: []
       });
 
       this.interpretEach (members, membersEnv);
@@ -409,7 +392,7 @@ class Interpreter<Input> {
 
       membersEnv.addToRequired (requiredHere.concat (requiredHere2).concat (requiredHere3));
 
-      membersEnv.lookup ("select").forEach (req => {
+      membersEnv.lookup ("cols").forEach (req => {
         membersEnv.writeToQuery (req);
       });
 
@@ -462,29 +445,6 @@ class Interpreter<Input> {
       return;
     }
 
-    if (exp.type === "Call") {
-      const { args, name, as, cast } = exp;
-      const { inFunction } = env.record;
-
-      const argumentEnv = new Environment ({
-        inFunction: true,
-        sql: "",
-        next: []
-      });
-
-      // nested
-      if (inFunction) {
-        env.writeToQuery (`${name}(`);
-      } else {
-        env.writeToQuery (`'${as}', ${name}(`);
-      }
-
-      this.interpretEach (args, argumentEnv, true);
-
-      env.writeToQuery (`)${cast ? `::${cast}` : ""}`);
-
-      return;
-    }
 
     if (exp.type === "Variable") {
       const { value, cast } = exp;

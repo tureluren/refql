@@ -159,12 +159,12 @@ export interface EnvRecord {
   table?: Table;
   query?: string;
   sql?: string;
+  cols?: string[];
   values?: Values;
   keyIdx?: number;
   inFunction?: boolean;
-  isRoot?: boolean;
+  isRoot?: boolean; // nog nodig ?
   next?: Next[];
-  select?: string[];
 }
 
 export interface CompiledQuery {
@@ -201,3 +201,7 @@ export type Querier = (query: string, values: Values) => Promise<any[]>;
 export type Rules = [RegExp, string][];
 
 export type ASTType = "Root" | "HasMany" | "ManyToMany" | "BelongsTo";
+
+export type Transformations = {
+  [key in keyof EnvRecord]: (value: NonNullable<EnvRecord[key]>) => NonNullable<EnvRecord[key]>;
+};

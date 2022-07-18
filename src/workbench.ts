@@ -71,9 +71,7 @@ const playerQuery = rql<{ id: number }, Player>`
   player (id: 1) {
     id
     last_name
-    - team {
-      name
-    }
+    concat(upper(first_name), upper(last_name))
   }
 `;
 

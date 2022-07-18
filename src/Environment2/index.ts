@@ -4,7 +4,6 @@ class Environment {
   record: EnvRecord;
 
   constructor(record: EnvRecord) {
-    // assign nog nodig ? over functie maakt al een nieuw object
     this.record = Object.assign ({}, record);
   }
 
@@ -38,8 +37,8 @@ class Environment {
   }
 
   addToRequired(req: string[]) {
-    const required = this.lookup ("select");
-    this.assign ("select", required.concat (req));
+    const required = this.lookup ("cols");
+    this.assign ("cols", required.concat (req));
   }
 
   addValues(newValues: Values) {

@@ -1996,11 +1996,6 @@ cssstyle@^2.3.0:
   dependencies:
     cssom "~0.3.6"
 
-curry-me@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.npmjs.org/curry-me/-/curry-me-1.0.5.tgz"
-  integrity sha512-yxosD0WNfiZBwzufArkf42d3tAyDyIx/8ZW/uo3d/QwHxZZeVY3KVk7rTVGUBtUwmtwGCc0agSKkklEtDFnNlQ==
-
 data-urls@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/data-urls/-/data-urls-2.0.0.tgz"
