@@ -186,8 +186,7 @@ class Parser<Params> {
   }
 
   Identifier(pluralizable = false) {
-    let name, as;
-    name = as = this.eat ("IDENTIFIER").value;
+    const name = this.eat ("IDENTIFIER").value;
 
     // can only be handled here
     // to give the user the possibility to overwrite `as`
@@ -200,8 +199,7 @@ class Parser<Params> {
 
     let identifier: Identifier = {
       type: "Identifier",
-      name,
-      as
+      name
     };
 
     // overwrite if `as` is specified
@@ -347,8 +345,8 @@ class Parser<Params> {
   }
 
   BooleanLiteral(value: boolean): BooleanLiteral {
-    let as = value ? "true" : "false";
-    this.eat (as);
+    this.eat (value ? "true" : "false");
+    let as;
 
     if (this.lookahead.type === ":") {
       this.eat (":");
@@ -364,7 +362,7 @@ class Parser<Params> {
 
   NullLiteral(): NullLiteral {
     this.eat ("null");
-    let as = "null";
+    let as;
 
     if (this.lookahead.type === ":") {
       this.eat (":");
@@ -381,7 +379,7 @@ class Parser<Params> {
   StringLiteral(): StringLiteral {
     let value, as;
     const token = this.eat ("STRING");
-    value = as = token.value.slice (1, -1);
+    value = token.value.slice (1, -1);
 
     if (this.lookahead.type === ":") {
       this.eat (":");
@@ -399,7 +397,7 @@ class Parser<Params> {
     const token = this.eat ("NUMBER");
 
     // `as` should be a string
-    let as = token.value;
+    let as;
 
     if (this.lookahead.type === ":") {
       this.eat (":");

@@ -206,9 +206,9 @@ class Interpreter<Input> {
         sql += "::" + cast;
       }
 
-      // if (as) {
-      //   sql += " as " + as;
-      // }
+      if (as) {
+        sql += " as " + as;
+      }
 
       return overCols (cols => cols.concat (sql)) (record);
     }
@@ -485,9 +485,9 @@ class Interpreter<Input> {
 
       let sql = `'${value}'`;
 
-      // if (as) {
-      //   sql += ` as ${as}`;
-      // }
+      if (as) {
+        sql += ` as ${as}`;
+      }
 
       return overCols (cols => cols.concat (sql)) (record);
     }

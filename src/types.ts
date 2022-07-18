@@ -65,7 +65,7 @@ export type Plurals = {
 };
 
 export interface Aliasable {
-  as: string;
+  as?: string;
 }
 
 export interface Castable {
