@@ -14,13 +14,16 @@ import lookup from "../Environment2/lookup";
 import over from "../Environment2/over";
 import chain from "../more/chain";
 import evolve from "../Environment2/evolve";
+import set from "../Environment2/set";
 
 const overCols = over ("comps");
 const overQuery = over ("query");
 const overFn = over ("fn");
-const getCols = lookup ("comps");
+const getComps = lookup ("comps");
 const getTable = lookup ("table");
 const getFn = lookup ("fn");
+const setQuery = set ("query");
+const setFn = set ("fn");
 
 
 
@@ -107,11 +110,9 @@ class Interpreter<Input> {
           acc.extend (env => this.interpret (mem, env)), rootEnv)
 
         .map (chain (
-          getCols,
-          comps => overQuery (query => `${query}${comps.join (", ")}`))
-        )
-
-        .map (overQuery (query => `select ${query} from "${name}" "${as || name}"`))
+          getComps,
+          comps =>
+            setQuery (`select ${comps.join (", ")} from "${name}" "${as || name}"`)))
 
         .record;
 
@@ -150,50 +151,30 @@ class Interpreter<Input> {
       const { args, name, as, cast } = exp;
       const { record } = env;
 
-      // const createEnv = (table: Table) => new Environment ({
-      //   table,
-      //   sql: "",
-      //   query: "select",
-      //   // valueIdx ?
-      //   keyIdx: 0,
-      //   values: [],
-      //   next: [],
-      //   comps: []
-      // });
-
       const callEnv = new Environment ({
         table: getTable (record),
-        fn: ``,
+        fn: "",
         inFunction: true,
         sql: "", // sql can be used inside fns
         comps: []
       });
 
-      // nested
-      // if (lookup ("inFunction") (record)) {
-      //   env.writeToQuery (`${name}(`);
-      // } else {
-      //   env.writeToQuery (`'${as}', ${name}(`);
-      // }
+      const alias = as ? ` as ${as}` : "";
 
-      // this.interpretEach (args, argumentEnv, true);
-
-      // env.writeToQuery (`)${cast ? `::${cast}` : ""}`);
+      const convert = cast ? `::${cast}` : "";
 
       const thisRecord = args
         .reduce ((acc, arg) =>
           acc.extend (env => this.interpret (arg, env)), callEnv)
 
         .map (chain (
-          getCols,
-          comps => overFn (fn => `${fn}${comps.join (", ")}`))
-        )
-
-        .map (overFn (fn => `${name} (${fn})`))
+          getComps,
+          comps =>
+            setFn (`${name} (${comps.join (", ")})${convert}${alias}`)))
 
         .record;
 
-      return overCols (comps => comps.concat ([getFn (thisRecord)])) (record);
+      return overCols (comps => comps.concat (getFn (thisRecord))) (record);
     }
 
     if (exp.type === "Identifier") {
@@ -234,12 +215,11 @@ class Interpreter<Input> {
         return evolve ({
           comps: comps => comps.concat (required),
 
-          next: nxt => nxt.concat (
-            {
-              exp,
-              lkeys: lkeys.map (lk => lk.as),
-              rkeys: rkeys.map (rk => rk.as)
-            })
+          next: nxt => nxt.concat ({
+            exp,
+            lkeys: lkeys.map (lk => lk.as),
+            rkeys: rkeys.map (rk => rk.as)
+          })
         }, record);
       }
 
@@ -260,7 +240,7 @@ class Interpreter<Input> {
       const requiredHere = rkeys.map (rk => `"${as || name}".${rk.name} as ${rk.as}`);
 
       const almost = eachInterpreted.map (record =>
-        overQuery (query => query + " " + getCols (record).concat (requiredHere).join (", ") + ",") (record)
+        overQuery (query => query + " " + getComps (record).concat (requiredHere).join (", ") + ",") (record)
       );
 
       let wherePart = ` from "${name}" "${as}" where`;

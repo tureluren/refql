@@ -204,5 +204,5 @@ export type Rules = [RegExp, string][];
 export type ASTType = "Root" | "HasMany" | "ManyToMany" | "BelongsTo";
 
 export type Transformations = {
-  [key in keyof EnvRecord]: (value: NonNullable<EnvRecord[key]>) => NonNullable<EnvRecord[key]>;
+  [key in keyof EnvRecord]: (value: NonNullable<EnvRecord[key]>) => EnvRecord[key];
 };
