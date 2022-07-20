@@ -14,6 +14,7 @@ import {
 } from "../types";
 import convertTableRefs from "../refs/convertTableRefs";
 import Pluralizer from "../Pluralizer";
+import Table from "../Table";
 
 class Parser<Params> {
   // caseType?: CaseType;
@@ -53,7 +54,8 @@ class Parser<Params> {
   }
 
   AST(type: ASTType, pluralizable = false) {
-    let table = <ASTRelation><unknown> this.Identifier (pluralizable);
+    let identifier = this.Identifier (pluralizable);
+    let table = new Table (identifier.name, identifier.as);
     let keywords: Keywords = {};
 
     if (this.lookahead.type === "(") {
@@ -140,11 +142,12 @@ class Parser<Params> {
       this.eat (")");
     }
 
-    table.type = type;
-    table.members = this.members ();
-    table.keywords = keywords;
-
-    return table;
+    return {
+      table,
+      type,
+      keywords,
+      members: this.members ()
+    };
   }
 
   grabVariable() {

@@ -12,11 +12,12 @@ import {
 
 const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (compiledQuery: CompiledQuery) => {
   const go = <T>(compiled: CompiledQuery): Promise<T[]> => {
-    console.log (compiled);
     // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
-        const ip = interpreter.interpret (c.exp, new Environment ({ table: compiled.table }), rows);
+
+        // is table wel nog nodig nu dat er refs zijn
+        const ip = interpreter.interpret (c.exp, new Environment ({ table: compiled.table, refs: c.refs }), rows);
 
         return go ({
           next: ip?.next!,
@@ -31,9 +32,14 @@ const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (co
       ).then (aggs => {
         return rows.map (row => {
           return aggs.reduce ((acc, agg, idx) => {
-            const { exp, lkeys, rkeys } = compiled.next[idx];
+            const { exp, refs } = compiled.next[idx];
+
+            const lkeys = refs.lkeys.map (lk => lk.as);
+            const rkeys = refs.rkeys.map (rk => rk.as);
+            const lxkeys = refs.lxkeys.map (lxk => lxk.as);
+
             if (exp.type === "BelongsTo") {
-              acc[exp.as || exp.name] = agg.find ((r: any) =>
+              acc[exp.table.as || exp.table.name] = agg.find ((r: any) =>
                 rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
               );
 
@@ -42,7 +48,7 @@ const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (co
               });
 
             } else if (exp.type === "HasMany") {
-              acc[exp.as || exp.name] = agg.filter ((r: any) =>
+              acc[exp.table.as || exp.table.name] = agg.filter ((r: any) =>
                 rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
               );
 
@@ -50,8 +56,8 @@ const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (co
                 delete acc[lk];
               });
             } else if (exp.type === "ManyToMany") {
-              acc[exp.as || exp.name] = agg.filter ((r: any) =>
-                rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
+              acc[exp.table.as || exp.table.name] = agg.filter ((r: any) =>
+                lxkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
               );
             }
             return acc;
@@ -71,6 +77,7 @@ class RQLTag <Input, Output> {
   ast: ASTRelation;
 
   constructor(ast: ASTRelation) {
+    console.log (ast, "HDHDDHDH");
 
     this.ast = ast;
     this.string = "";

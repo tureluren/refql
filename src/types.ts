@@ -103,26 +103,30 @@ export interface NumericLiteral extends Aliasable {
   value: number;
 }
 
-export interface Root extends Omit<Identifier, "type"> {
+export interface Root {
+  table: Table;
   type: "Root";
   members: ASTNode[];
   // of params noemen ?
   keywords: Keywords;
 }
 
-export interface HasMany extends Omit<Identifier, "type"> {
+export interface HasMany {
+  table: Table;
   type: "HasMany";
   members: ASTNode[];
   keywords: Keywords;
 }
 
-export interface BelongsTo extends Omit<Identifier, "type"> {
+export interface BelongsTo {
+  table: Table;
   type: "BelongsTo";
   members: ASTNode[];
   keywords: Keywords;
 }
 
-export interface ManyToMany extends Omit<Identifier, "type"> {
+export interface ManyToMany {
+  table: Table;
   type: "ManyToMany";
   members: ASTNode[];
   keywords: Keywords;
@@ -150,8 +154,7 @@ export type ASTNode =
 
 export interface Next {
   exp: HasMany | BelongsTo | ManyToMany;
-  lkeys: string[];
-  rkeys: string[];
+  refs: RefsNew;
 }
 
 
@@ -166,6 +169,7 @@ export interface EnvRecord {
   inFunction?: boolean;
   isRoot?: boolean; // nog nodig ?
   next?: Next[];
+  refs?: RefsNew;
 }
 
 export interface CompiledQuery {
@@ -206,3 +210,15 @@ export type ASTType = "Root" | "HasMany" | "ManyToMany" | "BelongsTo";
 export type Transformations = {
   [key in keyof EnvRecord]: (value: NonNullable<EnvRecord[key]>) => EnvRecord[key];
 };
+
+export interface NamedKeys {
+  name: string;
+  as: string;
+}
+
+export interface RefsNew {
+  lkeys: NamedKeys[];
+  rkeys: NamedKeys[];
+  lxkeys: NamedKeys[];
+  rxkeys: NamedKeys[];
+}
