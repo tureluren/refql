@@ -11,7 +11,9 @@ import {
 } from "../types";
 
 const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (compiledQuery: CompiledQuery) => {
+  console.log (compiledQuery);
   const go = <T>(compiled: CompiledQuery): Promise<T[]> => {
+    console.log (compiled);
     // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
@@ -77,8 +79,6 @@ class RQLTag <Input, Output> {
   ast: ASTRelation;
 
   constructor(ast: ASTRelation) {
-    console.log (ast, "HDHDDHDH");
-
     this.ast = ast;
     this.string = "";
     this.keys = [];
@@ -104,6 +104,7 @@ class RQLTag <Input, Output> {
 
 
     const interpreted = interpreter.interpret (this.ast);
+    console.log (interpreted);
 
     return go ({
       next: interpreted?.next!,

@@ -50,7 +50,7 @@ const keysToRefs = (table: Table, keys: Keys) => {
       .map ((name, idx) => {
         return {
           name,
-          as: `${table}${key}${idx}`
+          as: `${table.as}${key}${idx}`
         };
       });
 
@@ -101,7 +101,7 @@ class Interpreter<Input> {
         .map (chain (
           getComps,
           comps =>
-            setQuery (`select ${comps.join (", ")} from ${table.name} ${table}`)))
+            setQuery (`select ${comps.join (", ")} from ${table.name} ${table.as}`)))
 
         .record;
 
@@ -172,7 +172,7 @@ class Interpreter<Input> {
 
       const table = getTable (record);
 
-      let sql = `${table}.${name}`;
+      let sql = `${table.as}.${name}`;
 
       if (cast) {
         sql += `:: ${cast}`;
@@ -216,13 +216,13 @@ class Interpreter<Input> {
         return acc.extend (env => this.interpret (mem, env));
       }, belongsToEnv);
 
-      const requiredHere = rkeys.map (rk => `${table}.${rk.name} as ${rk.as}`);
+      const requiredHere = rkeys.map (rk => `${table.as}.${rk.name} as ${rk.as}`);
 
       const almost = eachInterpreted.map (record =>
         overQuery (query => query + "select " + getComps (record).concat (requiredHere).join (", ") + ",") (record)
       );
 
-      let wherePart = ` from "${table.name}" "${table}" where`;
+      let wherePart = ` from "${table.name}" "${table.as}" where`;
 
       // lkeys length should equal rkeys length
       lkeys.forEach ((lk, idx) => {

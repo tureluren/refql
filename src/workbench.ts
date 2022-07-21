@@ -71,16 +71,6 @@ const playerQuery = rql<{ id: number }, Player>`
   player (id: 1) {
     id
     last_name
-    concat:fullname::text(upper(first_name), " ", upper(last_name))
-    - team: teams {
-      name
-      - league {
-        name
-      }
-    }
-    - position {
-      name
-    }
   }
 `;
 
