@@ -71,6 +71,9 @@ const playerQuery = rql<{ id: number }, Player>`
   player (id: 1) {
     id
     last_name
+    - team {
+      name
+    }
   }
 `;
 
@@ -170,3 +173,11 @@ const refs = {
 // }
 
 // getPlayer ();
+
+
+const lk = { as: "as" };
+const rows = [{ as: "a" }, { as: "b" }, { as: "a" }];
+// @ts-ignore
+const uniqRows = [...new Set (rows.map (r => ({ as: r[lk.as] })))];
+
+console.log (uniqRows);

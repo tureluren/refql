@@ -4,7 +4,7 @@ import associate from "../refs/associate";
 import getRefPath from "../refs/getRefPath";
 import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
-import { ASTRelation, ASTType, Link, ASTNode, Refs, CaseType, OptCaseType, Dict, EnvRecord, RefsNew } from "../types";
+import { ASTRelation, ASTType, Link, ASTNode, Refs, CaseType, OptCaseType, Dict, EnvRecord, RefsNew, Next, Values, NamedKeys } from "../types";
 import varToSQLTag from "../JBOInterpreter/varToSQLTag";
 import parameterize from "../more/parameterize";
 import isFunction from "../predicate/isFunction";
@@ -16,7 +16,7 @@ import chain from "../more/chain";
 import evolve from "../Environment2/evolve";
 import set from "../Environment2/set";
 
-const overCols = over ("comps");
+const overComps = over ("comps");
 const overQuery = over ("query");
 const overFn = over ("fn");
 const getComps = lookup ("comps");
@@ -25,7 +25,23 @@ const getRefs = lookup ("refs");
 const getFn = lookup ("fn");
 const setQuery = set ("query");
 const setFn = set ("fn");
+const getKeyIdx = lookup ("keyIdx");
 
+const concat = <T>(item: T | T[]) => <R> (arr: R[]): R[] =>
+  arr.concat (item as unknown as R);
+
+const keysToComp = (table: Table, keys: NamedKeys[]) =>
+  keys.map (k => `${table.as}.${k.name} as ${k.as}`);
+
+const concatKeys = (table: Table, keys: NamedKeys[]) =>
+  concat (keysToComp (table, keys));
+
+const concatQuery = (query1: string) => (query2: string) =>
+  `${query2} ${query1}`;
+
+const selectFrom = (table: Table) => chain (
+  getComps,
+  comps => setQuery (`select ${comps.join (", ")} from ${table.name} ${table.as}`));
 
 const splitKeys = (keys: string = "") =>
   keys.split (",").map (s => s.trim ());
@@ -87,21 +103,21 @@ class Interpreter<Input> {
     return convertCase (this.caseType, string);
   }
 
+  interpretEach(members: ASTNode[], env: Environment) {
+    return members
+      .reduce ((acc, mem) =>
+        acc.extend (env => this.interpret (mem, env)), env);
+  }
+
   interpret(exp: ASTNode, env: Environment = new Environment ({}), rows?: any[]): any {
 
     if (exp.type === "Root") {
       const { table, members } = exp;
 
-      const rootEnv = createEnv (table);
+      return this
+        .interpretEach (members, createEnv (table))
 
-      return members
-        .reduce ((acc, mem) =>
-          acc.extend (env => this.interpret (mem, env)), rootEnv)
-
-        .map (chain (
-          getComps,
-          comps =>
-            setQuery (`select ${comps.join (", ")} from ${table.name} ${table.as}`)))
+        .map (selectFrom (table))
 
         .record;
 
@@ -152,9 +168,7 @@ class Interpreter<Input> {
 
       const convert = cast ? `::${cast}` : "";
 
-      const thisRecord = args
-        .reduce ((acc, arg) =>
-          acc.extend (env => this.interpret (arg, env)), callEnv)
+      const thisRecord = this.interpretEach (args, callEnv)
 
         .map (chain (
           getComps,
@@ -163,7 +177,7 @@ class Interpreter<Input> {
 
         .record;
 
-      return overCols (comps => comps.concat (getFn (thisRecord))) (record);
+      return overComps (concat (getFn (thisRecord))) (record);
     }
 
     if (exp.type === "Identifier") {
@@ -182,7 +196,7 @@ class Interpreter<Input> {
         sql += ` as ${as}`;
       }
 
-      return overCols (comps => comps.concat (sql)) (record);
+      return overComps (concat (sql)) (record);
     }
 
     if (exp.type === "BelongsTo") {
@@ -200,49 +214,46 @@ class Interpreter<Input> {
         });
 
         return evolve ({
-          comps: comps => comps.concat (refs.lkeys.map (lk =>
-            `${parent}.${lk.name} as ${lk.as}`)),
-
-          next: next => next.concat ({ exp, refs })
-
-        }, record);
+          comps: concatKeys (parent, refs.lkeys),
+          next: concat ({ exp, refs })
+        }) (record);
       }
 
+      // lkeys length should equal rkeys length
       const { rkeys, lkeys } = getRefs (record);
 
-      const belongsToEnv = createEnv (table);
+      const eachInterpreted = this
 
-      const eachInterpreted = members.reduce ((acc, mem) => {
-        return acc.extend (env => this.interpret (mem, env));
-      }, belongsToEnv);
+        .interpretEach (members, createEnv (table))
 
-      const requiredHere = rkeys.map (rk => `${table.as}.${rk.name} as ${rk.as}`);
+        .map (overComps (concatKeys (table, rkeys)))
 
-      const almost = eachInterpreted.map (record =>
-        overQuery (query => query + "select " + getComps (record).concat (requiredHere).join (", ") + ",") (record)
-      );
+        .map (selectFrom (table))
 
-      let wherePart = ` from "${table.name}" "${table.as}" where`;
+        .map (chain (
+          getKeyIdx,
+          keyIdx => {
+            const [query, values] = lkeys.reduce (([sql, vals], lk, idx) => {
+              const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
+              const rk = rkeys[idx];
+              const op = idx === 0 ? "" : "and ";
 
-      // lkeys length should equal rkeys length
-      lkeys.forEach ((lk, idx) => {
-        const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
-        const rk = rkeys[idx];
-        const andOp = idx === 0 ? "" : "and ";
+              return [
+                `${sql} ${op}${table.as}.${rk.name} in (${parameterize (keyIdx, uniqRows.length)})`,
+                vals.concat (uniqRows)
+              ];
+            }, ["where", [] as Values]);
 
-        wherePart += ` ${andOp}${rk.name} in (${parameterize (almost.lookup ("keyIdx"), uniqRows.length, "")})`;
+            return evolve ({
+              query: concatQuery (query),
+              values: concat (values)
+            });
+          }));
 
-        almost.addValues (uniqRows);
-      });
 
-      const final = almost.map (record =>
-        // remove trailing comma
-        overQuery (query => query.slice (0, -1) + `${wherePart}`) (record)
-      );
+      eachInterpreted.writeSQLToQuery (true);
 
-      final.writeSQLToQuery (true);
-
-      return final.record;
+      return eachInterpreted.record;
     }
 
     // if (exp.type === "HasMany") {
@@ -458,7 +469,7 @@ class Interpreter<Input> {
         sql += ` as ${as}`;
       }
 
-      return overCols (comps => comps.concat (sql)) (record);
+      return overComps (comps => comps.concat (sql)) (record);
     }
 
     if (
@@ -509,15 +520,6 @@ class Interpreter<Input> {
     return sql;
   }
 
-  interpretEach(arr: ASTNode[], env: Environment, moveSQL = false) {
-    arr.forEach (exp => {
-      this.interpret (exp, env);
-
-      if (moveSQL) {
-        env.moveSQLToQuery ();
-      }
-    });
-  }
 }
 
 export default Interpreter;
