@@ -25,6 +25,15 @@ class SQLTag <Input, Output> {
     );
   }
 
+  run(config: RefQLConfig, params: Input): Promise<Output[]> {
+
+    const [query, values] = this.interpret ();
+    console.log (query);
+
+
+    return config.querier (query, values);
+  }
+
   // include(snip: any) {
   //   if (isRel (snip)) {
   //     throw new Error ("You can't use a Rel inside SQL Tags");
@@ -53,9 +62,9 @@ class SQLTag <Input, Output> {
   //   return new SQLTag (nextStrings as any, nextKeys);
   // }
 
-  // interpret() {
-  //   return compileSQLTag (this, 0);
-  // }
+  interpret() {
+    return compileSQLTag<Input, Output> (this, 0);
+  }
 
   compile(_config: RefQLConfig): CompiledQuery {
     // const [query, values] = this.interpret ();

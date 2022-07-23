@@ -2,6 +2,8 @@ import { Pool } from "pg";
 import { rql } from "./index";
 import RQLTag from "./RQLTag";
 import { Goal, Player } from "./soccer";
+import SQLTag from "./SQLTag";
+import sql from "./SQLTag/sql";
 import Table from "./Table";
 import { ASTNode, ASTRelation, RefQLConfig, Dict, Values, CaseType, Keywords } from "./types";
 
@@ -42,7 +44,7 @@ const config: RefQLConfig = {
   querier
 };
 
-const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RQLTag<Input, Output>, params: Input) => {
+const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RQLTag<Input, Output> | SQLTag<Input, Output>, params: Input) => {
   return tag.run (config, params);
 };
 
@@ -175,3 +177,18 @@ const refs = {
 // getPlayer ();
 
 
+const selectPlayer = sql<{}, Player>`
+  select * from player
+`;
+
+const paginate = sql<{}, any>`
+  limit 5
+  offset 0
+`;
+
+const fullPlayer = selectPlayer.concat (paginate);
+
+
+run (fullPlayer, {}).then (players => {
+  console.log (players);
+});

@@ -10,8 +10,8 @@ import {
   RefQLConfig, RQLValue, Values, Dict, Querier
 } from "../types";
 
-const makeGo = <Input>(querier: Querier, interpreter: Interpreter<Input>) => (compiledQuery: CompiledQuery) => {
-  const go = <T>(compiled: CompiledQuery): Promise<T[]> => {
+const makeGo = <Input, Output>(querier: Querier, interpreter: Interpreter<Input>) => (compiledQuery: CompiledQuery) => {
+  const go = (compiled: CompiledQuery): Promise<Output[]> => {
     // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
@@ -94,11 +94,11 @@ class RQLTag <Input, Output> {
     return new RQLTag<Input, Output> (fn (this.ast));
   }
 
-  run(config: RefQLConfig, params: Input) {
+  run(config: RefQLConfig, params: Input): Promise<Output[]> {
 
     const interpreter = new Interpreter (config.caseType, config.useSmartAlias, params);
 
-    const go = makeGo<Input> (config.querier, interpreter);
+    const go = makeGo<Input, Output> (config.querier, interpreter);
 
 
     const interpreted = interpreter.interpret (this.ast);

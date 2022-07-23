@@ -58,7 +58,7 @@ const compileSQLTag = <Input, Output>(tag: SQLTag<Input, Output>, keyIdx: number
         return acc + s + " $" + (keyIdx + values.length) + " ";
       }
 
-      return acc + s;
+      return `${acc} ${s}`;
     }, "");
   };
 
