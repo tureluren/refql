@@ -226,7 +226,6 @@ class Parser<Params> {
 
     let variable: Variable = {
       type: "Variable",
-      idx: this.keyIdx,
       value: key
     };
 

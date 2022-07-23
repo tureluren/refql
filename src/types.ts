@@ -79,7 +79,6 @@ export interface Identifier extends Aliasable, Castable {
 
 export interface Variable extends Castable {
   type: "Variable";
-  idx: number;
   value: any;
 }
 

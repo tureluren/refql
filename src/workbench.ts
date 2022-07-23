@@ -181,14 +181,20 @@ const selectPlayer = sql<{}, Player>`
   select * from player
 `;
 
-const paginate = sql<{}, any>`
-  limit 5
-  offset 0
-`;
+// const paginate = sql<{}, any>`
+//   limit 5
+//   offset 0
+// `;
 
-const fullPlayer = selectPlayer.concat (paginate);
+const paginate = <Input, Output>(tag: RQLTag<Input, Output> | SQLTag<Input, Output>) =>
+  tag.concat (sql<Input & { limit: number}, Output>`
+    limit 5,
+    offset 0 
+  `);
+
+const fullPlayer = paginate (selectPlayer);
 
 
-run (fullPlayer, {}).then (players => {
+run (fullPlayer, { limit: 5 }).then (players => {
   console.log (players);
 });

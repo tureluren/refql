@@ -5,6 +5,7 @@
 // import isSub from "../Sub/isSub";
 import Environment from "../Environment2";
 import Interpreter from "../Interpreter";
+import SQLTag from "../SQLTag";
 import {
   ASTNode, ASTRelation, CompiledQuery, EnvRecord, JsonBuildObject,
   RefQLConfig, RQLValue, Values, Dict, Querier
@@ -82,8 +83,12 @@ class RQLTag <Input, Output> {
     this.keys = [];
   }
 
-  concat<Input2, Output2>(other: RQLTag<Input2, Output2>) {
-    const members = this.ast.members.concat (other.ast);
+  concat<Input2, Output2>(other: RQLTag<Input2, Output2> | SQLTag<Input, Output>) {
+    const newMember: ASTNode = other instanceof RQLTag
+      ? other.ast
+      : { type: "Variable", value: other };
+
+    const members = this.ast.members.concat (newMember);
 
     return new RQLTag<Input & Input2, Output> (
       Object.assign ({}, this.ast, { members })
