@@ -10,10 +10,10 @@ import formatSQLString from "./formatSQLString";
 import formatTLString from "./formatTLString";
 import isSQLTag from "./isSQLTag";
 
-const compileSQLTag = (tag: SQLTag, keyIdx: number): [string, Values] => {
+const compileSQLTag = <Input, Output>(tag: SQLTag<Input, Output>, keyIdx: number): [string, Values] => {
   const values: Values = [];
 
-  const go = (sqlTag: SQLTag): string => {
+  const go = (sqlTag: SQLTag<Input, Output>): string => {
     const { strings, keys } = sqlTag;
 
     return strings.reduce ((acc, str, idx) => {
@@ -37,15 +37,19 @@ const compileSQLTag = (tag: SQLTag, keyIdx: number): [string, Values] => {
         }
 
         if (isTable (k)) {
+          // @ts-ignore
           return acc + s + ' "' + k.as + '"';
         }
 
         if (isRaw (k)) {
+          // @ts-ignore
           return acc + s + " " + k.value + " ";
         }
 
         if (isArray (k)) {
+          // @ts-ignore
           values.push (...k);
+          // @ts-ignore
           return parameterize (keyIdx, k.length, acc + s);
         }
 

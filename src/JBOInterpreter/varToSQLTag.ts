@@ -4,7 +4,7 @@ import SQLTag from "../SQLTag";
 import isSQLTag from "../SQLTag/isSQLTag";
 import Table from "../Table";
 
-const varToSQLTag = (value: any, table: Table): SQLTag | null => {
+const varToSQLTag = <Input, Output>(value: any, table: Table): SQLTag<Input, Output> | null => {
   if (isSQLTag (value)) {
     return value;
   }

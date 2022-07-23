@@ -31,7 +31,7 @@ export interface RefQLConfig extends Dict {
 export type Link = [string, string];
 export type TableRefs = { [tableTo: string]: Link[] };
 export type Refs = { [tableFrom: string]: TableRefs };
-export type SQLTag_ = SQLTag | ((t: Table) => SQLTag);
+export type SQLTag_ = SQLTag<any, any> | ((t: Table) => SQLTag<any, any>);
 
 export interface JsonBuildObject<T> {
   json_build_object: T;
@@ -187,8 +187,8 @@ export interface CompiledQuery {
 
 export type TagFn = {
   (baseTag: any, ...snippets: any[]): any;
-  (baseTag: SQLTag, ...snippets: any[]): SQLTag;
-  (baseTag: any | SQLTag, ...snippets: any[]): any | SQLTag;
+  (baseTag: SQLTag<any, any>, ...snippets: any[]): SQLTag<any, any>;
+  (baseTag: any | SQLTag<any, any>, ...snippets: any[]): any | SQLTag<any, any>;
 };
 
 export interface DBRef {
