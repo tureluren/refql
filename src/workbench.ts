@@ -113,7 +113,7 @@ const query2 = hasManyGoals2 (playerQuery);
 //   .then (rows => console.log (rows[1]));
 
 playerQuery.run<Player> (config, { id: 5 }).then (players => {
-  console.log (players[1]);
+  console.log (players[4]);
 });
 
 const refs = {

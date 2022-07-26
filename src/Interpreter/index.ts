@@ -124,6 +124,19 @@ class Interpreter<Input> {
 
         .map (selectFrom (table))
 
+        .map (record => {
+          const sqlTag = lookup ("sql") (record);
+          const keyIdx = lookup ("keyIdx") (record);
+          const table = lookup ("table") (record);
+
+          const [query, values] = compileSQLTag (sqlTag, keyIdx, this.params, table);
+
+          return evolve ({
+            query: concatQuery (query),
+            values: concat (values)
+          }) (record);
+        })
+
         .record;
 
 
