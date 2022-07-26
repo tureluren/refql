@@ -126,6 +126,7 @@ class Interpreter<Input> {
 
         .map (record => {
           const sqlTag = lookup ("sql") (record);
+          // values.length als keyIdx ?
           const keyIdx = lookup ("keyIdx") (record);
           const table = lookup ("table") (record);
 
@@ -448,6 +449,18 @@ class Interpreter<Input> {
       const { record } = env;
 
       if (isSQLTag (value)) {
+        if (as) {
+          // values.length als keyIdx ?
+          const keyIdx = lookup ("keyIdx") (record);
+          const table = lookup ("table") (record);
+
+          const [query, values] = compileSQLTag (value, keyIdx, this.params, table);
+
+          return evolve ({
+            comps: concat (`(${query}) as ${as}`),
+            values: concat (values)
+          }) (record);
+        }
         return overSql (sql => sql.concat (value)) (record);
       }
 

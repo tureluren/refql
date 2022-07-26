@@ -78,6 +78,10 @@ const playerQuery = rql<{ id: number }>`
     id
     last_name
     ${sql`
+      select count(*) from goal
+      where player_id = id 
+    `}:goalCount
+    ${sql`
       order by first_name 
     `}
     ${sql`
