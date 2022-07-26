@@ -1,11 +1,13 @@
+// DELETE
+
 import isFunction from "../predicate/isFunction";
 import isRQLTag from "../RQLTag/isRQLTag";
 import SQLTag from "../SQLTag";
 import isSQLTag from "../SQLTag/isSQLTag";
 import Table from "../Table";
 
-const varToSQLTag = <Input, Output>(value: any, table: Table): SQLTag<Input, Output> | null => {
-  if (isSQLTag (value)) {
+const varToSQLTag = <Input>(value: any, table: Table): SQLTag<Input> | null => {
+  if (isSQLTag<Input> (value)) {
     return value;
   }
 
@@ -17,7 +19,7 @@ const varToSQLTag = <Input, Output>(value: any, table: Table): SQLTag<Input, Out
     // @ts-ignore
     const sqlTag = value (table);
 
-    if (isSQLTag (sqlTag)) {
+    if (isSQLTag<Input> (sqlTag)) {
       return sqlTag;
     }
 

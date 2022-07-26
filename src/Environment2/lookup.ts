@@ -1,6 +1,6 @@
 import { EnvRecord } from "../types";
 
-const lookup = <K extends keyof EnvRecord>(prop: K) => (record: EnvRecord): NonNullable<EnvRecord[K]> => {
+const lookup = <Input, K extends keyof EnvRecord<Input>>(prop: K) => (record: EnvRecord<Input>): NonNullable<EnvRecord<Input>[K]> => {
   if (record.hasOwnProperty (prop)) {
     return record[prop]!;
   }

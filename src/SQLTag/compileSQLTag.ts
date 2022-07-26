@@ -4,16 +4,17 @@ import isArray from "../predicate/isArray";
 import isFunction from "../predicate/isFunction";
 import isRaw from "../Raw/isRaw";
 import isRQLTag from "../RQLTag/isRQLTag";
+import Table from "../Table";
 import isTable from "../Table/isTable";
 import { Values } from "../types";
 import formatSQLString from "./formatSQLString";
 import formatTLString from "./formatTLString";
 import isSQLTag from "./isSQLTag";
 
-const compileSQLTag = <Input, Output>(tag: SQLTag<Input, Output>, keyIdx: number): [string, Values] => {
+const compileSQLTag = <Input>(tag: SQLTag<Input>, keyIdx: number, params: Input, table?: Table): [string, Values] => {
   const values: Values = [];
 
-  const go = (sqlTag: SQLTag<Input, Output>): string => {
+  const go = (sqlTag: SQLTag<Input>): string => {
     const { strings, keys } = sqlTag;
 
     return strings.reduce ((acc, str, idx) => {
@@ -25,14 +26,17 @@ const compileSQLTag = <Input, Output>(tag: SQLTag<Input, Output>, keyIdx: number
       if (typeof k !== "undefined") {
 
         if (isFunction (k)) {
-          throw new Error ("You can't use Functions inside SQL Tags");
+          // raw res opvangen
+          const res = k (params, table);
+          values.push (res);
+          return acc + s + " $" + (keyIdx + values.length) + " ";
         }
 
         if (isRQLTag (k)) {
           throw new Error ("You can't use RQL tags inside SQL Tags");
         }
 
-        if (isSQLTag (k)) {
+        if (isSQLTag<Input> (k)) {
           return acc + s + " " + go (k);
         }
 

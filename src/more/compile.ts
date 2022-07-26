@@ -2,7 +2,7 @@ import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import { RefQLConfig } from "../types";
 
-const compile = <Input, Output> (config: RefQLConfig, tag: RQLTag<Input, Output> | SQLTag<Input, Output>) =>
+const compile = <Input> (config: RefQLConfig, tag: RQLTag<Input> | SQLTag<Input>) =>
   tag.compile (config);
 
 export default compile;

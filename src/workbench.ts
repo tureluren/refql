@@ -44,8 +44,8 @@ const config: RefQLConfig = {
   querier
 };
 
-const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RQLTag<Input, Output> | SQLTag<Input, Output>, params: Input) => {
-  return tag.run (config, params);
+const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RQLTag<Input> | SQLTag<Input>, params: Input) => {
+  return tag.run<Output> (config, params);
 };
 
 const run = makeRun (config);
@@ -65,21 +65,29 @@ const toHasMany = (ast: ASTRelation): ASTRelation => {
   } as ASTRelation;
 };
 
-const hasMany = <Input, Output> (tag: RQLTag<Input, Output>): RQLTag<Input, Output> => {
+const hasMany = <Input> (tag: RQLTag<Input>): RQLTag<Input> => {
   return tag.map (toHasMany);
 };
 
-const playerQuery = rql<{ id: number }, Player>`
-  player (id: 1) {
+const hasMany2 = <Input> (tag: RQLTag<Input>) => <Input2>(tag2: RQLTag<Input2>): RQLTag<Input & Input2> => {
+  return tag2.concat (tag.map (toHasMany));
+};
+
+const playerQuery = rql<{ id: number }>`
+  player (id: ${p => p.id}) {
     id
     last_name
-    - team {
-      name
-    }
+    ${sql`
+      order by first_name 
+    `}
+    ${sql`
+      limit 5
+      offset 10
+    `}
   }
 `;
 
-const goalsQuery = rql<{ limit: number }, Goal>`
+const goalsQuery = rql<{ limit: number }>`
   goals (limit: 1) {
     id
     minute
@@ -92,14 +100,21 @@ const playerGoalsRef = {
 };
 
 const hasManyGoals = hasMany (goalsQuery.map (updateKeywords (playerGoalsRef)));
+const hasManyGoals2 = hasMany2 (goalsQuery.map (updateKeywords (playerGoalsRef)));
 
 // const query = playerQuery.concat (goalsQuery.map (toHasMany));
 const query = playerQuery
   .concat (hasManyGoals);
 
+const query2 = hasManyGoals2 (playerQuery);
 
-run (playerQuery, { id: 5, refs: {} })
-  .then (rows => console.log (rows[9]));
+
+// run<{ id: number }, Player> (playerQuery, { id: 5 })
+//   .then (rows => console.log (rows[1]));
+
+playerQuery.run<Player> (config, { id: 5 }).then (players => {
+  console.log (players[1]);
+});
 
 const refs = {
   player: {
@@ -177,7 +192,7 @@ const refs = {
 // getPlayer ();
 
 
-const selectPlayer = sql<{}, Player>`
+const selectPlayer = sql<{id: number}>`
   select * from player
 `;
 
@@ -186,15 +201,20 @@ const selectPlayer = sql<{}, Player>`
 //   offset 0
 // `;
 
-const paginate = <Input, Output>(tag: RQLTag<Input, Output> | SQLTag<Input, Output>) =>
-  tag.concat (sql<Input & { limit: number}, Output>`
-    limit 5,
+const paginate = <Input>(tag: RQLTag<Input> | SQLTag<Input>) =>
+  tag.concat (sql<Input & { limit: number}>`
+    limit ${(params: any) => params.limit}
     offset 0 
   `);
+
+
+
+
+// compose (orderByName, paginate) (selectPlayer)
 
 const fullPlayer = paginate (selectPlayer);
 
 
-run (fullPlayer, { limit: 5 }).then (players => {
-  console.log (players);
-});
+// run<{limit: number; id: number}, Player> (fullPlayer, { limit: 5, id: 5 }).then (players => {
+//   console.log (players);
+// });

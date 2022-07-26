@@ -71,8 +71,8 @@ const makeGo = <Input, Output>(querier: Querier, interpreter: Interpreter<Input>
   return go (compiledQuery);
 };
 
-// vervang INput door params en outPut door return
-class RQLTag <Input, Output> {
+// vervang INput door params en
+class RQLTag <Input> {
   string: string;
   keys: RQLValue<Input>[];
   ast: ASTRelation;
@@ -83,23 +83,23 @@ class RQLTag <Input, Output> {
     this.keys = [];
   }
 
-  concat<Input2, Output2>(other: RQLTag<Input2, Output2> | SQLTag<Input, Output>) {
+  concat<Input2>(other: RQLTag<Input2> | SQLTag<Input2>) {
     const newMember: ASTNode = other instanceof RQLTag
       ? other.ast
       : { type: "Variable", value: other };
 
     const members = this.ast.members.concat (newMember);
 
-    return new RQLTag<Input & Input2, Output> (
+    return new RQLTag<Input & Input2> (
       Object.assign ({}, this.ast, { members })
     );
   }
 
   map(fn: (ast: ASTRelation) => ASTRelation) {
-    return new RQLTag<Input, Output> (fn (this.ast));
+    return new RQLTag<Input> (fn (this.ast));
   }
 
-  run(config: RefQLConfig, params: Input): Promise<Output[]> {
+  run<Output>(config: RefQLConfig, params: Input): Promise<Output[]> {
 
     const interpreter = new Interpreter (config.caseType, config.useSmartAlias, params);
 
@@ -107,6 +107,7 @@ class RQLTag <Input, Output> {
 
 
     const interpreted = interpreter.interpret (this.ast);
+    console.log (interpreted);
 
     return go ({
       next: interpreted?.next!,

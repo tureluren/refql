@@ -15,9 +15,13 @@ import over from "../Environment2/over";
 import chain from "../more/chain";
 import evolve from "../Environment2/evolve";
 import set from "../Environment2/set";
+import SQLTag from "../SQLTag";
+import sql from "../SQLTag/sql";
+import isSQLTag from "../SQLTag/isSQLTag";
 
 const overComps = over ("comps");
 const overQuery = over ("query");
+const overSql = over ("sql");
 const overFn = over ("fn");
 const getComps = lookup ("comps");
 const getTable = lookup ("table");
@@ -76,9 +80,9 @@ const keysToRefs = (table: Table, keys: Keys) => {
 };
 
 
-const createEnv = (table: Table) => new Environment ({
+const createEnv = <Input>(table: Table) => new Environment ({
   table,
-  sql: "",
+  sql: sql<Input>``,
   query: "",
   // valueIdx ?
   keyIdx: 0,
@@ -103,19 +107,20 @@ class Interpreter<Input> {
     return convertCase (this.caseType, string);
   }
 
-  interpretEach(members: ASTNode[], env: Environment) {
+  interpretEach(members: ASTNode[], env: Environment<Input>) {
     return members
       .reduce ((acc, mem) =>
         acc.extend (env => this.interpret (mem, env)), env);
   }
 
-  interpret(exp: ASTNode, env: Environment = new Environment ({}), rows?: any[]): any {
+  interpret(exp: ASTNode, env: Environment<Input> = new Environment ({}), rows?: any[]): any {
+    // cata ?
 
     if (exp.type === "Root") {
       const { table, members } = exp;
 
       return this
-        .interpretEach (members, createEnv (table))
+        .interpretEach (members, createEnv<Input> (table))
 
         .map (selectFrom (table))
 
@@ -160,7 +165,7 @@ class Interpreter<Input> {
         table: getTable (record),
         fn: "",
         inFunction: true,
-        sql: "", // sql can be used inside fns
+        // sql: "", // sql can be used inside fns
         comps: []
       });
 
@@ -224,7 +229,7 @@ class Interpreter<Input> {
 
       const eachInterpreted = this
 
-        .interpretEach (members, createEnv (table))
+        .interpretEach (members, createEnv<Input> (table))
 
         .map (overComps (concatKeys (table, rkeys)))
 
@@ -426,37 +431,36 @@ class Interpreter<Input> {
 
 
     if (exp.type === "Variable") {
-      const { value, cast } = exp;
-      // const { isRoot } = env.record;
+      const { value, cast, as } = exp;
+      const { record } = env;
 
-      const sql = this.getSQLIfSQLTag (value, env);
-
-      if (sql) {
-        // if (!isRoot) {
-        //   const invalid = /\b(limit|offset)\b/i.test (sql);
-        //   if (invalid) {
-        //     throw new Error ("Limit and offset can't be used inside a relation");
-        //   }
-        // }
-
-        env.writeToSQL (sql);
-      } else if (isRaw (value)) {
-        env.writeToQuery (value.value);
-
-      } else {
-        // normal variable
-        env.addValues ([value]);
-
-        let query = "$" + env.lookup ("keyIdx");
-
-        if (cast) {
-          query += "::" + cast;
-        }
-
-        env.writeToQuery (query);
+      if (isSQLTag (value)) {
+        return overSql (sql => sql.concat (value)) (record);
       }
 
-      return;
+      // if as, subselect in ge val van sqlTAG
+
+      // const sql = this.getSQLIfSQLTag (value, env);
+
+      // if (sql) {
+      //   env.writeToSQL (sql);
+      // } else if (isRaw (value)) {
+      //   env.writeToQuery (value.value);
+
+      // } else {
+      //   // normal variable
+      //   env.addValues ([value]);
+
+      //   let query = "$" + env.lookup ("keyIdx");
+
+      //   if (cast) {
+      //     query += "::" + cast;
+      //   }
+
+      //   env.writeToQuery (query);
+      // }
+
+      // return;
     }
 
     if (exp.type === "StringLiteral") {
@@ -492,28 +496,14 @@ class Interpreter<Input> {
     throw new Error (`Unimplemented: ${JSON.stringify (exp)}`);
   }
 
-  getOrderBy(orderBy: any, env: Environment) {
-    if (!orderBy) return "";
-
-    const orderBySql = this.getSQLIfSQLTag (orderBy, env);
-
-    if (orderBySql == null) {
-      throw new Error (
-        "`orderBy` should be a sql snippet or a function that returns a sql snippet"
-      );
-    }
-
-    return " " + orderBySql;
-  }
-
-  getSQLIfSQLTag(value: any, env: Environment) {
+  getSQLIfSQLTag(value: any, env: Environment<Input>) {
     const sqlTag = varToSQLTag (value, env.lookup ("table"));
 
     if (sqlTag == null) {
       return null;
     }
 
-    const [sql, values] = compileSQLTag (sqlTag, env.lookup ("keyIdx"));
+    const [sql, values] = compileSQLTag (sqlTag, env.lookup ("keyIdx"), this.params, env.lookup ("table"));
 
     env.addValues (values);
 

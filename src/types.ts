@@ -31,7 +31,7 @@ export interface RefQLConfig extends Dict {
 export type Link = [string, string];
 export type TableRefs = { [tableTo: string]: Link[] };
 export type Refs = { [tableFrom: string]: TableRefs };
-export type SQLTag_ = SQLTag<any, any> | ((t: Table) => SQLTag<any, any>);
+export type SQLTag_ = SQLTag<any> | ((t: Table) => SQLTag<any>);
 
 export interface JsonBuildObject<T> {
   json_build_object: T;
@@ -77,7 +77,7 @@ export interface Identifier extends Aliasable, Castable {
   name: string;
 }
 
-export interface Variable extends Castable {
+export interface Variable extends Aliasable, Castable {
   type: "Variable";
   value: any;
 }
@@ -157,10 +157,10 @@ export interface Next {
 }
 
 
-export interface EnvRecord {
+export interface EnvRecord<Input> {
   table?: Table;
   query?: string;
-  sql?: string;
+  sql?: SQLTag<Input>;
   fn?: string;
   comps?: string[];
   values?: Values;
@@ -186,8 +186,8 @@ export interface CompiledQuery {
 
 export type TagFn = {
   (baseTag: any, ...snippets: any[]): any;
-  (baseTag: SQLTag<any, any>, ...snippets: any[]): SQLTag<any, any>;
-  (baseTag: any | SQLTag<any, any>, ...snippets: any[]): any | SQLTag<any, any>;
+  (baseTag: SQLTag<any>, ...snippets: any[]): SQLTag<any>;
+  (baseTag: any | SQLTag<any>, ...snippets: any[]): any | SQLTag<any>;
 };
 
 export interface DBRef {
@@ -197,7 +197,7 @@ export interface DBRef {
 
 export type Primitive = string | number | boolean;
 
-export type RQLValue<Input> = ((p: Input, t: Table) => any) | Primitive | TableRefs | Link[] | Keywords;
+export type RQLValue<Input> = ((p: Input, t: Table) => any) | Primitive | TableRefs | Link[] | Keywords | SQLTag<Input> ;
 export type Values = any[];
 
 export type Querier = (query: string, values: Values) => Promise<any[]>;
@@ -206,8 +206,8 @@ export type Rules = [RegExp, string][];
 
 export type ASTType = "Root" | "HasMany" | "ManyToMany" | "BelongsTo";
 
-export type Transformations = {
-  [key in keyof EnvRecord]: (value: NonNullable<EnvRecord[key]>) => EnvRecord[key];
+export type Transformations<Input> = {
+  [key in keyof EnvRecord<Input>]: (value: NonNullable<EnvRecord<Input>[key]>) => EnvRecord<Input>[key];
 };
 
 export interface NamedKeys {

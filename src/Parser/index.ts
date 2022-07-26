@@ -231,6 +231,11 @@ class Parser<Params> {
 
     this.keyIdx += 1;
 
+    if (this.lookahead.type === ":") {
+      this.eat (":");
+      variable.as = this.eat ("IDENTIFIER").value;
+    }
+
     if (this.lookahead.type === "::") {
       this.eat ("::");
       variable.cast = this.eat ("IDENTIFIER").value;

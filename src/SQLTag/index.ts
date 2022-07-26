@@ -6,7 +6,7 @@ import { CompiledQuery, RefQLConfig, RefsNew, Values } from "../types";
 import compileSQLTag from "./compileSQLTag";
 import isSQLTag from "./isSQLTag";
 
-class SQLTag <Input, Output> {
+class SQLTag <Input> {
   strings: TemplateStringsArray;
   keys: Values;
 
@@ -15,21 +15,25 @@ class SQLTag <Input, Output> {
     this.keys = keys;
   }
 
-  concat<Input2, Output2>(other: SQLTag<Input2, Output2>) {
-    const keys = this.keys.concat (other.keys);
-    const strings = this.strings.concat (other.strings);
+  concat<Input2>(other: SQLTag<Input2>) {
+    const tag1Strings = Array.from (this.strings);
+    const lastEl = tag1Strings.pop ();
 
+    const tag2Strings = Array.from (other.strings);
+    const firstEl = tag2Strings.shift ();
 
-    return new SQLTag<Input & Input2, Output> (
-      strings as unknown as TemplateStringsArray, keys
+    const nextStrings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
+    const nextKeys = this.keys.concat (other.keys);
+
+    return new SQLTag<Input & Input2> (
+      nextStrings as unknown as TemplateStringsArray, nextKeys
     );
   }
 
-  run(config: RefQLConfig, params: Input): Promise<Output[]> {
+  run<Output>(config: RefQLConfig, params: Input): Promise<Output[]> {
 
-    const [query, values] = this.interpret ();
+    const [query, values] = this.interpret (params);
     console.log (query);
-
 
     return config.querier (query, values);
   }
@@ -62,8 +66,8 @@ class SQLTag <Input, Output> {
   //   return new SQLTag (nextStrings as any, nextKeys);
   // }
 
-  interpret() {
-    return compileSQLTag<Input, Output> (this, 0);
+  interpret(params: Input) {
+    return compileSQLTag<Input> (this, 0, params);
   }
 
   compile(_config: RefQLConfig): CompiledQuery {

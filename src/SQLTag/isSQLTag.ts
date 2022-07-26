@@ -1,6 +1,6 @@
 import SQLTag from ".";
 
-const isSQLTag = <Input, Output>(value: any): value is SQLTag<Input, Output> =>
+const isSQLTag = <Input>(value: any): value is SQLTag<Input> =>
   value instanceof SQLTag;
 
 export default isSQLTag;
