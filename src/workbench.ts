@@ -77,17 +77,12 @@ const playerQuery = rql<{ id: number }>`
   player (id: ${p => p.id}) {
     id
     last_name
-    ${sql`
-      select count(*) from goal
-      where player_id = id 
-    `}:goalCount
-    ${sql`
-      order by first_name 
-    `}
-    ${sql`
-      limit 5
-      offset 10
-    `}
+    - team {
+      name
+      ${sql`
+        order by name 
+      `}
+    }
   }
 `;
 

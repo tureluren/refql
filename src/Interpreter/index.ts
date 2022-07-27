@@ -241,7 +241,7 @@ class Interpreter<Input> {
       // lkeys length should equal rkeys length
       const { rkeys, lkeys } = getRefs (record);
 
-      const eachInterpreted = this
+      return this
 
         .interpretEach (members, createEnv<Input> (table))
 
@@ -263,16 +263,28 @@ class Interpreter<Input> {
               ];
             }, ["where", [] as Values]);
 
+
             return evolve ({
               query: concatQuery (query),
               values: concat (values)
             });
-          }));
+          }))
 
+        .map (record => {
+          const sqlTag = lookup ("sql") (record);
+          // values.length als keyIdx ?
+          const keyIdx = lookup ("keyIdx") (record);
+          const table = lookup ("table") (record);
 
-      eachInterpreted.writeSQLToQuery (true);
+          const [query, values] = compileSQLTag (sqlTag, keyIdx, this.params, table);
 
-      return eachInterpreted.record;
+          return evolve ({
+            query: concatQuery (query),
+            values: concat (values)
+          }) (record);
+        })
+
+        .record;
     }
 
     // if (exp.type === "HasMany") {

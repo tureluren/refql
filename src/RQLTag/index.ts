@@ -19,6 +19,7 @@ const makeGo = <Input, Output>(querier: Querier, interpreter: Interpreter<Input>
 
         // is table wel nog nodig nu dat er refs zijn
         const ip = interpreter.interpret (c.exp, new Environment ({ table: compiled.table, refs: c.refs }), rows);
+        console.log (ip);
 
         return go ({
           next: ip?.next!,
@@ -107,7 +108,6 @@ class RQLTag <Input> {
 
 
     const interpreted = interpreter.interpret (this.ast);
-    console.log (interpreted);
 
     return go ({
       next: interpreted?.next!,
