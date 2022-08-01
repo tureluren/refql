@@ -159,22 +159,18 @@ export interface Next {
 
 export interface EnvRecord<Input> {
   table?: Table;
-  query?: string;
-  sql?: SQLTag<Input>;
-  fn?: string;
-  comps?: string[];
-  values?: Values;
-  keyIdx?: number;
-  inFunction?: boolean;
-  isRoot?: boolean; // nog nodig ?
-  next?: Next[];
-  refs?: RefsNew;
+  query: string;
+  sqlTag: SQLTag<Input>;
+  comps: string[];
+  values: Values;
+  next: Next[];
+  refs: RefsNew;
 }
 
 export interface CompiledQuery {
   query: string;
   values: Values;
-  table: Table;
+  table?: Table;
   next: Next[];
 }
 
@@ -207,7 +203,7 @@ export type Rules = [RegExp, string][];
 export type ASTType = "Root" | "HasMany" | "ManyToMany" | "BelongsTo";
 
 export type Transformations<Input> = {
-  [key in keyof EnvRecord<Input>]: (value: NonNullable<EnvRecord<Input>[key]>) => EnvRecord<Input>[key];
+  [key in keyof Partial<EnvRecord<Input>>]: (value: NonNullable<EnvRecord<Input>[key]>) => EnvRecord<Input>[key];
 };
 
 export interface NamedKeys {

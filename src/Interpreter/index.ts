@@ -18,18 +18,17 @@ import set from "../Environment2/set";
 import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
 import isSQLTag from "../SQLTag/isSQLTag";
+import createEnv from "../RQLTag/createEnv";
 
 const overComps = over ("comps");
 const overQuery = over ("query");
-const overSql = over ("sql");
-const overFn = over ("fn");
+const overSqlTag = over ("sqlTag");
 const getComps = lookup ("comps");
+const getValues = lookup ("values");
 const getTable = lookup ("table");
 const getRefs = lookup ("refs");
-const getFn = lookup ("fn");
+const getQuery = lookup ("query");
 const setQuery = set ("query");
-const setFn = set ("fn");
-const getKeyIdx = lookup ("keyIdx");
 
 const concat = <T>(item: T | T[]) => <R> (arr: R[]): R[] =>
   arr.concat (item as unknown as R);
@@ -80,16 +79,6 @@ const keysToRefs = (table: Table, keys: Keys) => {
 };
 
 
-const createEnv = <Input>(table: Table) => new Environment ({
-  table,
-  sql: sql<Input>``,
-  query: "",
-  // valueIdx ?
-  keyIdx: 0,
-  values: [],
-  next: [],
-  comps: []
-});
 
 
 class Interpreter<Input> {
@@ -103,6 +92,19 @@ class Interpreter<Input> {
     this.params = params;
   }
 
+  includeSql(table: Table) {
+    return (record: EnvRecord<Input>) => {
+      const { sqlTag, values } = record;
+
+      const [query, newValues] = compileSQLTag (sqlTag, values.length, this.params, table);
+
+      return evolve ({
+        query: concatQuery (query),
+        values: concat (newValues)
+      }) (record);
+    };
+  }
+
   toCase(string: string) {
     return convertCase (this.caseType, string);
   }
@@ -113,7 +115,7 @@ class Interpreter<Input> {
         acc.extend (env => this.interpret (mem, env)), env);
   }
 
-  interpret(exp: ASTNode, env: Environment<Input> = new Environment ({}), rows?: any[]): any {
+  interpret(exp: ASTNode, env: Environment<Input> = createEnv<Input> (), rows?: any[]): EnvRecord<Input> {
     // cata ?
 
     if (exp.type === "Root") {
@@ -124,19 +126,7 @@ class Interpreter<Input> {
 
         .map (selectFrom (table))
 
-        .map (record => {
-          const sqlTag = lookup ("sql") (record);
-          // values.length als keyIdx ?
-          const keyIdx = lookup ("keyIdx") (record);
-          const table = lookup ("table") (record);
-
-          const [query, values] = compileSQLTag (sqlTag, keyIdx, this.params, table);
-
-          return evolve ({
-            query: concatQuery (query),
-            values: concat (values)
-          }) (record);
-        })
+        .map (this.includeSql (table))
 
         .record;
 
@@ -175,13 +165,13 @@ class Interpreter<Input> {
       const { args, name, as, cast } = exp;
       const { record } = env;
 
-      const callEnv = new Environment ({
-        table: getTable (record),
-        fn: "",
-        inFunction: true,
-        // sql: "", // sql can be used inside fns
-        comps: []
-      });
+      const { table } = record;
+
+      if (!table) {
+        throw new Error ("No Table");
+      }
+
+      const callEnv = createEnv<Input> (table);
 
       const alias = as ? ` as ${as}` : "";
 
@@ -192,18 +182,22 @@ class Interpreter<Input> {
         .map (chain (
           getComps,
           comps =>
-            setFn (`${name} (${comps.join (", ")})${convert}${alias}`)))
+            setQuery (`${name} (${comps.join (", ")})${convert}${alias}`)))
 
         .record;
 
-      return overComps (concat (getFn (thisRecord))) (record);
+      return overComps (concat (getQuery (thisRecord))) (record);
     }
 
     if (exp.type === "Identifier") {
       const { name, as, cast } = exp;
       const { record } = env;
 
-      const table = getTable (record);
+      const { table } = record;
+
+      if (!table) {
+        throw new Error ("No Table");
+      }
 
       let sql = `${table.as}.${name}`;
 
@@ -223,7 +217,11 @@ class Interpreter<Input> {
       const { record } = env;
 
       if (!rows) {
-        const parent = getTable (record);
+        const { table: parent } = record;
+
+        if (!parent) {
+          throw new Error ("No Table");
+        }
 
         const { lkey, rkey } = keywords;
 
@@ -239,7 +237,7 @@ class Interpreter<Input> {
       }
 
       // lkeys length should equal rkeys length
-      const { rkeys, lkeys } = getRefs (record);
+      const { rkeys, lkeys } = record.refs;
 
       return this
 
@@ -250,15 +248,15 @@ class Interpreter<Input> {
         .map (selectFrom (table))
 
         .map (chain (
-          getKeyIdx,
-          keyIdx => {
-            const [query, values] = lkeys.reduce (([sql, vals], lk, idx) => {
+          getValues,
+          values => {
+            const [query, newValues] = lkeys.reduce (([sql, vals], lk, idx) => {
               const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
               const rk = rkeys[idx];
               const op = idx === 0 ? "" : "and ";
 
               return [
-                `${sql} ${op}${table.as}.${rk.name} in (${parameterize (keyIdx, uniqRows.length)})`,
+                `${sql} ${op}${table.as}.${rk.name} in (${parameterize (values.length, uniqRows.length)})`,
                 vals.concat (uniqRows)
               ];
             }, ["where", [] as Values]);
@@ -266,23 +264,11 @@ class Interpreter<Input> {
 
             return evolve ({
               query: concatQuery (query),
-              values: concat (values)
+              values: concat (newValues)
             });
           }))
 
-        .map (record => {
-          const sqlTag = lookup ("sql") (record);
-          // values.length als keyIdx ?
-          const keyIdx = lookup ("keyIdx") (record);
-          const table = lookup ("table") (record);
-
-          const [query, values] = compileSQLTag (sqlTag, keyIdx, this.params, table);
-
-          return evolve ({
-            query: concatQuery (query),
-            values: concat (values)
-          }) (record);
-        })
+        .map (this.includeSql (table))
 
         .record;
     }
@@ -441,19 +427,19 @@ class Interpreter<Input> {
     //   return membersEnv.record;
     // }
 
-    if (exp.type === "Subselect") {
-      const { tag, as } = exp;
+    // if (exp.type === "Subselect") {
+    //   const { tag, as } = exp;
 
-      const sql = this.getSQLIfSQLTag (tag, env);
+    //   const sql = this.getSQLIfSQLTag (tag, env);
 
-      if (sql) {
-        env.writeToQuery (`'${as}', (${sql})`);
-      } else {
-        throw new Error ("A subselect should be a sql snippet or a function that returns a sql snippet");
-      }
+    //   if (sql) {
+    //     env.writeToQuery (`'${as}', (${sql})`);
+    //   } else {
+    //     throw new Error ("A subselect should be a sql snippet or a function that returns a sql snippet");
+    //   }
 
-      return;
-    }
+    //   return;
+    // }
 
 
     if (exp.type === "Variable") {
@@ -462,18 +448,18 @@ class Interpreter<Input> {
 
       if (isSQLTag (value)) {
         if (as) {
-          // values.length als keyIdx ?
-          const keyIdx = lookup ("keyIdx") (record);
+          // subquery
+          const values = lookup ("values") (record);
           const table = lookup ("table") (record);
 
-          const [query, values] = compileSQLTag (value, keyIdx, this.params, table);
+          const [query, newValues] = compileSQLTag (value, values.length, this.params, table);
 
           return evolve ({
             comps: concat (`(${query}) as ${as}`),
-            values: concat (values)
+            values: concat (newValues)
           }) (record);
         }
-        return overSql (sql => sql.concat (value)) (record);
+        return overSqlTag (sqlTag => sqlTag.concat (value)) (record);
       }
 
       // if as, subselect in ge val van sqlTAG
@@ -519,34 +505,34 @@ class Interpreter<Input> {
       exp.type === "BooleanLiteral" ||
       exp.type === "NullLiteral"
     ) {
-      const { value, as } = exp;
-      const { inFunction } = env.record;
+      // const { value, as } = exp;
+      // const { inFunction } = env.record;
 
-      if (inFunction) {
-        env.writeToQuery (`${value}`);
-      } else {
-        env.writeToQuery (`'${as}', ${value}`);
-      }
+      // if (inFunction) {
+      //   env.writeToQuery (`${value}`);
+      // } else {
+      //   env.writeToQuery (`'${as}', ${value}`);
+      // }
 
-      return;
+      return env.record;
     }
 
     throw new Error (`Unimplemented: ${JSON.stringify (exp)}`);
   }
 
-  getSQLIfSQLTag(value: any, env: Environment<Input>) {
-    const sqlTag = varToSQLTag (value, env.lookup ("table"));
+  // getSQLIfSQLTag(value: any, env: Environment<Input>) {
+  //   const sqlTag = varToSQLTag (value, env.lookup ("table"));
 
-    if (sqlTag == null) {
-      return null;
-    }
+  //   if (sqlTag == null) {
+  //     return null;
+  //   }
 
-    const [sql, values] = compileSQLTag (sqlTag, env.lookup ("keyIdx"), this.params, env.lookup ("table"));
+  //   const [sql, values] = compileSQLTag (sqlTag, env.lookup ("keyIdx"), this.params, env.lookup ("table"));
 
-    env.addValues (values);
+  //   env.addValues (values);
 
-    return sql;
-  }
+  //   return sql;
+  // }
 
 }
 

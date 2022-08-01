@@ -10,6 +10,7 @@ import {
   ASTNode, ASTRelation, CompiledQuery, EnvRecord, JsonBuildObject,
   RefQLConfig, RQLValue, Values, Dict, Querier
 } from "../types";
+import createEnv from "./createEnv";
 
 const makeGo = <Input, Output>(querier: Querier, interpreter: Interpreter<Input>) => (compiledQuery: CompiledQuery) => {
   const go = (compiled: CompiledQuery): Promise<Output[]> => {
@@ -18,7 +19,7 @@ const makeGo = <Input, Output>(querier: Querier, interpreter: Interpreter<Input>
       const nextNext = compiled.next.map (c => {
 
         // is table wel nog nodig nu dat er refs zijn
-        const ip = interpreter.interpret (c.exp, new Environment ({ table: compiled.table, refs: c.refs }), rows);
+        const ip = interpreter.interpret (c.exp, createEnv<Input> (compiled.table, c.refs), rows);
         console.log (ip);
 
         return go ({
@@ -106,14 +107,13 @@ class RQLTag <Input> {
 
     const go = makeGo<Input, Output> (config.querier, interpreter);
 
-
     const interpreted = interpreter.interpret (this.ast);
 
     return go ({
-      next: interpreted?.next!,
-      query: interpreted?.query!,
-      values: interpreted?.values!,
-      table: interpreted?.table!
+      next: interpreted.next,
+      query: interpreted.query,
+      values: interpreted.values,
+      table: interpreted.table
     });
 
   }
