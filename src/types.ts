@@ -1,3 +1,5 @@
+import Environment from "./Environment2";
+import { BelongsTo, HasMany, Identifier, ManyToMany, Root } from "./Parser/Node";
 import RQLTag from "./RQLTag";
 import SQLTag from "./SQLTag";
 import Table from "./Table";
@@ -72,11 +74,6 @@ export interface Castable {
   cast?: string;
 }
 
-export interface Identifier extends Aliasable, Castable {
-  type: "Identifier";
-  name: string;
-}
-
 export interface Variable extends Aliasable, Castable {
   type: "Variable";
   value: any;
@@ -102,35 +99,7 @@ export interface NumericLiteral extends Aliasable {
   value: number;
 }
 
-export interface Root {
-  table: Table;
-  type: "Root";
-  members: ASTNode[];
-  // of params noemen ?
-  keywords: Keywords;
-}
-
-export interface HasMany {
-  table: Table;
-  type: "HasMany";
-  members: ASTNode[];
-  keywords: Keywords;
-}
-
-export interface BelongsTo {
-  table: Table;
-  type: "BelongsTo";
-  members: ASTNode[];
-  keywords: Keywords;
-}
-
-export interface ManyToMany {
-  table: Table;
-  type: "ManyToMany";
-  members: ASTNode[];
-  keywords: Keywords;
-}
-
+// remove
 export interface Subselect extends Omit<Identifier, "type"> {
   type: "Subselect";
   tag: SQLTag_;
@@ -148,8 +117,8 @@ export type ASTRelation =
   Root | HasMany | BelongsTo | ManyToMany;
 
 export type ASTNode =
-  Identifier | ASTRelation |
-  Subselect | Call | Variable | Literal;
+  Identifier | ASTRelation;
+  // | Subselect | Call | Variable | Literal;
 
 export interface Next {
   exp: HasMany | BelongsTo | ManyToMany;
@@ -217,3 +186,13 @@ export interface RefsNew {
   lxkeys: NamedKeys[];
   rxkeys: NamedKeys[];
 }
+
+export type Pattern<R> = {
+  Root: (table: Table, members: ASTNode[], keywords: Keywords) => R;
+  HasMany: (table: Table, members: ASTNode[], keywords: Keywords) => R;
+  BelongsTo: (table: Table, members: ASTNode[], keywords: Keywords) => R;
+  ManyToMany: (table: Table, members: ASTNode[], keywords: Keywords) => R;
+  Identifier: (name: string, as?: string, cast?: string) => R;
+};
+
+export type InterpretFn<Input> = (exp: ASTNode, env?: Environment<Input>, rows?: any[]) => EnvRecord<Input>;

@@ -58,54 +58,50 @@ const updateKeywords = (keywords: Keywords) => (ast: ASTRelation): ASTRelation =
   } as ASTRelation;
 };
 
-const toHasMany = (ast: ASTRelation): ASTRelation => {
-  return {
-    ...ast,
-    type: "HasMany"
-  } as ASTRelation;
-};
+// const toHasMany = (ast: ASTRelation): ASTRelation => {
+//   return {
+//     ...ast,
+//     type: "HasMany"
+//   } as ASTRelation;
+// };
 
-const hasMany = <Input> (tag: RQLTag<Input>): RQLTag<Input> => {
-  return tag.map (toHasMany);
-};
+// const hasMany = <Input> (tag: RQLTag<Input>): RQLTag<Input> => {
+//   return tag.map (toHasMany);
+// };
 
-const hasMany2 = <Input> (tag: RQLTag<Input>) => <Input2>(tag2: RQLTag<Input2>): RQLTag<Input & Input2> => {
-  return tag2.concat (tag.map (toHasMany));
-};
+// const hasMany2 = <Input> (tag: RQLTag<Input>) => <Input2>(tag2: RQLTag<Input2>): RQLTag<Input & Input2> => {
+//   return tag2.concat (tag.map (toHasMany));
+// };
 
 const playerQuery = rql<{ id: number }>`
-  player (id: ${p => p.id}) {
+  player {
     id
     last_name
-    - team {
-      name
-      ${sql`
-        order by name 
-      `}
-    }
   }
 `;
 
-const goalsQuery = rql<{ limit: number }>`
-  goals (limit: 1) {
-    id
-    minute
-  }
-`;
+console.log (playerQuery);
+
+// const goalsQuery = rql<{ limit: number }>`
+//   goals (limit: 1) {
+//     id
+//     minute
+//   }
+// `;
 
 const playerGoalsRef = {
   lkey: "id",
   rkey: "goal_id"
 };
 
-const hasManyGoals = hasMany (goalsQuery.map (updateKeywords (playerGoalsRef)));
-const hasManyGoals2 = hasMany2 (goalsQuery.map (updateKeywords (playerGoalsRef)));
+// const hasManyGoals = hasMany (goalsQuery.map (updateKeywords (playerGoalsRef)));
+// const hasManyGoals2 = hasMany2 (goalsQuery.map (updateKeywords (playerGoalsRef)));
 
 // const query = playerQuery.concat (goalsQuery.map (toHasMany));
-const query = playerQuery
-  .concat (hasManyGoals);
+// const query = playerQuery
+//   .concat (hasManyGoals);
 
-const query2 = hasManyGoals2 (playerQuery);
+// const query2 = hasManyGoals2 (playerQuery);
 
 
 // run<{ id: number }, Player> (playerQuery, { id: 5 })
@@ -216,4 +212,25 @@ const fullPlayer = paginate (selectPlayer);
 
 // run<{limit: number; id: number}, Player> (fullPlayer, { limit: 5, id: 5 }).then (players => {
 //   console.log (players);
+// });
+
+
+
+// class BelongsTo {
+//   sign: string;
+
+//   constructor(sign: string) {
+//     this.sign = sign;
+//   }
+
+//   cata<R>(pattern: Pattern<R>) {
+//     return pattern.BelongsTo (this.sign);
+//   }
+// }
+
+// const exp = new HasMany ("-");
+
+// const res = exp.cata<string> ({
+//   BelongsTo: x => x,
+//   HasMany: x => x
 // });

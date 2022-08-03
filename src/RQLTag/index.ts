@@ -5,6 +5,7 @@
 // import isSub from "../Sub/isSub";
 import Environment from "../Environment2";
 import Interpreter from "../Interpreter";
+import { BelongsTo, HasMany, ManyToMany } from "../Parser/Node";
 import SQLTag from "../SQLTag";
 import {
   ASTNode, ASTRelation, CompiledQuery, EnvRecord, JsonBuildObject,
@@ -12,14 +13,15 @@ import {
 } from "../types";
 import createEnv from "./createEnv";
 
-const makeGo = <Input, Output>(querier: Querier, interpreter: Interpreter<Input>) => (compiledQuery: CompiledQuery) => {
+
+const makeGo = <Input, Output>(querier: Querier, interpret: (exp: ASTNode, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>) => (compiledQuery: CompiledQuery) => {
   const go = (compiled: CompiledQuery): Promise<Output[]> => {
     // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
 
         // is table wel nog nodig nu dat er refs zijn
-        const ip = interpreter.interpret (c.exp, createEnv<Input> (compiled.table, c.refs), rows);
+        const ip = interpret (c.exp, createEnv<Input> (compiled.table, c.refs), rows);
         console.log (ip);
 
         return go ({
@@ -41,7 +43,7 @@ const makeGo = <Input, Output>(querier: Querier, interpreter: Interpreter<Input>
             const rkeys = refs.rkeys.map (rk => rk.as);
             const lxkeys = refs.lxkeys.map (lxk => lxk.as);
 
-            if (exp.type === "BelongsTo") {
+            if (exp instanceof BelongsTo) {
               acc[exp.table.as || exp.table.name] = agg.find ((r: any) =>
                 rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
               );
@@ -50,7 +52,7 @@ const makeGo = <Input, Output>(querier: Querier, interpreter: Interpreter<Input>
                 delete acc[lk];
               });
 
-            } else if (exp.type === "HasMany") {
+            } else if (exp instanceof HasMany) {
               acc[exp.table.as || exp.table.name] = agg.filter ((r: any) =>
                 rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
               );
@@ -58,7 +60,7 @@ const makeGo = <Input, Output>(querier: Querier, interpreter: Interpreter<Input>
               lkeys.forEach (lk => {
                 delete acc[lk];
               });
-            } else if (exp.type === "ManyToMany") {
+            } else if (exp instanceof ManyToMany) {
               acc[exp.table.as || exp.table.name] = agg.filter ((r: any) =>
                 lxkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
               );
@@ -86,11 +88,13 @@ class RQLTag <Input> {
   }
 
   concat<Input2>(other: RQLTag<Input2> | SQLTag<Input2>) {
-    const newMember: ASTNode = other instanceof RQLTag
-      ? other.ast
-      : { type: "Variable", value: other };
+    // const newMember: ASTNode = other instanceof RQLTag
+    //   ? other.ast
+    //   : { type: "Variable", value: other };
 
-    const members = this.ast.members.concat (newMember);
+    // const members = this.ast.members.concat (newMember);
+
+    const members = this.ast.members;
 
     return new RQLTag<Input & Input2> (
       Object.assign ({}, this.ast, { members })
@@ -103,11 +107,11 @@ class RQLTag <Input> {
 
   run<Output>(config: RefQLConfig, params: Input): Promise<Output[]> {
 
-    const interpreter = new Interpreter (config.caseType, config.useSmartAlias, params);
+    const interpret = Interpreter (config.caseType, config.useSmartAlias, params);
 
-    const go = makeGo<Input, Output> (config.querier, interpreter);
+    const go = makeGo<Input, Output> (config.querier, interpret);
 
-    const interpreted = interpreter.interpret (this.ast);
+    const interpreted = interpret (this.ast);
 
     return go ({
       next: interpreted.next,

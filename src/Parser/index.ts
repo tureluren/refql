@@ -6,15 +6,16 @@ import Tokenizer from "../Tokenizer";
 import validateKeywords from "./validateKeywords";
 import convertCase from "../more/convertCase";
 import {
-  ASTNode, ASTRelation, ASTType, BelongsTo, BooleanLiteral,
-  Call, CaseType, HasMany, Identifier, Keywords,
-  Literal, ManyToMany, NullLiteral, NumericLiteral,
+  ASTNode, ASTRelation, ASTType, BooleanLiteral,
+  Call, CaseType, Keywords,
+  Literal, NullLiteral, NumericLiteral,
   OptCaseType, Plurals, RQLValue, StringLiteral,
   Subselect, Token, Variable
 } from "../types";
 import convertTableRefs from "../refs/convertTableRefs";
 import Pluralizer from "../Pluralizer";
 import Table from "../Table";
+import { BelongsTo, HasMany, Identifier, ManyToMany, Root } from "./Node";
 
 class Parser<Params> {
   // caseType?: CaseType;
@@ -77,18 +78,18 @@ class Parser<Params> {
           this.eat (":");
           let value;
 
-          if (isLiteral (this.lookahead.type)) {
-            value = this.Literal ().value;
+          // if (isLiteral (this.lookahead.type)) {
+          //   value = this.Literal ().value;
 
-          // @ts-ignore
-          } else if (this.lookahead.type === "VARIABLE") {
-            value = this.grabVariable ();
+          // // @ts-ignore
+          // } else if (this.lookahead.type === "VARIABLE") {
+          //   value = this.grabVariable ();
 
-          } else {
-            throw new SyntaxError (
-              `Only Literals or Variables are allowed as parameters, not: "${this.lookahead.type}"`
-            );
-          }
+          // } else {
+          //   throw new SyntaxError (
+          //     `Only Literals or Variables are allowed as parameters, not: "${this.lookahead.type}"`
+          //   );
+          // }
 
           // @ts-ignore
           keywords[identifier] = value;
@@ -142,12 +143,9 @@ class Parser<Params> {
       this.eat (")");
     }
 
-    return {
-      table,
-      type,
-      keywords,
-      members: this.members ()
-    };
+    const ctor = type === "Root" ? Root : type === "BelongsTo" ? BelongsTo : type === "HasMany" ? HasMany : ManyToMany;
+
+    return new ctor (table, this.members (), keywords);
   }
 
   grabVariable() {
@@ -200,10 +198,7 @@ class Parser<Params> {
     //   as = this.pluralizer.toPlural (as);
     // }
 
-    let identifier: Identifier = {
-      type: "Identifier",
-      name
-    };
+    let identifier = new Identifier (name);
 
     // overwrite if `as` is specified
     if (this.lookahead.type === ":") {
@@ -244,13 +239,13 @@ class Parser<Params> {
     return variable;
   }
 
-  Call(callee: Identifier): Call {
-    return {
-      ...callee,
-      type: "Call",
-      args: this.Arguments ()
-    };
-  }
+  // Call(callee: Identifier): Call {
+  //   return {
+  //     ...callee,
+  //     type: "Call",
+  //     args: this.Arguments ()
+  //   };
+  // }
 
   members() {
     this.eat ("{");
@@ -266,7 +261,7 @@ class Parser<Params> {
 
       if (this.lookahead.type === "(") {
         // can only be an identifier
-        members.push (this.Call (<Identifier>ASTNode));
+        // members.push (this.Call (<Identifier>ASTNode));
       } else {
         members.push (ASTNode);
       }
@@ -278,35 +273,35 @@ class Parser<Params> {
     return members;
   }
 
-  Arguments() {
-    this.eat ("(");
+  // Arguments() {
+  //   this.eat ("(");
 
-    const argumentList: ASTNode[] = [];
+  //   const argumentList: ASTNode[] = [];
 
-    if (this.lookahead.type !== ")") {
+  //   if (this.lookahead.type !== ")") {
 
-      do {
-        const argument = this.Argument ();
+  //     do {
+  //       const argument = this.Argument ();
 
-        if (this.lookahead.type === "(") {
-          // can only be an identifier
-          argumentList.push (this.Call (<Identifier>argument));
-        } else {
-          argumentList.push (argument);
-        }
-      // @ts-ignore
-      } while (this.lookahead.type === "," && this.eat (",") && this.lookahead.type !== ")");
-    }
+  //       if (this.lookahead.type === "(") {
+  //         // can only be an identifier
+  //         argumentList.push (this.Call (<Identifier>argument));
+  //       } else {
+  //         argumentList.push (argument);
+  //       }
+  //     // @ts-ignore
+  //     } while (this.lookahead.type === "," && this.eat (",") && this.lookahead.type !== ")");
+  //   }
 
-    this.eat (")");
+  //   this.eat (")");
 
-    return argumentList;
-  }
+  //   return argumentList;
+  // }
 
   ASTNode(): ASTNode {
-    if (isLiteral (this.lookahead.type)) {
-      return this.Literal ();
-    }
+    // if (isLiteral (this.lookahead.type)) {
+    //   return this.Literal ();
+    // }
     switch (this.lookahead.type) {
       case "IDENTIFIER":
         return this.Identifier ();
@@ -316,8 +311,8 @@ class Parser<Params> {
         return this.BelongsTo ();
       case "x":
         return this.ManyToMany ();
-      case "VARIABLE":
-        return this.Variable ();
+      // case "VARIABLE":
+      //   return this.Variable ();
       case "&":
         return this.Subselect ();
     }
@@ -325,31 +320,31 @@ class Parser<Params> {
     throw new SyntaxError (`Unknown ASTNode Type: "${this.lookahead.type}"`);
   }
 
-  Argument(): ASTNode {
-    if (isLiteral (this.lookahead.type)) {
-      return this.Literal ();
-    }
-    switch (this.lookahead.type) {
-      case "IDENTIFIER":
-        return this.Identifier ();
-      case "VARIABLE":
-        return this.Variable ();
-    }
+  // Argument(): ASTNode {
+  //   if (isLiteral (this.lookahead.type)) {
+  //     return this.Literal ();
+  //   }
+  //   switch (this.lookahead.type) {
+  //     case "IDENTIFIER":
+  //       return this.Identifier ();
+  //     case "VARIABLE":
+  //       return this.Variable ();
+  //   }
 
-    throw new SyntaxError (`Invalid Argument Type: "${this.lookahead.type}"`);
-  }
+  //   throw new SyntaxError (`Invalid Argument Type: "${this.lookahead.type}"`);
+  // }
 
-  Literal(): Literal {
-    switch (this.lookahead.type) {
-      case "NUMBER": return this.NumericLiteral ();
-      case "STRING": return this.StringLiteral ();
-      case "true": return this.BooleanLiteral (true);
-      case "false": return this.BooleanLiteral (false);
-      case "null": return this.NullLiteral ();
-      default:
-        throw new SyntaxError (`Unknown Literal: "${this.lookahead.type}"`);
-    }
-  }
+  // Literal(): Literal {
+  //   switch (this.lookahead.type) {
+  //     case "NUMBER": return this.NumericLiteral ();
+  //     case "STRING": return this.StringLiteral ();
+  //     case "true": return this.BooleanLiteral (true);
+  //     case "false": return this.BooleanLiteral (false);
+  //     case "null": return this.NullLiteral ();
+  //     default:
+  //       throw new SyntaxError (`Unknown Literal: "${this.lookahead.type}"`);
+  //   }
+  // }
 
   BooleanLiteral(value: boolean): BooleanLiteral {
     this.eat (value ? "true" : "false");
