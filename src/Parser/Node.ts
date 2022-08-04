@@ -80,3 +80,20 @@ export class Identifier {
     return pattern.Identifier (this.name, this.as, this.cast);
   }
 }
+
+export class Variable {
+  // any ?
+  value: any;
+  as?: string;
+  cast?: string;
+
+  constructor(value: any, as?: string, cast?: string) {
+    this.value = value;
+    this.as = as;
+    this.cast = cast;
+  }
+
+  cata<R>(pattern: Pattern<R>) {
+    return pattern.Variable (this.value, this.as, this.cast);
+  }
+}

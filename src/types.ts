@@ -1,5 +1,5 @@
 import Environment from "./Environment2";
-import { BelongsTo, HasMany, Identifier, ManyToMany, Root } from "./Parser/Node";
+import { BelongsTo, HasMany, Identifier, ManyToMany, Root, Variable } from "./Parser/Node";
 import RQLTag from "./RQLTag";
 import SQLTag from "./SQLTag";
 import Table from "./Table";
@@ -74,11 +74,6 @@ export interface Castable {
   cast?: string;
 }
 
-export interface Variable extends Aliasable, Castable {
-  type: "Variable";
-  value: any;
-}
-
 export interface BooleanLiteral extends Aliasable {
   type: "BooleanLiteral";
   value: boolean;
@@ -117,7 +112,7 @@ export type ASTRelation =
   Root | HasMany | BelongsTo | ManyToMany;
 
 export type ASTNode =
-  Identifier | ASTRelation;
+  Identifier | ASTRelation | Variable;
   // | Subselect | Call | Variable | Literal;
 
 export interface Next {
@@ -193,6 +188,7 @@ export type Pattern<R> = {
   BelongsTo: (table: Table, members: ASTNode[], keywords: Keywords) => R;
   ManyToMany: (table: Table, members: ASTNode[], keywords: Keywords) => R;
   Identifier: (name: string, as?: string, cast?: string) => R;
+  Variable: (value: any, as?: string, cast?: string) => R;
 };
 
 export type InterpretFn<Input> = (exp: ASTNode, env?: Environment<Input>, rows?: any[]) => EnvRecord<Input>;

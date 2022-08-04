@@ -10,12 +10,12 @@ import {
   Call, CaseType, Keywords,
   Literal, NullLiteral, NumericLiteral,
   OptCaseType, Plurals, RQLValue, StringLiteral,
-  Subselect, Token, Variable
+  Subselect, Token
 } from "../types";
 import convertTableRefs from "../refs/convertTableRefs";
 import Pluralizer from "../Pluralizer";
 import Table from "../Table";
-import { BelongsTo, HasMany, Identifier, ManyToMany, Root } from "./Node";
+import { BelongsTo, HasMany, Identifier, ManyToMany, Root, Variable } from "./Node";
 
 class Parser<Params> {
   // caseType?: CaseType;
@@ -219,10 +219,7 @@ class Parser<Params> {
 
     const key = this.keys[this.keyIdx];
 
-    let variable: Variable = {
-      type: "Variable",
-      value: key
-    };
+    const variable = new Variable (key);
 
     this.keyIdx += 1;
 
@@ -311,8 +308,8 @@ class Parser<Params> {
         return this.BelongsTo ();
       case "x":
         return this.ManyToMany ();
-      // case "VARIABLE":
-      //   return this.Variable ();
+      case "VARIABLE":
+        return this.Variable ();
       case "&":
         return this.Subselect ();
     }

@@ -78,8 +78,29 @@ const keysToRefs = (table: Table, keys: Keys) => {
   return refs;
 };
 
+const whereIn = (refs: RefsNew, rows: any[], child: Table) => chain (getValues, values => {
+  const { lkeys, rkeys } = refs;
+
+  const [query, newValues] = lkeys.reduce (([sql, vals], lk, idx) => {
+    const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
+    const rk = rkeys[idx];
+    const op = idx === 0 ? "" : "and ";
+
+    return [
+      `${sql} ${op}${child.as}.${rk.name} in (${parameterize (values.length, uniqRows.length)})`,
+      vals.concat (uniqRows)
+    ];
+  }, ["where", [] as Values]);
+
+
+  return evolve ({
+    query: concatQuery (query),
+    values: concat (newValues)
+  });
+});
+
 const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params?: Input) => {
-  const interpretEach = (members: ASTNode[], env: Environment<Input>): Environment<Input> =>
+  const interpretComps = (members: ASTNode[], env: Environment<Input>): Environment<Input> =>
     members.reduce ((acc, mem) =>
       acc.extend (env => goInterpret (mem, env)), env);
 
@@ -94,19 +115,55 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
     }) (record);
   };
 
+  const toCase = (string: string) => {
+    return convertCase (caseType, string);
+  };
+
+
   const goInterpret: InterpretFn<Input> = (exp, env = createEnv<Input> (), rows?) => {
+    const { record } = env;
+    const { values, table, refs } = record;
+
     return exp.cata<EnvRecord<Input>> ({
-      Root: (table, members) => {
-        return interpretEach (members, createEnv<Input> (table))
+      Root: (table, members) =>
+        interpretComps (members, createEnv<Input> (table))
 
           .map (selectFrom (table))
 
-        // .map (this.includeSql (table))
+          .map (includeSql (table))
+
+          .record,
+
+      BelongsTo: (child, members, keywords) => {
+        if (!rows) {
+          if (!table) {
+            throw new Error ("No Table");
+          }
+
+          const { lkey, rkey } = keywords;
+
+          const refs = keysToRefs (child, {
+            lkey: lkey || toCase (child.name + "_id"),
+            rkey: rkey || "id"
+          });
+
+          return evolve ({
+            comps: concatKeys (table, refs.lkeys),
+            next: concat ({ exp, refs })
+          }) (record);
+        }
+
+        return interpretComps (members, createEnv<Input> (child))
+
+          .map (overComps (concatKeys (child, refs.rkeys)))
+
+          .map (selectFrom (child))
+
+          .map (whereIn (refs, rows, child))
+
+          .map (includeSql (child))
 
           .record;
-      },
-      BelongsTo: () => {
-        return env.record;
       },
       HasMany: () => {
         return env.record;
@@ -115,10 +172,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
         return env.record;
       },
       Identifier: (name, as, cast) => {
-        const { record } = env;
-
-        const { table } = record;
-
         if (!table) {
           throw new Error ("No Table");
         }
@@ -134,6 +187,49 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
         }
 
         return overComps (concat (sql)) (record);
+      },
+      Variable: (value, as, cast) => {
+
+        if (isSQLTag (value)) {
+          if (as) {
+            // subquery
+
+            const [query, newValues] = compileSQLTag (value, values.length, params, table);
+
+            return evolve ({
+              comps: concat (`(${query}) as ${as}`),
+              values: concat (newValues)
+            }) (record);
+          }
+          return overSqlTag (sqlTag => sqlTag.concat (value)) (record);
+        }
+        return env.record;
+
+        // if as, subselect in ge val van sqlTAG
+
+        // const sql = this.getSQLIfSQLTag (value, env);
+
+        // if (sql) {
+        //   env.writeToSQL (sql);
+        // } else if (isRaw (value)) {
+        //   env.writeToQuery (value.value);
+
+        // } else {
+        //   // normal variable
+        //   env.addValues ([value]);
+
+        //   let query = "$" + env.lookup ("keyIdx");
+
+        //   if (cast) {
+        //     query += "::" + cast;
+        //   }
+
+        //   env.writeToQuery (query);
+        // }
+
+        // return;
+        // }
+
       }
     });
 
@@ -156,9 +252,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 //   }
 
 
-//   toCase(string: string) {
-//     return convertCase (this.caseType, string);
-//   }
 
 //   interpretEach(members: ASTNode[], env: Environment<Input>) {
 //     return members
@@ -224,67 +317,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 //   return overComps (concat (getQuery (thisRecord))) (record);
 // }
 
-
-// if (exp.type === "BelongsTo") {
-//   const { table, members, keywords } = exp;
-//   const { record } = env;
-
-//   if (!rows) {
-//     const { table: parent } = record;
-
-//     if (!parent) {
-//       throw new Error ("No Table");
-//     }
-
-//     const { lkey, rkey } = keywords;
-
-//     const refs = keysToRefs (table, {
-//       lkey: lkey || this.toCase (table.name + "_id"),
-//       rkey: rkey || "id"
-//     });
-
-//     return evolve ({
-//       comps: concatKeys (parent, refs.lkeys),
-//       next: concat ({ exp, refs })
-//     }) (record);
-//   }
-
-//   // lkeys length should equal rkeys length
-//   const { rkeys, lkeys } = record.refs;
-
-//   return this
-
-//     .interpretEach (members, createEnv<Input> (table))
-
-//     .map (overComps (concatKeys (table, rkeys)))
-
-//     .map (selectFrom (table))
-
-//     .map (chain (
-//       getValues,
-//       values => {
-//         const [query, newValues] = lkeys.reduce (([sql, vals], lk, idx) => {
-//           const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
-//           const rk = rkeys[idx];
-//           const op = idx === 0 ? "" : "and ";
-
-//           return [
-//             `${sql} ${op}${table.as}.${rk.name} in (${parameterize (values.length, uniqRows.length)})`,
-//             vals.concat (uniqRows)
-//           ];
-//         }, ["where", [] as Values]);
-
-
-//         return evolve ({
-//           query: concatQuery (query),
-//           values: concat (newValues)
-//         });
-//       }))
-
-//     .map (this.includeSql (table))
-
-//     .record;
-// }
 
 // if (exp.type === "HasMany") {
 //   const { name, as, members, keywords } = exp;
@@ -455,50 +487,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 // }
 
 
-// if (exp.type === "Variable") {
-//   const { value, cast, as } = exp;
-//   const { record } = env;
-
-//   if (isSQLTag (value)) {
-//     if (as) {
-//       // subquery
-//       const values = lookup ("values") (record);
-//       const table = lookup ("table") (record);
-
-//       const [query, newValues] = compileSQLTag (value, values.length, this.params, table);
-
-//       return evolve ({
-//         comps: concat (`(${query}) as ${as}`),
-//         values: concat (newValues)
-//       }) (record);
-//     }
-//     return overSqlTag (sqlTag => sqlTag.concat (value)) (record);
-//   }
-
-// if as, subselect in ge val van sqlTAG
-
-// const sql = this.getSQLIfSQLTag (value, env);
-
-// if (sql) {
-//   env.writeToSQL (sql);
-// } else if (isRaw (value)) {
-//   env.writeToQuery (value.value);
-
-// } else {
-//   // normal variable
-//   env.addValues ([value]);
-
-//   let query = "$" + env.lookup ("keyIdx");
-
-//   if (cast) {
-//     query += "::" + cast;
-//   }
-
-//   env.writeToQuery (query);
-// }
-
-// return;
-// }
 
 // if (exp.type === "StringLiteral") {
 //   const { value, as } = exp;
