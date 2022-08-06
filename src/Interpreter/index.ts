@@ -4,7 +4,7 @@ import associate from "../refs/associate";
 import getRefPath from "../refs/getRefPath";
 import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
-import { ASTRelation, ASTType, Link, ASTNode, Refs, CaseType, OptCaseType, Dict, EnvRecord, RefsNew, Next, Values, NamedKeys, InterpretFn } from "../types";
+import { ASTRelation, ASTType, Link, ASTNode, Refs, CaseType, OptCaseType, Dict, EnvRecord, RefsNew, Next, Values, NamedKeys, InterpretFn, Keywords } from "../types";
 import varToSQLTag from "../JBOInterpreter/varToSQLTag";
 import parameterize from "../more/parameterize";
 import isFunction from "../predicate/isFunction";
@@ -78,16 +78,14 @@ const keysToRefs = (table: Table, keys: Keys) => {
   return refs;
 };
 
-const whereIn = (refs: RefsNew, rows: any[], child: Table) => chain (getValues, values => {
-  const { lkeys, rkeys } = refs;
-
+const whereIn = (lkeys: NamedKeys[], rkeys: NamedKeys[], rows: any[], table: Table) => chain (getValues, values => {
   const [query, newValues] = lkeys.reduce (([sql, vals], lk, idx) => {
     const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
     const rk = rkeys[idx];
     const op = idx === 0 ? "" : "and ";
 
     return [
-      `${sql} ${op}${child.as}.${rk.name} in (${parameterize (values.length, uniqRows.length)})`,
+      `${sql} ${op}${table.as}.${rk.name} in (${parameterize (values.length, uniqRows.length)})`,
       vals.concat (uniqRows)
     ];
   }, ["where", [] as Values]);
@@ -98,6 +96,18 @@ const whereIn = (refs: RefsNew, rows: any[], child: Table) => chain (getValues, 
     values: concat (newValues)
   });
 });
+
+const join = (lkeys: NamedKeys[], rkeys: NamedKeys[], table: Table, xTable: Table) => overQuery (q => {
+  return lkeys.reduce ((q, lk, idx) => {
+    const rk = rkeys[idx];
+    const op = idx === 0 ? "" : "and ";
+
+    return `${q} ${op}${xTable.as}.${lk.name} = ${table.as}.${rk.name}`;
+
+  }, `${q} join ${xTable.name} as ${xTable.as} on`);
+
+});
+
 
 const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params?: Input) => {
   const interpretComps = (members: ASTNode[], env: Environment<Input>): Environment<Input> =>
@@ -159,17 +169,82 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 
           .map (selectFrom (child))
 
-          .map (whereIn (refs, rows, child))
+          .map (whereIn (refs.lkeys, refs.rkeys, rows, child))
 
           .map (includeSql (child))
 
           .record;
       },
-      HasMany: () => {
-        return env.record;
+      HasMany: (child, members, keywords) => {
+
+        if (!rows) {
+          if (!table) {
+            throw new Error ("No Table");
+          }
+
+          const { lkey, rkey } = keywords;
+
+          const refs = keysToRefs (child, {
+            lkey: lkey || "id",
+            rkey: rkey || toCase (table.name + "_id")
+          });
+
+          return evolve ({
+            comps: concatKeys (table, refs.lkeys),
+            next: concat ({ exp, refs })
+          }) (record);
+        }
+
+        return interpretComps (members, createEnv<Input> (child))
+
+          .map (overComps (concatKeys (child, refs.rkeys)))
+
+          .map (selectFrom (child))
+
+          .map (whereIn (refs.lkeys, refs.rkeys, rows, child))
+
+          .map (includeSql (child))
+
+          .record;
       },
-      ManyToMany: () => {
-        return env.record;
+      ManyToMany: (child, members, keywords) => {
+        if (!rows) {
+          if (!table) {
+            throw new Error ("No Table");
+          }
+
+          const { lkey, rkey, lxkey, rxkey } = keywords;
+
+          const refs = keysToRefs (child, {
+            lkey: lkey || "id",
+            rkey: rkey || "id",
+            lxkey: lxkey || toCase (table.name + "_id"),
+            rxkey: rxkey || toCase (child.name + "_id")
+          });
+
+          return evolve ({
+            comps: concatKeys (table, refs.lkeys),
+            next: concat ({ exp, refs })
+          }) (record);
+        }
+
+        if (!table) {
+          throw new Error ("No Table");
+        }
+
+        const xTable = new Table (keywords.x || toCase (`${table.name}_${child.name}`));
+
+        return interpretComps (members, createEnv<Input> (child))
+          .map (overComps (concatKeys (child, refs.rkeys)))
+          .map (overComps (concatKeys (xTable, refs.lxkeys)))
+          .map (overComps (concatKeys (xTable, refs.rxkeys)))
+          .map (selectFrom (child))
+          .map (join (refs.rxkeys, refs.rkeys, child, xTable))
+          .map (whereIn (refs.lkeys, refs.lxkeys, rows, xTable))
+          .map (includeSql (child))
+
+          .record;
+
       },
       Identifier: (name, as, cast) => {
         if (!table) {
@@ -241,28 +316,9 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 
 
 // class Interpreter<Input> {
-//   caseType: OptCaseType;
-//   useSmartAlias: boolean;
-//   params?: Input;
-
-//   constructor(caseType: OptCaseType, useSmartAlias: boolean, params?: Input) {
-//     this.caseType = caseType;
-//     this.useSmartAlias = useSmartAlias;
-//     this.params = params;
-//   }
 
 
 
-//   interpretEach(members: ASTNode[], env: Environment<Input>) {
-//     return members
-//       .reduce ((acc, mem) =>
-//         acc.extend (env => this.interpret (mem, env)), env);
-//   }
-
-
-
-
-// this.interpretEach (members, membersEnv);
 
 // membersEnv.writeToQuery (`from "${name}" "${as}"`
 //   .concat (hasId ? ` where "${as}".id = ${id}` : "")
@@ -317,72 +373,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 //   return overComps (concat (getQuery (thisRecord))) (record);
 // }
 
-
-// if (exp.type === "HasMany") {
-//   const { name, as, members, keywords } = exp;
-//   const { lkey, rkey } = keywords;
-
-//   const table = env.lookup ("table");
-
-//   const { lkeys, rkeys } = keysToRefs (as || name, {
-//     lkey: lkey || "id",
-//     rkey: rkey || this.toCase (table.name + "_id")
-//   });
-
-//   const required = lkeys.map (lk => `"${table.as || table.name}".${lk.name} as ${lk.as}`);
-
-//   if (!rows) {
-//     env.addToRequired (required);
-//     env.addToNext ({
-//       exp,
-//       refs: {
-//         lkeys,
-//         rkeys,
-//         lxkeys: [],
-//         rxkeys: []
-//       }
-//     });
-//     return;
-//   }
-
-//   const membersEnv = new Environment ({
-//     table: new Table (name, as),
-//     query: "select",
-//     sql: "",
-//     keyIdx: 0,
-//     values: [],
-//     next: [],
-//     comps: []
-//   });
-
-//   this.interpretEach (members, membersEnv);
-
-//   const requiredHere = rkeys.map (rk => `"${as || name}".${rk.name} as ${rk.as}`);
-
-//   membersEnv.addToRequired (requiredHere);
-
-//   membersEnv.lookup ("comps").forEach (req => {
-//     membersEnv.writeToQuery (req);
-//   });
-
-//   let wherePart = `from "${name}" "${as}" where`;
-
-//   lkeys.forEach ((lk, idx) => {
-//     const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
-//     const rk = rkeys[idx];
-//     const andOp = idx === 0 ? "" : "and ";
-
-//     wherePart += ` ${andOp}${rk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), uniqRows.length, "")})`;
-
-//     membersEnv.addValues (uniqRows);
-//   });
-
-//   membersEnv.writeToQuery (wherePart);
-
-//   membersEnv.writeSQLToQuery (true);
-
-//   return membersEnv.record;
-// }
 
 // if (exp.type === "ManyToMany") {
 //   const { name, as, members, keywords } = exp;

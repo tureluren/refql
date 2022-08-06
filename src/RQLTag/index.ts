@@ -16,6 +16,7 @@ import createEnv from "./createEnv";
 
 const makeGo = <Input, Output>(querier: Querier, interpret: (exp: ASTNode, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>) => (compiledQuery: CompiledQuery) => {
   const go = (compiled: CompiledQuery): Promise<Output[]> => {
+    console.log (compiled);
     // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
@@ -25,10 +26,10 @@ const makeGo = <Input, Output>(querier: Querier, interpret: (exp: ASTNode, env: 
         console.log (ip);
 
         return go ({
-          next: ip?.next!,
-          query: ip?.query!,
-          values: ip?.values!,
-          table: ip?.table!
+          next: ip.next,
+          query: ip.query,
+          values: ip.values,
+          table: ip.table
         });
 
       });
