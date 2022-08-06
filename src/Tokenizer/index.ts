@@ -32,7 +32,7 @@ const spec: Spec = [
   [/^</, "<"],
   [/^-/, "-"],
   [/^x\b/, "x"],
-  [/^&/, "&"],
+  [/^&/, "&"], // REMOVE
 
   // Identifiers
   [/^\w+/, "IDENTIFIER"],

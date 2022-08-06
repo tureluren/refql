@@ -1,5 +1,5 @@
 import Environment from "./Environment2";
-import { BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, Variable } from "./Parser/Node";
+import { BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Parser/Node";
 import RQLTag from "./RQLTag";
 import SQLTag from "./SQLTag";
 import Table from "./Table";
@@ -72,26 +72,6 @@ export interface Aliasable {
 
 export interface Castable {
   cast?: string;
-}
-
-export interface BooleanLiteral extends Aliasable {
-  type: "BooleanLiteral";
-  value: boolean;
-}
-
-export interface NullLiteral extends Aliasable {
-  type: "NullLiteral";
-  value: null;
-}
-
-export interface StringLiteral extends Aliasable {
-  type: "StringLiteral";
-  value: string;
-}
-
-export interface NumericLiteral extends Aliasable {
-  type: "NumericLiteral";
-  value: number;
 }
 
 // remove
@@ -185,6 +165,10 @@ export type Pattern<R> = {
   Identifier: (name: string, as?: string, cast?: string) => R;
   Variable: (value: any, as?: string, cast?: string) => R;
   Call: (name: string, args: ASTNode[], as?: string, cast?: string) => R;
+  StringLiteral: (value: string, as?: string, cast?: string) => R;
+  NumericLiteral: (value: number, as?: string, cast?: string) => R;
+  BooleanLiteral: (value: boolean, as?: string, cast?: string) => R;
+  NullLiteral: (value: null, as?: string, cast?: string) => R;
 };
 
 export type InterpretFn<Input> = (exp: ASTNode, env?: Environment<Input>, rows?: any[]) => EnvRecord<Input>;

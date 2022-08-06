@@ -6,16 +6,16 @@ import Tokenizer from "../Tokenizer";
 import validateKeywords from "./validateKeywords";
 import convertCase from "../more/convertCase";
 import {
-  ASTNode, ASTRelation, ASTType, BooleanLiteral,
+  ASTNode, ASTRelation, ASTType,
   CaseType, Keywords,
-  Literal, NullLiteral, NumericLiteral,
-  OptCaseType, Plurals, RQLValue, StringLiteral,
+  Literal,
+  OptCaseType, Plurals, RQLValue,
   Subselect, Token
 } from "../types";
 import convertTableRefs from "../refs/convertTableRefs";
 import Pluralizer from "../Pluralizer";
 import Table from "../Table";
-import { BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, Variable } from "./Node";
+import { BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Node";
 
 class Parser<Params> {
   // caseType?: CaseType;
@@ -292,9 +292,9 @@ class Parser<Params> {
   }
 
   ASTNode(): ASTNode {
-    // if (isLiteral (this.lookahead.type)) {
-    //   return this.Literal ();
-    // }
+    if (isLiteral (this.lookahead.type)) {
+      return this.Literal ();
+    }
     switch (this.lookahead.type) {
       case "IDENTIFIER":
         return this.Identifier ();
@@ -314,9 +314,9 @@ class Parser<Params> {
   }
 
   Argument(): ASTNode {
-    // if (isLiteral (this.lookahead.type)) {
-    //   return this.Literal ();
-    // }
+    if (isLiteral (this.lookahead.type)) {
+      return this.Literal ();
+    }
     switch (this.lookahead.type) {
       case "IDENTIFIER":
         return this.Identifier ();
@@ -327,52 +327,54 @@ class Parser<Params> {
     throw new SyntaxError (`Invalid Argument Type: "${this.lookahead.type}"`);
   }
 
-  // Literal(): Literal {
-  //   switch (this.lookahead.type) {
-  //     case "NUMBER": return this.NumericLiteral ();
-  //     case "STRING": return this.StringLiteral ();
-  //     case "true": return this.BooleanLiteral (true);
-  //     case "false": return this.BooleanLiteral (false);
-  //     case "null": return this.NullLiteral ();
-  //     default:
-  //       throw new SyntaxError (`Unknown Literal: "${this.lookahead.type}"`);
-  //   }
-  // }
+  Literal(): Literal {
+    switch (this.lookahead.type) {
+      case "NUMBER": return this.NumericLiteral ();
+      case "STRING": return this.StringLiteral ();
+      case "true": return this.BooleanLiteral (true);
+      case "false": return this.BooleanLiteral (false);
+      case "null": return this.NullLiteral ();
+      default:
+        throw new SyntaxError (`Unknown Literal: "${this.lookahead.type}"`);
+    }
+  }
 
-  BooleanLiteral(value: boolean): BooleanLiteral {
+  BooleanLiteral(value: boolean) {
     this.eat (value ? "true" : "false");
-    let as;
+    let as, cast;
 
     if (this.lookahead.type === ":") {
       this.eat (":");
       as = this.eat ("IDENTIFIER").value;
     }
 
-    return {
-      type: "BooleanLiteral",
-      value,
-      as
-    };
+    if (this.lookahead.type === "::") {
+      this.eat ("::");
+      cast = this.eat ("IDENTIFIER").value;
+    }
+
+    return new BooleanLiteral (value, as, cast);
   }
 
-  NullLiteral(): NullLiteral {
+  NullLiteral() {
     this.eat ("null");
-    let as;
+    let as, cast;
 
     if (this.lookahead.type === ":") {
       this.eat (":");
       as = this.eat ("IDENTIFIER").value;
     }
 
-    return {
-      type: "NullLiteral",
-      value: null,
-      as
-    };
+    if (this.lookahead.type === "::") {
+      this.eat ("::");
+      cast = this.eat ("IDENTIFIER").value;
+    }
+
+    return new NullLiteral (null, as, cast);
   }
 
-  StringLiteral(): StringLiteral {
-    let value, as;
+  StringLiteral() {
+    let value, cast, as;
     const token = this.eat ("STRING");
     value = token.value.slice (1, -1);
 
@@ -381,29 +383,31 @@ class Parser<Params> {
       as = this.eat ("IDENTIFIER").value;
     }
 
-    return {
-      type: "StringLiteral",
-      value,
-      as
-    };
+    if (this.lookahead.type === "::") {
+      this.eat ("::");
+      cast = this.eat ("IDENTIFIER").value;
+    }
+
+    return new StringLiteral (value, as, cast);
   }
 
-  NumericLiteral(): NumericLiteral {
+  NumericLiteral() {
     const token = this.eat ("NUMBER");
 
     // `as` should be a string
-    let as;
+    let as, cast;
 
     if (this.lookahead.type === ":") {
       this.eat (":");
       as = this.eat ("IDENTIFIER").value;
     }
 
-    return {
-      type: "NumericLiteral",
-      value: Number (token.value),
-      as
-    };
+    if (this.lookahead.type === "::") {
+      this.eat ("::");
+      cast = this.eat ("IDENTIFIER").value;
+    }
+
+    return new NumericLiteral (Number (token.value), as, cast);
   }
 
   eat(tokenType: string) {

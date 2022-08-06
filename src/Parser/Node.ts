@@ -115,3 +115,67 @@ export class Call {
     return pattern.Call (this.name, this.args, this.as, this.cast);
   }
 }
+
+export class StringLiteral {
+  value: string;
+  as?: string;
+  cast?: string;
+
+  constructor(value: string, as?: string, cast?: string) {
+    this.value = value;
+    this.as = as;
+    this.cast = cast;
+  }
+
+  cata<R>(pattern: Pattern<R>) {
+    return pattern.StringLiteral (this.value, this.as, this.cast);
+  }
+}
+
+export class NumericLiteral {
+  value: number;
+  as?: string;
+  cast?: string;
+
+  constructor(value: number, as?: string, cast?: string) {
+    this.value = value;
+    this.as = as;
+    this.cast = cast;
+  }
+
+  cata<R>(pattern: Pattern<R>) {
+    return pattern.NumericLiteral (this.value, this.as, this.cast);
+  }
+}
+
+export class BooleanLiteral {
+  value: boolean;
+  as?: string;
+  cast?: string;
+
+  constructor(value: boolean, as?: string, cast?: string) {
+    this.value = value;
+    this.as = as;
+    this.cast = cast;
+  }
+
+  cata<R>(pattern: Pattern<R>) {
+    return pattern.BooleanLiteral (this.value, this.as, this.cast);
+  }
+}
+
+export class NullLiteral {
+  value: null;
+  as?: string;
+  cast?: string;
+
+  constructor(value: null, as?: string, cast?: string) {
+    this.value = value;
+    this.as = as;
+    this.cast = cast;
+  }
+
+  cata<R>(pattern: Pattern<R>) {
+    return pattern.NullLiteral (this.value, this.as, this.cast);
+  }
+}

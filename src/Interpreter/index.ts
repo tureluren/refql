@@ -253,7 +253,7 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
         let sql = `${table.as}.${name}`;
 
         if (cast) {
-          sql += `:: ${cast}`;
+          sql += `::${cast}`;
         }
 
         if (as) {
@@ -322,6 +322,58 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
         // return;
         // }
 
+      },
+      StringLiteral: (value, as, cast) => {
+        let sql = `'${value}'`;
+
+        if (cast) {
+          sql += `::${cast}`;
+        }
+
+        if (as) {
+          sql += ` as ${as}`;
+        }
+
+        return overComps (concat (sql)) (record);
+      },
+      NumericLiteral: (value, as, cast) => {
+        let sql = `${value}`;
+
+        if (cast) {
+          sql += `::${cast}`;
+        }
+
+        if (as) {
+          sql += ` as ${as}`;
+        }
+
+        return overComps (concat (sql)) (record);
+      },
+      BooleanLiteral: (value, as, cast) => {
+        let sql = `${value}`;
+
+        if (cast) {
+          sql += `::${cast}`;
+        }
+
+        if (as) {
+          sql += ` as ${as}`;
+        }
+
+        return overComps (concat (sql)) (record);
+      },
+      NullLiteral: (value, as, cast) => {
+        let sql = `${value}`;
+
+        if (cast) {
+          sql += `::${cast}`;
+        }
+
+        if (as) {
+          sql += ` as ${as}`;
+        }
+
+        return overComps (concat (sql)) (record);
       }
     });
 
@@ -367,13 +419,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 //   const { value, as } = exp;
 //   const { record } = env;
 
-//   let sql = `'${value}'`;
-
-//   if (as) {
-//     sql += ` as ${as}`;
-//   }
-
-//   return overComps (comps => comps.concat (sql)) (record);
 // }
 
 // if (

@@ -78,6 +78,7 @@ const playerQuery = rql<{ id: number }>`
     id
     last_name
     concat(last_name, upper(first_name))
+    null
     ${sql`
       limit 11
     `}
