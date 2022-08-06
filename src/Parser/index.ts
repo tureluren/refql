@@ -7,7 +7,7 @@ import validateKeywords from "./validateKeywords";
 import convertCase from "../more/convertCase";
 import {
   ASTNode, ASTRelation, ASTType, BooleanLiteral,
-  Call, CaseType, Keywords,
+  CaseType, Keywords,
   Literal, NullLiteral, NumericLiteral,
   OptCaseType, Plurals, RQLValue, StringLiteral,
   Subselect, Token
@@ -15,7 +15,7 @@ import {
 import convertTableRefs from "../refs/convertTableRefs";
 import Pluralizer from "../Pluralizer";
 import Table from "../Table";
-import { BelongsTo, HasMany, Identifier, ManyToMany, Root, Variable } from "./Node";
+import { BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, Variable } from "./Node";
 
 class Parser<Params> {
   // caseType?: CaseType;
@@ -236,13 +236,9 @@ class Parser<Params> {
     return variable;
   }
 
-  // Call(callee: Identifier): Call {
-  //   return {
-  //     ...callee,
-  //     type: "Call",
-  //     args: this.Arguments ()
-  //   };
-  // }
+  Call(callee: Identifier) {
+    return new Call (callee.name, this.Arguments (), callee.as, callee.cast);
+  }
 
   members() {
     this.eat ("{");
@@ -258,7 +254,7 @@ class Parser<Params> {
 
       if (this.lookahead.type === "(") {
         // can only be an identifier
-        // members.push (this.Call (<Identifier>ASTNode));
+        members.push (this.Call (<Identifier>ASTNode));
       } else {
         members.push (ASTNode);
       }
@@ -270,30 +266,30 @@ class Parser<Params> {
     return members;
   }
 
-  // Arguments() {
-  //   this.eat ("(");
+  Arguments() {
+    this.eat ("(");
 
-  //   const argumentList: ASTNode[] = [];
+    const argumentList: ASTNode[] = [];
 
-  //   if (this.lookahead.type !== ")") {
+    if (this.lookahead.type !== ")") {
 
-  //     do {
-  //       const argument = this.Argument ();
+      do {
+        const argument = this.Argument ();
 
-  //       if (this.lookahead.type === "(") {
-  //         // can only be an identifier
-  //         argumentList.push (this.Call (<Identifier>argument));
-  //       } else {
-  //         argumentList.push (argument);
-  //       }
-  //     // @ts-ignore
-  //     } while (this.lookahead.type === "," && this.eat (",") && this.lookahead.type !== ")");
-  //   }
+        if (this.lookahead.type === "(") {
+          // can only be an identifier
+          argumentList.push (this.Call (<Identifier>argument));
+        } else {
+          argumentList.push (argument);
+        }
+      // @ts-ignore
+      } while (this.lookahead.type === "," && this.eat (",") && this.lookahead.type !== ")");
+    }
 
-  //   this.eat (")");
+    this.eat (")");
 
-  //   return argumentList;
-  // }
+    return argumentList;
+  }
 
   ASTNode(): ASTNode {
     // if (isLiteral (this.lookahead.type)) {
@@ -317,19 +313,19 @@ class Parser<Params> {
     throw new SyntaxError (`Unknown ASTNode Type: "${this.lookahead.type}"`);
   }
 
-  // Argument(): ASTNode {
-  //   if (isLiteral (this.lookahead.type)) {
-  //     return this.Literal ();
-  //   }
-  //   switch (this.lookahead.type) {
-  //     case "IDENTIFIER":
-  //       return this.Identifier ();
-  //     case "VARIABLE":
-  //       return this.Variable ();
-  //   }
+  Argument(): ASTNode {
+    // if (isLiteral (this.lookahead.type)) {
+    //   return this.Literal ();
+    // }
+    switch (this.lookahead.type) {
+      case "IDENTIFIER":
+        return this.Identifier ();
+      case "VARIABLE":
+        return this.Variable ();
+    }
 
-  //   throw new SyntaxError (`Invalid Argument Type: "${this.lookahead.type}"`);
-  // }
+    throw new SyntaxError (`Invalid Argument Type: "${this.lookahead.type}"`);
+  }
 
   // Literal(): Literal {
   //   switch (this.lookahead.type) {

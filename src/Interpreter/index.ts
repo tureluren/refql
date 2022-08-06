@@ -176,7 +176,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
           .record;
       },
       HasMany: (child, members, keywords) => {
-
         if (!rows) {
           if (!table) {
             throw new Error ("No Table");
@@ -263,6 +262,24 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 
         return overComps (concat (sql)) (record);
       },
+      Call: (name, args, as, cast) => {
+        if (!table) {
+          throw new Error ("No Table");
+        }
+
+        const alias = as ? ` as ${as}` : "";
+        const convert = cast ? `::${cast}` : "";
+
+        const thisRecord = interpretComps (args, createEnv<Input> (table))
+          .map (chain (
+            getComps,
+            comps =>
+              setQuery (`${name} (${comps.join (", ")})${convert}${alias}`)))
+
+          .record;
+
+        return overComps (concat (getQuery (thisRecord))) (record);
+      },
       Variable: (value, as, cast) => {
 
         if (isSQLTag (value)) {
@@ -345,138 +362,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 // membersEnv.writeSQLToQuery (hasId);
 
 
-// if (exp.type === "Call") {
-//   const { args, name, as, cast } = exp;
-//   const { record } = env;
-
-//   const { table } = record;
-
-//   if (!table) {
-//     throw new Error ("No Table");
-//   }
-
-//   const callEnv = createEnv<Input> (table);
-
-//   const alias = as ? ` as ${as}` : "";
-
-//   const convert = cast ? `::${cast}` : "";
-
-//   const thisRecord = this.interpretEach (args, callEnv)
-
-//     .map (chain (
-//       getComps,
-//       comps =>
-//         setQuery (`${name} (${comps.join (", ")})${convert}${alias}`)))
-
-//     .record;
-
-//   return overComps (concat (getQuery (thisRecord))) (record);
-// }
-
-
-// if (exp.type === "ManyToMany") {
-//   const { name, as, members, keywords } = exp;
-//   const { x, lkey, lxkey, rkey, rxkey } = keywords;
-//   const table = env.lookup ("table");
-//   const xTable = x || this.toCase (`${table.name}_${name}`);
-
-//   const { lkeys, rkeys, lxkeys, rxkeys } = keysToRefs (as || name, {
-//     lkey: lkey || "id",
-//     rkey: rkey || "id",
-//     lxkey: lxkey || this.toCase (table.name + "_id"),
-//     rxkey: rxkey || this.toCase (name + "_id")
-//   });
-
-//   const required = lkeys.map (lk => `${lk.name} as ${lk.as}`);
-
-//   if (!rows) {
-//     env.addToRequired (required);
-//     env.addToNext ({
-//       exp,
-//       refs: {
-//         lkeys,
-//         rkeys,
-//         lxkeys,
-//         rxkeys
-//       }
-//     });
-//     return;
-//   }
-
-//   const membersEnv = new Environment ({
-//     table: new Table (name, as),
-//     query: "select",
-//     sql: "",
-//     keyIdx: 0,
-//     values: [],
-//     next: [],
-//     comps: []
-//   });
-
-//   this.interpretEach (members, membersEnv);
-
-//   const requiredHere = rkeys.map (rk => `"${as || name}".${rk.name} as ${rk.as}`);
-
-//   const requiredHere2 = lxkeys.map (lxk => `"${xTable}".${lxk.name} as ${lxk.as}`);
-
-//   const requiredHere3 = rxkeys.map (rxk => `"${xTable}".${rxk.name} as ${rxk.as}`);
-
-//   membersEnv.addToRequired (requiredHere.concat (requiredHere2).concat (requiredHere3));
-
-//   membersEnv.lookup ("comps").forEach (req => {
-//     membersEnv.writeToQuery (req);
-//   });
-
-//   let wherePart = `from ${name} as "${as}" join ${xTable} as "${xTable}" on`;
-
-//   /**
-//    * select * from game
-//    * join x on rxkey = rkey
-//    * where lxkey = lkey
-//    */
-
-//   rkeys.forEach ((rk, idx) => {
-//     const andOp = idx === 0 ? "" : "and ";
-//     const rxk = rxkeys[idx];
-
-//     wherePart += ` ${andOp}"${xTable}".${rxk.name} = "${as || name}".${rk.name}`;
-//   });
-
-//   wherePart += " where";
-
-//   // lkeys length should equal lxkeys length
-//   lkeys.forEach ((lk, idx) => {
-//     const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
-//     const lxk = lxkeys[idx];
-//     const andOp = idx === 0 ? "" : "and ";
-
-//     wherePart += ` ${andOp}"${xTable}".${lxk.name} in (${parameterize (membersEnv.lookup ("keyIdx"), uniqRows.length, "")})`;
-
-//     membersEnv.addValues (uniqRows);
-//   });
-
-//   membersEnv.writeToQuery (wherePart);
-
-//   membersEnv.writeSQLToQuery (true);
-
-//   return membersEnv.record;
-// }
-
-// if (exp.type === "Subselect") {
-//   const { tag, as } = exp;
-
-//   const sql = this.getSQLIfSQLTag (tag, env);
-
-//   if (sql) {
-//     env.writeToQuery (`'${as}', (${sql})`);
-//   } else {
-//     throw new Error ("A subselect should be a sql snippet or a function that returns a sql snippet");
-//   }
-
-//   return;
-// }
-
-
 
 // if (exp.type === "StringLiteral") {
 //   const { value, as } = exp;
@@ -506,22 +391,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 // }
 
 //   return env.record;
-// }
-
-// getSQLIfSQLTag(value: any, env: Environment<Input>) {
-//   const sqlTag = varToSQLTag (value, env.lookup ("table"));
-
-//   if (sqlTag == null) {
-//     return null;
-//   }
-
-//   const [sql, values] = compileSQLTag (sqlTag, env.lookup ("keyIdx"), this.params, env.lookup ("table"));
-
-//   env.addValues (values);
-
-//   return sql;
-// }
-
 // }
 
 export default interpret;

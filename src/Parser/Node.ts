@@ -97,3 +97,21 @@ export class Variable {
     return pattern.Variable (this.value, this.as, this.cast);
   }
 }
+
+export class Call {
+  name: string;
+  args: ASTNode[];
+  as?: string;
+  cast?: string;
+
+  constructor(name: string, args: ASTNode[], as?: string, cast?: string) {
+    this.name = name;
+    this.args = args;
+    this.as = as;
+    this.cast = cast;
+  }
+
+  cata<R>(pattern: Pattern<R>) {
+    return pattern.Call (this.name, this.args, this.as, this.cast);
+  }
+}

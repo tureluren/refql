@@ -1,5 +1,5 @@
 import Environment from "./Environment2";
-import { BelongsTo, HasMany, Identifier, ManyToMany, Root, Variable } from "./Parser/Node";
+import { BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, Variable } from "./Parser/Node";
 import RQLTag from "./RQLTag";
 import SQLTag from "./SQLTag";
 import Table from "./Table";
@@ -100,11 +100,6 @@ export interface Subselect extends Omit<Identifier, "type"> {
   tag: SQLTag_;
 }
 
-export interface Call extends Omit<Identifier, "type"> {
-  type: "Call";
-  args: ASTNode[];
-}
-
 export type Literal =
   StringLiteral | NumericLiteral | BooleanLiteral | NullLiteral;
 
@@ -112,7 +107,7 @@ export type ASTRelation =
   Root | HasMany | BelongsTo | ManyToMany;
 
 export type ASTNode =
-  Identifier | ASTRelation | Variable;
+  Identifier | ASTRelation | Variable | Call;
   // | Subselect | Call | Variable | Literal;
 
 export interface Next {
@@ -189,6 +184,7 @@ export type Pattern<R> = {
   ManyToMany: (table: Table, members: ASTNode[], keywords: Keywords) => R;
   Identifier: (name: string, as?: string, cast?: string) => R;
   Variable: (value: any, as?: string, cast?: string) => R;
+  Call: (name: string, args: ASTNode[], as?: string, cast?: string) => R;
 };
 
 export type InterpretFn<Input> = (exp: ASTNode, env?: Environment<Input>, rows?: any[]) => EnvRecord<Input>;
