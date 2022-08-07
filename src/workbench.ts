@@ -77,12 +77,11 @@ const updateKeywords = (keywords: Keywords) => (ast: ASTRelation): ASTRelation =
 
 const playerQuery = rql<{ id: number }>`
   player {
-    id:identifie::text
     last_name
-    ${sql`
-      select count (*) from goal
-      where player_id = player.id 
-    `}:goalcount::int
+    - team {
+      id
+      name
+    }
     ${sql`
       limit 11
     `}

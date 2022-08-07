@@ -3,7 +3,7 @@ import sql from "../SQLTag/sql";
 import Table from "../Table";
 import { RefsNew } from "../types";
 
-const createEnv = <Input>(table?: Table, refs?: RefsNew) => new Environment ({
+const createEnv = <Input>(table: Table, refs?: RefsNew) => new Environment ({
   table,
   sqlTag: sql<Input>``,
   query: "",

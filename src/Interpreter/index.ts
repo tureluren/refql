@@ -133,7 +133,7 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
   };
 
 
-  const goInterpret: InterpretFn<Input> = (exp, env = createEnv<Input> (), rows?) => {
+  const goInterpret: InterpretFn<Input> = (exp, env, rows?) => {
     const { record } = env;
     const { values, table, refs } = record;
 
@@ -149,10 +149,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 
       BelongsTo: (child, members, keywords) => {
         if (!rows) {
-          if (!table) {
-            throw new Error ("No Table");
-          }
-
           const { lkey, rkey } = keywords;
 
           const refs = keysToRefs (child, {
@@ -180,10 +176,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
       },
       HasMany: (child, members, keywords) => {
         if (!rows) {
-          if (!table) {
-            throw new Error ("No Table");
-          }
-
           const { lkey, rkey } = keywords;
 
           const refs = keysToRefs (child, {
@@ -211,10 +203,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
       },
       ManyToMany: (child, members, keywords) => {
         if (!rows) {
-          if (!table) {
-            throw new Error ("No Table");
-          }
-
           const { lkey, rkey, lxkey, rxkey } = keywords;
 
           const refs = keysToRefs (child, {
@@ -228,10 +216,6 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
             comps: concatKeys (table, refs.lkeys),
             next: concat ({ exp, refs })
           }) (record);
-        }
-
-        if (!table) {
-          throw new Error ("No Table");
         }
 
         const xTable = new Table (keywords.x || toCase (`${table.name}_${child.name}`));
@@ -249,19 +233,11 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 
       },
       Identifier: (name, as, cast) => {
-        if (!table) {
-          throw new Error ("No Table");
-        }
-
         const sql = `${table.as}.${name}`;
 
         return overComps (concat (castAs (sql, as, cast))) (record);
       },
       Call: (name, args, as, cast) => {
-        if (!table) {
-          throw new Error ("No Table");
-        }
-
         const thisRecord = interpretComps (args, createEnv<Input> (table))
           .map (chain (
             getComps,

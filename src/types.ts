@@ -98,7 +98,7 @@ export interface Next {
 
 
 export interface EnvRecord<Input> {
-  table?: Table;
+  table: Table;
   query: string;
   sqlTag: SQLTag<Input>;
   comps: string[];
@@ -110,7 +110,7 @@ export interface EnvRecord<Input> {
 export interface CompiledQuery {
   query: string;
   values: Values;
-  table?: Table;
+  table: Table;
   next: Next[];
 }
 
@@ -173,4 +173,4 @@ export type Pattern<R> = {
   NullLiteral: (value: null, as?: string, cast?: string) => R;
 };
 
-export type InterpretFn<Input> = (exp: ASTNode, env?: Environment<Input>, rows?: any[]) => EnvRecord<Input>;
+export type InterpretFn<Input> = (exp: ASTNode, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>;

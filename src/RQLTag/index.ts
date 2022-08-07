@@ -112,7 +112,9 @@ class RQLTag <Input> {
 
     const go = makeGo<Input, Output> (config.querier, interpret);
 
-    const interpreted = interpret (this.ast);
+    // if ast has no table (when changing astrelation to ast node) throw error
+
+    const interpreted = interpret (this.ast, createEnv (this.ast.table));
 
     return go ({
       next: interpreted.next,
