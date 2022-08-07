@@ -1,5 +1,7 @@
 import { Pool } from "pg";
 import { rql } from "./index";
+import Raw from "./Raw";
+import raw from "./Raw/raw";
 import RQLTag from "./RQLTag";
 import { Goal, Player } from "./soccer";
 import SQLTag from "./SQLTag";
@@ -75,10 +77,12 @@ const updateKeywords = (keywords: Keywords) => (ast: ASTRelation): ASTRelation =
 
 const playerQuery = rql<{ id: number }>`
   player {
-    id
+    id:identifie::text
     last_name
-    concat(last_name, upper(first_name))
-    null
+    ${sql`
+      select count (*) from goal
+      where player_id = player.id 
+    `}:goalcount::int
     ${sql`
       limit 11
     `}

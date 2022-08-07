@@ -1,5 +1,6 @@
 import Environment from "./Environment2";
 import { BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Parser/Node";
+import Raw from "./Raw";
 import RQLTag from "./RQLTag";
 import SQLTag from "./SQLTag";
 import Table from "./Table";
@@ -132,7 +133,8 @@ export interface DBRef {
 
 export type Primitive = string | number | boolean;
 
-export type RQLValue<Input> = ((p: Input, t: Table) => any) | Primitive | TableRefs | Link[] | Keywords | SQLTag<Input> ;
+export type RQLValue<Input> = ((p: Input, t: Table) => any) | Primitive | TableRefs | Link[] | Keywords | SQLTag<Input> | Raw;
+
 export type Values = any[];
 
 export type Querier = (query: string, values: Values) => Promise<any[]>;

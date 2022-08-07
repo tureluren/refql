@@ -30,6 +30,9 @@ const getRefs = lookup ("refs");
 const getQuery = lookup ("query");
 const setQuery = set ("query");
 
+const castAs = (sql: string | number | boolean | null, as?: string, cast?: string) =>
+  `${sql}${cast ? `::${cast}` : ""}${as ? ` as ${as}` : ""}`;
+
 const concat = <T>(item: T | T[]) => <R> (arr: R[]): R[] =>
   arr.concat (item as unknown as R);
 
@@ -250,192 +253,61 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
           throw new Error ("No Table");
         }
 
-        let sql = `${table.as}.${name}`;
+        const sql = `${table.as}.${name}`;
 
-        if (cast) {
-          sql += `::${cast}`;
-        }
-
-        if (as) {
-          sql += ` as ${as}`;
-        }
-
-        return overComps (concat (sql)) (record);
+        return overComps (concat (castAs (sql, as, cast))) (record);
       },
       Call: (name, args, as, cast) => {
         if (!table) {
           throw new Error ("No Table");
         }
 
-        const alias = as ? ` as ${as}` : "";
-        const convert = cast ? `::${cast}` : "";
-
         const thisRecord = interpretComps (args, createEnv<Input> (table))
           .map (chain (
             getComps,
             comps =>
-              setQuery (`${name} (${comps.join (", ")})${convert}${alias}`)))
+              setQuery (castAs (`${name} (${comps.join (", ")})`, as, cast))))
 
           .record;
 
         return overComps (concat (getQuery (thisRecord))) (record);
       },
       Variable: (value, as, cast) => {
-
         if (isSQLTag (value)) {
           if (as) {
-            // subquery
-
             const [query, newValues] = compileSQLTag (value, values.length, params, table);
 
             return evolve ({
-              comps: concat (`(${query}) as ${as}`),
+              comps: concat (castAs (`(${query})`, as, cast)),
               values: concat (newValues)
             }) (record);
           }
           return overSqlTag (sqlTag => sqlTag.concat (value)) (record);
+
+        } else if (isRaw (value)) {
+          return overComps (concat (value.value)) (record);
         }
-        return env.record;
 
-        // if as, subselect in ge val van sqlTAG
-
-        // const sql = this.getSQLIfSQLTag (value, env);
-
-        // if (sql) {
-        //   env.writeToSQL (sql);
-        // } else if (isRaw (value)) {
-        //   env.writeToQuery (value.value);
-
-        // } else {
-        //   // normal variable
-        //   env.addValues ([value]);
-
-        //   let query = "$" + env.lookup ("keyIdx");
-
-        //   if (cast) {
-        //     query += "::" + cast;
-        //   }
-
-        //   env.writeToQuery (query);
-        // }
-
-        // return;
-        // }
-
+        return evolve ({
+          values: concat (value),
+          comps: concat (castAs (`$${values.length + 1}`, as, cast))
+        }) (record);
       },
-      StringLiteral: (value, as, cast) => {
-        let sql = `'${value}'`;
+      StringLiteral: (value, as, cast) =>
+        overComps (concat (castAs (`'${value}'`, as, cast))) (record),
 
-        if (cast) {
-          sql += `::${cast}`;
-        }
+      NumericLiteral: (value, as, cast) =>
+        overComps (concat (castAs (value, as, cast))) (record),
 
-        if (as) {
-          sql += ` as ${as}`;
-        }
+      BooleanLiteral: (value, as, cast) =>
+        overComps (concat (castAs (value, as, cast))) (record),
 
-        return overComps (concat (sql)) (record);
-      },
-      NumericLiteral: (value, as, cast) => {
-        let sql = `${value}`;
-
-        if (cast) {
-          sql += `::${cast}`;
-        }
-
-        if (as) {
-          sql += ` as ${as}`;
-        }
-
-        return overComps (concat (sql)) (record);
-      },
-      BooleanLiteral: (value, as, cast) => {
-        let sql = `${value}`;
-
-        if (cast) {
-          sql += `::${cast}`;
-        }
-
-        if (as) {
-          sql += ` as ${as}`;
-        }
-
-        return overComps (concat (sql)) (record);
-      },
-      NullLiteral: (value, as, cast) => {
-        let sql = `${value}`;
-
-        if (cast) {
-          sql += `::${cast}`;
-        }
-
-        if (as) {
-          sql += ` as ${as}`;
-        }
-
-        return overComps (concat (sql)) (record);
-      }
+      NullLiteral: (value, as, cast) =>
+        overComps (concat (castAs (value, as, cast))) (record)
     });
 
   };
   return goInterpret;
 };
-
-
-
-
-// class Interpreter<Input> {
-
-
-
-
-// membersEnv.writeToQuery (`from "${name}" "${as}"`
-//   .concat (hasId ? ` where "${as}".id = ${id}` : "")
-// );
-// const hasId = id != null;
-
-// eachInterpreted.lookup ("required").forEach (req => {
-//   eachInterpreted.writeToQuery (req);
-// });
-
-
-//  eachInterpreted.writeToQuery (`from "${name}" "${as || name}"`
-//     // .concat (hasId ? ` where "${as}".id = ${id}` : "")
-//   );
-
-// if (limit != null) {
-//   membersEnv.writeToSQL (`limit ${limit}`);
-// }
-
-// if (offset != null) {
-//   membersEnv.writeToSQL (`offset ${offset}`);
-// }
-
-// membersEnv.writeSQLToQuery (hasId);
-
-
-
-// if (exp.type === "StringLiteral") {
-//   const { value, as } = exp;
-//   const { record } = env;
-
-// }
-
-// if (
-//   exp.type === "NumericLiteral" ||
-//   exp.type === "BooleanLiteral" ||
-//   exp.type === "NullLiteral"
-// ) {
-// const { value, as } = exp;
-// const { inFunction } = env.record;
-
-// if (inFunction) {
-//   env.writeToQuery (`${value}`);
-// } else {
-//   env.writeToQuery (`'${as}', ${value}`);
-// }
-
-//   return env.record;
-// }
 
 export default interpret;
