@@ -108,7 +108,7 @@ class RQLTag <Input> {
 
   run<Output>(config: RefQLConfig, params: Input): Promise<Output[]> {
 
-    const interpret = Interpreter (config.caseType, config.useSmartAlias, params);
+    const interpret = Interpreter (config.caseType, params);
 
     const go = makeGo<Input, Output> (config.querier, interpret);
 

@@ -144,7 +144,7 @@ export type Rules = [RegExp, string][];
 export type ASTType = "Root" | "HasMany" | "ManyToMany" | "BelongsTo";
 
 export type Transformations<Input> = {
-  [key in keyof Partial<EnvRecord<Input>>]: (value: NonNullable<EnvRecord<Input>[key]>) => EnvRecord<Input>[key];
+  [key in keyof Partial<EnvRecord<Input>>]: (value: EnvRecord<Input>[key]) => EnvRecord<Input>[key];
 };
 
 export interface NamedKeys {

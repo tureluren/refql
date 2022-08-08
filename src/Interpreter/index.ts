@@ -4,7 +4,7 @@ import Table from "../Table";
 import { ASTRelation, ASTType, Link, ASTNode, Refs, CaseType, OptCaseType, Dict, EnvRecord, RefsNew, Next, Values, NamedKeys, InterpretFn, Keywords } from "../types";
 import parameterize from "../more/parameterize";
 import convertCase from "../more/convertCase";
-import lookup from "../Environment2/lookup";
+import view from "../Environment2/view";
 import over from "../Environment2/over";
 import chain from "../more/chain";
 import evolve from "../Environment2/evolve";
@@ -15,9 +15,9 @@ import createEnv from "../RQLTag/createEnv";
 const overComps = over ("comps");
 const overQuery = over ("query");
 const overSqlTag = over ("sqlTag");
-const getComps = lookup ("comps");
-const getValues = lookup ("values");
-const getQuery = lookup ("query");
+const getComps = view ("comps");
+const getValues = view ("values");
+const getQuery = view ("query");
 const setQuery = set ("query");
 
 const castAs = (sql: string | number | boolean | null, as?: string, cast?: string) =>
@@ -38,7 +38,8 @@ const concatQuery = (query1: string) => (query2: string) =>
 
 const selectFrom = (table: Table) => chain (
   getComps,
-  comps => setQuery (`select ${comps.join (", ")} from ${table.name} ${table.as}`));
+  comps => setQuery (`select ${comps.join (", ")} from ${table.name} ${table.as}`)
+);
 
 const splitKeys = (keys: string = "") =>
   keys.split (",").map (s => s.trim ());
@@ -49,7 +50,7 @@ const mapToRef = (table: Table) => (ref: string, keys: string) =>
     as: `${table.as}${ref}${idx}`
   }));
 
-const keysToRefs = (caseType: OptCaseType) => <Input>(exp: ASTNode, record: EnvRecord<Input>) => {
+const moveToNext = (caseType: OptCaseType) => <Input>(exp: ASTNode, record: EnvRecord<Input>) => {
   const { table } = record;
 
   let refs: RefsNew = {
@@ -82,7 +83,6 @@ const keysToRefs = (caseType: OptCaseType) => <Input>(exp: ASTNode, record: EnvR
     comps: concatKeys (table, refs.lkeys),
     next: concat ({ exp, refs })
   }) (record);
-
 };
 
 const whereIn = (lkeys: NamedKeys[], rkeys: NamedKeys[], rows: any[], table: Table) => chain (getValues, values => {
@@ -104,7 +104,7 @@ const whereIn = (lkeys: NamedKeys[], rkeys: NamedKeys[], rows: any[], table: Tab
   });
 });
 
-const join = (lkeys: NamedKeys[], rkeys: NamedKeys[], table: Table, xTable: Table) => overQuery (q => {
+const joinOn = (lkeys: NamedKeys[], rkeys: NamedKeys[], table: Table, xTable: Table) => overQuery (q => {
   return lkeys.reduce ((q, lk, idx) => {
     const rk = rkeys[idx];
     const op = idx === 0 ? "" : "and ";
@@ -115,16 +115,14 @@ const join = (lkeys: NamedKeys[], rkeys: NamedKeys[], table: Table, xTable: Tabl
 
 });
 
-// overComps (concat (castAs (`${table.as}.${name}`, as, cast))) (record),
-
-const addComp = (comps: string | string[]) =>
-  overComps (c => c.concat (comps));
+const addComp = (comp: string | string[]) =>
+  over ("comps") (c => c.concat (comp));
 
 const addKeys = (table: Table, keys: NamedKeys[]) =>
   addComp (keys.map (k => `${table.as}.${k.name} as ${k.as}`));
 
 
-const includeSql = <Input>(params?: Input) => (table: Table) => (record: EnvRecord<Input>) => {
+const interpretSQLTag = <Input>(params?: Input) => (table: Table) => (record: EnvRecord<Input>) => {
   const { sqlTag, values } = record;
 
   const [query, newValues] = compileSQLTag (sqlTag, values.length, params, table);
@@ -136,70 +134,64 @@ const includeSql = <Input>(params?: Input) => (table: Table) => (record: EnvReco
 };
 
 
-const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params?: Input) => {
+const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
+  const next = moveToNext (caseType);
+  const includeSql = interpretSQLTag (params);
 
-  const interpretComps = (members: ASTNode[], table: Table) =>
+  const interpretMembers = (members: ASTNode[], table: Table) =>
     members.reduce ((acc, mem) =>
       acc.extend (env => goInterpret (mem, env)), createEnv<Input> (table));
 
-
-  const toRefs = keysToRefs (caseType);
-  const addSql = includeSql (params);
-
   const goInterpret: InterpretFn<Input> = (exp, env, rows?) => {
     const { record } = env;
-    const { values, table, refs } = record;
+    const { values, table: parent, refs } = record;
 
     return exp.cata<EnvRecord<Input>> ({
       Root: (table, members) =>
-        interpretComps (members, table)
+        interpretMembers (members, table)
           .map (selectFrom (table))
-          .map (addSql (table))
+          .map (includeSql (table))
           .record,
 
-      BelongsTo: (child, members) => {
-        if (!rows) {
-          return toRefs (exp, record);
-        }
+      BelongsTo: (table, members) => {
+        if (!rows) return next (exp, record);
 
-        return interpretComps (members, child)
-          .map (addKeys (child, refs.rkeys))
-          .map (selectFrom (child))
-          .map (whereIn (refs.lkeys, refs.rkeys, rows, child))
-          .map (addSql (child))
+        return interpretMembers (members, table)
+          .map (addKeys (table, refs.rkeys))
+          .map (selectFrom (table))
+          .map (whereIn (refs.lkeys, refs.rkeys, rows, table))
+          .map (includeSql (table))
           .record;
       },
-      HasMany: (child, members) => {
-        if (!rows) {
-          return toRefs (exp, record);
-        }
+      HasMany: (table, members) => {
+        if (!rows) return next (exp, record);
 
-        return interpretComps (members, child)
-          .map (addKeys (child, refs.rkeys))
-          .map (selectFrom (child))
-          .map (whereIn (refs.lkeys, refs.rkeys, rows, child))
-          .map (addSql (child))
+        return interpretMembers (members, table)
+          .map (addKeys (table, refs.rkeys))
+          .map (selectFrom (table))
+          .map (whereIn (refs.lkeys, refs.rkeys, rows, table))
+          .map (includeSql (table))
           .record;
       },
-      ManyToMany: (child, members, keywords) => {
-        if (!rows) {
-          return toRefs (exp, record);
-        }
+      ManyToMany: (table, members, keywords) => {
+        if (!rows) return next (exp, record);
 
-        const xTable = new Table (keywords.x || convertCase (caseType, `${table.name}_${child.name}`));
+        const xTable = new Table (
+          keywords.x || convertCase (caseType, `${parent.name}_${table.name}`)
+        );
 
-        return interpretComps (members, child)
-          .map (addKeys (child, refs.rkeys))
+        return interpretMembers (members, table)
+          .map (addKeys (table, refs.rkeys))
           .map (addKeys (xTable, refs.lxkeys.concat (refs.rxkeys)))
-          .map (selectFrom (child))
-          .map (join (refs.rxkeys, refs.rkeys, child, xTable))
+          .map (selectFrom (table))
+          .map (joinOn (refs.rxkeys, refs.rkeys, table, xTable))
           .map (whereIn (refs.lkeys, refs.lxkeys, rows, xTable))
-          .map (addSql (child))
+          .map (includeSql (table))
 
           .record;
       },
       Call: (name, args, as, cast) => {
-        const thisRecord = interpretComps (args, table)
+        const callRecord = interpretMembers (args, parent)
           .map (chain (
             getComps,
             comps =>
@@ -207,12 +199,12 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
 
           .record;
 
-        return overComps (concat (getQuery (thisRecord))) (record);
+        return addComp (getQuery (callRecord)) (record);
       },
       Variable: (value, as, cast) => {
         if (isSQLTag (value)) {
           if (as) {
-            const [query, newValues] = compileSQLTag (value, values.length, params, table);
+            const [query, newValues] = compileSQLTag (value, values.length, params, parent);
 
             return evolve ({
               comps: concat (castAs (`(${query})`, as, cast)),
@@ -231,7 +223,7 @@ const interpret = <Input> (caseType: OptCaseType, useSmartAlias: boolean, params
         }) (record);
       },
       Identifier: (name, as, cast) =>
-        addComp (castAs (`${table.as}.${name}`, as, cast)) (record),
+        addComp (castAs (`${parent.as}.${name}`, as, cast)) (record),
 
       StringLiteral: (value, as, cast) =>
         addComp (castAs (`'${value}'`, as, cast)) (record),
