@@ -85,35 +85,38 @@ const moveToNext = (caseType: OptCaseType) => <Input>(exp: ASTNode, record: EnvR
   }) (record);
 };
 
-const whereIn = (lkeys: NamedKeys[], rkeys: NamedKeys[], rows: any[], table: Table) => chain (getValues, values => {
-  const [query, newValues] = lkeys.reduce (([sql, vals], lk, idx) => {
-    const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
-    const rk = rkeys[idx];
-    const op = idx === 0 ? "" : "and ";
+const whereIn = (lkeys: NamedKeys[], rkeys: NamedKeys[], rows: any[], table: Table) => chain (
+  getValues,
+  values => {
+    const [query, newValues] = lkeys.reduce (([sql, vals], lk, idx) => {
+      const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
+      const rk = rkeys[idx];
+      const op = idx === 0 ? "" : "and ";
 
-    return [
-      `${sql} ${op}${table.as}.${rk.name} in (${parameterize (values.length, uniqRows.length)})`,
+      return [
+        `${sql} ${op}${table.as}.${rk.name} in (${parameterize (values.length, uniqRows.length)})`,
       vals.concat (uniqRows)
-    ];
-  }, ["where", [] as Values]);
+      ];
+    }, ["where", [] as Values]);
 
 
-  return evolve ({
-    query: concatQuery (query),
-    values: concat (newValues)
-  });
-});
+    return evolve ({
+      query: concatQuery (query),
+      values: concat (newValues)
+    });
+  }
+);
 
-const joinOn = (lkeys: NamedKeys[], rkeys: NamedKeys[], table: Table, xTable: Table) => overQuery (q => {
-  return lkeys.reduce ((q, lk, idx) => {
-    const rk = rkeys[idx];
-    const op = idx === 0 ? "" : "and ";
+const joinOn = (lkeys: NamedKeys[], rkeys: NamedKeys[], table: Table, xTable: Table) =>
+  overQuery (query =>
+    lkeys.reduce ((q, lk, idx) => {
+      const rk = rkeys[idx];
+      const op = idx === 0 ? "" : "and ";
 
-    return `${q} ${op}${xTable.as}.${lk.name} = ${table.as}.${rk.name}`;
+      return `${q} ${op}${xTable.as}.${lk.name} = ${table.as}.${rk.name}`;
 
-  }, `${q} join ${xTable.name} as ${xTable.as} on`);
-
-});
+    }, `${query} join ${xTable.name} as ${xTable.as} on`)
+  );
 
 const addComp = (comp: string | string[]) =>
   over ("comps") (c => c.concat (comp));
@@ -187,7 +190,6 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
           .map (joinOn (refs.rxkeys, refs.rkeys, table, xTable))
           .map (whereIn (refs.lkeys, refs.lxkeys, rows, xTable))
           .map (includeSql (table))
-
           .record;
       },
       Call: (name, args, as, cast) => {
