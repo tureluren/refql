@@ -36,7 +36,7 @@ const concatKeys = (table: Table, keys: NamedKeys[]) =>
 const concatQuery = (query1: string) => (query2: string) =>
   `${query2} ${query1}`;
 
-const selectFrom = (table: Table) => chain (
+const from = (table: Table) => chain (
   getComps,
   comps => setQuery (`select ${comps.join (", ")} from ${table.name} ${table.as}`)
 );
@@ -118,11 +118,11 @@ const joinOn = (lkeys: NamedKeys[], rkeys: NamedKeys[], table: Table, xTable: Ta
     }, `${query} join ${xTable.name} as ${xTable.as} on`)
   );
 
-const addComp = (comp: string | string[]) =>
+const select = (comp: string | string[]) =>
   over ("comps") (c => c.concat (comp));
 
 const addKeys = (table: Table, keys: NamedKeys[]) =>
-  addComp (keys.map (k => `${table.as}.${k.name} as ${k.as}`));
+  select (keys.map (k => `${table.as}.${k.name} as ${k.as}`));
 
 
 const interpretSQLTag = <Input>(params?: Input) => (table: Table) => (record: EnvRecord<Input>) => {
@@ -152,7 +152,7 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
     return exp.cata<EnvRecord<Input>> ({
       Root: (table, members) =>
         interpretMembers (members, table)
-          .map (selectFrom (table))
+          .map (from (table))
           .map (includeSql (table))
           .record,
 
@@ -161,7 +161,7 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
 
         return interpretMembers (members, table)
           .map (addKeys (table, refs.rkeys))
-          .map (selectFrom (table))
+          .map (from (table))
           .map (whereIn (refs.lkeys, refs.rkeys, rows, table))
           .map (includeSql (table))
           .record;
@@ -171,7 +171,7 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
 
         return interpretMembers (members, table)
           .map (addKeys (table, refs.rkeys))
-          .map (selectFrom (table))
+          .map (from (table))
           .map (whereIn (refs.lkeys, refs.rkeys, rows, table))
           .map (includeSql (table))
           .record;
@@ -186,7 +186,7 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
         return interpretMembers (members, table)
           .map (addKeys (table, refs.rkeys))
           .map (addKeys (xTable, refs.lxkeys.concat (refs.rxkeys)))
-          .map (selectFrom (table))
+          .map (from (table))
           .map (joinOn (refs.rxkeys, refs.rkeys, table, xTable))
           .map (whereIn (refs.lkeys, refs.lxkeys, rows, xTable))
           .map (includeSql (table))
@@ -201,7 +201,7 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
 
           .record;
 
-        return addComp (getQuery (callRecord)) (record);
+        return select (getQuery (callRecord)) (record);
       },
       Variable: (value, as, cast) => {
         if (isSQLTag (value)) {
@@ -216,7 +216,7 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
           return overSqlTag (sqlTag => sqlTag.concat (value)) (record);
 
         } else if (isRaw (value)) {
-          return addComp (value.value) (record);
+          return select (value.value) (record);
         }
 
         return evolve ({
@@ -225,19 +225,19 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
         }) (record);
       },
       Identifier: (name, as, cast) =>
-        addComp (castAs (`${parent.as}.${name}`, as, cast)) (record),
+        select (castAs (`${parent.as}.${name}`, as, cast)) (record),
 
       StringLiteral: (value, as, cast) =>
-        addComp (castAs (`'${value}'`, as, cast)) (record),
+        select (castAs (`'${value}'`, as, cast)) (record),
 
       NumericLiteral: (value, as, cast) =>
-        addComp (castAs (value, as, cast)) (record),
+        select (castAs (value, as, cast)) (record),
 
       BooleanLiteral: (value, as, cast) =>
-        addComp (castAs (value, as, cast)) (record),
+        select (castAs (value, as, cast)) (record),
 
       NullLiteral: (value, as, cast) =>
-        addComp (castAs (value, as, cast)) (record)
+        select (castAs (value, as, cast)) (record)
     });
 
   };
