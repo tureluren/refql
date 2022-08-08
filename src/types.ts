@@ -159,7 +159,7 @@ export interface RefsNew {
   rxkeys: NamedKeys[];
 }
 
-export type Pattern<R> = {
+export type Pattern<R> = Partial<{
   Root: (table: Table, members: ASTNode[], keywords: Keywords) => R;
   HasMany: (table: Table, members: ASTNode[], keywords: Keywords) => R;
   BelongsTo: (table: Table, members: ASTNode[], keywords: Keywords) => R;
@@ -171,6 +171,6 @@ export type Pattern<R> = {
   NumericLiteral: (value: number, as?: string, cast?: string) => R;
   BooleanLiteral: (value: boolean, as?: string, cast?: string) => R;
   NullLiteral: (value: null, as?: string, cast?: string) => R;
-};
+}>;
 
 export type InterpretFn<Input> = (exp: ASTNode, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>;

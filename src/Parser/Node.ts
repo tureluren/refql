@@ -13,7 +13,7 @@ export class Root {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.Root (this.table, this.members, this.keywords);
+    return pattern.Root! (this.table, this.members, this.keywords);
   }
 }
 
@@ -29,7 +29,7 @@ export class HasMany {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.HasMany (this.table, this.members, this.keywords);
+    return pattern.HasMany! (this.table, this.members, this.keywords);
   }
 }
 
@@ -45,7 +45,7 @@ export class BelongsTo {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.BelongsTo (this.table, this.members, this.keywords);
+    return pattern.BelongsTo! (this.table, this.members, this.keywords);
   }
 }
 
@@ -61,7 +61,7 @@ export class ManyToMany {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.ManyToMany (this.table, this.members, this.keywords);
+    return pattern.ManyToMany! (this.table, this.members, this.keywords);
   }
 }
 
@@ -77,7 +77,7 @@ export class Identifier {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.Identifier (this.name, this.as, this.cast);
+    return pattern.Identifier! (this.name, this.as, this.cast);
   }
 }
 
@@ -94,7 +94,7 @@ export class Variable {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.Variable (this.value, this.as, this.cast);
+    return pattern.Variable! (this.value, this.as, this.cast);
   }
 }
 
@@ -112,7 +112,7 @@ export class Call {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.Call (this.name, this.args, this.as, this.cast);
+    return pattern.Call! (this.name, this.args, this.as, this.cast);
   }
 }
 
@@ -128,7 +128,7 @@ export class StringLiteral {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.StringLiteral (this.value, this.as, this.cast);
+    return pattern.StringLiteral! (this.value, this.as, this.cast);
   }
 }
 
@@ -144,7 +144,7 @@ export class NumericLiteral {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.NumericLiteral (this.value, this.as, this.cast);
+    return pattern.NumericLiteral! (this.value, this.as, this.cast);
   }
 }
 
@@ -160,7 +160,7 @@ export class BooleanLiteral {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.BooleanLiteral (this.value, this.as, this.cast);
+    return pattern.BooleanLiteral! (this.value, this.as, this.cast);
   }
 }
 
@@ -176,6 +176,6 @@ export class NullLiteral {
   }
 
   cata<R>(pattern: Pattern<R>) {
-    return pattern.NullLiteral (this.value, this.as, this.cast);
+    return pattern.NullLiteral! (this.value, this.as, this.cast);
   }
 }
