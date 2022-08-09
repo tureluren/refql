@@ -3,7 +3,7 @@ import tag from "../more/tag";
 import makeRefs from "../refs/makeRefs";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
-import { CompiledQuery, Querier, RefQLConfig, Refs } from "../types";
+import { CompiledQuery, Querier, RefQLConfig, RefsOld } from "../types";
 import defaultConfig from "./defaultConfig";
 import readRefs from "./readRefs";
 import validateConfig from "./validateConfig";
@@ -37,12 +37,13 @@ const RefQL = (userConfig: Partial<RefQLConfig>, querier: Querier) => {
   validateConfig (config);
 
   let ready = false;
-  let refs: Refs = {};
-  let queue: ((refs: Refs) => void)[] = [];
+  let refs: RefsOld = {};
+  let queue: ((refs: RefsOld) => void)[] = [];
 
   if (config.detectRefs) {
     readRefs (querier)
       .then (dbRefs => {
+        // @ts-ignore
         refs = makeRefs (config, dbRefs);
         ready = true;
         queue.forEach (fn => fn (refs));
@@ -64,7 +65,7 @@ const RefQL = (userConfig: Partial<RefQLConfig>, querier: Querier) => {
   const query = <T>(...components: [any | SQLTag<any>, ...any[]]): Promise<T[]> => {
     const t = tag (...components);
     return new Promise ((resolve, reject) => {
-      const run = (refs: Refs) => {
+      const run = (refs: RefsOld) => {
         const { query, values } = compile ({ ...config, refs }, t);
 
         if (config.debug) {

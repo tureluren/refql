@@ -1,4 +1,5 @@
-import { DBRef, Link, RefQLConfig, Refs } from "../types";
+// @ts-nocheck
+import { DBRef, Link, RefQLConfig, RefsOld } from "../types";
 import convertRefs from "./convertRefs";
 import getRefInfo from "./getRefInfo";
 import getRefPath from "./getRefPath";
@@ -6,7 +7,7 @@ import makeLinks from "./makeLinks";
 import setRefPath from "./setRefPath";
 
 const makeRefs = (config: RefQLConfig, dbRefs: DBRef[]) => {
-  let refs: Refs = {};
+  let refs: RefsOld = {};
 
   if (config.detectRefs) {
     let multipleDetects: [string, string, Link[]][] = [];

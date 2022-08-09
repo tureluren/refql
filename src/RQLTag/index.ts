@@ -5,7 +5,7 @@
 // import isSub from "../Sub/isSub";
 import Environment from "../Environment2";
 import Interpreter from "../Interpreter";
-import { BelongsTo, HasMany, ManyToMany } from "../Parser/Node";
+import { BelongsTo, HasMany, ManyToMany, MembersNode, Root } from "../Parser/Node";
 import SQLTag from "../SQLTag";
 import {
   ASTNode, ASTRelation, CompiledQuery, EnvRecord, JsonBuildObject,
@@ -80,15 +80,19 @@ const makeGo = <Input, Output>(querier: Querier, interpret: (exp: ASTNode, env: 
 class RQLTag <Input> {
   string: string;
   keys: RQLValue<Input>[];
-  ast: ASTRelation;
+  ast: ASTNode;
 
-  constructor(ast: ASTRelation) {
+  constructor(ast: ASTNode) {
     this.ast = ast;
     this.string = "";
     this.keys = [];
   }
 
-  concat<Input2>(other: RQLTag<Input2> | SQLTag<Input2>) {
+  concat<Input2>(other: RQLTag<Input2> | SQLTag<Input2>): RQLTag<Input & Input2> {
+
+    if (!(this.ast instanceof MembersNode)) {
+      return this;
+    }
     // const newMember: ASTNode = other instanceof RQLTag
     //   ? other.ast
     //   : { type: "Variable", value: other };
@@ -102,7 +106,7 @@ class RQLTag <Input> {
     );
   }
 
-  map(fn: (ast: ASTRelation) => ASTRelation) {
+  map(fn: (ast: ASTNode) => ASTNode) {
     return new RQLTag<Input> (fn (this.ast));
   }
 
@@ -112,7 +116,14 @@ class RQLTag <Input> {
 
     const go = makeGo<Input, Output> (config.querier, interpret);
 
+    if (!(this.ast instanceof Root)) {
+      throw new Error ("No Root");
+    }
+
     // if ast has no table (when changing astrelation to ast node) throw error
+    if (!this.ast.hasOwnProperty ("table")) {
+      throw new Error ("No Table");
+    }
 
     const interpreted = interpret (this.ast, createEnv (this.ast.table));
 
@@ -125,61 +136,9 @@ class RQLTag <Input> {
 
   }
 
-  // include(snip: any) {
-  //   let nextString, nextKeys;
-
-  //   if (isRel (snip)) {
-  //     nextString = this.string
-  //       .trim ()
-  //       // replace last "}" to include the snippet, and insert }
-  //       .replace (/\}$/, snip.symbol + " " + snip.tag.string.trim () + "}");
-
-  //     nextKeys = this.keys.concat (snip.tag.keys);
-  //   } else if (isSub (snip)) {
-  //     nextString = this.string
-  //       .trim ()
-  //       .replace (/\}$/, "& " + snip.as + "$ }");
-
-  //     nextKeys = this.keys.concat (snip.tag);
-  //   } else {
-  //     nextString = this.string.trim ().replace (/\}$/, "$}");
-  //     nextKeys = this.keys.concat (snip);
-  //   }
-
-  //   return new RQLTag ({} as ASTNode);
-  // }
   compile() {
     return {} as CompiledQuery;
   }
-
-  // compile(config: RefQLConfig): CompiledQuery {
-  //   const parser = new Parser (
-  //     // config.caseType,
-  //     // config.caseTypeJS,
-  //     // config.pluralize,
-  //     // config.plurals
-  //   );
-  //   const ast = parser.parse (this.string, this.keys);
-  //   // const interpreter = new JBOInterpreter (config.refs, config.useSmartAlias);
-  //   const interpreter = new Interpreter (config.refs, config.useSmartAlias);
-
-  //   // @ts-ignore
-  //   const interpreted: EnvRecord = interpreter.interpret (ast, []);
-
-  //   console.log (interpreted);
-
-  //   // return [query, values, ast];
-  //   return {
-  //     query: interpreted.query || "",
-  //     values: interpreted.values || [],
-  //     next: interpreted.next
-  //   };
-  // }
-
-  // static transform<T>(_config: RefQLConfig, rows: JsonBuildObject<T>[]) {
-  //   // return rows.map (r => r.json_build_object);
-  //   return rows;
-  // }
 }
 
 export default RQLTag;

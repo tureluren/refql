@@ -2,7 +2,7 @@ import convertObject from "../more/convertObject";
 import isRel from "../Rel/isRel";
 import isSub from "../Sub/isSub";
 import Table from "../Table";
-import { CompiledQuery, RefQLConfig, RefsNew, Values } from "../types";
+import { CompiledQuery, RefQLConfig, Refs, Values } from "../types";
 import compileSQLTag from "./compileSQLTag";
 import isSQLTag from "./isSQLTag";
 

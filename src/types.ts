@@ -1,7 +1,6 @@
 import Environment from "./Environment2";
 import { BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Parser/Node";
 import Raw from "./Raw";
-import RQLTag from "./RQLTag";
 import SQLTag from "./SQLTag";
 import Table from "./Table";
 
@@ -26,14 +25,14 @@ export interface RefQLConfig extends Dict {
   onSetupError?: (err: Error) => void;
   pluralize: boolean;
   plurals: Plurals;
-  refs: Refs;
+  refs: RefsOld;
   useSmartAlias: boolean;
   querier: Querier;
 }
 
 export type Link = [string, string];
 export type TableRefs = { [tableTo: string]: Link[] };
-export type Refs = { [tableFrom: string]: TableRefs };
+export type RefsOld = { [tableFrom: string]: TableRefs };
 export type SQLTag_ = SQLTag<any> | ((t: Table) => SQLTag<any>);
 
 export interface JsonBuildObject<T> {
@@ -67,13 +66,6 @@ export type Plurals = {
   [singular: string]: string;
 };
 
-export interface Aliasable {
-  as?: string;
-}
-
-export interface Castable {
-  cast?: string;
-}
 
 // remove
 export interface Subselect extends Omit<Identifier, "type"> {
@@ -92,8 +84,8 @@ export type ASTNode =
   // | Subselect | Call | Variable | Literal;
 
 export interface Next {
-  exp: HasMany | BelongsTo | ManyToMany;
-  refs: RefsNew;
+  exp: ASTNode;
+  refs: Refs;
 }
 
 
@@ -104,7 +96,7 @@ export interface EnvRecord<Input> {
   comps: string[];
   values: Values;
   next: Next[];
-  refs: RefsNew;
+  refs: Refs;
 }
 
 export interface CompiledQuery {
@@ -147,16 +139,16 @@ export type Transformations<Input> = {
   [key in keyof Partial<EnvRecord<Input>>]: (value: EnvRecord<Input>[key]) => EnvRecord<Input>[key];
 };
 
-export interface NamedKeys {
+export interface Key {
   name: string;
   as: string;
 }
 
-export interface RefsNew {
-  lkeys: NamedKeys[];
-  rkeys: NamedKeys[];
-  lxkeys: NamedKeys[];
-  rxkeys: NamedKeys[];
+export interface Refs {
+  lkeys: Key[];
+  rkeys: Key[];
+  lxkeys: Key[];
+  rxkeys: Key[];
 }
 
 export type Pattern<R> = Partial<{
@@ -166,7 +158,7 @@ export type Pattern<R> = Partial<{
   ManyToMany: (table: Table, members: ASTNode[], keywords: Keywords) => R;
   Identifier: (name: string, as?: string, cast?: string) => R;
   Variable: (value: any, as?: string, cast?: string) => R;
-  Call: (name: string, args: ASTNode[], as?: string, cast?: string) => R;
+  Call: (name: string, members: ASTNode[], as?: string, cast?: string) => R;
   StringLiteral: (value: string, as?: string, cast?: string) => R;
   NumericLiteral: (value: number, as?: string, cast?: string) => R;
   BooleanLiteral: (value: boolean, as?: string, cast?: string) => R;

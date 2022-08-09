@@ -1,21 +1,17 @@
 import Environment from "../Environment2";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
-import { RefsNew } from "../types";
+import { Refs } from "../types";
+import emptyRefs from "./emptyRefs";
 
-const createEnv = <Input>(table: Table, refs?: RefsNew) => new Environment ({
+const createEnv = <Input>(table: Table, refs?: Refs) => new Environment ({
   table,
   sqlTag: sql<Input>``,
   query: "",
   values: [],
   next: [],
   comps: [],
-  refs: refs || {
-    lkeys: [],
-    rkeys: [],
-    lxkeys: [],
-    rxkeys: []
-  }
+  refs: refs || emptyRefs ()
 });
 
 export default createEnv;

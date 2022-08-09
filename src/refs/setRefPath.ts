@@ -1,6 +1,6 @@
-import { Link, Refs } from "../types";
+import { Link, RefsOld } from "../types";
 
-const setRefPath = (tableFrom: string, tableTo: string, value: Link[], refs: Refs): Refs => {
+const setRefPath = (tableFrom: string, tableTo: string, value: Link[], refs: RefsOld): RefsOld => {
   const result = Object.assign ({}, refs);
 
   if (result[tableFrom] == null) {

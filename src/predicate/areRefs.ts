@@ -1,17 +1,17 @@
 import keys from "../more/keys";
-import { Refs } from "../types";
+import { RefsOld } from "../types";
 import areTableRefs from "./areTableRefs";
 import isObject from "./isObject";
 
 // refs: { tableFrom: { tableTo: [["tableFromCol", "tableToCol"]] } }
-const areRefs = (value: any): value is Refs => {
+const areRefs = (value: any): value is RefsOld => {
   if (!isObject (value)) {
     return false;
   }
 
   let theyAre = true;
 
-  keys<Refs> (value).forEach (tableFrom => {
+  keys<RefsOld> (value).forEach (tableFrom => {
     const tableRefs = value[tableFrom];
     theyAre = areTableRefs (tableRefs);
   });

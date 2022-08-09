@@ -1,14 +1,21 @@
 import Table from "../Table";
 import { ASTNode, Keywords, Pattern } from "../types";
 
-export class Root {
-  table: Table;
+export class MembersNode {
   members: ASTNode[];
+
+  constructor(members: ASTNode[]) {
+    this.members = members;
+  }
+}
+
+export class Root extends MembersNode {
+  table: Table;
   keywords: Keywords;
 
   constructor(table: Table, members: ASTNode[], keywords: Keywords) {
+    super (members);
     this.table = table;
-    this.members = members;
     this.keywords = keywords;
   }
 
@@ -17,14 +24,13 @@ export class Root {
   }
 }
 
-export class HasMany {
+export class HasMany extends MembersNode {
   table: Table;
-  members: ASTNode[];
   keywords: Keywords;
 
   constructor(table: Table, members: ASTNode[], keywords: Keywords) {
+    super (members);
     this.table = table;
-    this.members = members;
     this.keywords = keywords;
   }
 
@@ -33,14 +39,13 @@ export class HasMany {
   }
 }
 
-export class BelongsTo {
+export class BelongsTo extends MembersNode {
   table: Table;
-  members: ASTNode[];
   keywords: Keywords;
 
   constructor(table: Table, members: ASTNode[], keywords: Keywords) {
+    super (members);
     this.table = table;
-    this.members = members;
     this.keywords = keywords;
   }
 
@@ -49,19 +54,35 @@ export class BelongsTo {
   }
 }
 
-export class ManyToMany {
+export class ManyToMany extends MembersNode {
   table: Table;
-  members: ASTNode[];
   keywords: Keywords;
 
   constructor(table: Table, members: ASTNode[], keywords: Keywords) {
+    super (members);
     this.table = table;
-    this.members = members;
     this.keywords = keywords;
   }
 
   cata<R>(pattern: Pattern<R>) {
     return pattern.ManyToMany! (this.table, this.members, this.keywords);
+  }
+}
+
+export class Call extends MembersNode {
+  name: string;
+  as?: string;
+  cast?: string;
+
+  constructor(name: string, args: ASTNode[], as?: string, cast?: string) {
+    super (args);
+    this.name = name;
+    this.as = as;
+    this.cast = cast;
+  }
+
+  cata<R>(pattern: Pattern<R>) {
+    return pattern.Call! (this.name, this.members, this.as, this.cast);
   }
 }
 
@@ -95,24 +116,6 @@ export class Variable {
 
   cata<R>(pattern: Pattern<R>) {
     return pattern.Variable! (this.value, this.as, this.cast);
-  }
-}
-
-export class Call {
-  name: string;
-  args: ASTNode[];
-  as?: string;
-  cast?: string;
-
-  constructor(name: string, args: ASTNode[], as?: string, cast?: string) {
-    this.name = name;
-    this.args = args;
-    this.as = as;
-    this.cast = cast;
-  }
-
-  cata<R>(pattern: Pattern<R>) {
-    return pattern.Call! (this.name, this.args, this.as, this.cast);
   }
 }
 

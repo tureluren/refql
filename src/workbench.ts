@@ -242,3 +242,4 @@ const fullPlayer = paginate (selectPlayer);
 //   BelongsTo: x => x,
 //   HasMany: x => x
 // });
+

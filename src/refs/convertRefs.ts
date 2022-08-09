@@ -1,3 +1,4 @@
+// @ts-nocheck
 import convertCase from "../more/convertCase";
 import keys from "../more/keys";
 import { OptCaseType, Refs } from "../types";

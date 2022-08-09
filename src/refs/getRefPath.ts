@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Link, Refs } from "../types";
 
 const getRefPath = (tableFrom: string, tableTo: string, refs: Refs): Link[] | undefined =>
