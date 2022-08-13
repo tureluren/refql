@@ -1,7 +1,7 @@
 import { Pool } from "pg";
 import RefQL from ".";
-import rql from "../RQLTag/rql";
-import sql from "../SQLTag/sql";
+import rql from "../RqlTag/rql";
+import sql from "../SqlTag/sql";
 import format from "../test/format";
 import querier from "../test/querier";
 import userConfig from "../test/userConfig";

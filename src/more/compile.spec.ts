@@ -1,11 +1,11 @@
-import rql from "../RQLTag/rql";
-import sql from "../SQLTag/sql";
+import rql from "../RqlTag/rql";
+import sql from "../SqlTag/sql";
 import refQLConfig from "../test/refQLConfig";
 import format from "../test/format";
 import compile from "./compile";
 
-describe ("more `compile` - compiles a RQLTag or a SQLTag to a query and values", () => {
-  test ("RQLTag compiled", () => {
+describe ("more `compile` - compiles a RqlTag or a SqlTag to a query and values", () => {
+  test ("RqlTag compiled", () => {
     const getPlayer = (id: number) => rql`
       player {
         id
@@ -30,7 +30,7 @@ describe ("more `compile` - compiles a RQLTag or a SQLTag to a query and values"
     expect (values).toEqual ([1]);
   });
 
-  test ("SQLTag compiled", () => {
+  test ("SqlTag compiled", () => {
     const getPlayer = (id: number) => sql`
       select id, last_name
       from player

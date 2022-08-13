@@ -1,5 +1,5 @@
 import Table from "../Table";
-import { ASTNode, Keywords, Pattern } from "../types";
+import { ASTNode, Keywords, Pattern, RQLValue } from "../types";
 
 export class MembersNode {
   members: ASTNode[];
@@ -11,60 +11,60 @@ export class MembersNode {
 
 export class Root extends MembersNode {
   table: Table;
-  keywords: Keywords;
+  keywords: Keywords<any>;
 
-  constructor(table: Table, members: ASTNode[], keywords: Keywords) {
+  constructor(table: Table, members: ASTNode[], keywords: Keywords<any>) {
     super (members);
     this.table = table;
     this.keywords = keywords;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.Root! (this.table, this.members, this.keywords);
   }
 }
 
 export class HasMany extends MembersNode {
   table: Table;
-  keywords: Keywords;
+  keywords: Keywords<any>;
 
-  constructor(table: Table, members: ASTNode[], keywords: Keywords) {
+  constructor(table: Table, members: ASTNode[], keywords: Keywords<any>) {
     super (members);
     this.table = table;
     this.keywords = keywords;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.HasMany! (this.table, this.members, this.keywords);
   }
 }
 
 export class BelongsTo extends MembersNode {
   table: Table;
-  keywords: Keywords;
+  keywords: Keywords<any>;
 
-  constructor(table: Table, members: ASTNode[], keywords: Keywords) {
+  constructor(table: Table, members: ASTNode[], keywords: Keywords<any>) {
     super (members);
     this.table = table;
     this.keywords = keywords;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.BelongsTo! (this.table, this.members, this.keywords);
   }
 }
 
 export class ManyToMany extends MembersNode {
   table: Table;
-  keywords: Keywords;
+  keywords: Keywords<any>;
 
-  constructor(table: Table, members: ASTNode[], keywords: Keywords) {
+  constructor(table: Table, members: ASTNode[], keywords: Keywords<any>) {
     super (members);
     this.table = table;
     this.keywords = keywords;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.ManyToMany! (this.table, this.members, this.keywords);
   }
 }
@@ -81,7 +81,7 @@ export class Call extends MembersNode {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.Call! (this.name, this.members, this.as, this.cast);
   }
 }
@@ -97,24 +97,23 @@ export class Identifier {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.Identifier! (this.name, this.as, this.cast);
   }
 }
 
 export class Variable {
-  // any ?
-  value: any;
+  value: RQLValue<any>;
   as?: string;
   cast?: string;
 
-  constructor(value: any, as?: string, cast?: string) {
+  constructor(value: RQLValue<any>, as?: string, cast?: string) {
     this.value = value;
     this.as = as;
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.Variable! (this.value, this.as, this.cast);
   }
 }
@@ -130,7 +129,7 @@ export class StringLiteral {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.StringLiteral! (this.value, this.as, this.cast);
   }
 }
@@ -146,7 +145,7 @@ export class NumericLiteral {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.NumericLiteral! (this.value, this.as, this.cast);
   }
 }
@@ -162,7 +161,7 @@ export class BooleanLiteral {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.BooleanLiteral! (this.value, this.as, this.cast);
   }
 }
@@ -178,7 +177,7 @@ export class NullLiteral {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R>) {
+  cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.NullLiteral! (this.value, this.as, this.cast);
   }
 }

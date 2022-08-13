@@ -6,36 +6,27 @@ import Tokenizer from "../Tokenizer";
 import validateKeywords from "./validateKeywords";
 import convertCase from "../more/convertCase";
 import {
-  ASTNode, ASTRelation, ASTType,
+  ASTNode,
   CaseType, Keywords,
   Literal,
   OptCaseType, Plurals, RQLValue,
-  Subselect, Token
+  TableNode, Token
 } from "../types";
 import convertTableRefs from "../refs/convertTableRefs";
 import Pluralizer from "../Pluralizer";
 import Table from "../Table";
 import { BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Node";
+import identifierToTable from "./identifierToTable";
 
-class Parser<Params> {
-  // caseType?: CaseType;
-  // caseTypeJS?: CaseType;
+const isVariable = (value: any) =>
+  value === "VARIABLE";
+
+class Parser {
   tokenizer: Tokenizer;
-  // pluralizer: Pluralizer;
   string: string;
-  keys: RQLValue<Params>[];
+  keys: RQLValue<any>[];
   keyIdx: number;
   lookahead!: Token;
-
-  // constructor(caseType: OptCaseType, caseTypeJS: OptCaseType, pluralize: boolean, plurals: Plurals) {
-  //   this.caseType = caseType;
-  //   this.caseTypeJS = caseTypeJS;
-  //   this.pluralizer = new Pluralizer (pluralize, plurals);
-  //   this.tokenizer = new Tokenizer ();
-  //   this.string = "";
-  //   this.keys = [];
-  //   this.keyIdx = 0;
-  // }
 
   constructor() {
     this.tokenizer = new Tokenizer ();
@@ -44,149 +35,70 @@ class Parser<Params> {
     this.keyIdx = 0;
   }
 
-  parse(string: string, keys: RQLValue<Params>[]): ASTRelation {
+  parse(string: string, keys: RQLValue<any>[]): Root {
     this.string = string;
     this.keys = keys;
     this.keyIdx = 0;
     this.tokenizer.init (string);
     this.lookahead = this.tokenizer.getNextToken ();
 
-    return this.AST ("Root");
+    return this.Table (Root);
   }
 
-  AST(type: ASTType, pluralizable = false) {
-    let identifier = this.Identifier (pluralizable);
-    let table = new Table (identifier.name, identifier.as);
-    let keywords: Keywords = {};
+  Table(ctor: new (table: Table, members: ASTNode[], keywords: Keywords<any>) => TableNode) {
+    let table = identifierToTable (this.Identifier ());
+    let keywords: Keywords<any> = {};
 
     if (this.lookahead.type === "(") {
       this.eat ("(");
 
-      // @ts-ignore
-      if (this.lookahead.type === "VARIABLE") {
-        keywords = <Keywords> this.grabVariable () as Keywords;
+      // <table> (as: "table", id: ${1}, limit: ${p => p.limit}) { }
+      do {
+        const identifier = this.eat ("IDENTIFIER").value as keyof Keywords<any>;
+        this.eat (":");
+        let value;
 
-        if (!isObject (keywords)) {
-          throw new TypeError (`${table.name} + (${"${}"}) should be of type Object`);
+        if (isLiteral (this.lookahead.type)) {
+          value = this.Literal ().value;
+
+        } else if (isVariable (this.lookahead.type)) {
+          value = this.grabVariable ();
+
+        } else {
+          throw new SyntaxError (
+            `Only Literals or Variables are allowed as parameters, not: "${this.lookahead.type}"`
+          );
         }
 
-      // @ts-ignore
-      } else if (this.lookahead.type !== ")") {
-
-        do {
-          const identifier = this.eat ("IDENTIFIER").value as keyof Keywords;
-          this.eat (":");
-          let value;
-
-          // if (isLiteral (this.lookahead.type)) {
-          //   value = this.Literal ().value;
-
-          // // @ts-ignore
-          // } else if (this.lookahead.type === "VARIABLE") {
-          //   value = this.grabVariable ();
-
-          // } else {
-          //   throw new SyntaxError (
-          //     `Only Literals or Variables are allowed as parameters, not: "${this.lookahead.type}"`
-          //   );
-          // }
-
-          // @ts-ignore
-          keywords[identifier] = value;
+        // @ts-ignore
+        keywords[identifier] = value;
 
         // @ts-ignore
-        } while (this.lookahead.type === "," && this.eat (",") && this.lookahead.type !== ")");
-      }
-
-      // if (!isEmpty (keywords)) {
-      //   // `keywords.orderBy` is validated by the interpreter
-      //   validateKeywords (keywords);
-
-      //   // keys from keywords will overwrite identifier props
-      //   // null, undefined or ""
-      //   if (keywords.as) {
-      //     table.as = keywords.as;
-      //   }
-
-      //   if (keywords.id) {
-      //     table.id = keywords.id;
-      //   }
-
-      //   if (keywords.limit) {
-      //     table.limit = keywords.limit;
-      //   }
-
-      //   if (keywords.offset) {
-      //     table.offset = keywords.offset;
-      //   }
-
-      //   if (keywords.orderBy) {
-      //     table.orderBy = keywords.orderBy;
-      //   }
-
-      //   if (keywords.links) {
-      //     // table.links = convertLinks (this.caseType, keywords.links);
-      //     table.links = keywords.links;
-      //   }
-
-      //   if (keywords.refs) {
-      //     // table.refs = convertTableRefs (this.caseType, keywords.refs);
-      //     table.refs = keywords.refs;
-      //   }
-
-      //   if (keywords.xTable) {
-      //     // table.xTable = convertCase (this.caseType, keywords.xTable);
-      //     table.xTable = keywords.xTable;
-      //   }
-      // }
+      } while (this.lookahead.type === "," && this.eat (",") && this.lookahead.type !== ")");
 
       this.eat (")");
     }
 
-    const ctor = type === "Root" ? Root : type === "BelongsTo" ? BelongsTo : type === "HasMany" ? HasMany : ManyToMany;
-
     return new ctor (table, this.members (), keywords);
   }
 
-  grabVariable() {
-    const variable = this.keys[this.keyIdx];
-
-    this.keys.splice (this.keyIdx, 1);
-    this.eat ("VARIABLE");
-
-    return variable;
-  }
 
   HasMany(): HasMany {
     this.eat ("<");
-    return this.AST ("HasMany", true) as HasMany;
+    return this.Table (HasMany);
   }
 
   BelongsTo(): BelongsTo {
     this.eat ("-");
-    return this.AST ("BelongsTo") as BelongsTo;
+    return this.Table (BelongsTo);
   }
 
   ManyToMany(): ManyToMany {
     this.eat ("x");
-    return this.AST ("ManyToMany", true) as ManyToMany;
+    return this.Table (ManyToMany);
   }
 
-  Subselect(): Subselect {
-    this.eat ("&");
-
-    const subselect = <Subselect><unknown> this.Identifier ();
-
-    // the interpreter will check if this variable is
-    // a SQLTag or a function that returns a SQLTag
-    subselect.tag = this.Variable ().value;
-
-    subselect.type = "Subselect";
-
-    return subselect;
-  }
-
-  Identifier(pluralizable = false) {
+  Identifier() {
     const name = this.eat ("IDENTIFIER").value;
 
     // can only be handled here
@@ -212,6 +124,15 @@ class Parser<Params> {
     }
 
     return identifier;
+  }
+
+  grabVariable() {
+    const key = this.keys[this.keyIdx];
+
+    this.keys.splice (this.keyIdx, 1);
+    this.eat ("VARIABLE");
+
+    return new Variable (key);
   }
 
   Variable() {
@@ -306,8 +227,6 @@ class Parser<Params> {
         return this.ManyToMany ();
       case "VARIABLE":
         return this.Variable ();
-      case "&":
-        return this.Subselect ();
     }
 
     throw new SyntaxError (`Unknown ASTNode Type: "${this.lookahead.type}"`);

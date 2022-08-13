@@ -1,4 +1,4 @@
-const formatTLString = (tls: string) =>
+const formatTlString = (tls: string) =>
   tls
     // remove linebreaks
     .replace (/\n/g, "")
@@ -7,4 +7,4 @@ const formatTLString = (tls: string) =>
     // trim
     .trim ();
 
-export default formatTLString;
+export default formatTlString;

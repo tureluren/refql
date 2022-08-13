@@ -1,10 +1,10 @@
-import sql from "../SQLTag/sql";
+import sql from "../SqlTag/sql";
 import Table from "../Table";
-import rql from "../RQLTag/rql";
+import rql from "../RqlTag/rql";
 import varToSQLTag from "./varToSQLTag";
 
-describe ("JBOInterpreter `varToSQLTag` - tranforms a variable into a SQLTag", () => {
-  test ("variable is SQLTag", () => {
+describe ("JBOInterpreter `varToSQLTag` - tranforms a variable into a SqlTag", () => {
+  test ("variable is SqlTag", () => {
     const table = new Table ("player", "player");
 
     const tag = sql`
@@ -16,7 +16,7 @@ describe ("JBOInterpreter `varToSQLTag` - tranforms a variable into a SQLTag", (
     expect (varToSQLTag (tag, table)).toEqual (tag);
   });
 
-  test ("variable is function that returns a SQLTag", () => {
+  test ("variable is function that returns a SqlTag", () => {
     const table = new Table ("player", "player");
 
     const tag = (t: Table) => sql`
@@ -34,7 +34,7 @@ describe ("JBOInterpreter `varToSQLTag` - tranforms a variable into a SQLTag", (
     expect (varToSQLTag (tag, table)).toEqual (expected);
   });
 
-  test ("variable can't be transformed into SQLTag", () => {
+  test ("variable can't be transformed into SqlTag", () => {
     const table = new Table ("player", "player");
 
     expect (varToSQLTag ("player", table)).toBe (null);

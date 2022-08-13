@@ -2,16 +2,16 @@ import raw from "../Raw/raw";
 import belongsTo from "../Rel/belongsTo";
 import hasMany from "../Rel/hasMany";
 import manyToMany from "../Rel/manyToMany";
-import rql from "../RQLTag/rql";
-import sql from "../SQLTag/sql";
+import rql from "../RqlTag/rql";
+import sql from "../SqlTag/sql";
 import subselect from "../Sub/subselect";
 import tag from "./tag";
 import refQLConfig from "../test/refQLConfig";
 import compile from "./compile";
 import Table from "../Table";
 
-describe ("more `tag` - tag a bunch of query related components (of type RQLTag, SQLTag, Raw, Rel or Table -> SQLTag)", () => {
-  test ("tag into RQLTag", () => {
+describe ("more `tag` - tag a bunch of query related components (of type RqlTag, SqlTag, Raw, Rel or Table -> SqlTag)", () => {
+  test ("tag into RqlTag", () => {
     const getPlayer = rql`
       player { id last_name }
     `;
@@ -50,7 +50,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
     expect (values1).toEqual (values2);
   });
 
-  test ("tag into SQLTag", () => {
+  test ("tag into SqlTag", () => {
     const getPlayer = sql`
       select id, last_name
       from player
@@ -81,7 +81,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
       .toEqual (compile (refQLConfig, expected (1)));
   });
 
-  test ("baseTag is not a RQLTag or a SQLTag", () => {
+  test ("baseTag is not a RqlTag or a SqlTag", () => {
     const getPlayer = raw (
       "select id, last_name from player"
     );
@@ -102,7 +102,7 @@ describe ("more `tag` - tag a bunch of query related components (of type RQLTag,
 
     expect (() => getPlayers (1))
       .toThrowError (new Error (
-        "The first argument passed to `tag` should be of type RQLTag or SQLTag"
+        "The first argument passed to `tag` should be of type RqlTag or SqlTag"
       ));
   });
 

@@ -2,7 +2,7 @@ import Environment from "../Environment";
 import isRaw from "../Raw/isRaw";
 import associate from "../refs/associate";
 import getRefPath from "../refs/getRefPath";
-import compileSQLTag from "../SQLTag/compileSQLTag";
+import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
 import { ASTType, Link, Refs } from "../types";
 import varToSQLTag from "./varToSQLTag";
@@ -395,7 +395,7 @@ class JBOInterpreter {
       return null;
     }
 
-    const [sql, values] = compileSQLTag (sqlTag, env.lookup ("keyIdx"));
+    const [sql, values] = compileSqlTag (sqlTag, env.lookup ("keyIdx"));
 
     env.addValues (values);
 

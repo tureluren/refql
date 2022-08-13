@@ -7,7 +7,7 @@ import {
   RefQLConfig, RQLValue, Values
 } from "../types.ts";
 
-class RQLTag {
+class RqlTag {
   string: string;
   keys: RQLValue[];
 
@@ -37,7 +37,7 @@ class RQLTag {
       nextKeys = this.keys.concat (snip);
     }
 
-    return new RQLTag (nextString, nextKeys);
+    return new RqlTag (nextString, nextKeys);
   }
 
   compile(config: RefQLConfig): [string, Values, AST] {
@@ -61,4 +61,4 @@ class RQLTag {
   }
 }
 
-export default RQLTag;
+export default RqlTag;

@@ -1,17 +1,17 @@
 // DELETE
 
 import isFunction from "../predicate/isFunction";
-import isRQLTag from "../RQLTag/isRQLTag";
-import SQLTag from "../SQLTag";
-import isSQLTag from "../SQLTag/isSQLTag";
+import isRqlTag from "../RqlTag/isRqlTag";
+import SqlTag from "../SqlTag";
+import isSqlTag from "../SqlTag/isSqlTag";
 import Table from "../Table";
 
-const varToSQLTag = <Input>(value: any, table: Table): SQLTag<Input> | null => {
-  if (isSQLTag<Input> (value)) {
+const varToSQLTag = <Input>(value: any, table: Table): SqlTag<Input> | null => {
+  if (isSqlTag<Input> (value)) {
     return value;
   }
 
-  if (isRQLTag (value)) {
+  if (isRqlTag (value)) {
     throw new Error ("You can't nest RQL tags");
   }
 
@@ -19,7 +19,7 @@ const varToSQLTag = <Input>(value: any, table: Table): SQLTag<Input> | null => {
     // @ts-ignore
     const sqlTag = value (table);
 
-    if (isSQLTag<Input> (sqlTag)) {
+    if (isSqlTag<Input> (sqlTag)) {
       return sqlTag;
     }
 

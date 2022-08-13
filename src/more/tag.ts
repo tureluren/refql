@@ -1,11 +1,11 @@
-import isRQLTag from "../RQLTag/isRQLTag";
-import isSQLTag from "../SQLTag/isSQLTag";
+import isRqlTag from "../RqlTag/isRqlTag";
+import isSqlTag from "../SqlTag/isSqlTag";
 import { TagFn } from "../types";
 
 const tag: TagFn = (baseTag, ...snippets) => {
-  if (! (isRQLTag (baseTag) || isSQLTag (baseTag))) {
+  if (! (isRqlTag (baseTag) || isSqlTag (baseTag))) {
     throw new Error (
-      "The first argument passed to `tag` should be of type RQLTag or SQLTag"
+      "The first argument passed to `tag` should be of type RqlTag or SqlTag"
     );
   }
 

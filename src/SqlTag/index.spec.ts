@@ -1,17 +1,17 @@
-import SQLTag from ".";
+import SqlTag from ".";
 import raw from "../Raw/raw";
 import belongsTo from "../Rel/belongsTo";
-import rql from "../RQLTag/rql";
+import rql from "../RqlTag/rql";
 import subselect from "../Sub/subselect";
 import format from "../test/format";
 import refQLConfig from "../test/refQLConfig";
 import sql from "./sql";
 
-describe ("SQLTag type", () => {
-  test ("create SQLTag", () => {
+describe ("SqlTag type", () => {
+  test ("create SqlTag", () => {
     const strings = ["where id = ", "order by last_name"];
     const keys = [1];
-    const sqlTag = new SQLTag (strings as any, keys);
+    const sqlTag = new SqlTag (strings as any, keys);
 
     expect (sqlTag.strings).toEqual (strings);
     expect (sqlTag.keys).toEqual (keys);
@@ -109,7 +109,7 @@ describe ("SQLTag type", () => {
     expect (values).toEqual (["1"]);
   });
 
-  test ("invalid SQLTag", () => {
+  test ("invalid SqlTag", () => {
     const sqlSnippet = sql`
       select id, last_name
       from player
@@ -134,12 +134,12 @@ describe ("SQLTag type", () => {
       { id: 2, first_name: "Jane", last_name: "Doe" }
     ];
 
-    expect (SQLTag.transform (refQLConfig, rows)).toEqual ([
+    expect (SqlTag.transform (refQLConfig, rows)).toEqual ([
       { id: 1, firstName: "John", lastName: "Doe" },
       { id: 2, firstName: "Jane", lastName: "Doe" }
     ]);
 
-    expect (SQLTag.transform ({ ...refQLConfig, caseTypeJS: undefined }, rows)).toEqual ([
+    expect (SqlTag.transform ({ ...refQLConfig, caseTypeJS: undefined }, rows)).toEqual ([
       { id: 1, first_name: "John", last_name: "Doe" },
       { id: 2, first_name: "Jane", last_name: "Doe" }
     ]);

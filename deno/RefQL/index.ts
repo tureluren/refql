@@ -1,8 +1,8 @@
 import compile from "../more/compile.ts";
 import tag from "../more/tag.ts";
 import makeRefs from "../refs/makeRefs.ts";
-import RQLTag from "../RQLTag/index.ts";
-import SQLTag from "../SQLTag/index.ts";
+import RqlTag from "../RqlTag/index.ts";
+import SqlTag from "../SqlTag/index.ts";
 import { Querier, RefQLConfig, Refs } from "../types.ts";
 import defaultConfig from "./defaultConfig.ts";
 import readRefs from "./readRefs.ts";
@@ -35,7 +35,7 @@ const RefQL = (userConfig: Partial<RefQLConfig>, querier: Querier) => {
     refs = config.refs;
   }
 
-  const query = <T>(...components: [RQLTag | SQLTag, ...any[]]): Promise<T[]> => {
+  const query = <T>(...components: [RqlTag | SqlTag, ...any[]]): Promise<T[]> => {
     const t = tag (...components);
     return new Promise ((resolve, reject) => {
       const run = (refs: Refs) => {
@@ -63,7 +63,7 @@ const RefQL = (userConfig: Partial<RefQLConfig>, querier: Querier) => {
     });
   };
 
-  const query1 = <T>(...components: [RQLTag | SQLTag, ...any[]]): Promise<T> =>
+  const query1 = <T>(...components: [RqlTag | SqlTag, ...any[]]): Promise<T> =>
     query<T> (...components).then (rows => rows[0]);
 
   return { query, query1 };

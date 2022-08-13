@@ -1,6 +1,6 @@
-import SQLTag from "./index.ts";
+import SqlTag from "./index.ts";
 
-const isSQLTag = (value: any): value is SQLTag =>
-  value instanceof SQLTag;
+const isSqlTag = (value: any): value is SqlTag =>
+  value instanceof SqlTag;
 
-export default isSQLTag;
+export default isSqlTag;

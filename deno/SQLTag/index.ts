@@ -2,10 +2,10 @@ import convertObject from "../more/convertObject.ts";
 import isRel from "../Rel/isRel.ts";
 import isSub from "../Sub/isSub.ts";
 import { AST, RefQLConfig, Values } from "../types.ts";
-import compileSQLTag from "./compileSQLTag.ts";
-import isSQLTag from "./isSQLTag.ts";
+import compileSqlTag from "./compileSqlTag.ts";
+import isSqlTag from "./isSqlTag.ts";
 
-class SQLTag {
+class SqlTag {
   strings: TemplateStringsArray;
   keys: Values;
 
@@ -25,7 +25,7 @@ class SQLTag {
 
     let nextStrings, nextKeys;
 
-    if (isSQLTag (snip)) {
+    if (isSqlTag (snip)) {
       const tag1Strings = Array.from (this.strings);
       const lastEl = tag1Strings.pop ();
 
@@ -39,11 +39,11 @@ class SQLTag {
       nextKeys = this.keys.concat (snip);
     }
 
-    return new SQLTag (nextStrings as any, nextKeys);
+    return new SqlTag (nextStrings as any, nextKeys);
   }
 
   interpret() {
-    return compileSQLTag (this, 0);
+    return compileSqlTag (this, 0);
   }
 
   compile(_config: RefQLConfig): [string, Values, AST?] {
@@ -55,4 +55,4 @@ class SQLTag {
   }
 }
 
-export default SQLTag;
+export default SqlTag;

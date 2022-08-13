@@ -5,8 +5,8 @@ import RefQL from "./RefQL/index.ts";
 import belongsTo from "./Rel/belongsTo.ts";
 import hasMany from "./Rel/hasMany.ts";
 import manyToMany from "./Rel/manyToMany.ts";
-import rql from "./RQLTag/rql.ts";
-import sql from "./SQLTag/sql.ts";
+import rql from "./RqlTag/rql.ts";
+import sql from "./SqlTag/sql.ts";
 import subselect from "./Sub/subselect.ts";
 
 export * from "./types.ts";

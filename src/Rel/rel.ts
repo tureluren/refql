@@ -1,7 +1,7 @@
 import Rel from ".";
-import RQLTag from "../RQLTag";
+import RqlTag from "../RqlTag";
 
-// const rel = (symbol: string) => (tag: RQLTag) =>
+// const rel = (symbol: string) => (tag: RqlTag) =>
 const rel = (symbol: string) => (tag: any) =>
   new Rel (symbol, tag);
 

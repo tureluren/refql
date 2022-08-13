@@ -1,7 +1,7 @@
 import JBOInterpreter from ".";
 import raw from "../Raw/raw";
-import rql from "../RQLTag/rql";
-import sql from "../SQLTag/sql";
+import rql from "../RqlTag/rql";
+import sql from "../SqlTag/sql";
 import Table from "../Table";
 import format from "../test/format";
 import { ASTType, Refs } from "../types";

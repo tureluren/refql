@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { EnvRecord, Values } from "../types";
 
 class Environment {

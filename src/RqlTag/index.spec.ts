@@ -1,12 +1,12 @@
-import RQLTag from ".";
-import sql from "../SQLTag/sql";
+import RqlTag from ".";
+import sql from "../SqlTag/sql";
 import refQLConfig from "../test/refQLConfig";
 
-describe ("RQLTag type", () => {
-  test ("create RQLTag", () => {
+describe ("RqlTag type", () => {
+  test ("create RqlTag", () => {
     const string = "player { id lastName $ }";
     const keys = [sql`where id = 1`];
-    const rqlTag = new RQLTag (string, keys);
+    const rqlTag = new RqlTag (string, keys);
 
     expect (rqlTag.string).toEqual (string);
     expect (rqlTag.keys).toEqual (keys);
@@ -18,7 +18,7 @@ describe ("RQLTag type", () => {
       { json_build_object: { id: 2, firstName: "Jane", lastName: "Doe" } }
     ];
 
-    expect (RQLTag.transform (refQLConfig, rows)).toEqual ([
+    expect (RqlTag.transform (refQLConfig, rows)).toEqual ([
       { id: 1, firstName: "John", lastName: "Doe" },
       { id: 2, firstName: "Jane", lastName: "Doe" }
     ]);

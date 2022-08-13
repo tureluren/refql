@@ -1,7 +1,7 @@
 import { EnvRecord, Transformations } from "../types";
 import get from "./get";
 
-const evolve = <Input, T extends keyof EnvRecord<Input>>(transformations: Transformations<Input>) => (obj: EnvRecord<Input>): EnvRecord<Input> => {
+const evolve = <T extends keyof EnvRecord<any>>(transformations: Transformations<any>) => <Input>(obj: EnvRecord<Input>): EnvRecord<Input> => {
   return (Object.keys (obj) as Array<T>).reduce ((acc, key) => {
     const transformation = transformations[key];
     if (transformation) {

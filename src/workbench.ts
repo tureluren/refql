@@ -1,13 +1,14 @@
 import { Pool } from "pg";
 import { rql } from "./index";
+import { MembersNode } from "./Parser/Node";
 import Raw from "./Raw";
 import raw from "./Raw/raw";
-import RQLTag from "./RQLTag";
+import RqlTag from "./RqlTag";
 import { Goal, Player } from "./soccer";
-import SQLTag from "./SQLTag";
-import sql from "./SQLTag/sql";
+import SqlTag from "./SqlTag";
+import sql from "./SqlTag/sql";
 import Table from "./Table";
-import { ASTNode, ASTRelation, RefQLConfig, Dict, Values, CaseType, Keywords } from "./types";
+import { ASTNode, TableNode, RefQLConfig, Dict, Values, CaseType, Keywords } from "./types";
 
 const pool = new Pool ({
   user: "test",
@@ -46,19 +47,20 @@ const config: RefQLConfig = {
   querier
 };
 
-const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RQLTag<Input> | SQLTag<Input>, params: Input) => {
+const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RqlTag<Input> | SqlTag<Input>, params: Input) => {
   return tag.run<Output> (config, params);
 };
 
 const run = makeRun (config);
 
-const updateKeywords = (keywords: Keywords) => (ast: ASTRelation): ASTRelation => {
+const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: TableNode): TableNode => {
   const newKeywords = { ...ast.keywords, ...keywords };
   return {
     ...ast,
     keywords: newKeywords
-  } as ASTRelation;
+  } as TableNode;
 };
+
 
 // const toHasMany = (ast: ASTRelation): ASTRelation => {
 //   return {
@@ -67,28 +69,30 @@ const updateKeywords = (keywords: Keywords) => (ast: ASTRelation): ASTRelation =
 //   } as ASTRelation;
 // };
 
-// const hasMany = <Input> (tag: RQLTag<Input>): RQLTag<Input> => {
+// const hasMany = <Input> (tag: RqlTag<Input>): RqlTag<Input> => {
 //   return tag.map (toHasMany);
 // };
 
-// const hasMany2 = <Input> (tag: RQLTag<Input>) => <Input2>(tag2: RQLTag<Input2>): RQLTag<Input & Input2> => {
+// const hasMany2 = <Input> (tag: RqlTag<Input>) => <Input2>(tag2: RqlTag<Input2>): RqlTag<Input & Input2> => {
 //   return tag2.concat (tag.map (toHasMany));
 // };
 
-const playerQuery = rql<{ id: number }>`
-  player {
+const playerQuery = rql<{ id: number; limit: number }>`
+  player (id: ${p => p.limit}, limit: ${p => p.limit}) {
     last_name
-    - team {
-      id
-      name
-    }
-    ${sql`
-      limit 11
+    concat(last_name, ${sql`${1}::text`})
+    ${() => raw ("first_name")}
+    ${(p, t) => sql`
+      where ${raw (t.as)}.id = 2 
     `}
   }
 `;
 
-console.log (playerQuery);
+// const upd = playerQuery.map (ast => updateKeywords<{off: number}> ({
+//   offset: p => p.off
+// }) (ast));
+
+// console.log (upd);
 
 // const goalsQuery = rql<{ limit: number }>`
 //   goals (limit: 1) {
@@ -115,8 +119,8 @@ const playerGoalsRef = {
 // run<{ id: number }, Player> (playerQuery, { id: 5 })
 //   .then (rows => console.log (rows[1]));
 
-playerQuery.run<Player> (config, { id: 5 }).then (players => {
-  console.log (players[10]);
+playerQuery.run<Player> (config, { id: 5, limit: 5 }).then (players => {
+  console.log (players[4]);
 });
 
 const refs = {
@@ -204,7 +208,7 @@ const selectPlayer = sql<{id: number}>`
 //   offset 0
 // `;
 
-const paginate = <Input>(tag: RQLTag<Input> | SQLTag<Input>) =>
+const paginate = <Input>(tag: RqlTag<Input> | SqlTag<Input>) =>
   tag.concat (sql<Input & { limit: number}>`
     limit ${(params: any) => params.limit}
     offset 0 

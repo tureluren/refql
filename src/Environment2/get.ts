@@ -1,6 +1,6 @@
 import { EnvRecord } from "../types";
 
-const get = <Input, K extends keyof EnvRecord<Input>>(prop: K) => (record: EnvRecord<Input>) =>
+const get = <K extends keyof EnvRecord<any>>(prop: K) => <Input>(record: EnvRecord<Input>) =>
   record[prop];
 
 export default get;

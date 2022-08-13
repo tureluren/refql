@@ -1,5 +1,5 @@
 import Rel from ".";
-import rql from "../RQLTag/rql";
+import rql from "../RqlTag/rql";
 import isRel from "./isRel";
 
 describe ("Rel `isRel` - detects if a given value is a Rel", () => {

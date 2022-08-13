@@ -1,5 +1,5 @@
 import Sub from ".";
-import sql from "../SQLTag/sql";
+import sql from "../SqlTag/sql";
 import isSub from "./isSub";
 
 describe ("Sub `isSub` - detects if a given value is a Sub", () => {

@@ -1,6 +1,6 @@
 import Parser from ".";
 import Raw from "../Raw";
-import sql from "../SQLTag/sql";
+import sql from "../SqlTag/sql";
 import Table from "../Table";
 import Tokenizer from "../Tokenizer";
 import { ASTType, OptCaseType } from "../types";

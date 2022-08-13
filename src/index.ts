@@ -5,8 +5,8 @@ import RefQL from "./RefQL";
 import belongsTo from "./Rel/belongsTo";
 import hasMany from "./Rel/hasMany";
 import manyToMany from "./Rel/manyToMany";
-import rql from "./RQLTag/rql";
-import sql from "./SQLTag/sql";
+import rql from "./RqlTag/rql";
+import sql from "./SqlTag/sql";
 import subselect from "./Sub/subselect";
 
 export * from "./types";

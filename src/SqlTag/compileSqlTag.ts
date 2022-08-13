@@ -1,25 +1,25 @@
-import SQLTag from ".";
+import SqlTag from ".";
 import parameterize from "../more/parameterize";
 import isArray from "../predicate/isArray";
 import isFunction from "../predicate/isFunction";
 import isRaw from "../Raw/isRaw";
-import isRQLTag from "../RQLTag/isRQLTag";
+import isRqlTag from "../RqlTag/isRqlTag";
 import Table from "../Table";
 import isTable from "../Table/isTable";
 import { Values } from "../types";
-import formatSQLString from "./formatSQLString";
-import formatTLString from "./formatTLString";
-import isSQLTag from "./isSQLTag";
+import formatSqlString from "./formatSqlString";
+import formatTlString from "./formatTlString";
+import isSqlTag from "./isSqlTag";
 
-const compileSQLTag = <Input>(tag: SQLTag<Input>, keyIdx: number, params: Input, table?: Table): [string, Values] => {
+const compileSqlTag = <Input>(tag: SqlTag<Input>, keyIdx: number, params: Input, table: Table): [string, Values] => {
   const values: Values = [];
 
-  const go = (sqlTag: SQLTag<Input>): string => {
+  const go = (sqlTag: SqlTag<Input>): string => {
     const { strings, keys } = sqlTag;
 
     return strings.reduce ((acc, str, idx) => {
 
-      const s = formatTLString (str);
+      const s = formatTlString (str);
 
       const k = keys[idx];
 
@@ -32,17 +32,17 @@ const compileSQLTag = <Input>(tag: SQLTag<Input>, keyIdx: number, params: Input,
           return acc + s + " $" + (keyIdx + values.length) + " ";
         }
 
-        if (isRQLTag (k)) {
+        if (isRqlTag (k)) {
           throw new Error ("You can't use RQL tags inside SQL Tags");
         }
 
-        if (isSQLTag<Input> (k)) {
+        if (isSqlTag<Input> (k)) {
           return acc + s + " " + go (k);
         }
 
         if (isTable (k)) {
           // @ts-ignore
-          return acc + s + ' "' + k.as + '"';
+          return acc + s + " " + k.as;
         }
 
         if (isRaw (k)) {
@@ -66,7 +66,7 @@ const compileSQLTag = <Input>(tag: SQLTag<Input>, keyIdx: number, params: Input,
     }, "");
   };
 
-  return [formatSQLString (go (tag)), values];
+  return [formatSqlString (go (tag)), values];
 };
 
-export default compileSQLTag;
+export default compileSqlTag;

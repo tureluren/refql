@@ -1,9 +1,10 @@
 import evolve from "../Environment2/evolve";
 import convertCase from "../more/convertCase";
-import emptyRefs from "../RQLTag/emptyRefs";
+import emptyRefs from "../RqlTag/emptyRefs";
 import Table from "../Table";
 import { ASTNode, EnvRecord, OptCaseType } from "../types";
 import keysToComp from "./keysToComp";
+import runKeyword from "./runKeyword";
 
 const createKey = (table: Table) => (ref: string, keys: string) =>
   keys.split (",").map ((name, idx) => ({
@@ -11,26 +12,29 @@ const createKey = (table: Table) => (ref: string, keys: string) =>
     as: `${table.as}${ref}${idx}`
   }));
 
-const moveToNext = (caseType: OptCaseType) => <Input>(exp: ASTNode, record: EnvRecord<Input>) => {
+const moveToNext = <Input>(caseType: OptCaseType, params: Input) => (exp: ASTNode, record: EnvRecord<Input>) => {
   const { table } = record;
 
   let refs = emptyRefs ();
   const keyOf = createKey (table);
 
-  exp.cata<void> ({
-    BelongsTo: (child, _members, keywords) => {
-      refs.lkeys = keyOf ("lkey", keywords.lkey || convertCase (caseType, child.name + "_id"));
-      refs.rkeys = keyOf ("rkey", keywords.rkey || "id");
+  exp.cata<Input, void> ({
+    BelongsTo: (child, _members, { lkey, rkey }) => {
+      const runKw = runKeyword (params, child);
+      refs.lkeys = keyOf ("lkey", runKw (lkey) || convertCase (caseType, child.name + "_id"));
+      refs.rkeys = keyOf ("rkey", runKw (rkey) || "id");
     },
-    HasMany: (_child, _members, keywords) => {
-      refs.lkeys = keyOf ("lkey", keywords.lkey || "id");
-      refs.rkeys = keyOf ("rkey", keywords.rkey || convertCase (caseType, table.name + "_id"));
+    HasMany: (child, _members, { lkey, rkey }) => {
+      const runKw = runKeyword (params, child);
+      refs.lkeys = keyOf ("lkey", runKw (lkey) || "id");
+      refs.rkeys = keyOf ("rkey", runKw (rkey) || convertCase (caseType, table.name + "_id"));
     },
-    ManyToMany: (child, _members, keywords) => {
-      refs.lkeys = keyOf ("lkey", keywords.lkey || "id");
-      refs.rkeys = keyOf ("rkey", keywords.rkey || "id");
-      refs.lxkeys = keyOf ("lxkey", keywords.lxkey || convertCase (caseType, table.name + "_id"));
-      refs.rxkeys = keyOf ("rxkey", keywords.rxkey || convertCase (caseType, child.name + "_id"));
+    ManyToMany: (child, _members, { lkey, rkey, lxkey, rxkey }) => {
+      const runKw = runKeyword (params, child);
+      refs.lkeys = keyOf ("lkey", runKw (lkey) || "id");
+      refs.rkeys = keyOf ("rkey", runKw (rkey) || "id");
+      refs.lxkeys = keyOf ("lxkey", runKw (lxkey) || convertCase (caseType, table.name + "_id"));
+      refs.rxkeys = keyOf ("rxkey", runKw (rxkey) || convertCase (caseType, child.name + "_id"));
     }
   });
 

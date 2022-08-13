@@ -1,5 +1,5 @@
 import compile from "../more/compile";
-import rql from "../RQLTag/rql";
+import rql from "../RqlTag/rql";
 import refQLConfig from "../test/refQLConfig";
 import manyToMany from "./manyToMany";
 import isRel from "./isRel";

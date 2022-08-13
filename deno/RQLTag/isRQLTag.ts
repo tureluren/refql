@@ -1,6 +1,6 @@
-import RQLTag from "./index.ts";
+import RqlTag from "./index.ts";
 
-const isRQLTag = (value: any): value is RQLTag =>
-  value instanceof RQLTag;
+const isRqlTag = (value: any): value is RqlTag =>
+  value instanceof RqlTag;
 
-export default isRQLTag;
+export default isRqlTag;

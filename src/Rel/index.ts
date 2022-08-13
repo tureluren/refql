@@ -1,4 +1,4 @@
-import RQLTag from "../RQLTag";
+import RqlTag from "../RqlTag";
 
 class Rel {
   symbol: string;

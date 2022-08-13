@@ -1,41 +1,45 @@
 import isRaw from "../Raw/isRaw";
-import compileSQLTag from "../SQLTag/compileSQLTag";
+import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
-import { ASTNode, OptCaseType, EnvRecord, InterpretFn } from "../types";
+import { ASTNode, OptCaseType, EnvRecord, RQLValue } from "../types";
 import convertCase from "../more/convertCase";
 import get from "../Environment2/get";
 import over from "../Environment2/over";
 import chain from "../more/chain";
 import evolve from "../Environment2/evolve";
 import set from "../Environment2/set";
-import isSQLTag from "../SQLTag/isSQLTag";
-import createEnv from "../RQLTag/createEnv";
+import isSqlTag from "../SqlTag/isSqlTag";
+import createEnv from "../RqlTag/createEnv";
 import moveToNext from "./moveToNext";
 import whereIn from "./whereIn";
 import fromTable from "./fromTable";
 import joinOn from "./joinOn";
 import select from "./select";
-import interpretSQLTag from "./interpretSQLTag";
+import interpretSqlTag from "./interpretSqlTag";
 import castAs from "./castAs";
 import selectRefs from "./selectRefs";
+import isFunction from "../predicate/isFunction";
+import runKeyword from "./runKeyword";
+import Environment from "../Environment2";
+import concat from "../more/concat";
 
-const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
-  const next = moveToNext (caseType);
-  const includeSQL = interpretSQLTag (params);
+const interpret = <Input> (caseType: OptCaseType, params: Input) => {
+  const next = moveToNext (caseType, params);
+  const includeSql = interpretSqlTag (params);
 
-  const interpretMembers = (members: ASTNode[], table: Table) =>
+  const interpretMembers = (members: ASTNode[], table: Table, inCall = false) =>
     members.reduce ((acc, mem) =>
-      acc.extend (env => goInterpret (mem, env)), createEnv<Input> (table));
+      acc.extend (env => goInterpret (mem, env)), createEnv<Input> (table, undefined, inCall));
 
-  const goInterpret: InterpretFn<Input> = (exp, env, rows?) => {
+  const goInterpret = (exp: ASTNode, env: Environment<Input>, rows?: any[]): EnvRecord<Input> => {
     const { record } = env;
-    const { values, table: parent, refs } = record;
+    const { values, table: parent, refs, inCall } = record;
 
-    return exp.cata<EnvRecord<Input>> ({
+    return exp.cata<Input, EnvRecord<Input>> ({
       Root: (table, members) =>
         interpretMembers (members, table)
           .map (fromTable (table))
-          .map (includeSQL (table))
+          .map (includeSql (table))
           .record,
 
       BelongsTo: (table, members) => {
@@ -45,7 +49,7 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
           .map (selectRefs (table, refs.rkeys))
           .map (fromTable (table))
           .map (whereIn (refs.lkeys, refs.rkeys, rows, table))
-          .map (includeSQL (table))
+          .map (includeSql (table))
           .record;
       },
       HasMany: (table, members) => {
@@ -55,14 +59,15 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
           .map (selectRefs (table, refs.rkeys))
           .map (fromTable (table))
           .map (whereIn (refs.lkeys, refs.rkeys, rows, table))
-          .map (includeSQL (table))
+          .map (includeSql (table))
           .record;
       },
-      ManyToMany: (table, members, keywords) => {
+      ManyToMany: (table, members, { x }) => {
         if (!rows) return next (exp, record);
 
         const xTable = new Table (
-          keywords.x || convertCase (caseType, `${parent.name}_${table.name}`)
+          runKeyword (params, table) (x)
+          || convertCase (caseType, `${parent.name}_${table.name}`)
         );
 
         return interpretMembers (members, table)
@@ -71,41 +76,54 @@ const interpret = <Input> (caseType: OptCaseType, params?: Input) => {
           .map (fromTable (table))
           .map (joinOn (refs.rxkeys, refs.rkeys, table, xTable))
           .map (whereIn (refs.lkeys, refs.lxkeys, rows, xTable))
-          .map (includeSQL (table))
+          .map (includeSql (table))
           .record;
       },
       Call: (name, args, as, cast) => {
-        const call = interpretMembers (args, parent)
+        const callRecord = interpretMembers (args, parent, true)
           .map (chain (
             get ("comps"),
             comps =>
               set ("query") (castAs (`${name} (${comps.join (", ")})`, as, cast))))
-          .record
-          .query;
-
-        return select (call) (record);
-      },
-      Variable: (value, as, cast) => {
-        if (isSQLTag (value)) {
-          if (as) {
-            // subquery
-            const [query, newValues] = compileSQLTag (value, values.length, params, parent);
-
-            return evolve ({
-              comps: c => c.concat (castAs (`(${query})`, as, cast)),
-              values: v => v.concat (newValues)
-            }) (record);
-          }
-          return over ("sqlTag") (tag => tag.concat (value)) (record);
-
-        } else if (isRaw (value)) {
-          return select (value.value) (record);
-        }
+          .record;
 
         return evolve ({
-          values: v => v.concat (value),
-          comps: c => c.concat (castAs (`$${values.length + 1}`, as, cast))
+          comps: concat (callRecord.query),
+          values: concat (callRecord.values)
         }) (record);
+
+      },
+      Variable: (value, as, cast) => {
+        const processVar = (variable: RQLValue<Input>) => {
+          if (isSqlTag<Input> (variable)) {
+            if (inCall || as) {
+              const [query, newValues] = compileSqlTag (variable, values.length, params, parent);
+
+              const sql = !inCall ? `(${query})` : query;
+
+              return evolve ({
+                comps: concat (castAs (sql, as, cast)),
+                values: concat (newValues)
+              }) (record);
+            }
+
+            return over ("sqlTag") (concat (variable)) (record);
+          }
+
+          if (isRaw (variable)) {
+            return select (variable.value) (record);
+          }
+
+          return evolve ({
+            comps: concat (castAs (`$${values.length + 1}`, as, cast)),
+            values: concat (variable)
+          }) (record);
+        };
+
+        return isFunction (value)
+          ? processVar (value (params, parent))
+          : processVar (value);
+
       },
       Identifier: (name, as, cast) =>
         select (castAs (`${parent.as}.${name}`, as, cast)) (record),

@@ -6,24 +6,20 @@
 import Environment from "../Environment2";
 import Interpreter from "../Interpreter";
 import { BelongsTo, HasMany, ManyToMany, MembersNode, Root } from "../Parser/Node";
-import SQLTag from "../SQLTag";
+import SqlTag from "../SqlTag";
 import {
-  ASTNode, ASTRelation, CompiledQuery, EnvRecord, JsonBuildObject,
-  RefQLConfig, RQLValue, Values, Dict, Querier
+  ASTNode, CompiledQuery, EnvRecord, JsonBuildObject,
+  RefQLConfig, RQLValue, Values, Dict, Querier, TableNode
 } from "../types";
 import createEnv from "./createEnv";
 
 
 const makeGo = <Input, Output>(querier: Querier, interpret: (exp: ASTNode, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>) => (compiledQuery: CompiledQuery) => {
   const go = (compiled: CompiledQuery): Promise<Output[]> => {
-    console.log (compiled);
-    // zie hier dat refs opgehaald worden
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
 
-        // is table wel nog nodig nu dat er refs zijn
         const ip = interpret (c.exp, createEnv<Input> (compiled.table, c.refs), rows);
-        console.log (ip);
 
         return go ({
           next: ip.next,
@@ -77,23 +73,23 @@ const makeGo = <Input, Output>(querier: Querier, interpret: (exp: ASTNode, env: 
 };
 
 // vervang INput door params en
-class RQLTag <Input> {
+class RqlTag <Input> {
   string: string;
   keys: RQLValue<Input>[];
-  ast: ASTNode;
+  ast: TableNode;
 
-  constructor(ast: ASTNode) {
+  constructor(ast: TableNode) {
     this.ast = ast;
     this.string = "";
     this.keys = [];
   }
 
-  concat<Input2>(other: RQLTag<Input2> | SQLTag<Input2>): RQLTag<Input & Input2> {
+  concat<Input2>(other: RqlTag<Input2> | SqlTag<Input2>): RqlTag<Input & Input2> {
 
     if (!(this.ast instanceof MembersNode)) {
       return this;
     }
-    // const newMember: ASTNode = other instanceof RQLTag
+    // const newMember: ASTNode = other instanceof RqlTag
     //   ? other.ast
     //   : { type: "Variable", value: other };
 
@@ -101,13 +97,13 @@ class RQLTag <Input> {
 
     const members = this.ast.members;
 
-    return new RQLTag<Input & Input2> (
+    return new RqlTag<Input & Input2> (
       Object.assign ({}, this.ast, { members })
     );
   }
 
-  map(fn: (ast: ASTNode) => ASTNode) {
-    return new RQLTag<Input> (fn (this.ast));
+  map(fn: (ast: TableNode) => TableNode) {
+    return new RqlTag<Input> (fn (this.ast));
   }
 
   run<Output>(config: RefQLConfig, params: Input): Promise<Output[]> {
@@ -141,4 +137,4 @@ class RQLTag <Input> {
   }
 }
 
-export default RQLTag;
+export default RqlTag;

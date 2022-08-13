@@ -174,7 +174,7 @@ class Parser {
     const subselect = <Subselect><unknown> this.Identifier ();
 
     // the interpreter will check if this variable is
-    // a SQLTag or a function that returns a SQLTag
+    // a SqlTag or a function that returns a SqlTag
     subselect.tag = this.Variable ().value;
 
     subselect.type = "Subselect";

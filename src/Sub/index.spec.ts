@@ -1,5 +1,5 @@
 import Sub from ".";
-import sql from "../SQLTag/sql";
+import sql from "../SqlTag/sql";
 import Table from "../Table";
 
 describe ("Sub type", () => {

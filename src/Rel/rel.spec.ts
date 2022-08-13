@@ -1,4 +1,4 @@
-import rql from "../RQLTag/rql";
+import rql from "../RqlTag/rql";
 import isRel from "./isRel";
 import rel from "./rel";
 

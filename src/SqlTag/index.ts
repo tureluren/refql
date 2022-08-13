@@ -2,20 +2,20 @@ import convertObject from "../more/convertObject";
 import isRel from "../Rel/isRel";
 import isSub from "../Sub/isSub";
 import Table from "../Table";
-import { CompiledQuery, RefQLConfig, Refs, Values } from "../types";
-import compileSQLTag from "./compileSQLTag";
-import isSQLTag from "./isSQLTag";
+import { CompiledQuery, RefQLConfig, Refs, RQLValue, Values } from "../types";
+import compileSqlTag from "./compileSqlTag";
+import isSqlTag from "./isSqlTag";
 
-class SQLTag <Input> {
+class SqlTag <Input> {
   strings: TemplateStringsArray;
-  keys: Values;
+  keys: RQLValue<Input>[];
 
-  constructor(strings: TemplateStringsArray, keys: Values) {
+  constructor(strings: TemplateStringsArray, keys: RQLValue<Input>[]) {
     this.strings = strings;
     this.keys = keys;
   }
 
-  concat<Input2>(other: SQLTag<Input2>) {
+  concat<Input2>(other: SqlTag<Input2>) {
     const tag1Strings = Array.from (this.strings);
     const lastEl = tag1Strings.pop ();
 
@@ -23,9 +23,9 @@ class SQLTag <Input> {
     const firstEl = tag2Strings.shift ();
 
     const nextStrings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
-    const nextKeys = this.keys.concat (other.keys);
+    const nextKeys: RQLValue<Input & Input2>[] = (<RQLValue<Input & Input2>[]> this.keys).concat (other.keys);
 
-    return new SQLTag<Input & Input2> (
+    return new SqlTag<Input & Input2> (
       nextStrings as unknown as TemplateStringsArray, nextKeys
     );
   }
@@ -49,7 +49,7 @@ class SQLTag <Input> {
 
   //   let nextStrings, nextKeys;
 
-  //   if (isSQLTag (snip)) {
+  //   if (isSqlTag (snip)) {
   //     const tag1Strings = Array.from (this.strings);
   //     const lastEl = tag1Strings.pop ();
 
@@ -63,11 +63,11 @@ class SQLTag <Input> {
   //     nextKeys = this.keys.concat (snip);
   //   }
 
-  //   return new SQLTag (nextStrings as any, nextKeys);
+  //   return new SqlTag (nextStrings as any, nextKeys);
   // }
 
   interpret(params: Input) {
-    return compileSQLTag<Input> (this, 0, params);
+    return compileSqlTag<Input> (this, 0, params, {} as Table);
   }
 
   compile(_config: RefQLConfig): CompiledQuery {
@@ -81,4 +81,4 @@ class SQLTag <Input> {
   // }
 }
 
-export default SQLTag;
+export default SqlTag;

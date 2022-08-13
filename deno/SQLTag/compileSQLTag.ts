@@ -1,23 +1,23 @@
-import SQLTag from "./index.ts";
+import SqlTag from "./index.ts";
 import isArray from "../predicate/isArray.ts";
 import isFunction from "../predicate/isFunction.ts";
 import isRaw from "../Raw/isRaw.ts";
-import isRQLTag from "../RQLTag/isRQLTag.ts";
+import isRqlTag from "../RqlTag/isRqlTag.ts";
 import isTable from "../Table/isTable.ts";
 import { Values } from "../types.ts";
-import formatSQLString from "./formatSQLString.ts";
-import formatTLString from "./formatTLString.ts";
-import isSQLTag from "./isSQLTag.ts";
+import formatSqlString from "./formatSqlString.ts";
+import formatTlString from "./formatTlString.ts";
+import isSqlTag from "./isSqlTag.ts";
 
-const compileSQLTag = (tag: SQLTag, keyIdx: number): [string, Values] => {
+const compileSqlTag = (tag: SqlTag, keyIdx: number): [string, Values] => {
   const values: Values = [];
 
-  const go = (sqlTag: SQLTag): string => {
+  const go = (sqlTag: SqlTag): string => {
     const { strings, keys } = sqlTag;
 
     return strings.reduce ((acc, str, idx) => {
 
-      const s = formatTLString (str);
+      const s = formatTlString (str);
 
       const k = keys[idx];
 
@@ -27,11 +27,11 @@ const compileSQLTag = (tag: SQLTag, keyIdx: number): [string, Values] => {
           throw new Error ("You can't use Functions inside SQL Tags");
         }
 
-        if (isRQLTag (k)) {
+        if (isRqlTag (k)) {
           throw new Error ("You can't use RQL tags inside SQL Tags");
         }
 
-        if (isSQLTag (k)) {
+        if (isSqlTag (k)) {
           return acc + s + " " + go (k);
         }
 
@@ -60,7 +60,7 @@ const compileSQLTag = (tag: SQLTag, keyIdx: number): [string, Values] => {
     }, "");
   };
 
-  return [formatSQLString (go (tag)), values];
+  return [formatSqlString (go (tag)), values];
 };
 
-export default compileSQLTag;
+export default compileSqlTag;

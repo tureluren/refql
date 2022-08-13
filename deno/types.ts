@@ -1,5 +1,5 @@
-import RQLTag from "./RQLTag/index.ts";
-import SQLTag from "./SQLTag/index.ts";
+import RqlTag from "./RqlTag/index.ts";
+import SqlTag from "./SqlTag/index.ts";
 import Table from "./Table/index.ts";
 
 export type CaseType = "camel" | "snake";
@@ -28,7 +28,7 @@ export interface RefQLConfig extends Dict {
 export type Link = [string, string];
 export type TableRefs = { [tableTo: string]: Link[] };
 export type Refs = { [tableFrom: string]: TableRefs };
-export type SQLTag_ = SQLTag | ((t: Table) => SQLTag);
+export type SQLTag_ = SqlTag | ((t: Table) => SqlTag);
 
 export interface JsonBuildObject<T> {
   json_build_object: T;
@@ -144,9 +144,9 @@ export interface EnvRecord {
 }
 
 export type TagFn = {
-  (baseTag: RQLTag, ...snippets: any[]): RQLTag;
-  (baseTag: SQLTag, ...snippets: any[]): SQLTag;
-  (baseTag: RQLTag | SQLTag, ...snippets: any[]): RQLTag | SQLTag;
+  (baseTag: RqlTag, ...snippets: any[]): RqlTag;
+  (baseTag: SqlTag, ...snippets: any[]): SqlTag;
+  (baseTag: RqlTag | SqlTag, ...snippets: any[]): RqlTag | SqlTag;
 };
 
 export interface DBRef {
@@ -154,7 +154,7 @@ export interface DBRef {
   constraint: string;
 }
 
-export type RQLValue = ((t: Table) => SQLTag) | string | number | boolean | TableRefs | Link[] | Keywords;
+export type RQLValue = ((t: Table) => SqlTag) | string | number | boolean | TableRefs | Link[] | Keywords;
 export type Values = any[];
 
 export type Querier = (query: string, values: Values) => Promise<any[]>;

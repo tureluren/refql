@@ -1,8 +1,8 @@
 import compile from "../more/compile";
 import tag from "../more/tag";
 import makeRefs from "../refs/makeRefs";
-import RQLTag from "../RQLTag";
-import SQLTag from "../SQLTag";
+import RqlTag from "../RqlTag";
+import SqlTag from "../SqlTag";
 import { CompiledQuery, Querier, RefQLConfig, RefsOld } from "../types";
 import defaultConfig from "./defaultConfig";
 import readRefs from "./readRefs";
@@ -61,8 +61,8 @@ const RefQL = (userConfig: Partial<RefQLConfig>, querier: Querier) => {
 
   // const go = makeGo (querier);
 
-  // const query = <T>(...components: [RQLTag | SQLTag, ...any[]]): Promise<T[]> => {
-  const query = <T>(...components: [any | SQLTag<any>, ...any[]]): Promise<T[]> => {
+  // const query = <T>(...components: [RqlTag | SqlTag, ...any[]]): Promise<T[]> => {
+  const query = <T>(...components: [any | SqlTag<any>, ...any[]]): Promise<T[]> => {
     const t = tag (...components);
     return new Promise ((resolve, reject) => {
       const run = (refs: RefsOld) => {
@@ -90,8 +90,8 @@ const RefQL = (userConfig: Partial<RefQLConfig>, querier: Querier) => {
     });
   };
 
-  // const query1 = <T>(...components: [RQLTag | SQLTag, ...any[]]): Promise<T> =>
-  const query1 = <T>(...components: [any | SQLTag<any>, ...any[]]): Promise<T> =>
+  // const query1 = <T>(...components: [RqlTag | SqlTag, ...any[]]): Promise<T> =>
+  const query1 = <T>(...components: [any | SqlTag<any>, ...any[]]): Promise<T> =>
     query<T> (...components).then (rows => rows[0]);
 
   return { query, query1 };

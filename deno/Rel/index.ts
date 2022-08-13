@@ -1,10 +1,10 @@
-import RQLTag from "../RQLTag/index.ts";
+import RqlTag from "../RqlTag/index.ts";
 
 class Rel {
   symbol: string;
-  tag: RQLTag;
+  tag: RqlTag;
 
-  constructor(symbol: string, tag: RQLTag) {
+  constructor(symbol: string, tag: RqlTag) {
     this.symbol = symbol;
     this.tag = tag;
   }

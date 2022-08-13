@@ -1,5 +1,5 @@
 import Rel from ".";
-import rql from "../RQLTag/rql";
+import rql from "../RqlTag/rql";
 
 describe ("Rel type", () => {
   test ("create Rel", () => {
