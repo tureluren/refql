@@ -78,13 +78,13 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: TableNode):
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  player (id: ${p => p.limit}, limit: ${p => p.limit}) {
-    last_name
-    concat(last_name, ${sql`${1}::text`})
-    ${() => raw ("first_name")}
-    ${(p, t) => sql`
-      where ${raw (t.as)}.id = 2 
-    `}
+  public.player (id: ${p => p.limit}, limit: ${p => p.limit}) {
+    - public.team (as: "foemp") {
+      id
+      ${p => sql`
+        limit 5
+      `}
+    }
   }
 `;
 

@@ -10,13 +10,14 @@ import {
   CaseType, Keywords,
   Literal,
   OptCaseType, Plurals, RQLValue,
-  TableNode, Token
+  TableNode, Token, TableNodeCTor
 } from "../types";
 import convertTableRefs from "../refs/convertTableRefs";
 import Pluralizer from "../Pluralizer";
 import Table from "../Table";
-import { BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Node";
+import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Node";
 import identifierToTable from "./identifierToTable";
+import runKeyword from "../Interpreter/runKeyword";
 
 const isVariable = (value: any) =>
   value === "VARIABLE";
@@ -45,8 +46,8 @@ class Parser {
     return this.Table (Root);
   }
 
-  Table(ctor: new (table: Table, members: ASTNode[], keywords: Keywords<any>) => TableNode) {
-    let table = identifierToTable (this.Identifier ());
+  Table(ctor: TableNodeCTor) {
+    let table = identifierToTable (this.Schema (), this.Identifier ());
     let keywords: Keywords<any> = {};
 
     if (this.lookahead.type === "(") {
@@ -96,6 +97,17 @@ class Parser {
   ManyToMany(): ManyToMany {
     this.eat ("x");
     return this.Table (ManyToMany);
+  }
+
+  All() {
+    const sign = this.eat ("*").value;
+    return new All (sign);
+  }
+
+  Schema() {
+    if (this.lookahead.type === "SCHEMA") {
+      return this.eat ("SCHEMA").value.slice (0, -1);
+    }
   }
 
   Identifier() {
@@ -217,6 +229,8 @@ class Parser {
       return this.Literal ();
     }
     switch (this.lookahead.type) {
+      case "*":
+        return this.All ();
       case "IDENTIFIER":
         return this.Identifier ();
       case "<":

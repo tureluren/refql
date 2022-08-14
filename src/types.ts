@@ -1,5 +1,5 @@
 import Environment from "./Environment2";
-import { BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Parser/Node";
+import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Parser/Node";
 import Raw from "./Raw";
 import SqlTag from "./SqlTag";
 import Table from "./Table";
@@ -48,8 +48,12 @@ export type Token = {
 
 export type ParamFn<Params, Result> = (p: Params, T: Table) => Result;
 
+export type TableNodeCTor = new (table: Table, members: ASTNode[], keywords: Keywords<any>) => TableNode;
+
 export interface Keywords<Params> {
   as?: string | ParamFn<Params, string>;
+  schema?: string | ParamFn<Params, string>;
+  name?: string | ParamFn<Params, string>;
   lkey?: string | ParamFn<Params, string>;
   rkey?: string | ParamFn<Params, string>;
   x?: string | ParamFn<Params, string>;
@@ -72,13 +76,12 @@ export type TableNode =
   Root | HasMany | BelongsTo | ManyToMany;
 
 export type ASTNode =
-  Identifier | TableNode | Variable | Call | Literal;
+  Identifier | All | TableNode | Variable | Call | Literal;
 
 export interface Next {
   exp: ASTNode;
   refs: Refs;
 }
-
 
 export interface EnvRecord<Input> {
   table: Table;
@@ -146,6 +149,7 @@ export type Pattern<Params, Return> = Partial<{
   HasMany: (table: Table, members: ASTNode[], keywords: Keywords<Params>) => Return;
   BelongsTo: (table: Table, members: ASTNode[], keywords: Keywords<Params>) => Return;
   ManyToMany: (table: Table, members: ASTNode[], keywords: Keywords<Params>) => Return;
+  All: (sign: string) => Return;
   Identifier: (name: string, as?: string, cast?: string) => Return;
   Variable: (value: RQLValue<Params>, as?: string, cast?: string) => Return;
   Call: (name: string, members: ASTNode[], as?: string, cast?: string) => Return;

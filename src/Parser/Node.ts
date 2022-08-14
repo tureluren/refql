@@ -1,5 +1,19 @@
+import runKeyword from "../Interpreter/runKeyword";
 import Table from "../Table";
-import { ASTNode, Keywords, Pattern, RQLValue } from "../types";
+import { ASTNode, Keywords, Pattern, RQLValue, TableNode, TableNodeCTor } from "../types";
+
+function runKeywordsOnTableNode <Params>(this: TableNode, params: Params): TableNode {
+  const runKw = runKeyword (params, this.table);
+  const name = runKw (this.keywords.name) || this.table.name;
+  const as = runKw (this.keywords.as) || this.table.as;
+  const schema = runKw (this.keywords.schema) || this.table.schema;
+
+  return new (this.constructor as TableNodeCTor) (
+    new Table (name, as, schema),
+    this.members,
+    this.keywords
+  );
+}
 
 export class MembersNode {
   members: ASTNode[];
@@ -22,6 +36,10 @@ export class Root extends MembersNode {
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.Root! (this.table, this.members, this.keywords);
   }
+
+  runKeywords<Params>(params: Params, _table: Table): Root {
+    return runKeywordsOnTableNode.bind (this) (params);
+  }
 }
 
 export class HasMany extends MembersNode {
@@ -36,6 +54,10 @@ export class HasMany extends MembersNode {
 
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.HasMany! (this.table, this.members, this.keywords);
+  }
+
+  runKeywords<Params>(params: Params, _table: Table): HasMany {
+    return runKeywordsOnTableNode.bind (this) (params);
   }
 }
 
@@ -52,6 +74,10 @@ export class BelongsTo extends MembersNode {
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.BelongsTo! (this.table, this.members, this.keywords);
   }
+
+  runKeywords<Params>(params: Params, _table: Table): BelongsTo {
+    return runKeywordsOnTableNode.bind (this) (params);
+  }
 }
 
 export class ManyToMany extends MembersNode {
@@ -66,6 +92,10 @@ export class ManyToMany extends MembersNode {
 
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.ManyToMany! (this.table, this.members, this.keywords);
+  }
+
+  runKeywords<Params>(params: Params, _table: Table): ManyToMany {
+    return runKeywordsOnTableNode.bind (this) (params);
   }
 }
 
@@ -84,6 +114,10 @@ export class Call extends MembersNode {
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.Call! (this.name, this.members, this.as, this.cast);
   }
+
+  runKeywords<Params>(_params: Params, _table: Table) {
+    return this;
+  }
 }
 
 export class Identifier {
@@ -99,6 +133,26 @@ export class Identifier {
 
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.Identifier! (this.name, this.as, this.cast);
+  }
+
+  runKeywords<Params>(_params: Params, _table: Table) {
+    return this;
+  }
+}
+
+export class All {
+  sign: string;
+
+  constructor(sign: string) {
+    this.sign = sign;
+  }
+
+  cata<P, R>(pattern: Pattern<P, R>) {
+    return pattern.All! (this.sign);
+  }
+
+  runKeywords<Params>(_params: Params, _table: Table) {
+    return this;
   }
 }
 
@@ -116,6 +170,14 @@ export class Variable {
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.Variable! (this.value, this.as, this.cast);
   }
+
+  runKeywords<Params>(params: Params, table: Table) {
+    return new Variable (
+      runKeyword (params, table) (this.value),
+      this.as,
+      this.cast
+    );
+  }
 }
 
 export class StringLiteral {
@@ -131,6 +193,10 @@ export class StringLiteral {
 
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.StringLiteral! (this.value, this.as, this.cast);
+  }
+
+  runKeywords<Params>(_params: Params, _table: Table) {
+    return this;
   }
 }
 
@@ -148,6 +214,10 @@ export class NumericLiteral {
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.NumericLiteral! (this.value, this.as, this.cast);
   }
+
+  runKeywords<Params>(_params: Params, _table: Table) {
+    return this;
+  }
 }
 
 export class BooleanLiteral {
@@ -164,6 +234,10 @@ export class BooleanLiteral {
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.BooleanLiteral! (this.value, this.as, this.cast);
   }
+
+  runKeywords<Params>(_params: Params, _table: Table) {
+    return this;
+  }
 }
 
 export class NullLiteral {
@@ -179,5 +253,9 @@ export class NullLiteral {
 
   cata<P, R>(pattern: Pattern<P, R>) {
     return pattern.NullLiteral! (this.value, this.as, this.cast);
+  }
+
+  runKeywords<Params>(_params: Params, _table: Table) {
+    return this;
   }
 }

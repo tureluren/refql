@@ -16,6 +16,7 @@ import createEnv from "./createEnv";
 
 const makeGo = <Input, Output>(querier: Querier, interpret: (exp: ASTNode, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>) => (compiledQuery: CompiledQuery) => {
   const go = (compiled: CompiledQuery): Promise<Output[]> => {
+    console.log (compiled);
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
 

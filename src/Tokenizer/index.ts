@@ -34,6 +34,8 @@ const spec: Spec = [
   [/^x\b/, "x"],
 
   // Identifiers
+  [/^\*/, "*"],
+  [/^\w+\./, "SCHEMA"],
   [/^\w+/, "IDENTIFIER"],
 
   // Strings
