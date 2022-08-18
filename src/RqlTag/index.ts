@@ -5,17 +5,17 @@
 // import isSub from "../Sub/isSub";
 import Environment from "../Environment2";
 import Interpreter from "../Interpreter";
-import { BelongsTo, HasMany, ManyToMany, MembersNode, Root } from "../Parser/Node";
+import { BelongsTo, HasMany, ManyToMany, Root } from "../Parser/Node";
 import SqlTag from "../SqlTag";
 import {
-  ASTNode, CompiledQuery, EnvRecord, JsonBuildObject,
-  RefQLConfig, RQLValue, Values, Dict, Querier, TableNode
+  AstNode, CompiledQuery, EnvRecord, JsonBuildObject,
+  RefQLConfig, RQLValue, Values, Dict, Querier, KeywordsNode, MembersNode
 } from "../types";
 import createEnv from "./createEnv";
 
 
-const makeGo = <Input, Output>(querier: Querier, interpret: (exp: ASTNode, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>) => (compiledQuery: CompiledQuery) => {
-  const go = (compiled: CompiledQuery): Promise<Output[]> => {
+const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input, true | false>, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>) => (compiledQuery: CompiledQuery<Input>) => {
+  const go = (compiled: CompiledQuery<Input>): Promise<Output[]> => {
     console.log (compiled);
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
@@ -77,9 +77,9 @@ const makeGo = <Input, Output>(querier: Querier, interpret: (exp: ASTNode, env: 
 class RqlTag <Input> {
   string: string;
   keys: RQLValue<Input>[];
-  ast: TableNode;
+  ast: KeywordsNode<Input>;
 
-  constructor(ast: TableNode) {
+  constructor(ast: KeywordsNode<Input>) {
     this.ast = ast;
     this.string = "";
     this.keys = [];
@@ -87,10 +87,11 @@ class RqlTag <Input> {
 
   concat<Input2>(other: RqlTag<Input2> | SqlTag<Input2>): RqlTag<Input & Input2> {
 
-    if (!(this.ast instanceof MembersNode)) {
+    // of has many of manytomany
+    if (!(this.ast instanceof Root)) {
       return this;
     }
-    // const newMember: ASTNode = other instanceof RqlTag
+    // const newMember: AstNode = other instanceof RqlTag
     //   ? other.ast
     //   : { type: "Variable", value: other };
 
@@ -103,7 +104,7 @@ class RqlTag <Input> {
     );
   }
 
-  map(fn: (ast: TableNode) => TableNode) {
+  map(fn: (ast: KeywordsNode<Input>) => KeywordsNode<Input>) {
     return new RqlTag<Input> (fn (this.ast));
   }
 
@@ -134,7 +135,7 @@ class RqlTag <Input> {
   }
 
   compile() {
-    return {} as CompiledQuery;
+    return {} as CompiledQuery<Input>;
   }
 }
 

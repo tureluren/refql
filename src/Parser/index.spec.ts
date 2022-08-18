@@ -505,7 +505,7 @@ describe ("Parser type", () => {
       .toThrowError (new SyntaxError ('Unexpected end of input, expected: "{"'));
 
     expect (() => parse`player {}`)
-      .toThrowError (new SyntaxError ("A table block should have at least one ASTNode"));
+      .toThrowError (new SyntaxError ("A table block should have at least one AstNode"));
 
     expect (() => parse`player (${"p"})`)
       .toThrowError (new SyntaxError ("player + (${}) should be of type Object"));
@@ -1283,11 +1283,11 @@ describe ("Parser type", () => {
     expect (ast).toEqual (expected);
   });
 
-  test ("Unknown ASTNode Type", () => {
+  test ("Unknown AstNode Type", () => {
     const parse = parseFn ("snake", "camel", true);
 
     expect (() => parse`Player {id, lastName}`)
-      .toThrowError (new Error ('Unknown ASTNode Type: ","'));
+      .toThrowError (new Error ('Unknown AstNode Type: ","'));
   });
 
   test ("Unknown Argument Type", () => {

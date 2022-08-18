@@ -4,10 +4,18 @@ import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
 import { EnvRecord } from "../types";
 
-const interpretSqlTag = <Input>(params: Input) => (table: Table) => (record: EnvRecord<Input>) => {
+const interpretSqlTag = <Input>(params: Input) => (table: Table, correctWhere: boolean = true) => (record: EnvRecord<Input>) => {
   const { sqlTag, values } = record;
 
-  const [query, newValues] = compileSqlTag (sqlTag, values.length, params, table);
+  let [query, newValues] = compileSqlTag (sqlTag, values.length, params, table);
+
+  if (!query) return record;
+
+  if (correctWhere) {
+    query = query.replace (/^\b(where)\b/i, "and");
+  } else {
+    query = query.replace (/^\b(and|or)\b/i, "where");
+  }
 
   return evolve ({
     query: q => `${q} ${query}`,

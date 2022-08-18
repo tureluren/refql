@@ -4,7 +4,7 @@ const formatSqlString = (sql: string) =>
     .replace (/\s\s+/g, " ")
     // cast after variable
     .replace (/\s::/, "::")
-    // table + ASTNode as variable
+    // table + AstNode as variable
     .replace (/\.\s\$/, ".$")
     // trim ending space (if str ends with $x);
     .replace (/\s\./, ".")

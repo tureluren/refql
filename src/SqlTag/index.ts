@@ -6,7 +6,7 @@ import { CompiledQuery, RefQLConfig, Refs, RQLValue, Values } from "../types";
 import compileSqlTag from "./compileSqlTag";
 import isSqlTag from "./isSqlTag";
 
-class SqlTag <Input> {
+class SqlTag <Input > {
   strings: TemplateStringsArray;
   keys: RQLValue<Input>[];
 
@@ -15,7 +15,7 @@ class SqlTag <Input> {
     this.keys = keys;
   }
 
-  concat<Input2>(other: SqlTag<Input2>) {
+  concat<Input2 >(other: SqlTag<Input2>) {
     const tag1Strings = Array.from (this.strings);
     const lastEl = tag1Strings.pop ();
 
@@ -70,10 +70,10 @@ class SqlTag <Input> {
     return compileSqlTag<Input> (this, 0, params, {} as Table);
   }
 
-  compile(_config: RefQLConfig): CompiledQuery {
+  compile(_config: RefQLConfig): CompiledQuery<Input> {
     // const [query, values] = this.interpret ();
     // return { query, values, next: [], table: {} as Table };
-    return {} as CompiledQuery;
+    return {} as CompiledQuery<Input>;
   }
 
   // static transform<T>(config: RefQLConfig, rows: T[]) {

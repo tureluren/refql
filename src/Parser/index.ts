@@ -1,31 +1,25 @@
-import isEmpty from "../predicate/isEmpty";
 import isLiteral from "../predicate/isLiteral";
-import isObject from "../predicate/isObject";
-import convertLinks from "../refs/convertLinks";
 import Tokenizer from "../Tokenizer";
-import validateKeywords from "./validateKeywords";
-import convertCase from "../more/convertCase";
 import {
-  ASTNode,
-  CaseType, Keywords,
-  Literal,
-  OptCaseType, Plurals, RQLValue,
-  TableNode, Token, TableNodeCTor
+  AstNode, Keywords, Literal,
+  RQLValue, Token
 } from "../types";
-import convertTableRefs from "../refs/convertTableRefs";
-import Pluralizer from "../Pluralizer";
-import Table from "../Table";
-import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Node";
+import {
+  All, BelongsTo, BooleanLiteral,
+  Call, HasMany, Identifier,
+  ManyToMany, NullLiteral, NumericLiteral,
+  Root, StringLiteral, Variable
+} from "./Node";
 import identifierToTable from "./identifierToTable";
-import runKeyword from "../Interpreter/runKeyword";
+import Table from "../Table";
 
 const isVariable = (value: any) =>
   value === "VARIABLE";
 
-class Parser {
+class Parser<Params> {
   tokenizer: Tokenizer;
   string: string;
-  keys: RQLValue<any>[];
+  keys: RQLValue<Params>[];
   keyIdx: number;
   lookahead!: Token;
 
@@ -36,26 +30,41 @@ class Parser {
     this.keyIdx = 0;
   }
 
-  parse(string: string, keys: RQLValue<any>[]): Root {
+  parse(string: string, keys: RQLValue<Params>[]) {
     this.string = string;
     this.keys = keys;
     this.keyIdx = 0;
     this.tokenizer.init (string);
     this.lookahead = this.tokenizer.getNextToken ();
 
-    return this.Table (Root);
+    const { table, members, keywords } = this.Table ();
+    return new Root (table, members, keywords);
   }
 
-  Table(ctor: TableNodeCTor) {
-    let table = identifierToTable (this.Schema (), this.Identifier ());
-    let keywords: Keywords<any> = {};
+  Table() {
+    let table;
+
+    if (isVariable (this.lookahead.type)) {
+      const variable = this.grabVariable ();
+
+      if (variable instanceof Table) {
+        table = variable;
+
+      } else {
+        throw new Error ("expecte table");
+      }
+
+    } else {
+
+      table = identifierToTable (this.Schema (), this.Identifier ());
+    }
+    let keywords: Keywords<Params> = {};
 
     if (this.lookahead.type === "(") {
       this.eat ("(");
 
-      // <table> (as: "table", id: ${1}, limit: ${p => p.limit}) { }
       do {
-        const identifier = this.eat ("IDENTIFIER").value as keyof Keywords<any>;
+        const identifier = this.eat ("IDENTIFIER").value as keyof Keywords<Params>;
         this.eat (":");
         let value;
 
@@ -80,23 +89,26 @@ class Parser {
       this.eat (")");
     }
 
-    return new ctor (table, this.members (), keywords);
+    return { table, members: this.members (), keywords };
   }
 
 
-  HasMany(): HasMany {
+  HasMany() {
     this.eat ("<");
-    return this.Table (HasMany);
+    const { table, members, keywords } = this.Table ();
+    return new HasMany (table, members, keywords);
   }
 
-  BelongsTo(): BelongsTo {
+  BelongsTo() {
     this.eat ("-");
-    return this.Table (BelongsTo);
+    const { table, members, keywords } = this.Table ();
+    return new BelongsTo (table, members, keywords);
   }
 
-  ManyToMany(): ManyToMany {
+  ManyToMany() {
     this.eat ("x");
-    return this.Table (ManyToMany);
+    const { table, members, keywords } = this.Table ();
+    return new ManyToMany (table, members, keywords);
   }
 
   All() {
@@ -113,18 +125,8 @@ class Parser {
   Identifier() {
     const name = this.eat ("IDENTIFIER").value;
 
-    // can only be handled here
-    // to give the user the possibility to overwrite `as`
-    // name = convertCase (this.caseType, name);
-    // as = convertCase (this.caseTypeJS, as);
-
-    // if (pluralizable) {
-    //   as = this.pluralizer.toPlural (as);
-    // }
-
     let identifier = new Identifier (name);
 
-    // overwrite if `as` is specified
     if (this.lookahead.type === ":") {
       this.eat (":");
       identifier.as = this.eat ("IDENTIFIER").value;
@@ -144,7 +146,7 @@ class Parser {
     this.keys.splice (this.keyIdx, 1);
     this.eat ("VARIABLE");
 
-    return new Variable (key);
+    return key;
   }
 
   Variable() {
@@ -169,7 +171,7 @@ class Parser {
     return variable;
   }
 
-  Call(callee: Identifier) {
+  Call(callee: Identifier<Params>) {
     return new Call (callee.name, this.Arguments (), callee.as, callee.cast);
   }
 
@@ -177,19 +179,19 @@ class Parser {
     this.eat ("{");
 
     if (this.lookahead.type === "}") {
-      throw new SyntaxError ("A table block should have at least one ASTNode");
+      throw new SyntaxError ("A table block should have at least one AstNode");
     }
 
-    const members: ASTNode[] = [];
+    const members: AstNode<Params>[] = [];
 
     do {
-      const ASTNode = this.ASTNode ();
+      const AstNode = this.AstNode ();
 
       if (this.lookahead.type === "(") {
         // can only be an identifier
-        members.push (this.Call (<Identifier>ASTNode));
+        members.push (this.Call (AstNode as Identifier<Params>));
       } else {
-        members.push (ASTNode);
+        members.push (AstNode);
       }
 
     } while (this.lookahead.type !== "}");
@@ -202,7 +204,7 @@ class Parser {
   Arguments() {
     this.eat ("(");
 
-    const argumentList: ASTNode[] = [];
+    const argumentList: AstNode<Params>[] = [];
 
     if (this.lookahead.type !== ")") {
 
@@ -211,7 +213,7 @@ class Parser {
 
         if (this.lookahead.type === "(") {
           // can only be an identifier
-          argumentList.push (this.Call (<Identifier>argument));
+          argumentList.push (this.Call (argument as Identifier<Params>));
         } else {
           argumentList.push (argument);
         }
@@ -224,7 +226,7 @@ class Parser {
     return argumentList;
   }
 
-  ASTNode(): ASTNode {
+  AstNode(): AstNode<Params> {
     if (isLiteral (this.lookahead.type)) {
       return this.Literal ();
     }
@@ -243,10 +245,10 @@ class Parser {
         return this.Variable ();
     }
 
-    throw new SyntaxError (`Unknown ASTNode Type: "${this.lookahead.type}"`);
+    throw new SyntaxError (`Unknown AstNode Type: "${this.lookahead.type}"`);
   }
 
-  Argument(): ASTNode {
+  Argument(): AstNode<Params> {
     if (isLiteral (this.lookahead.type)) {
       return this.Literal ();
     }
@@ -260,7 +262,7 @@ class Parser {
     throw new SyntaxError (`Invalid Argument Type: "${this.lookahead.type}"`);
   }
 
-  Literal(): Literal {
+  Literal(): Literal<Params> {
     switch (this.lookahead.type) {
       case "NUMBER": return this.NumericLiteral ();
       case "STRING": return this.StringLiteral ();

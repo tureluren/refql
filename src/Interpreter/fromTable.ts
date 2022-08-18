@@ -5,7 +5,7 @@ import Table from "../Table";
 
 const fromTable = (table: Table) => chain (
   get ("comps"),
-  comps => set ("query") (`select ${comps.join (", ")} from ${table.schema ? `${table.schema}.` : ""}${table.name} ${table.as}`)
+  comps => set ("query", `select ${comps.join (", ")} from ${table.schema ? `${table.schema}.` : ""}${table.name} ${table.as}`)
 );
 
 export default fromTable;

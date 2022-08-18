@@ -1,126 +1,154 @@
 import runKeyword from "../Interpreter/runKeyword";
+import isFunction from "../predicate/isFunction";
 import Table from "../Table";
-import { ASTNode, Keywords, Pattern, RQLValue, TableNode, TableNodeCTor } from "../types";
+import { AstNode, Keywords, Pattern, RQLValue } from "../types";
 
-function runKeywordsOnTableNode <Params>(this: TableNode, params: Params): TableNode {
-  const runKw = runKeyword (params, this.table);
-  const name = runKw (this.keywords.name) || this.table.name;
-  const as = runKw (this.keywords.as) || this.table.as;
-  const schema = runKw (this.keywords.schema) || this.table.schema;
 
-  return new (this.constructor as TableNodeCTor) (
-    new Table (name, as, schema),
-    this.members,
-    this.keywords
-  );
-}
-
-export class MembersNode {
-  members: ASTNode[];
-
-  constructor(members: ASTNode[]) {
-    this.members = members;
-  }
-}
-
-export class Root extends MembersNode {
+export class Root<Params, Ran extends boolean = false> {
   table: Table;
-  keywords: Keywords<any>;
+  members: AstNode<Params>[];
+  keywords: Keywords<Params, Ran>;
 
-  constructor(table: Table, members: ASTNode[], keywords: Keywords<any>) {
-    super (members);
+  constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
     this.table = table;
+    this.members = members;
     this.keywords = keywords;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.Root! (this.table, this.members, this.keywords);
   }
 
-  runKeywords<Params>(params: Params, _table: Table): Root {
-    return runKeywordsOnTableNode.bind (this) (params);
+  run(params: Params, _table: Table) {
+    const runKw = runKeyword (params, this.table);
+
+    const patched: Keywords<Params, true> = (Object.keys (this.keywords) as Array<keyof Keywords<Params, false>>).reduce ((acc, key) => {
+      acc[key] = runKw (this.keywords[key]);
+      return acc;
+    }, {} as { [key: string]: any });
+
+    return new Root<Params, true> (
+      this.table,
+      this.members,
+      patched
+    );
   }
+
 }
 
-export class HasMany extends MembersNode {
+export class HasMany<Params, Ran extends boolean = false> {
   table: Table;
-  keywords: Keywords<any>;
+  members: AstNode<Params>[];
+  keywords: Keywords<Params, Ran>;
 
-  constructor(table: Table, members: ASTNode[], keywords: Keywords<any>) {
-    super (members);
+  constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
     this.table = table;
+    this.members = members;
     this.keywords = keywords;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.HasMany! (this.table, this.members, this.keywords);
   }
 
-  runKeywords<Params>(params: Params, _table: Table): HasMany {
-    return runKeywordsOnTableNode.bind (this) (params);
+  run(params: Params, _table: Table) {
+    const runKw = runKeyword (params, this.table);
+    const patched: Keywords<Params, true> = (Object.keys (this.keywords) as Array<keyof Keywords<Params, false>>).reduce ((acc, key) => {
+      acc[key] = runKw (this.keywords[key]);
+      return acc;
+    }, {} as { [key: string]: any });
+
+    return new HasMany<Params, true> (
+      this.table,
+      this.members,
+      patched
+    );
   }
 }
 
-export class BelongsTo extends MembersNode {
+export class BelongsTo<Params, Ran extends boolean = false> {
   table: Table;
-  keywords: Keywords<any>;
+  members: AstNode<Params>[];
+  keywords: Keywords<Params, Ran>;
 
-  constructor(table: Table, members: ASTNode[], keywords: Keywords<any>) {
-    super (members);
+  constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
     this.table = table;
+    this.members = members;
     this.keywords = keywords;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.BelongsTo! (this.table, this.members, this.keywords);
   }
 
-  runKeywords<Params>(params: Params, _table: Table): BelongsTo {
-    return runKeywordsOnTableNode.bind (this) (params);
+  run(params: Params, _table: Table) {
+    const runKw = runKeyword (params, this.table);
+    const patched: Keywords<Params, true> = (Object.keys (this.keywords) as Array<keyof Keywords<Params, false>>).reduce ((acc, key) => {
+      acc[key] = runKw (this.keywords[key]);
+      return acc;
+    }, {} as { [key: string]: any });
+
+    return new BelongsTo<Params, true> (
+      this.table,
+      this.members,
+      patched
+    );
   }
 }
 
-export class ManyToMany extends MembersNode {
+export class ManyToMany<Params, Ran extends boolean = false> {
   table: Table;
-  keywords: Keywords<any>;
+  members: AstNode<Params>[];
+  keywords: Keywords<Params, Ran>;
 
-  constructor(table: Table, members: ASTNode[], keywords: Keywords<any>) {
-    super (members);
+  constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
     this.table = table;
+    this.members = members;
     this.keywords = keywords;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.ManyToMany! (this.table, this.members, this.keywords);
   }
 
-  runKeywords<Params>(params: Params, _table: Table): ManyToMany {
-    return runKeywordsOnTableNode.bind (this) (params);
+  run(params: Params, _table: Table) {
+    const runKw = runKeyword (params, this.table);
+    const patched: Keywords<Params, true> = (Object.keys (this.keywords) as Array<keyof Keywords<Params, false>>).reduce ((acc, key) => {
+      acc[key] = runKw (this.keywords[key]);
+      return acc;
+    }, {} as { [key: string]: any });
+
+    return new ManyToMany<Params, true> (
+      this.table,
+      this.members,
+      patched
+    );
   }
 }
 
-export class Call extends MembersNode {
+export class Call<Params, Ran extends boolean = false> {
   name: string;
+  members: AstNode<Params>[];
   as?: string;
   cast?: string;
 
-  constructor(name: string, args: ASTNode[], as?: string, cast?: string) {
-    super (args);
+  constructor(name: string, args: AstNode<Params>[], as?: string, cast?: string) {
     this.name = name;
+    this.members = args;
     this.as = as;
     this.cast = cast;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.Call! (this.name, this.members, this.as, this.cast);
   }
 
-  runKeywords<Params>(_params: Params, _table: Table) {
-    return this;
+  run(_params: Params, _table: Table) {
+    return new Call<Params, true> (this.name, this.members, this.as, this.cast);
   }
 }
 
-export class Identifier {
+export class Identifier<Params, Ran extends boolean = false> {
   name: string;
   as?: string;
   cast?: string;
@@ -131,56 +159,65 @@ export class Identifier {
     this.cast = cast;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.Identifier! (this.name, this.as, this.cast);
   }
 
-  runKeywords<Params>(_params: Params, _table: Table) {
-    return this;
+  run(_params: any, _table: Table) {
+    return new Identifier<Params, true> (this.name, this.as, this.cast);
   }
 }
 
-export class All {
+export class All <Params, Ran extends boolean = false> {
   sign: string;
 
   constructor(sign: string) {
     this.sign = sign;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.All! (this.sign);
   }
 
-  runKeywords<Params>(_params: Params, _table: Table) {
-    return this;
+  run(_params: Params, _table: Table) {
+    return new All<Params, true> (this.sign);
   }
 }
 
-export class Variable {
-  value: RQLValue<any>;
+const runVariable = <Input>(params: Input, table: Table) =>
+  (keyword: ((params: Input, table: Table) => RQLValue<Input, true>) | RQLValue<Input, false>) => {
+    if (isFunction (keyword)) {
+      return keyword (params, table);
+    }
+    return keyword;
+  };
+
+export class Variable<Params, Ran extends boolean = false> {
+  value: RQLValue<Params, Ran>;
   as?: string;
   cast?: string;
 
-  constructor(value: RQLValue<any>, as?: string, cast?: string) {
+  constructor(value: RQLValue<Params, Ran>, as?: string, cast?: string) {
     this.value = value;
     this.as = as;
     this.cast = cast;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.Variable! (this.value, this.as, this.cast);
   }
 
-  runKeywords<Params>(params: Params, table: Table) {
-    return new Variable (
-      runKeyword (params, table) (this.value),
+  run(params: Params, table: Table) {
+    const kw = runVariable (params, table) (this.value);
+    return new Variable<Params, true> (
+      kw,
       this.as,
       this.cast
     );
   }
 }
 
-export class StringLiteral {
+export class StringLiteral <Params, Ran extends boolean = false> {
   value: string;
   as?: string;
   cast?: string;
@@ -191,16 +228,16 @@ export class StringLiteral {
     this.cast = cast;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.StringLiteral! (this.value, this.as, this.cast);
   }
 
-  runKeywords<Params>(_params: Params, _table: Table) {
-    return this;
+  run(_params: any, _table: Table) {
+    return new StringLiteral<Params, true> (this.value, this.as, this.cast);
   }
 }
 
-export class NumericLiteral {
+export class NumericLiteral <Params, Ran extends boolean = false> {
   value: number;
   as?: string;
   cast?: string;
@@ -211,16 +248,16 @@ export class NumericLiteral {
     this.cast = cast;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.NumericLiteral! (this.value, this.as, this.cast);
   }
 
-  runKeywords<Params>(_params: Params, _table: Table) {
-    return this;
+  run(_params: Params, _table: Table) {
+    return new NumericLiteral<Params, true> (this.value, this.as, this.cast);
   }
 }
 
-export class BooleanLiteral {
+export class BooleanLiteral <Params, Ran extends boolean = false> {
   value: boolean;
   as?: string;
   cast?: string;
@@ -231,16 +268,16 @@ export class BooleanLiteral {
     this.cast = cast;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.BooleanLiteral! (this.value, this.as, this.cast);
   }
 
-  runKeywords<Params>(_params: Params, _table: Table) {
-    return this;
+  run(_params: Params, _table: Table) {
+    return new BooleanLiteral<Params, true> (this.value, this.as, this.cast);
   }
 }
 
-export class NullLiteral {
+export class NullLiteral <Params, Ran extends boolean = false> {
   value: null;
   as?: string;
   cast?: string;
@@ -251,11 +288,11 @@ export class NullLiteral {
     this.cast = cast;
   }
 
-  cata<P, R>(pattern: Pattern<P, R>) {
+  cata<R>(pattern: Pattern<R, Params, Ran>) {
     return pattern.NullLiteral! (this.value, this.as, this.cast);
   }
 
-  runKeywords<Params>(_params: Params, _table: Table) {
-    return this;
+  run(_params: Params, _table: Table) {
+    return new NullLiteral<Params, true> (this.value, this.as, this.cast);
   }
 }

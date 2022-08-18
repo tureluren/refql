@@ -1,6 +1,7 @@
 import evolve from "../Environment2/evolve";
 import get from "../Environment2/get";
 import chain from "../more/chain";
+import concat from "../more/concat";
 import parameterize from "../more/parameterize";
 import Table from "../Table";
 import { Key, Values } from "../types";
@@ -22,7 +23,7 @@ const whereIn = (lkeys: Key[], rkeys: Key[], rows: any[], table: Table) => chain
 
     return evolve ({
       query: q => `${q} ${query}`,
-      values: values => values.concat (newValues)
+      values: concat (newValues)
     });
   }
 );

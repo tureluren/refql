@@ -1,6 +1,5 @@
 import { Pool } from "pg";
 import { rql } from "./index";
-import { MembersNode } from "./Parser/Node";
 import Raw from "./Raw";
 import raw from "./Raw/raw";
 import RqlTag from "./RqlTag";
@@ -8,7 +7,7 @@ import { Goal, Player } from "./soccer";
 import SqlTag from "./SqlTag";
 import sql from "./SqlTag/sql";
 import Table from "./Table";
-import { ASTNode, TableNode, RefQLConfig, Dict, Values, CaseType, Keywords } from "./types";
+import { AstNode, RefQLConfig, Dict, Values, CaseType, Keywords, KeywordsNode } from "./types";
 
 const pool = new Pool ({
   user: "test",
@@ -53,12 +52,12 @@ const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RqlTag<Input> | Sq
 
 const run = makeRun (config);
 
-const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: TableNode): TableNode => {
+const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordsNode<Params>): KeywordsNode<Params> => {
   const newKeywords = { ...ast.keywords, ...keywords };
   return {
     ...ast,
     keywords: newKeywords
-  } as TableNode;
+  } as typeof ast;
 };
 
 
@@ -78,12 +77,10 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: TableNode):
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  public.player (id: ${p => p.limit}, limit: ${p => p.limit}) {
-    - public.team (as: "foemp") {
-      id
-      ${p => sql`
-        limit 5
-      `}
+  ${new Table ("player")} {
+    *
+    - ${new Table ("team", "ploeg")} {
+      *
     }
   }
 `;
@@ -119,8 +116,8 @@ const playerGoalsRef = {
 // run<{ id: number }, Player> (playerQuery, { id: 5 })
 //   .then (rows => console.log (rows[1]));
 
-playerQuery.run<Player> (config, { id: 5, limit: 5 }).then (players => {
-  console.log (players[4]);
+playerQuery.run<Player> (config, { id: 1, limit: 5 }).then (players => {
+  console.log (players[0]);
 });
 
 const refs = {
