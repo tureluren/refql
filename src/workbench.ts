@@ -78,7 +78,7 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordsNod
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  ${new Table ("player")} { * }
+  ${Table.of ("player")} { * }
 `;
 
 // const upd = playerQuery.map (ast => updateKeywords<{off: number}> ({
@@ -240,3 +240,8 @@ const fullPlayer = paginate (selectPlayer);
 //   HasMany: x => x
 // });
 
+
+
+//@ts-ignore
+// const t = Table ("DD");
+// t.foemp ();

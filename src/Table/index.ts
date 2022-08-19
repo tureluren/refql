@@ -8,6 +8,10 @@ class Table {
     this.as = as || name;
     this.schema = schema;
   }
+
+  static of(name: string, as?: string, schema?: string) {
+    return new Table (name, as, schema);
+  }
 }
 
 export default Table;
