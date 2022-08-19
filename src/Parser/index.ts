@@ -1,78 +1,69 @@
-import isLiteral from "../predicate/isLiteral";
 import Tokenizer from "../Tokenizer";
 import {
   AstNode, Keywords, Literal,
-  RQLValue, Token
+  RQLValue, Token, TokenType
 } from "../types";
 import {
-  All, BelongsTo, BooleanLiteral,
-  Call, HasMany, Identifier,
-  ManyToMany, NullLiteral, NumericLiteral,
-  Root, StringLiteral, Variable
+  All, BelongsTo, BooleanLiteral, Call,
+  HasMany, Identifier, ManyToMany, NullLiteral,
+  NumericLiteral, Root, StringLiteral, Variable
 } from "./Node";
 import identifierToTable from "./identifierToTable";
 import Table from "../Table";
-
-const isVariable = (value: any) =>
-  value === "VARIABLE";
 
 class Parser<Params> {
   tokenizer: Tokenizer;
   string: string;
   keys: RQLValue<Params>[];
   keyIdx: number;
-  lookahead!: Token;
+  lookahead: Token;
 
-  constructor() {
-    this.tokenizer = new Tokenizer ();
-    this.string = "";
-    this.keys = [];
-    this.keyIdx = 0;
-  }
-
-  parse(string: string, keys: RQLValue<Params>[]) {
+  constructor(string: string, keys: RQLValue<Params>[]) {
+    this.tokenizer = new Tokenizer (string);
     this.string = string;
     this.keys = keys;
     this.keyIdx = 0;
-    this.tokenizer.init (string);
     this.lookahead = this.tokenizer.getNextToken ();
+  }
 
+  Root() {
     const { table, members, keywords } = this.Table ();
+
     return new Root (table, members, keywords);
   }
 
   Table() {
     let table;
 
-    if (isVariable (this.lookahead.type)) {
-      const variable = this.grabVariable ();
+    if (this.isNext ("VARIABLE")) {
+      const variable = this.spliceKey ();
 
       if (variable instanceof Table) {
         table = variable;
-
       } else {
         throw new Error ("expecte table");
       }
 
     } else {
-
       table = identifierToTable (this.Schema (), this.Identifier ());
     }
+
     let keywords: Keywords<Params> = {};
 
-    if (this.lookahead.type === "(") {
+    if (this.isNext ("(")) {
       this.eat ("(");
 
       do {
-        const identifier = this.eat ("IDENTIFIER").value as keyof Keywords<Params>;
-        this.eat (":");
         let value;
+        const identifier = this.eat ("IDENTIFIER").value as keyof Keywords<Params>;
 
-        if (isLiteral (this.lookahead.type)) {
+        this.eat (":");
+
+        if (this.isNextLiteral ()) {
           value = this.Literal ().value;
 
-        } else if (isVariable (this.lookahead.type)) {
-          value = this.grabVariable ();
+        } else if (this.isNext ("VARIABLE")) {
+          value = this.spliceKey ();
 
         } else {
           throw new SyntaxError (
@@ -80,11 +71,9 @@ class Parser<Params> {
           );
         }
 
-        // @ts-ignore
         keywords[identifier] = value;
 
-        // @ts-ignore
-      } while (this.lookahead.type === "," && this.eat (",") && this.lookahead.type !== ")");
+      } while (this.hasArg ());
 
       this.eat (")");
     }
@@ -92,57 +81,64 @@ class Parser<Params> {
     return { table, members: this.members (), keywords };
   }
 
-
   HasMany() {
     this.eat ("<");
     const { table, members, keywords } = this.Table ();
+
     return new HasMany (table, members, keywords);
   }
 
   BelongsTo() {
     this.eat ("-");
     const { table, members, keywords } = this.Table ();
+
     return new BelongsTo (table, members, keywords);
   }
 
   ManyToMany() {
     this.eat ("x");
     const { table, members, keywords } = this.Table ();
+
     return new ManyToMany (table, members, keywords);
   }
 
   All() {
     const sign = this.eat ("*").value;
+
     return new All (sign);
   }
 
   Schema() {
-    if (this.lookahead.type === "SCHEMA") {
+    if (this.isNext ("SCHEMA")) {
       return this.eat ("SCHEMA").value.slice (0, -1);
     }
   }
 
-  Identifier() {
-    const name = this.eat ("IDENTIFIER").value;
+  CastAs() {
+    let as, cast;
 
-    let identifier = new Identifier (name);
-
-    if (this.lookahead.type === ":") {
+    if (this.isNext (":")) {
       this.eat (":");
-      identifier.as = this.eat ("IDENTIFIER").value;
+      as = this.eat ("IDENTIFIER").value;
     }
 
     if (this.lookahead.type === "::") {
       this.eat ("::");
-      identifier.cast = this.eat ("IDENTIFIER").value;
+      cast = this.eat ("IDENTIFIER").value;
     }
 
-    return identifier;
+    return [as, cast];
   }
 
-  grabVariable() {
-    const key = this.keys[this.keyIdx];
+  Identifier() {
+    const name = this.eat ("IDENTIFIER").value;
+    const [as, cast] = this.CastAs ();
 
+    return new Identifier (name, as, cast);
+  }
+
+  spliceKey() {
+    const key = this.keys[this.keyIdx];
     this.keys.splice (this.keyIdx, 1);
     this.eat ("VARIABLE");
 
@@ -151,22 +147,10 @@ class Parser<Params> {
 
   Variable() {
     this.eat ("VARIABLE");
-
     const key = this.keys[this.keyIdx];
-
-    const variable = new Variable (key);
-
+    const [as, cast] = this.CastAs ();
+    const variable = new Variable (key, as, cast);
     this.keyIdx += 1;
-
-    if (this.lookahead.type === ":") {
-      this.eat (":");
-      variable.as = this.eat ("IDENTIFIER").value;
-    }
-
-    if (this.lookahead.type === "::") {
-      this.eat ("::");
-      variable.cast = this.eat ("IDENTIFIER").value;
-    }
 
     return variable;
   }
@@ -178,7 +162,7 @@ class Parser<Params> {
   members() {
     this.eat ("{");
 
-    if (this.lookahead.type === "}") {
+    if (this.isNext ("}")) {
       throw new SyntaxError ("A table block should have at least one AstNode");
     }
 
@@ -187,14 +171,13 @@ class Parser<Params> {
     do {
       const AstNode = this.AstNode ();
 
-      if (this.lookahead.type === "(") {
-        // can only be an identifier
+      if (this.isNext ("(")) {
         members.push (this.Call (AstNode as Identifier<Params>));
       } else {
         members.push (AstNode);
       }
 
-    } while (this.lookahead.type !== "}");
+    } while (!this.isNext ("}"));
 
     this.eat ("}");
 
@@ -203,22 +186,18 @@ class Parser<Params> {
 
   Arguments() {
     this.eat ("(");
-
     const argumentList: AstNode<Params>[] = [];
 
-    if (this.lookahead.type !== ")") {
-
+    if (!this.isNext (")")) {
       do {
         const argument = this.Argument ();
 
-        if (this.lookahead.type === "(") {
-          // can only be an identifier
+        if (this.isNext ("(")) {
           argumentList.push (this.Call (argument as Identifier<Params>));
         } else {
           argumentList.push (argument);
         }
-      // @ts-ignore
-      } while (this.lookahead.type === "," && this.eat (",") && this.lookahead.type !== ")");
+      } while (this.hasArg ());
     }
 
     this.eat (")");
@@ -226,8 +205,12 @@ class Parser<Params> {
     return argumentList;
   }
 
+  hasArg() {
+    return this.isNext (",") && this.eat (",") && !this.isNext (")");
+  }
+
   AstNode(): AstNode<Params> {
-    if (isLiteral (this.lookahead.type)) {
+    if (this.isNextLiteral ()) {
       return this.Literal ();
     }
     switch (this.lookahead.type) {
@@ -249,7 +232,7 @@ class Parser<Params> {
   }
 
   Argument(): AstNode<Params> {
-    if (isLiteral (this.lookahead.type)) {
+    if (this.isNextLiteral ()) {
       return this.Literal ();
     }
     switch (this.lookahead.type) {
@@ -276,76 +259,34 @@ class Parser<Params> {
 
   BooleanLiteral(value: boolean) {
     this.eat (value ? "true" : "false");
-    let as, cast;
-
-    if (this.lookahead.type === ":") {
-      this.eat (":");
-      as = this.eat ("IDENTIFIER").value;
-    }
-
-    if (this.lookahead.type === "::") {
-      this.eat ("::");
-      cast = this.eat ("IDENTIFIER").value;
-    }
+    const [as, cast] = this.CastAs ();
 
     return new BooleanLiteral (value, as, cast);
   }
 
   NullLiteral() {
     this.eat ("null");
-    let as, cast;
-
-    if (this.lookahead.type === ":") {
-      this.eat (":");
-      as = this.eat ("IDENTIFIER").value;
-    }
-
-    if (this.lookahead.type === "::") {
-      this.eat ("::");
-      cast = this.eat ("IDENTIFIER").value;
-    }
+    const [as, cast] = this.CastAs ();
 
     return new NullLiteral (null, as, cast);
   }
 
   StringLiteral() {
-    let value, cast, as;
     const token = this.eat ("STRING");
-    value = token.value.slice (1, -1);
-
-    if (this.lookahead.type === ":") {
-      this.eat (":");
-      as = this.eat ("IDENTIFIER").value;
-    }
-
-    if (this.lookahead.type === "::") {
-      this.eat ("::");
-      cast = this.eat ("IDENTIFIER").value;
-    }
+    const value = token.value.slice (1, -1);
+    const [as, cast] = this.CastAs ();
 
     return new StringLiteral (value, as, cast);
   }
 
   NumericLiteral() {
     const token = this.eat ("NUMBER");
-
-    // `as` should be a string
-    let as, cast;
-
-    if (this.lookahead.type === ":") {
-      this.eat (":");
-      as = this.eat ("IDENTIFIER").value;
-    }
-
-    if (this.lookahead.type === "::") {
-      this.eat ("::");
-      cast = this.eat ("IDENTIFIER").value;
-    }
+    const [as, cast] = this.CastAs ();
 
     return new NumericLiteral (Number (token.value), as, cast);
   }
 
-  eat(tokenType: string) {
+  eat(tokenType: TokenType) {
     const token = this.lookahead;
 
     if (token.type === "EOF") {
@@ -363,6 +304,20 @@ class Parser<Params> {
     this.lookahead = this.tokenizer.getNextToken ();
 
     return token;
+  }
+
+  isNext(tokenType: TokenType) {
+    return this.lookahead.type === tokenType;
+  }
+
+  isNextLiteral() {
+    const { type } = this.lookahead;
+
+    return type === "NUMBER"
+      || type === "STRING"
+      || type === "true"
+      || type === "false"
+      || type === "null";
   }
 }
 

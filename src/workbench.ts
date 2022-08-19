@@ -9,6 +9,7 @@ import sql from "./SqlTag/sql";
 import Table from "./Table";
 import { AstNode, RefQLConfig, Dict, Values, CaseType, Keywords, KeywordsNode } from "./types";
 
+
 const pool = new Pool ({
   user: "test",
   host: "localhost",
@@ -77,12 +78,7 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordsNod
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  ${new Table ("player")} {
-    *
-    - ${new Table ("team", "ploeg")} {
-      *
-    }
-  }
+  ${new Table ("player")} { * }
 `;
 
 // const upd = playerQuery.map (ast => updateKeywords<{off: number}> ({

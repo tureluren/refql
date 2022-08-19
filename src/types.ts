@@ -39,16 +39,23 @@ export interface JsonBuildObject<T> {
   json_build_object: T;
 }
 
-export type Spec = [RegExp, string | null][];
+export type TokenType =
+  "::" | ":" | "{" | "}" |
+  "(" | ")" | "," | "VARIABLE" |
+  "true" | "false" | "null" | "NUMBER" |
+  "<" | "-" | "x" | "*" | "SCHEMA" |
+  "IDENTIFIER" | "STRING" | "EOF";
+
+export type Spec = [RegExp, TokenType | null][];
 
 export type Token = {
-  type: string;
+  type: TokenType | null;
   value: string;
 };
 
 export type ParamFn<Params, Result> = (p: Params, T: Table) => Result;
 
-export interface Keywords<Params, Ran extends boolean = false> {
+export interface Keywords<Params, Ran extends boolean = false> extends Dict {
   xtable?: Ran extends false ? string | ParamFn<Params, string> : string;
   lkey?: Ran extends false ? string | ParamFn<Params, string> : string;
   rkey?: Ran extends false ? string | ParamFn<Params, string> : string;
@@ -119,7 +126,7 @@ export interface DBRef {
   constraint: string;
 }
 
-export type Primitive = string | number | boolean;
+export type Primitive = string | number | boolean | null;
 
 export type RQLValue<Input, Ran extends boolean = false> =
   Ran extends false

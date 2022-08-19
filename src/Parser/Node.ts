@@ -1,8 +1,7 @@
-import runKeyword from "../Interpreter/runKeyword";
+import runKeywords from "../Interpreter/runKeywords";
 import isFunction from "../predicate/isFunction";
 import Table from "../Table";
 import { AstNode, Keywords, Pattern, RQLValue } from "../types";
-
 
 export class Root<Params, Ran extends boolean = false> {
   table: Table;
@@ -20,17 +19,10 @@ export class Root<Params, Ran extends boolean = false> {
   }
 
   run(params: Params, _table: Table) {
-    const runKw = runKeyword (params, this.table);
-
-    const patched: Keywords<Params, true> = (Object.keys (this.keywords) as Array<keyof Keywords<Params, false>>).reduce ((acc, key) => {
-      acc[key] = runKw (this.keywords[key]);
-      return acc;
-    }, {} as { [key: string]: any });
-
     return new Root<Params, true> (
       this.table,
       this.members,
-      patched
+      runKeywords (params, this.table, this.keywords)
     );
   }
 
@@ -52,16 +44,10 @@ export class HasMany<Params, Ran extends boolean = false> {
   }
 
   run(params: Params, _table: Table) {
-    const runKw = runKeyword (params, this.table);
-    const patched: Keywords<Params, true> = (Object.keys (this.keywords) as Array<keyof Keywords<Params, false>>).reduce ((acc, key) => {
-      acc[key] = runKw (this.keywords[key]);
-      return acc;
-    }, {} as { [key: string]: any });
-
     return new HasMany<Params, true> (
       this.table,
       this.members,
-      patched
+      runKeywords (params, this.table, this.keywords)
     );
   }
 }
@@ -82,16 +68,10 @@ export class BelongsTo<Params, Ran extends boolean = false> {
   }
 
   run(params: Params, _table: Table) {
-    const runKw = runKeyword (params, this.table);
-    const patched: Keywords<Params, true> = (Object.keys (this.keywords) as Array<keyof Keywords<Params, false>>).reduce ((acc, key) => {
-      acc[key] = runKw (this.keywords[key]);
-      return acc;
-    }, {} as { [key: string]: any });
-
     return new BelongsTo<Params, true> (
       this.table,
       this.members,
-      patched
+      runKeywords (params, this.table, this.keywords)
     );
   }
 }
@@ -112,16 +92,10 @@ export class ManyToMany<Params, Ran extends boolean = false> {
   }
 
   run(params: Params, _table: Table) {
-    const runKw = runKeyword (params, this.table);
-    const patched: Keywords<Params, true> = (Object.keys (this.keywords) as Array<keyof Keywords<Params, false>>).reduce ((acc, key) => {
-      acc[key] = runKw (this.keywords[key]);
-      return acc;
-    }, {} as { [key: string]: any });
-
     return new ManyToMany<Params, true> (
       this.table,
       this.members,
-      patched
+      runKeywords (params, this.table, this.keywords)
     );
   }
 }
@@ -184,14 +158,6 @@ export class All <Params, Ran extends boolean = false> {
   }
 }
 
-const runVariable = <Input>(params: Input, table: Table) =>
-  (keyword: ((params: Input, table: Table) => RQLValue<Input, true>) | RQLValue<Input, false>) => {
-    if (isFunction (keyword)) {
-      return keyword (params, table);
-    }
-    return keyword;
-  };
-
 export class Variable<Params, Ran extends boolean = false> {
   value: RQLValue<Params, Ran>;
   as?: string;
@@ -208,9 +174,12 @@ export class Variable<Params, Ran extends boolean = false> {
   }
 
   run(params: Params, table: Table) {
-    const kw = runVariable (params, table) (this.value);
+    const ran: RQLValue<Params, true> = isFunction (this.value)
+      ? this.value (params, table)
+      : this.value;
+
     return new Variable<Params, true> (
-      kw,
+      ran,
       this.as,
       this.cast
     );
@@ -232,7 +201,7 @@ export class StringLiteral <Params, Ran extends boolean = false> {
     return pattern.StringLiteral! (this.value, this.as, this.cast);
   }
 
-  run(_params: any, _table: Table) {
+  run(_params: Params, _table: Table) {
     return new StringLiteral<Params, true> (this.value, this.as, this.cast);
   }
 }

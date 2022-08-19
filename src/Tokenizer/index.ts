@@ -44,10 +44,10 @@ const spec: Spec = [
 ];
 
 class Tokenizer {
-  string!: string;
-  cursor!: number;
+  string: string;
+  cursor: number;
 
-  init(string: string) {
+  constructor(string: string) {
     this.string = string;
     this.cursor = 0;
   }
