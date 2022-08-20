@@ -3,15 +3,12 @@ import Raw from "../Raw";
 import sql from "../SqlTag/sql";
 import Table from "../Table";
 import Tokenizer from "../Tokenizer";
+import { RQLValue } from "../types";
+import { Identifier, Root } from "./Node";
 
-// const parseFn = (typeCaseDB: OptCaseType, typeCaseJS: OptCaseType, pluralize: boolean) =>
-//   (text: any, ...keys: any[]) => {
-//     const string = text.join ("$");
-//     const parser = new Parser (
-//       typeCaseDB, typeCaseJS, pluralize, { player: "teammates" }
-//     );
-//     return parser.parse (string, keys);
-//   };
+const rql = <Params> (strings: TemplateStringsArray, ...values: RQLValue<Params>[]) => {
+  return Parser.of (strings.join ("$"), values);
+};
 
 describe ("Parser type", () => {
   test ("create Parser", () => {
@@ -28,25 +25,46 @@ describe ("Parser type", () => {
     expect (parser.lookahead).toEqual (lookahead);
   });
 
-  // test ("table declaration - typeCaseDB = 'snake'", () => {
-  //   const parse = parseFn ("snake", "camel", true);
+  test ("Root", () => {
+    const parser = rql`
+      player (id: 1) { id last_name }
+    `;
 
-  //   const ast = parse`
-  //     player { id lastName }
-  //   `;
+    const ast = parser.Root ();
 
-  //   const expected: ASTType = {
-  //     type: "AST",
-  //     name: "player",
-  //     as: "player",
-  //     members: [
-  //       { type: "Identifier", name: "id", as: "id" },
-  //       { type: "Identifier", name: "last_name", as: "lastName" }
-  //     ]
-  //   };
+    const player = Table.of ("player");
+    const id = Identifier.of ("id");
+    const lastName = Identifier.of ("last_name");
 
-  //   expect (ast).toEqual (expected);
-  // });
+    const expected = Root.of (
+      player,
+      [id, lastName],
+      { id: 1 }
+    );
+
+    expect (ast).toEqual (expected);
+  });
+
+  test ("Dynamic table", () => {
+    const player = Table.of ("player");
+
+    const parser = rql`
+      ${player} (id: 1) { id last_name }
+    `;
+
+    const ast = parser.Root ();
+
+    const id = Identifier.of ("id");
+    const lastName = Identifier.of ("last_name");
+
+    const expected = Root.of (
+      player,
+      [id, lastName],
+      { id: 1 }
+    );
+
+    expect (ast).toEqual (expected);
+  });
 
   // test ("table declaration - typeCaseDB = undefined", () => {
   //   const parse = parseFn (undefined, "camel", true);

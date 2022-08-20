@@ -26,6 +26,10 @@ export class Root<Params, Ran extends boolean = false> {
     );
   }
 
+  static of<Params, Ran extends boolean = false>(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+    return new Root<Params, Ran> (table, members, keywords);
+  }
+
 }
 
 export class HasMany<Params, Ran extends boolean = false> {
@@ -139,6 +143,10 @@ export class Identifier<Params, Ran extends boolean = false> {
 
   run(_params: any, _table: Table) {
     return new Identifier<Params, true> (this.name, this.as, this.cast);
+  }
+
+  static of<Params, Ran extends boolean = false>(name: string, as?: string, cast?: string) {
+    return new Identifier<Params, Ran> (name, as, cast);
   }
 }
 

@@ -28,8 +28,7 @@ class Parser<Params> {
 
   Root() {
     const { table, members, keywords } = this.Table ();
-
-    return new Root (table, members, keywords);
+    return Root.of (table, members, keywords);
   }
 
   Table() {
@@ -133,8 +132,7 @@ class Parser<Params> {
   Identifier() {
     const name = this.eat ("IDENTIFIER").value;
     const [as, cast] = this.CastAs ();
-
-    return new Identifier (name, as, cast);
+    return Identifier.of (name, as, cast);
   }
 
   spliceKey() {
