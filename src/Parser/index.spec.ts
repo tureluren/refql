@@ -3,7 +3,6 @@ import Raw from "../Raw";
 import sql from "../SqlTag/sql";
 import Table from "../Table";
 import Tokenizer from "../Tokenizer";
-import { ASTType, OptCaseType } from "../types";
 
 // const parseFn = (typeCaseDB: OptCaseType, typeCaseJS: OptCaseType, pluralize: boolean) =>
 //   (text: any, ...keys: any[]) => {
@@ -16,13 +15,17 @@ import { ASTType, OptCaseType } from "../types";
 
 describe ("Parser type", () => {
   test ("create Parser", () => {
-    const table = Table ("player");
-    const parser = new Parser ("$ { * }", [player]);
+    const player = Table.of ("player");
+    const str = "$ { * }";
+    const parser = Parser.of (str, [player]);
+    const tokenizer = Tokenizer.of (str);
+    const lookahead = tokenizer.getNextToken ();
 
-    expect (parser.string).toBe ("");
-    expect (parser.keyIdx).toBe (0);
-    expect (parser.keys).toEqual ([]);
-    expect (parser.tokenizer).toEqual (new Tokenizer (""));
+    expect (parser.str).toBe (str);
+    expect (parser.idx).toBe (0);
+    expect (parser.values).toEqual ([player]);
+    expect (parser.tokenizer).toEqual (tokenizer);
+    expect (parser.lookahead).toEqual (lookahead);
   });
 
   // test ("table declaration - typeCaseDB = 'snake'", () => {

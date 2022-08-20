@@ -13,16 +13,16 @@ import Table from "../Table";
 
 class Parser<Params> {
   tokenizer: Tokenizer;
-  string: string;
-  keys: RQLValue<Params>[];
-  keyIdx: number;
+  str: string;
+  values: RQLValue<Params>[];
+  idx: number;
   lookahead: Token;
 
-  constructor(string: string, keys: RQLValue<Params>[]) {
-    this.tokenizer = new Tokenizer (string);
-    this.string = string;
-    this.keys = keys;
-    this.keyIdx = 0;
+  constructor(str: string, values: RQLValue<Params>[]) {
+    this.tokenizer = Tokenizer.of (str);
+    this.str = str;
+    this.values = values;
+    this.idx = 0;
     this.lookahead = this.tokenizer.getNextToken ();
   }
 
@@ -122,7 +122,7 @@ class Parser<Params> {
       as = this.eat ("IDENTIFIER").value;
     }
 
-    if (this.lookahead.type === "::") {
+    if (this.isNext ("::")) {
       this.eat ("::");
       cast = this.eat ("IDENTIFIER").value;
     }
@@ -138,8 +138,8 @@ class Parser<Params> {
   }
 
   spliceKey() {
-    const key = this.keys[this.keyIdx];
-    this.keys.splice (this.keyIdx, 1);
+    const key = this.values[this.idx];
+    this.values.splice (this.idx, 1);
     this.eat ("VARIABLE");
 
     return key;
@@ -147,10 +147,10 @@ class Parser<Params> {
 
   Variable() {
     this.eat ("VARIABLE");
-    const key = this.keys[this.keyIdx];
+    const key = this.values[this.idx];
     const [as, cast] = this.CastAs ();
     const variable = new Variable (key, as, cast);
-    this.keyIdx += 1;
+    this.idx += 1;
 
     return variable;
   }
@@ -319,6 +319,11 @@ class Parser<Params> {
       || type === "false"
       || type === "null";
   }
+
+  static of<Params>(str: string, values: RQLValue<Params>[]) {
+    return new Parser (str, values);
+  }
+
 }
 
 export default Parser;

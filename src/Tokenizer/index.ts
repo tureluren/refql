@@ -44,16 +44,16 @@ const spec: Spec = [
 ];
 
 class Tokenizer {
-  string: string;
-  cursor: number;
+  str: string;
+  idx: number;
 
-  constructor(string: string) {
-    this.string = string;
-    this.cursor = 0;
+  constructor(str: string) {
+    this.str = str;
+    this.idx = 0;
   }
 
   hasMoreTokens() {
-    return this.cursor < this.string.length;
+    return this.idx < this.str.length;
   }
 
   getNextToken(): Token {
@@ -61,10 +61,10 @@ class Tokenizer {
       return { type: "EOF", value: "EOF" };
     }
 
-    const string = this.string.slice (this.cursor);
+    const str = this.str.slice (this.idx);
 
     for (const [regexp, tokenType] of spec) {
-      const tokenValue = this.match (regexp, string);
+      const tokenValue = this.match (regexp, str);
 
       // no match
       if (tokenValue == null) {
@@ -82,19 +82,22 @@ class Tokenizer {
       };
     }
 
-    throw new SyntaxError (`Unexpected token: "${string[0]}"`);
+    throw new SyntaxError (`Unexpected token: "${str[0]}"`);
   }
 
-  match(regexp: RegExp, string: string) {
-    const matched = regexp.exec (string);
+  match(regexp: RegExp, str: string) {
+    const matched = regexp.exec (str);
 
     if (matched == null) {
       return null;
     }
 
-    this.cursor += matched[0].length;
+    this.idx += matched[0].length;
     return matched[0];
   }
 
+  static of(str: string) {
+    return new Tokenizer (str);
+  }
 }
 export default Tokenizer;

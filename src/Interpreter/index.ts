@@ -75,7 +75,7 @@ const interpret = <Input> (caseType: OptCaseType, params: Input) => {
       ManyToMany: (table, members, { id, limit, offset, xtable }) => {
         if (!rows) return next (patched, record);
 
-        const x = new Table (
+        const x = Table.of (
           xtable || convertCase (caseType, `${parent.name}_${table.name}`)
         );
 
