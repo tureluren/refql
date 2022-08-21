@@ -55,7 +55,7 @@ class Parser<Params> {
 
   Identifier() {
     const name = this.eat ("IDENTIFIER").value;
-    const [as, cast] = this.CastAs ();
+    const [as, cast] = this.castAs ();
 
     return Identifier.of (name, as, cast);
   }
@@ -121,7 +121,7 @@ class Parser<Params> {
     }
   }
 
-  CastAs() {
+  castAs() {
     let as, cast;
 
     if (this.isNext (":")) {
@@ -148,7 +148,7 @@ class Parser<Params> {
   Variable() {
     this.eat ("VARIABLE");
     const key = this.values[this.idx];
-    const [as, cast] = this.CastAs ();
+    const [as, cast] = this.castAs ();
     const variable = new Variable (key, as, cast);
     this.idx += 1;
 
@@ -259,14 +259,14 @@ class Parser<Params> {
 
   BooleanLiteral(value: boolean) {
     this.eat (value ? "true" : "false");
-    const [as, cast] = this.CastAs ();
+    const [as, cast] = this.castAs ();
 
     return new BooleanLiteral (value, as, cast);
   }
 
   NullLiteral() {
     this.eat ("null");
-    const [as, cast] = this.CastAs ();
+    const [as, cast] = this.castAs ();
 
     return new NullLiteral (null, as, cast);
   }
@@ -274,14 +274,14 @@ class Parser<Params> {
   StringLiteral() {
     const token = this.eat ("STRING");
     const value = token.value.slice (1, -1);
-    const [as, cast] = this.CastAs ();
+    const [as, cast] = this.castAs ();
 
     return new StringLiteral (value, as, cast);
   }
 
   NumericLiteral() {
     const token = this.eat ("NUMBER");
-    const [as, cast] = this.CastAs ();
+    const [as, cast] = this.castAs ();
 
     return new NumericLiteral (Number (token.value), as, cast);
   }

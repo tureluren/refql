@@ -7,7 +7,7 @@ import { RQLValue } from "../types";
 import { BelongsTo, HasMany, Identifier, ManyToMany, Root } from "./Node";
 
 const rql = <Params> (strings: TemplateStringsArray, ...values: RQLValue<Params>[]) => {
-  return Parser.of (strings.join ("$"), values);
+  return Parser.of (strings.join ("$"), values).Root ();
 };
 
 describe ("Parser type", () => {
@@ -26,98 +26,48 @@ describe ("Parser type", () => {
   });
 
   test ("Root", () => {
-    const parser = rql`
-      player (id: 1) { id last_name }
+    const ast = rql`
+      player (id: 1) { 
+        id:identifier::text 
+        last_name 
+        < goal:goals (limit: 5, offset: 0) {
+          minute
+        }
+        - public.team { name:team_name }
+        x game:games { result }
+      }
     `;
 
-    const ast = parser.Root ();
     const player = Table.of ("player");
-    const id = Identifier.of ("id");
+    const id = Identifier.of ("id", "identifier", "text");
     const lastName = Identifier.of ("last_name");
+
+    const goals = Table.of ("goal", "goals");
+    const minute = Identifier.of ("minute");
+    const goalsAst = HasMany.of (goals, [minute], { limit: 5, offset: 0 });
+
+    const team = Table.of ("team", undefined, "public");
+    const name = Identifier.of ("name", "team_name");
+    const teamAst = BelongsTo.of (team, [name], {});
+
+    const games = Table.of ("game", "games");
+    const result = Identifier.of ("result");
+    const gamesAst = ManyToMany.of (games, [result], {});
 
     const expected = Root.of (
       player,
-      [id, lastName],
+      [id, lastName, goalsAst, teamAst, gamesAst],
       { id: 1 }
     );
 
     expect (ast).toEqual (expected);
   });
 
-  test ("HasMany", () => {
-    const parser = rql`
-      < goal:goals {
-        minute
-      }
-    `;
-
-    const ast = parser.HasMany ();
-    const goal = Table.of ("goal", "goals");
-    const minute = Identifier.of ("minute");
-
-    const expected = HasMany.of (
-      goal,
-      [minute],
-      {}
-    );
-
-    expect (ast).toEqual (expected);
-  });
-
-  test ("BelongsTo", () => {
-    const parser = rql`
-      - public.team { name:team_name }
-    `;
-
-    const ast = parser.BelongsTo ();
-    const team = Table.of ("team", undefined, "public");
-    const name = Identifier.of ("name", "team_name");
-
-    const expected = BelongsTo.of (
-      team,
-      [name],
-      {}
-    );
-
-    expect (ast).toEqual (expected);
-  });
-
-  test ("ManyToMany", () => {
-    const parser = rql`
-      x game:games { result }
-    `;
-
-    const ast = parser.ManyToMany ();
-    const game = Table.of ("game", "games");
-    const result = Identifier.of ("result");
-
-    const expected = ManyToMany.of (
-      game,
-      [result],
-      {}
-    );
-
-    expect (ast).toEqual (expected);
-  });
-
-  test ("Identifier", () => {
-    const parser = rql`id:identifier::text`;
-
-    const ast = parser.Identifier ();
-
-    const expected = Identifier.of ("id", "identifier", "text");
-
-    expect (ast).toEqual (expected);
-  });
-
   test ("Dynamic table", () => {
     const player = Table.of ("player");
-
-    const parser = rql`
+    const ast = rql`
       ${player} (id: 1) { id last_name }
     `;
-
-    const ast = parser.Root ();
 
     const id = Identifier.of ("id");
     const lastName = Identifier.of ("last_name");
