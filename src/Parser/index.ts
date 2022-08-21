@@ -36,21 +36,21 @@ class Parser<Params> {
     this.eat ("<");
     const { table, members, keywords } = this.Table ();
 
-    return new HasMany (table, members, keywords);
+    return HasMany.of (table, members, keywords);
   }
 
   BelongsTo() {
     this.eat ("-");
     const { table, members, keywords } = this.Table ();
 
-    return new BelongsTo (table, members, keywords);
+    return BelongsTo.of (table, members, keywords);
   }
 
   ManyToMany() {
     this.eat ("x");
     const { table, members, keywords } = this.Table ();
 
-    return new ManyToMany (table, members, keywords);
+    return ManyToMany.of (table, members, keywords);
   }
 
   Identifier() {
@@ -112,7 +112,7 @@ class Parser<Params> {
   All() {
     const sign = this.eat ("*").value;
 
-    return new All (sign);
+    return All.of (sign);
   }
 
   Schema() {
@@ -149,14 +149,14 @@ class Parser<Params> {
     this.eat ("VARIABLE");
     const key = this.values[this.idx];
     const [as, cast] = this.castAs ();
-    const variable = new Variable (key, as, cast);
+    const variable = Variable.of (key, as, cast);
     this.idx += 1;
 
     return variable;
   }
 
   Call(identifier: Identifier<Params>) {
-    return new Call (identifier.name, this.Arguments (), identifier.as, identifier.cast);
+    return Call.of (identifier.name, this.Arguments (), identifier.as, identifier.cast);
   }
 
   members() {
@@ -261,14 +261,14 @@ class Parser<Params> {
     this.eat (value ? "true" : "false");
     const [as, cast] = this.castAs ();
 
-    return new BooleanLiteral (value, as, cast);
+    return BooleanLiteral.of (value, as, cast);
   }
 
   NullLiteral() {
     this.eat ("null");
     const [as, cast] = this.castAs ();
 
-    return new NullLiteral (null, as, cast);
+    return NullLiteral.of (null, as, cast);
   }
 
   StringLiteral() {
@@ -276,14 +276,14 @@ class Parser<Params> {
     const value = token.value.slice (1, -1);
     const [as, cast] = this.castAs ();
 
-    return new StringLiteral (value, as, cast);
+    return StringLiteral.of (value, as, cast);
   }
 
   NumericLiteral() {
     const token = this.eat ("NUMBER");
     const [as, cast] = this.castAs ();
 
-    return new NumericLiteral (Number (token.value), as, cast);
+    return NumericLiteral.of (Number (token.value), as, cast);
   }
 
   eat(tokenType: TokenType) {

@@ -78,7 +78,13 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordsNod
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  ${Table.of ("player")} { * }
+  ${Table.of ("player")} {
+        "1":one::int
+        2:two::text
+        true:t::text
+        false:f::text
+        null:n::text
+  }
 `;
 
 // const upd = playerQuery.map (ast => updateKeywords<{off: number}> ({

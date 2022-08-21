@@ -137,7 +137,7 @@ export class Call<Params, Ran extends boolean = false> {
   }
 
   static of<Params, Ran extends boolean = false>(name: string, args: AstNode<Params>[], as?: string, cast?: string) {
-    return new Call (name, args, as, cast);
+    return new Call<Params, Ran> (name, args, as, cast);
   }
 }
 
@@ -179,6 +179,10 @@ export class All <Params, Ran extends boolean = false> {
   run(_params: Params, _table: Table) {
     return new All<Params, true> (this.sign);
   }
+
+  static of<Params, Ran extends boolean = false>(sign: string) {
+    return new All<Params, Ran> (sign);
+  }
 }
 
 export class Variable<Params, Ran extends boolean = false> {
@@ -207,6 +211,10 @@ export class Variable<Params, Ran extends boolean = false> {
       this.cast
     );
   }
+
+  static of<Params, Ran extends boolean = false>(value: RQLValue<Params, Ran>, as?: string, cast?: string) {
+    return new Variable<Params, Ran> (value, as, cast);
+  }
 }
 
 export class StringLiteral <Params, Ran extends boolean = false> {
@@ -226,6 +234,10 @@ export class StringLiteral <Params, Ran extends boolean = false> {
 
   run(_params: Params, _table: Table) {
     return new StringLiteral<Params, true> (this.value, this.as, this.cast);
+  }
+
+  static of<Params, Ran extends boolean = false>(value: string, as?: string, cast?: string) {
+    return new StringLiteral<Params, Ran> (value, as, cast);
   }
 }
 
@@ -247,6 +259,10 @@ export class NumericLiteral <Params, Ran extends boolean = false> {
   run(_params: Params, _table: Table) {
     return new NumericLiteral<Params, true> (this.value, this.as, this.cast);
   }
+
+  static of<Params, Ran extends boolean = false>(value: number, as?: string, cast?: string) {
+    return new NumericLiteral<Params, Ran> (value, as, cast);
+  }
 }
 
 export class BooleanLiteral <Params, Ran extends boolean = false> {
@@ -267,6 +283,10 @@ export class BooleanLiteral <Params, Ran extends boolean = false> {
   run(_params: Params, _table: Table) {
     return new BooleanLiteral<Params, true> (this.value, this.as, this.cast);
   }
+
+  static of<Params, Ran extends boolean = false>(value: boolean, as?: string, cast?: string) {
+    return new BooleanLiteral<Params, Ran> (value, as, cast);
+  }
 }
 
 export class NullLiteral <Params, Ran extends boolean = false> {
@@ -286,5 +306,9 @@ export class NullLiteral <Params, Ran extends boolean = false> {
 
   run(_params: Params, _table: Table) {
     return new NullLiteral<Params, true> (this.value, this.as, this.cast);
+  }
+
+  static of<Params, Ran extends boolean = false>(value: null, as?: string, cast?: string) {
+    return new NullLiteral<Params, Ran> (value, as, cast);
   }
 }

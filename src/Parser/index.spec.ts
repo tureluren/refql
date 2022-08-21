@@ -4,7 +4,7 @@ import sql from "../SqlTag/sql";
 import Table from "../Table";
 import Tokenizer from "../Tokenizer";
 import { RQLValue } from "../types";
-import { BelongsTo, HasMany, Identifier, ManyToMany, Root } from "./Node";
+import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Node";
 
 const rql = <Params> (strings: TemplateStringsArray, ...values: RQLValue<Params>[]) => {
   return Parser.of (strings.join ("$"), values).Root ();
@@ -25,22 +25,38 @@ describe ("Parser type", () => {
     expect (parser.lookahead).toEqual (lookahead);
   });
 
-  test ("Root", () => {
+  test ("Relations", () => {
+    const position = Table.of ("position");
+
     const ast = rql`
       player (id: 1) { 
         id:identifier::text 
-        last_name 
+        birthday
+        concat:full_name (last_name, " ", first_name)
         < goal:goals (limit: 5, offset: 0) {
           minute
         }
-        - public.team { name:team_name }
+        - public.team { 
+          name:team_name
+          < player:players {
+            last_name
+            - ${position} {
+              *
+            }
+          }
+        }
         x game:games { result }
       }
     `;
 
     const player = Table.of ("player");
-    const id = Identifier.of ("id", "identifier", "text");
+    const identifier = Identifier.of ("id", "identifier", "text");
+    const birthday = Identifier.of ("birthday");
+
     const lastName = Identifier.of ("last_name");
+    const space = StringLiteral.of (" ");
+    const firstName = Identifier.of ("first_name");
+    const fullName = Call.of ("concat", [lastName, space, firstName], "full_name");
 
     const goals = Table.of ("goal", "goals");
     const minute = Identifier.of ("minute");
@@ -48,7 +64,11 @@ describe ("Parser type", () => {
 
     const team = Table.of ("team", undefined, "public");
     const name = Identifier.of ("name", "team_name");
-    const teamAst = BelongsTo.of (team, [name], {});
+    const players = Table.of ("player", "players");
+    const allPositionFields = All.of ("*");
+    const positionAst = BelongsTo.of (position, [allPositionFields], {});
+    const playersAst = HasMany.of (players, [lastName, positionAst], {});
+    const teamAst = BelongsTo.of (team, [name, playersAst], {});
 
     const games = Table.of ("game", "games");
     const result = Identifier.of ("result");
@@ -56,30 +76,69 @@ describe ("Parser type", () => {
 
     const expected = Root.of (
       player,
-      [id, lastName, goalsAst, teamAst, gamesAst],
+      [identifier, birthday, fullName, goalsAst, teamAst, gamesAst],
       { id: 1 }
     );
 
     expect (ast).toEqual (expected);
   });
 
-  test ("Dynamic table", () => {
-    const player = Table.of ("player");
-    const ast = rql`
-      ${player} (id: 1) { id last_name }
+  test ("Variables", () => {
+    const orderBySql = sql`order by player.last_name`;
+    type Params = { limit: number; offset: number };
+
+    const getLimit = (p: Params) => p.limit;
+    const getOffset = (p: Params) => p.offset;
+
+    const ast = rql<Params>`
+      player (id: ${1}, limit: ${getLimit}, offset: ${getOffset}) { 
+        id 
+        last_name
+        ${orderBySql}
+      }
     `;
 
+    const player = Table.of ("player");
     const id = Identifier.of ("id");
     const lastName = Identifier.of ("last_name");
+    const orderBy = Variable.of (orderBySql);
+
+    const expected = Root.of<Params> (
+      player,
+      [id, lastName, orderBy],
+      { id: 1, limit: getLimit, offset: getOffset }
+    );
+
+    expect (ast).toEqual (expected);
+  });
+
+  test ("Literals", () => {
+    const ast = rql`
+      player {
+        "1":one::int
+        2:two::text
+        true:t::text
+        false:f::text
+        null:n::text
+      }
+    `;
+
+    const player = Table.of ("player");
+    const one = StringLiteral.of ("1", "one", "int");
+    const two = NumericLiteral.of (2, "two", "text");
+    const t = BooleanLiteral.of (true, "t", "text");
+    const f = BooleanLiteral.of (false, "f", "text");
+    const n = NullLiteral.of (null, "n", "text");
 
     const expected = Root.of (
       player,
-      [id, lastName],
-      { id: 1 }
+      [one, two, t, f, n],
+      {}
     );
 
     expect (ast).toEqual (expected);
   });
+
 
   // test ("table declaration - typeCaseDB = undefined", () => {
   //   const parse = parseFn (undefined, "camel", true);
