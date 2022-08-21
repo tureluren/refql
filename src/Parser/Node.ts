@@ -29,7 +29,6 @@ export class Root<Params, Ran extends boolean = false> {
   static of<Params, Ran extends boolean = false>(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
     return new Root<Params, Ran> (table, members, keywords);
   }
-
 }
 
 export class HasMany<Params, Ran extends boolean = false> {
@@ -53,6 +52,10 @@ export class HasMany<Params, Ran extends boolean = false> {
       this.members,
       runKeywords (params, this.table, this.keywords)
     );
+  }
+
+  static of<Params, Ran extends boolean = false>(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+    return new HasMany<Params, Ran> (table, members, keywords);
   }
 }
 
@@ -78,6 +81,10 @@ export class BelongsTo<Params, Ran extends boolean = false> {
       runKeywords (params, this.table, this.keywords)
     );
   }
+
+  static of<Params, Ran extends boolean = false>(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+    return new BelongsTo<Params, Ran> (table, members, keywords);
+  }
 }
 
 export class ManyToMany<Params, Ran extends boolean = false> {
@@ -102,6 +109,10 @@ export class ManyToMany<Params, Ran extends boolean = false> {
       runKeywords (params, this.table, this.keywords)
     );
   }
+
+  static of<Params, Ran extends boolean = false>(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+    return new ManyToMany<Params, Ran> (table, members, keywords);
+  }
 }
 
 export class Call<Params, Ran extends boolean = false> {
@@ -123,6 +134,10 @@ export class Call<Params, Ran extends boolean = false> {
 
   run(_params: Params, _table: Table) {
     return new Call<Params, true> (this.name, this.members, this.as, this.cast);
+  }
+
+  static of<Params, Ran extends boolean = false>(name: string, args: AstNode<Params>[], as?: string, cast?: string) {
+    return new Call (name, args, as, cast);
   }
 }
 

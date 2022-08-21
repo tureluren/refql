@@ -4,7 +4,7 @@ import sql from "../SqlTag/sql";
 import Table from "../Table";
 import Tokenizer from "../Tokenizer";
 import { RQLValue } from "../types";
-import { Identifier, Root } from "./Node";
+import { BelongsTo, HasMany, Identifier, ManyToMany, Root } from "./Node";
 
 const rql = <Params> (strings: TemplateStringsArray, ...values: RQLValue<Params>[]) => {
   return Parser.of (strings.join ("$"), values);
@@ -31,7 +31,6 @@ describe ("Parser type", () => {
     `;
 
     const ast = parser.Root ();
-
     const player = Table.of ("player");
     const id = Identifier.of ("id");
     const lastName = Identifier.of ("last_name");
@@ -41,6 +40,72 @@ describe ("Parser type", () => {
       [id, lastName],
       { id: 1 }
     );
+
+    expect (ast).toEqual (expected);
+  });
+
+  test ("HasMany", () => {
+    const parser = rql`
+      < goal:goals {
+        minute
+      }
+    `;
+
+    const ast = parser.HasMany ();
+    const goal = Table.of ("goal", "goals");
+    const minute = Identifier.of ("minute");
+
+    const expected = HasMany.of (
+      goal,
+      [minute],
+      {}
+    );
+
+    expect (ast).toEqual (expected);
+  });
+
+  test ("BelongsTo", () => {
+    const parser = rql`
+      - public.team { name:team_name }
+    `;
+
+    const ast = parser.BelongsTo ();
+    const team = Table.of ("team", undefined, "public");
+    const name = Identifier.of ("name", "team_name");
+
+    const expected = BelongsTo.of (
+      team,
+      [name],
+      {}
+    );
+
+    expect (ast).toEqual (expected);
+  });
+
+  test ("ManyToMany", () => {
+    const parser = rql`
+      x game:games { result }
+    `;
+
+    const ast = parser.ManyToMany ();
+    const game = Table.of ("game", "games");
+    const result = Identifier.of ("result");
+
+    const expected = ManyToMany.of (
+      game,
+      [result],
+      {}
+    );
+
+    expect (ast).toEqual (expected);
+  });
+
+  test ("Identifier", () => {
+    const parser = rql`id:identifier::text`;
+
+    const ast = parser.Identifier ();
+
+    const expected = Identifier.of ("id", "identifier", "text");
 
     expect (ast).toEqual (expected);
   });

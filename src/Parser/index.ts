@@ -12,23 +12,52 @@ import identifierToTable from "./identifierToTable";
 import Table from "../Table";
 
 class Parser<Params> {
-  tokenizer: Tokenizer;
   str: string;
   values: RQLValue<Params>[];
   idx: number;
+  tokenizer: Tokenizer;
   lookahead: Token;
 
   constructor(str: string, values: RQLValue<Params>[]) {
-    this.tokenizer = Tokenizer.of (str);
     this.str = str;
     this.values = values;
     this.idx = 0;
+    this.tokenizer = Tokenizer.of (str);
     this.lookahead = this.tokenizer.getNextToken ();
   }
 
   Root() {
     const { table, members, keywords } = this.Table ();
+
     return Root.of (table, members, keywords);
+  }
+
+  HasMany() {
+    this.eat ("<");
+    const { table, members, keywords } = this.Table ();
+
+    return new HasMany (table, members, keywords);
+  }
+
+  BelongsTo() {
+    this.eat ("-");
+    const { table, members, keywords } = this.Table ();
+
+    return new BelongsTo (table, members, keywords);
+  }
+
+  ManyToMany() {
+    this.eat ("x");
+    const { table, members, keywords } = this.Table ();
+
+    return new ManyToMany (table, members, keywords);
+  }
+
+  Identifier() {
+    const name = this.eat ("IDENTIFIER").value;
+    const [as, cast] = this.CastAs ();
+
+    return Identifier.of (name, as, cast);
   }
 
   Table() {
@@ -80,27 +109,6 @@ class Parser<Params> {
     return { table, members: this.members (), keywords };
   }
 
-  HasMany() {
-    this.eat ("<");
-    const { table, members, keywords } = this.Table ();
-
-    return new HasMany (table, members, keywords);
-  }
-
-  BelongsTo() {
-    this.eat ("-");
-    const { table, members, keywords } = this.Table ();
-
-    return new BelongsTo (table, members, keywords);
-  }
-
-  ManyToMany() {
-    this.eat ("x");
-    const { table, members, keywords } = this.Table ();
-
-    return new ManyToMany (table, members, keywords);
-  }
-
   All() {
     const sign = this.eat ("*").value;
 
@@ -129,12 +137,6 @@ class Parser<Params> {
     return [as, cast];
   }
 
-  Identifier() {
-    const name = this.eat ("IDENTIFIER").value;
-    const [as, cast] = this.CastAs ();
-    return Identifier.of (name, as, cast);
-  }
-
   spliceKey() {
     const key = this.values[this.idx];
     this.values.splice (this.idx, 1);
@@ -153,8 +155,8 @@ class Parser<Params> {
     return variable;
   }
 
-  Call(callee: Identifier<Params>) {
-    return new Call (callee.name, this.Arguments (), callee.as, callee.cast);
+  Call(identifier: Identifier<Params>) {
+    return new Call (identifier.name, this.Arguments (), identifier.as, identifier.cast);
   }
 
   members() {
