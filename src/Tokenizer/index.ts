@@ -1,6 +1,6 @@
-import { Spec, Token } from "../types";
+import { Token, TokenType } from "../types";
 
-const spec: Spec = [
+const tokens: [RegExp, TokenType | null][] = [
   // Whitespace
   [/^\s+/, null],
 
@@ -63,7 +63,7 @@ class Tokenizer {
 
     const str = this.str.slice (this.idx);
 
-    for (const [regexp, tokenType] of spec) {
+    for (const [regexp, tokenType] of tokens) {
       const tokenValue = this.match (regexp, str);
 
       // no match
@@ -100,4 +100,5 @@ class Tokenizer {
     return new Tokenizer (str);
   }
 }
+
 export default Tokenizer;

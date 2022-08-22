@@ -8,6 +8,10 @@ class Raw {
     }
     this.value = value;
   }
+
+  static of(value: string) {
+    return new Raw (value);
+  }
 }
 
 export default Raw;

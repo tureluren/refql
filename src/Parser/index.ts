@@ -9,7 +9,7 @@ import {
   NumericLiteral, Root, StringLiteral, Variable
 } from "./Node";
 import identifierToTable from "./identifierToTable";
-import Table from "../Table";
+import isTable from "../Table/isTable";
 
 class Parser<Params> {
   str: string;
@@ -64,12 +64,12 @@ class Parser<Params> {
     let table;
 
     if (this.isNext ("VARIABLE")) {
-      const variable = this.spliceKey ();
+      const value = this.spliceValue ();
 
-      if (variable instanceof Table) {
-        table = variable;
+      if (isTable (value)) {
+        table = value;
       } else {
-        throw new Error ("expecte table");
+        throw new SyntaxError ("Invalid dynamic table, expected instance of Table");
       }
 
     } else {
@@ -83,23 +83,22 @@ class Parser<Params> {
 
       do {
         let value;
-        const identifier = this.eat ("IDENTIFIER").value as keyof Keywords<Params>;
-
+        const keyword = this.eat ("IDENTIFIER").value as keyof Keywords<Params>;
         this.eat (":");
 
         if (this.isNextLiteral ()) {
           value = this.Literal ().value;
 
         } else if (this.isNext ("VARIABLE")) {
-          value = this.spliceKey ();
+          value = this.spliceValue ();
 
         } else {
           throw new SyntaxError (
-            `Only Literals or Variables are allowed as parameters, not: "${this.lookahead.type}"`
+            `Only Literals or Variables are allowed as keywords, not: "${this.lookahead.type}"`
           );
         }
 
-        keywords[identifier] = value;
+        keywords[keyword] = value;
 
       } while (this.hasArg ());
 
@@ -121,30 +120,6 @@ class Parser<Params> {
     }
   }
 
-  castAs() {
-    let as, cast;
-
-    if (this.isNext (":")) {
-      this.eat (":");
-      as = this.eat ("IDENTIFIER").value;
-    }
-
-    if (this.isNext ("::")) {
-      this.eat ("::");
-      cast = this.eat ("IDENTIFIER").value;
-    }
-
-    return [as, cast];
-  }
-
-  spliceKey() {
-    const key = this.values[this.idx];
-    this.values.splice (this.idx, 1);
-    this.eat ("VARIABLE");
-
-    return key;
-  }
-
   Variable() {
     this.eat ("VARIABLE");
     const key = this.values[this.idx];
@@ -156,25 +131,25 @@ class Parser<Params> {
   }
 
   Call(identifier: Identifier<Params>) {
-    return Call.of (identifier.name, this.Arguments (), identifier.as, identifier.cast);
+    return Call.of (identifier.name, this.arguments (), identifier.as, identifier.cast);
   }
 
   members() {
     this.eat ("{");
 
     if (this.isNext ("}")) {
-      throw new SyntaxError ("A table block should have at least one AstNode");
+      throw new SyntaxError ("A table block should have at least one member");
     }
 
     const members: AstNode<Params>[] = [];
 
     do {
-      const AstNode = this.AstNode ();
+      const member = this.Member ();
 
       if (this.isNext ("(")) {
-        members.push (this.Call (AstNode as Identifier<Params>));
+        members.push (this.Call (member as Identifier<Params>));
       } else {
-        members.push (AstNode);
+        members.push (member);
       }
 
     } while (!this.isNext ("}"));
@@ -184,7 +159,7 @@ class Parser<Params> {
     return members;
   }
 
-  Arguments() {
+  arguments() {
     this.eat ("(");
     const argumentList: AstNode<Params>[] = [];
 
@@ -209,7 +184,31 @@ class Parser<Params> {
     return this.isNext (",") && this.eat (",") && !this.isNext (")");
   }
 
-  AstNode(): AstNode<Params> {
+  castAs() {
+    let as, cast;
+
+    if (this.isNext (":")) {
+      this.eat (":");
+      as = this.eat ("IDENTIFIER").value;
+    }
+
+    if (this.isNext ("::")) {
+      this.eat ("::");
+      cast = this.eat ("IDENTIFIER").value;
+    }
+
+    return [as, cast];
+  }
+
+  spliceValue() {
+    const value = this.values[this.idx];
+    this.values.splice (this.idx, 1);
+    this.eat ("VARIABLE");
+
+    return value;
+  }
+
+  Member(): AstNode<Params> {
     if (this.isNextLiteral ()) {
       return this.Literal ();
     }
@@ -228,7 +227,7 @@ class Parser<Params> {
         return this.Variable ();
     }
 
-    throw new SyntaxError (`Unknown AstNode Type: "${this.lookahead.type}"`);
+    throw new SyntaxError (`Unknown Member Type: "${this.lookahead.type}"`);
   }
 
   Argument(): AstNode<Params> {
@@ -242,19 +241,24 @@ class Parser<Params> {
         return this.Variable ();
     }
 
-    throw new SyntaxError (`Invalid Argument Type: "${this.lookahead.type}"`);
+    throw new SyntaxError (`Unknown Argument Type: "${this.lookahead.type}"`);
   }
 
   Literal(): Literal<Params> {
     switch (this.lookahead.type) {
-      case "NUMBER": return this.NumericLiteral ();
-      case "STRING": return this.StringLiteral ();
-      case "true": return this.BooleanLiteral (true);
-      case "false": return this.BooleanLiteral (false);
-      case "null": return this.NullLiteral ();
-      default:
-        throw new SyntaxError (`Unknown Literal: "${this.lookahead.type}"`);
+      case "NUMBER":
+        return this.NumericLiteral ();
+      case "STRING":
+        return this.StringLiteral ();
+      case "true":
+        return this.BooleanLiteral (true);
+      case "false":
+        return this.BooleanLiteral (false);
+      case "null":
+        return this.NullLiteral ();
     }
+
+    throw new SyntaxError (`Unknown Literal: "${this.lookahead.type}"`);
   }
 
   BooleanLiteral(value: boolean) {
@@ -323,7 +327,6 @@ class Parser<Params> {
   static of<Params>(str: string, values: RQLValue<Params>[]) {
     return new Parser (str, values);
   }
-
 }
 
 export default Parser;

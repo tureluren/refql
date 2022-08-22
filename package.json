@@ -62,7 +62,7 @@
       "<rootDir>/src"
     ],
     "testMatch": [
-      "**/?(*.)+(Parser\/index.spec).+(ts)"
+      "**/?(*.)+(Tokenizer\/index.spec).+(ts)"
     ]
   }
 }

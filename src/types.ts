@@ -40,13 +40,11 @@ export interface JsonBuildObject<T> {
 }
 
 export type TokenType =
-  "::" | ":" | "{" | "}" |
-  "(" | ")" | "," | "VARIABLE" |
-  "true" | "false" | "null" | "NUMBER" |
-  "<" | "-" | "x" | "*" | "SCHEMA" |
-  "IDENTIFIER" | "STRING" | "EOF";
-
-export type Spec = [RegExp, TokenType | null][];
+  | "::" | ":" | "{" | "}"
+  | "(" | ")" | "," | "VARIABLE"
+  | "true" | "false" | "null" | "NUMBER"
+  | "<" | "-" | "x" | "*" | "SCHEMA"
+  | "IDENTIFIER" | "STRING" | "EOF";
 
 export type Token = {
   type: TokenType | null;
@@ -71,20 +69,27 @@ export type Plurals = {
 };
 
 export type Literal <Params, Ran extends boolean = false> =
-  StringLiteral<Params, Ran> |
-  NumericLiteral<Params, Ran> |
-  BooleanLiteral<Params, Ran> |
-  NullLiteral<Params, Ran>;
+  | StringLiteral<Params, Ran>
+  | NumericLiteral<Params, Ran>
+  | BooleanLiteral<Params, Ran>
+  | NullLiteral<Params, Ran>;
 
 export type KeywordsNode <Params, Ran extends boolean = false> =
-  Root<Params, Ran>
-  | ManyToMany<Params, Ran> | HasMany<Params, Ran> | BelongsTo<Params, Ran>;
+  | Root<Params, Ran>
+  | ManyToMany<Params, Ran>
+  | HasMany<Params, Ran>
+  | BelongsTo<Params, Ran>;
 
 export type MembersNode <Params, Ran extends boolean = false> =
-  KeywordsNode<Params, Ran> | Call<Params, Ran>;
+  | KeywordsNode<Params, Ran>
+  | Call<Params, Ran>;
 
 export type AstNode <Params, Ran extends boolean = false> =
-  Identifier<Params, Ran> | All<Params, Ran> | MembersNode<Params, Ran> | Variable <Params, Ran> | Literal<Params, Ran>;
+  | Identifier<Params, Ran>
+  | All<Params, Ran>
+  | MembersNode<Params, Ran>
+  | Variable <Params, Ran>
+  | Literal<Params, Ran>;
 
 export interface Next<Input> {
   exp: AstNode <Input, true>;
@@ -132,7 +137,6 @@ export type RQLValue<Input, Ran extends boolean = false> =
   Ran extends false
   ? Primitive | SqlTag<Input> | Raw | Table | ParamFn<Input, Primitive | SqlTag<Input> | Raw | Table>
   : Primitive | SqlTag<Input> | Raw | Table;
-
 
 export type Values = any[];
 
