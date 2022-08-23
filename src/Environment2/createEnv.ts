@@ -1,8 +1,8 @@
-import Environment from "../Environment2";
+import Environment from ".";
 import sql from "../SqlTag/sql";
 import Table from "../Table";
 import { Refs } from "../types";
-import emptyRefs from "./emptyRefs";
+import emptyRefs from "../RqlTag/emptyRefs";
 
 const createEnv = <Params>(table: Table, refs?: Refs, inCall = false) => Environment.of ({
   table,

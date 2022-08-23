@@ -11,7 +11,7 @@ import {
   AstNode, CompiledQuery, EnvRecord, JsonBuildObject,
   RefQLConfig, RQLValue, Values, Dict, Querier, KeywordsNode, MembersNode
 } from "../types";
-import createEnv from "./createEnv";
+import createEnv from "../Environment2/createEnv";
 
 
 const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input, true | false>, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>) => (compiledQuery: CompiledQuery<Input>) => {

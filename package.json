@@ -62,7 +62,7 @@
       "<rootDir>/src"
     ],
     "testMatch": [
-      "**/?(*.)+(Tokenizer\/index.spec).+(ts)"
+      "**/?(*.)+(Environment2\/index.spec).+(ts)"
     ]
   }
 }

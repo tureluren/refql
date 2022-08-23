@@ -9,7 +9,7 @@ import chain from "../more/chain";
 import evolve from "../Environment2/evolve";
 import set from "../Environment2/set";
 import isSqlTag from "../SqlTag/isSqlTag";
-import createEnv from "../RqlTag/createEnv";
+import createEnv from "../Environment2/createEnv";
 import moveToNext from "./moveToNext";
 import whereIn from "./whereIn";
 import fromTable from "./fromTable";
