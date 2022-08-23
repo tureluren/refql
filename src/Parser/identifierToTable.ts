@@ -1,5 +1,5 @@
 import Table from "../Table";
-import { Identifier } from "./Node";
+import { Identifier } from "./nodes";
 
 const identifierToTable = <Params> (schema: string | undefined, identifier: Identifier<Params>) =>
   Table.of (identifier.name, identifier.as, schema);

@@ -4,9 +4,9 @@ import Table from "../Table";
 import { Refs } from "../types";
 import emptyRefs from "./emptyRefs";
 
-const createEnv = <Input>(table: Table, refs?: Refs, inCall = false) => new Environment ({
+const createEnv = <Params>(table: Table, refs?: Refs, inCall = false) => Environment.of ({
   table,
-  sqlTag: sql<Input>``,
+  sqlTag: sql<Params>``,
   query: "",
   values: [],
   next: [],

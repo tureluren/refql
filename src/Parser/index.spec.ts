@@ -8,7 +8,7 @@ import {
   All, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
-} from "./Node";
+} from "./nodes";
 
 const rql = <Params> (strings: TemplateStringsArray, ...values: RQLValue<Params>[]) => {
   return Parser.of (strings.join ("$"), values).Root ();

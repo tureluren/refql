@@ -7,9 +7,9 @@ import {
   All, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
-} from "./Node";
-import identifierToTable from "./identifierToTable";
+} from "./nodes";
 import isTable from "../Table/isTable";
+import identifierToTable from "./identifierToTable";
 
 class Parser<Params> {
   str: string;

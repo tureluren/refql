@@ -1,7 +1,7 @@
-import runKeywords from "../Interpreter/runKeywords";
 import isFunction from "../predicate/isFunction";
 import Table from "../Table";
 import { AstNode, Keywords, Pattern, RQLValue } from "../types";
+import runKeywords from "./runKeywords";
 
 export class Root<Params, Ran extends boolean = false> {
   table: Table;

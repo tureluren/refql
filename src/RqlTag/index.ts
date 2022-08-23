@@ -5,7 +5,7 @@
 // import isSub from "../Sub/isSub";
 import Environment from "../Environment2";
 import Interpreter from "../Interpreter";
-import { BelongsTo, HasMany, ManyToMany, Root } from "../Parser/Node";
+import { BelongsTo, HasMany, ManyToMany, Root } from "../Parser/nodes";
 import SqlTag from "../SqlTag";
 import {
   AstNode, CompiledQuery, EnvRecord, JsonBuildObject,

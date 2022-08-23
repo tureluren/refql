@@ -1,5 +1,5 @@
 import Environment from "./Environment2";
-import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Parser/Node";
+import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Parser/nodes";
 import Raw from "./Raw";
 import SqlTag from "./SqlTag";
 import Table from "./Table";
