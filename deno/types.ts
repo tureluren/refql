@@ -133,7 +133,7 @@ export type ASTType =
   AST | Identifier | HasMany | BelongsTo | ManyToMany |
   Subselect | Call | Variable | Literal;
 
-export interface EnvRecord {
+export interface Rec {
   table?: Table;
   query?: string;
   sql?: string;

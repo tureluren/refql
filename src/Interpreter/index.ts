@@ -1,7 +1,7 @@
 import isRaw from "../Raw/isRaw";
 import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
-import { AstNode, OptCaseType, EnvRecord } from "../types";
+import { AstNode, OptCaseType, Rec } from "../types";
 import convertCase from "../more/convertCase";
 import get from "../Environment2/get";
 import over from "../Environment2/over";
@@ -10,44 +10,40 @@ import evolve from "../Environment2/evolve";
 import set from "../Environment2/set";
 import isSqlTag from "../SqlTag/isSqlTag";
 import createEnv from "../Environment2/createEnv";
-import moveToNext from "./moveToNext";
-import whereIn from "./whereIn";
-import fromTable from "./fromTable";
-import joinOn from "./joinOn";
-import select from "./select";
+import toNext from "./toNext";
 import interpretSqlTag from "./interpretSqlTag";
-import castAs from "./castAs";
-import selectRefs from "./selectRefs";
 import Environment from "../Environment2";
 import concat from "../more/concat";
-import byId from "./byId";
-import paginate from "./paginate";
+import {
+  byId, castAs, fromTable, joinOn,
+  paginate, select, selectRefs, whereIn
+} from "./sqlBuilders";
 
 const interpret = <Input> (caseType: OptCaseType, params: Input) => {
-  const next = moveToNext (caseType);
+  const next = toNext (caseType);
   const includeSql = interpretSqlTag (params);
 
   const interpretMembers = (members: AstNode<Input>[], table: Table, inCall = false) =>
     members.reduce ((acc, mem) =>
       acc.extend (env => goInterpret (mem, env)), createEnv<Input> (table, undefined, inCall));
 
-  const goInterpret = (node: AstNode<Input>, env: Environment<Input>, rows?: any[]): EnvRecord<Input> => {
-    const { record } = env;
-    const { values, table: parent, refs, inCall } = record;
+  const goInterpret = (node: AstNode<Input>, env: Environment<Input>, rows?: any[]): Rec<Input> => {
+    const { rec } = env;
+    const { values, table: parent, refs, inCall } = rec;
 
     const patched = node.run (params, parent);
 
-    return patched.cata<EnvRecord<Input>> ({
+    return patched.cata<Rec<Input>> ({
       Root: (table, members, { id, limit, offset }) =>
         interpretMembers (members, table)
           .map (fromTable (table))
           .map (byId (table, id, "where"))
           .map (includeSql (table, id != null))
           .map (paginate (limit, offset))
-          .record,
+          .rec,
 
       BelongsTo: (table, members, { id, limit, offset }) => {
-        if (!rows) return next (patched, record);
+        if (!rows) return next (patched, rec);
 
         return interpretMembers (members, table)
           .map (selectRefs (table, refs.rkeys))
@@ -56,11 +52,11 @@ const interpret = <Input> (caseType: OptCaseType, params: Input) => {
           .map (byId (table, id))
           .map (includeSql (table))
           .map (paginate (limit, offset))
-          .record;
+          .rec;
       },
 
       HasMany: (table, members, { id, limit, offset }) => {
-        if (!rows) return next (patched, record);
+        if (!rows) return next (patched, rec);
 
         return interpretMembers (members, table)
           .map (selectRefs (table, refs.rkeys))
@@ -69,11 +65,11 @@ const interpret = <Input> (caseType: OptCaseType, params: Input) => {
           .map (byId (table, id))
           .map (includeSql (table))
           .map (paginate (limit, offset))
-          .record;
+          .rec;
       },
 
       ManyToMany: (table, members, { id, limit, offset, xtable }) => {
-        if (!rows) return next (patched, record);
+        if (!rows) return next (patched, rec);
 
         const x = Table.of (
           xtable || convertCase (caseType, `${parent.name}_${table.name}`)
@@ -88,7 +84,7 @@ const interpret = <Input> (caseType: OptCaseType, params: Input) => {
           .map (byId (table, id))
           .map (includeSql (table))
           .map (paginate (limit, offset))
-          .record;
+          .rec;
       },
 
       Call: (name, args, as, cast) => {
@@ -97,16 +93,16 @@ const interpret = <Input> (caseType: OptCaseType, params: Input) => {
             get ("comps"), comps =>
               set ("query", castAs (`${name} (${comps.join (", ")})`, as, cast))))
 
-          .record;
+          .rec;
 
         return evolve ({
           comps: concat (callRecord.query),
           values: concat (callRecord.values)
-        }, record);
+        }, rec);
       },
 
       Variable: (value, as, cast) => {
-        if (isRaw (value)) return select (value.value, record);
+        if (isRaw (value)) return select (value.value, rec);
 
         if (isSqlTag<Input> (value)) {
           if (inCall || as) {
@@ -115,35 +111,35 @@ const interpret = <Input> (caseType: OptCaseType, params: Input) => {
             return evolve ({
               comps: concat (castAs (!inCall ? `(${query})` : query, as, cast)),
               values: concat (newValues)
-            }, record);
+            }, rec);
           }
 
-          return over ("sqlTag", concat (value), record);
+          return over ("sqlTag", concat (value), rec);
         }
 
         return evolve ({
           comps: concat (castAs (`$${values.length + 1}`, as, cast)),
           values: concat (value)
-        }, record);
+        }, rec);
       },
 
       All: sign =>
-        select (`${parent.as}.${sign}`, record),
+        select (`${parent.as}.${sign}`, rec),
 
       Identifier: (name, as, cast) =>
-        select (castAs (`${parent.as}.${name}`, as, cast), record),
+        select (castAs (`${parent.as}.${name}`, as, cast), rec),
 
       StringLiteral: (value, as, cast) =>
-        select (castAs (`'${value}'`, as, cast), record),
+        select (castAs (`'${value}'`, as, cast), rec),
 
       NumericLiteral: (value, as, cast) =>
-        select (castAs (value, as, cast), record),
+        select (castAs (value, as, cast), rec),
 
       BooleanLiteral: (value, as, cast) =>
-        select (castAs (value, as, cast), record),
+        select (castAs (value, as, cast), rec),
 
       NullLiteral: (value, as, cast) =>
-        select (castAs (value, as, cast), record)
+        select (castAs (value, as, cast), rec)
     });
   };
 

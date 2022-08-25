@@ -1,25 +1,25 @@
-import { EnvRecord, Values } from "../types.ts";
+import { Rec, Values } from "../types.ts";
 
 class Environment {
-  record: EnvRecord;
+  record: Rec;
   parent: Environment | null;
 
-  constructor(record: EnvRecord, parent: Environment | null = null) {
+  constructor(record: Rec, parent: Environment | null = null) {
     // making sure that record can't be mutated from the outside
     this.record = Object.assign ({}, record);
     this.parent = parent;
   }
 
-  assign<T extends keyof EnvRecord>(name: T, value: EnvRecord[T]) {
+  assign<T extends keyof Rec>(name: T, value: Rec[T]) {
     this.resolve (name).record[name] = value;
     return value;
   }
 
-  lookup<T extends keyof EnvRecord>(name: T) {
+  lookup<T extends keyof Rec>(name: T) {
     return this.resolve (name).record[name]!;
   }
 
-  resolve(name: keyof EnvRecord): Environment {
+  resolve(name: keyof Rec): Environment {
     if (this.record.hasOwnProperty (name)) {
       return this;
     }

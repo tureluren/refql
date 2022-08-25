@@ -1,13 +1,13 @@
-import { EnvRecord } from "../types";
+import { Rec } from "../types";
 
-function set <K extends keyof EnvRecord<any>>(prop: K, value: EnvRecord<any>[K]): <Input>(record: EnvRecord<Input>) => EnvRecord<Input>;
-function set <Input, K extends keyof EnvRecord<Input>>(prop: K, value: EnvRecord<Input>[K], record: EnvRecord<Input>): EnvRecord<Input>;
-function set <K extends keyof EnvRecord<any>>(prop: K, value: EnvRecord<any>[K], record?: EnvRecord<any>): EnvRecord<any> | (<Input>(record: EnvRecord<Input>) => EnvRecord<Input>) {
-  const go = <Input>(record: EnvRecord<Input>): EnvRecord<Input> => {
-    return { ...record, [prop]: value };
+function set <K extends keyof Rec<any>>(prop: K, value: Rec<any>[K]): <Input>(rec: Rec<Input>) => Rec<Input>;
+function set <Input, K extends keyof Rec<Input>>(prop: K, value: Rec<Input>[K], rec: Rec<Input>): Rec<Input>;
+function set <K extends keyof Rec<any>>(prop: K, value: Rec<any>[K], rec?: Rec<any>): Rec<any> | (<Input>(rec: Rec<Input>) => Rec<Input>) {
+  const go = <Input>(rec: Rec<Input>): Rec<Input> => {
+    return { ...rec, [prop]: value };
   };
 
-  return !record ? go : go (record);
+  return !rec ? go : go (rec);
 }
 
 export default set;

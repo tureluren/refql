@@ -7,7 +7,7 @@ import set from "./set";
 
 describe ("Environment type", () => {
   test ("create Environment", () => {
-    const record = {
+    const rec = {
       table: Table.of ("player"),
       sqlTag: sql``,
       query: "",
@@ -18,9 +18,9 @@ describe ("Environment type", () => {
       inCall: false
     };
 
-    const env = Environment.of (record);
+    const env = Environment.of (rec);
 
-    expect (env.record).toEqual (record);
+    expect (env.rec).toEqual (rec);
   });
 
   test ("Functor", () => {
@@ -38,8 +38,8 @@ describe ("Environment type", () => {
   test ("Extend", () => {
     const env = createEnv<{}> (Table.of ("player"));
 
-    const setQuery = (e: Environment<{}>) => set ("query", "select *", e.record);
-    const setInCall = (e: Environment<{}>) => set ("inCall", true, e.record);
+    const setQuery = (e: Environment<{}>) => set ("query", "select *", e.rec);
+    const setInCall = (e: Environment<{}>) => set ("inCall", true, e.rec);
 
     expect (env.extend (setQuery).extend (setInCall))
       .toEqual (env.extend (e => setInCall (e.extend (setQuery))));

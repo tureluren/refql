@@ -2,14 +2,14 @@ import evolve from "../Environment2/evolve";
 import concat from "../more/concat";
 import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
-import { EnvRecord } from "../types";
+import { Rec } from "../types";
 
-const interpretSqlTag = <Input>(params: Input) => (table: Table, correctWhere: boolean = true) => (record: EnvRecord<Input>) => {
-  const { sqlTag, values } = record;
+const interpretSqlTag = <Input>(params: Input) => (table: Table, correctWhere: boolean = true) => (rec: Rec<Input>) => {
+  const { sqlTag, values } = rec;
 
   let [query, newValues] = compileSqlTag (sqlTag, values.length, params, table);
 
-  if (!query) return record;
+  if (!query) return rec;
 
   if (correctWhere) {
     query = query.replace (/^\b(where)\b/i, "and");
@@ -20,7 +20,7 @@ const interpretSqlTag = <Input>(params: Input) => (table: Table, correctWhere: b
   return evolve ({
     query: q => `${q} ${query}`,
     values: concat (newValues)
-  }) (record);
+  }) (rec);
 };
 
 export default interpretSqlTag;

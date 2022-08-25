@@ -8,13 +8,13 @@ import Interpreter from "../Interpreter";
 import { BelongsTo, HasMany, ManyToMany, Root } from "../Parser/nodes";
 import SqlTag from "../SqlTag";
 import {
-  AstNode, CompiledQuery, EnvRecord, JsonBuildObject,
+  AstNode, CompiledQuery, Rec, JsonBuildObject,
   RefQLConfig, RQLValue, Values, Dict, Querier, KeywordsNode, MembersNode
 } from "../types";
 import createEnv from "../Environment2/createEnv";
 
 
-const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input, true | false>, env: Environment<Input>, rows?: any[]) => EnvRecord<Input>) => (compiledQuery: CompiledQuery<Input>) => {
+const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input, true | false>, env: Environment<Input>, rows?: any[]) => Rec<Input>) => (compiledQuery: CompiledQuery<Input>) => {
   const go = (compiled: CompiledQuery<Input>): Promise<Output[]> => {
     console.log (compiled);
     return querier (compiled.query, compiled.values).then (rows => {

@@ -9,6 +9,7 @@ import sql from "./SqlTag/sql";
 import Table from "./Table";
 import { AstNode, RefQLConfig, Dict, Values, CaseType, Keywords, KeywordsNode } from "./types";
 
+// RENAME record to rec
 
 const pool = new Pool ({
   user: "test",

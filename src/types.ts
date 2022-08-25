@@ -96,7 +96,7 @@ export interface Next<Input> {
   refs: Refs;
 }
 
-export interface EnvRecord<Input> {
+export interface Rec<Input> {
   table: Table;
   query: string;
   sqlTag: SqlTag<Input>;
@@ -144,8 +144,8 @@ export type Querier = (query: string, values: Values) => Promise<any[]>;
 
 export type Rules = [RegExp, string][];
 
-export type Transformations<Input > = {
-  [key in keyof Partial<EnvRecord<Input>>]: (value: EnvRecord<Input>[key]) => EnvRecord<Input>[key];
+export type Tfs<Input > = {
+  [key in keyof Partial<Rec<Input>>]: (value: Rec<Input>[key]) => Rec<Input>[key];
 };
 
 export interface Key {

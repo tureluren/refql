@@ -3,8 +3,8 @@ import concat from "../more/concat";
 import convertCase from "../more/convertCase";
 import emptyRefs from "../RqlTag/emptyRefs";
 import Table from "../Table";
-import { AstNode, EnvRecord, KeywordsNode, OptCaseType } from "../types";
-import keysToComp from "./keysToComp";
+import { AstNode, Rec, KeywordsNode, OptCaseType } from "../types";
+import { keysToComp } from "./sqlBuilders";
 
 const createKey = (table: Table) => (ref: string, keys: string) =>
   keys.split (",").map ((name, idx) => ({
@@ -12,8 +12,8 @@ const createKey = (table: Table) => (ref: string, keys: string) =>
     as: `${table.as}${ref}${idx}`
   }));
 
-const moveToNext = (caseType: OptCaseType) => <Input>(exp: AstNode<Input, true>, record: EnvRecord<Input>) => {
-  const { table } = record;
+const moveToNext = (caseType: OptCaseType) => <Input>(exp: AstNode<Input, true>, rec: Rec<Input>) => {
+  const { table } = rec;
 
   let refs = emptyRefs ();
   const keyOf = createKey (table);
@@ -38,7 +38,7 @@ const moveToNext = (caseType: OptCaseType) => <Input>(exp: AstNode<Input, true>,
   return evolve ({
     comps: concat (keysToComp (table, refs.lkeys)),
     next: concat ({ exp, refs })
-  }, record);
+  }, rec);
 };
 
 export default moveToNext;

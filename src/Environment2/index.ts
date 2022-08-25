@@ -1,22 +1,22 @@
-import { EnvRecord } from "../types";
+import { Rec } from "../types";
 
 class Environment<Params> {
-  record: EnvRecord<Params>;
+  rec: Rec<Params>;
 
-  constructor(record: EnvRecord<Params>) {
-    this.record = Object.assign ({}, record);
+  constructor(rec: Rec<Params>) {
+    this.rec = Object.assign ({}, rec);
   }
 
-  extend(fn: (env: Environment<Params>) => EnvRecord<Params>) {
+  extend(fn: (env: Environment<Params>) => Rec<Params>) {
     return new Environment<Params> (fn (this));
   }
 
-  map(fn: (record: EnvRecord<Params>) => EnvRecord<Params>) {
-    return new Environment<Params> (fn (this.record));
+  map(fn: (rec: Rec<Params>) => Rec<Params>) {
+    return new Environment<Params> (fn (this.rec));
   }
 
-  static of<Params>(record: EnvRecord<Params>) {
-    return new Environment<Params> (record);
+  static of<Params>(rec: Rec<Params>) {
+    return new Environment<Params> (rec);
   }
 }
 

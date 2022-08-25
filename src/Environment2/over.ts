@@ -1,13 +1,13 @@
-import { EnvRecord } from "../types";
+import { Rec } from "../types";
 import get from "./get";
 
-function over <K extends keyof EnvRecord<any>>(prop: K, fn: (value: EnvRecord<any>[K]) => EnvRecord<any>[K]): <Input>(record: EnvRecord<Input>) => EnvRecord<Input>;
-function over <Input, K extends keyof EnvRecord<Input>>(prop: K, fn: (value: EnvRecord<Input>[K]) => EnvRecord<Input>[K], record: EnvRecord<Input>): EnvRecord<Input>;
-function over <K extends keyof EnvRecord<any>>(prop: K, fn: (value: EnvRecord<any>[K]) => EnvRecord<any>[K], record?: EnvRecord<any>): EnvRecord<any> | (<Input>(record: EnvRecord<Input>) => EnvRecord<Input>) {
-  const go = <Input>(record: EnvRecord<Input>): EnvRecord<Input> => {
-    return { ...record, [prop]: fn (get (prop, record)) };
+function over <K extends keyof Rec<any>>(prop: K, fn: (value: Rec<any>[K]) => Rec<any>[K]): <Input>(rec: Rec<Input>) => Rec<Input>;
+function over <Input, K extends keyof Rec<Input>>(prop: K, fn: (value: Rec<Input>[K]) => Rec<Input>[K], rec: Rec<Input>): Rec<Input>;
+function over <K extends keyof Rec<any>>(prop: K, fn: (value: Rec<any>[K]) => Rec<any>[K], rec?: Rec<any>): Rec<any> | (<Input>(rec: Rec<Input>) => Rec<Input>) {
+  const go = <Input>(rec: Rec<Input>): Rec<Input> => {
+    return { ...rec, [prop]: fn (get (prop, rec)) };
   };
-  return !record ? go : go (record);
+  return !rec ? go : go (rec);
 }
 
 export default over;
