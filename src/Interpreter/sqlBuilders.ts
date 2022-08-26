@@ -1,7 +1,4 @@
-import evolve from "../Environment2/evolve";
-import get from "../Environment2/get";
-import over from "../Environment2/over";
-import set from "../Environment2/set";
+import { evolve, get, over, set } from "../Environment2/access";
 import chain from "../more/chain";
 import concat from "../more/concat";
 import parameterize from "../more/parameterize";

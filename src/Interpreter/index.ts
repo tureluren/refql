@@ -3,16 +3,13 @@ import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
 import { AstNode, OptCaseType, Rec } from "../types";
 import convertCase from "../more/convertCase";
-import get from "../Environment2/get";
-import over from "../Environment2/over";
 import chain from "../more/chain";
-import evolve from "../Environment2/evolve";
-import set from "../Environment2/set";
 import isSqlTag from "../SqlTag/isSqlTag";
-import createEnv from "../Environment2/createEnv";
 import toNext from "./toNext";
 import interpretSqlTag from "./interpretSqlTag";
 import Environment from "../Environment2";
+import { evolve, get, over, set } from "../Environment2/access";
+import createEnv from "../Environment2/createEnv";
 import concat from "../more/concat";
 import {
   byId, castAs, fromTable, joinOn,

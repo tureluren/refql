@@ -2,8 +2,8 @@ import Environment from ".";
 import emptyRefs from "../RqlTag/emptyRefs";
 import sql from "../SqlTag/sql";
 import Table from "../Table";
+import { set } from "./access";
 import createEnv from "./createEnv";
-import set from "./set";
 
 describe ("Environment type", () => {
   test ("create Environment", () => {
@@ -29,6 +29,7 @@ describe ("Environment type", () => {
     expect (env.map (r => r)).toEqual (env);
 
     const setQuery = set ("query", "select *");
+
     const setInCall = set ("inCall", true);
 
     expect (env.map (r => setInCall (setQuery (r))))

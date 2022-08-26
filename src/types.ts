@@ -51,17 +51,17 @@ export type Token = {
   value: string;
 };
 
-export type ParamFn<Params, Result> = (p: Params, T: Table) => Result;
+export type ParamF<Params, Result> = (p: Params, T: Table) => Result;
 
 export interface Keywords<Params, Ran extends boolean = false> extends Dict {
-  xtable?: Ran extends false ? string | ParamFn<Params, string> : string;
-  lkey?: Ran extends false ? string | ParamFn<Params, string> : string;
-  rkey?: Ran extends false ? string | ParamFn<Params, string> : string;
-  lxkey?: Ran extends false ? string | ParamFn<Params, string> : string;
-  rxkey?: Ran extends false ? string | ParamFn<Params, string> : string;
-  id?: Ran extends false ? number | string | ParamFn<Params, number | string> : number | string;
-  limit?: Ran extends false ? number | ParamFn<Params, number> : number;
-  offset?: Ran extends false ? number | ParamFn<Params, number> : number;
+  xtable?: Ran extends false ? string | ParamF<Params, string> : string;
+  lkey?: Ran extends false ? string | ParamF<Params, string> : string;
+  rkey?: Ran extends false ? string | ParamF<Params, string> : string;
+  lxkey?: Ran extends false ? string | ParamF<Params, string> : string;
+  rxkey?: Ran extends false ? string | ParamF<Params, string> : string;
+  id?: Ran extends false ? number | string | ParamF<Params, number | string> : number | string;
+  limit?: Ran extends false ? number | ParamF<Params, number> : number;
+  offset?: Ran extends false ? number | ParamF<Params, number> : number;
 }
 
 export type Plurals = {
@@ -135,7 +135,7 @@ export type Primitive = string | number | boolean | null;
 
 export type RQLValue<Input, Ran extends boolean = false> =
   Ran extends false
-  ? Primitive | SqlTag<Input> | Raw | Table | ParamFn<Input, Primitive | SqlTag<Input> | Raw | Table>
+  ? Primitive | SqlTag<Input> | Raw | Table | ParamF<Input, Primitive | SqlTag<Input> | Raw | Table>
   : Primitive | SqlTag<Input> | Raw | Table;
 
 export type Values = any[];
@@ -144,7 +144,7 @@ export type Querier = (query: string, values: Values) => Promise<any[]>;
 
 export type Rules = [RegExp, string][];
 
-export type Tfs<Input > = {
+export type Transformations<Input> = {
   [key in keyof Partial<Rec<Input>>]: (value: Rec<Input>[key]) => Rec<Input>[key];
 };
 
