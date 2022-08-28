@@ -2,7 +2,7 @@ import convertObject from "../more/convertObject";
 import isRel from "../Rel/isRel";
 import isSub from "../Sub/isSub";
 import Table from "../Table";
-import { CompiledQuery, RefQLConfig, Refs, RQLValue, Values } from "../types";
+import { Rec, RefQLConfig, Refs, RQLValue, Values } from "../types";
 import compileSqlTag from "./compileSqlTag";
 import isSqlTag from "./isSqlTag";
 
@@ -70,10 +70,10 @@ class SqlTag <Input > {
     return compileSqlTag<Input> (this, 0, params, {} as Table);
   }
 
-  compile(_config: RefQLConfig): CompiledQuery<Input> {
+  compile(_config: RefQLConfig): Rec<Input> {
     // const [query, values] = this.interpret ();
     // return { query, values, next: [], table: {} as Table };
-    return {} as CompiledQuery<Input>;
+    return {} as Rec<Input>;
   }
 
   // static transform<T>(config: RefQLConfig, rows: T[]) {

@@ -1,10 +1,10 @@
-import Environment from ".";
+import Env from ".";
 import emptyRefs from "../RqlTag/emptyRefs";
 import sql from "../SqlTag/sql";
 import Table from "../Table";
 import { Refs } from "../types";
 
-const createEnv = <Params>(table: Table, refs?: Refs, inCall = false) => Environment.of ({
+const createEnv = <Params>(table: Table, refs?: Refs, inCall = false) => Env.of ({
   table,
   sqlTag: sql<Params>``,
   query: "",

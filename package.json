@@ -62,7 +62,7 @@
       "<rootDir>/src"
     ],
     "testMatch": [
-      "**/?(*.)+(Environment2\/index.spec).+(ts)"
+      "**/?(*.)+(Interpreter\/index.spec).+(ts)"
     ]
   }
 }

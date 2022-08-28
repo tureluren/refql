@@ -1,10 +1,10 @@
 import { Refs } from "../types";
 
 const emptyRefs = (): Refs => ({
-  lkeys: [],
-  rkeys: [],
-  lxkeys: [],
-  rxkeys: []
+  lrefs: [],
+  rrefs: [],
+  lxrefs: [],
+  rxrefs: []
 });
 
 export default emptyRefs;

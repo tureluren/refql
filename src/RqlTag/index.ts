@@ -3,31 +3,26 @@
 // import Parser from "../Parser";
 // import isRel from "../Rel/isRel";
 // import isSub from "../Sub/isSub";
-import Environment from "../Environment2";
+import Env from "../Env";
 import Interpreter from "../Interpreter";
 import { BelongsTo, HasMany, ManyToMany, Root } from "../Parser/nodes";
 import SqlTag from "../SqlTag";
 import {
-  AstNode, CompiledQuery, Rec, JsonBuildObject,
+  AstNode, Rec, JsonBuildObject,
   RefQLConfig, RQLValue, Values, Dict, Querier, KeywordsNode, MembersNode
 } from "../types";
-import createEnv from "../Environment2/createEnv";
+import createEnv from "../Env/createEnv";
 
 
-const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input, true | false>, env: Environment<Input>, rows?: any[]) => Rec<Input>) => (compiledQuery: CompiledQuery<Input>) => {
-  const go = (compiled: CompiledQuery<Input>): Promise<Output[]> => {
+const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input, true | false>, env: Env<Input>, rows?: any[]) => Rec<Input>) => (compiledQuery: Rec<Input>) => {
+  const go = (compiled: Rec<Input>): Promise<Output[]> => {
     console.log (compiled);
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
 
-        const ip = interpret (c.exp, createEnv<Input> (compiled.table, c.refs), rows);
+        const rec = interpret (c.exp, createEnv<Input> (compiled.table, c.refs), rows);
 
-        return go ({
-          next: ip.next,
-          query: ip.query,
-          values: ip.values,
-          table: ip.table
-        });
+        return go (rec);
 
       });
       return Promise.all (
@@ -37,30 +32,30 @@ const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input,
           return aggs.reduce ((acc, agg, idx) => {
             const { exp, refs } = compiled.next[idx];
 
-            const lkeys = refs.lkeys.map (lk => lk.as);
-            const rkeys = refs.rkeys.map (rk => rk.as);
-            const lxkeys = refs.lxkeys.map (lxk => lxk.as);
+            const lrefs = refs.lrefs.map (lr => lr.as);
+            const rrefs = refs.rrefs.map (rr => rr.as);
+            const lxrefs = refs.lxrefs.map (lxr => lxr.as);
 
             if (exp instanceof BelongsTo) {
               acc[exp.table.as || exp.table.name] = agg.find ((r: any) =>
-                rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
+                rrefs.reduce ((acc, rr, idx) => acc && (r[rr] === row[lrefs[idx]]), true as boolean)
               );
 
-              lkeys.forEach (lk => {
-                delete acc[lk];
+              lrefs.forEach (lr => {
+                delete acc[lr];
               });
 
             } else if (exp instanceof HasMany) {
               acc[exp.table.as || exp.table.name] = agg.filter ((r: any) =>
-                rkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
+                rrefs.reduce ((acc, rr, idx) => acc && (r[rr] === row[lrefs[idx]]), true as boolean)
               );
 
-              lkeys.forEach (lk => {
-                delete acc[lk];
+              lrefs.forEach (lr => {
+                delete acc[lr];
               });
             } else if (exp instanceof ManyToMany) {
               acc[exp.table.as || exp.table.name] = agg.filter ((r: any) =>
-                lxkeys.reduce ((acc, rk, idx) => acc && (r[rk] === row[lkeys[idx]]), true as boolean)
+                lxrefs.reduce ((acc, lxr, idx) => acc && (r[lxr] === row[lrefs[idx]]), true as boolean)
               );
             }
             return acc;
@@ -123,19 +118,14 @@ class RqlTag <Input> {
       throw new Error ("No Table");
     }
 
-    const interpreted = interpret (this.ast, createEnv (this.ast.table));
+    const rec = interpret (this.ast, createEnv (this.ast.table));
 
-    return go ({
-      next: interpreted.next,
-      query: interpreted.query,
-      values: interpreted.values,
-      table: interpreted.table
-    });
+    return go (rec);
 
   }
 
   compile() {
-    return {} as CompiledQuery<Input>;
+    return {} as Rec<Input>;
   }
 }
 

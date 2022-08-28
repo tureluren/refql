@@ -3,7 +3,7 @@ import tag from "../more/tag";
 import makeRefs from "../refs/makeRefs";
 import RqlTag from "../RqlTag";
 import SqlTag from "../SqlTag";
-import { CompiledQuery, Querier, RefQLConfig, RefsOld } from "../types";
+import { Querier, RefQLConfig, RefsOld } from "../types";
 import defaultConfig from "./defaultConfig";
 import readRefs from "./readRefs";
 import validateConfig from "./validateConfig";

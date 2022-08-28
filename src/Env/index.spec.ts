@@ -1,12 +1,12 @@
-import Environment from ".";
+import Env from ".";
 import emptyRefs from "../RqlTag/emptyRefs";
 import sql from "../SqlTag/sql";
 import Table from "../Table";
 import { set } from "./access";
 import createEnv from "./createEnv";
 
-describe ("Environment type", () => {
-  test ("create Environment", () => {
+describe ("Env type", () => {
+  test ("create Env", () => {
     const rec = {
       table: Table.of ("player"),
       sqlTag: sql``,
@@ -18,7 +18,7 @@ describe ("Environment type", () => {
       inCall: false
     };
 
-    const env = Environment.of (rec);
+    const env = Env.of (rec);
 
     expect (env.rec).toEqual (rec);
   });
@@ -39,8 +39,8 @@ describe ("Environment type", () => {
   test ("Extend", () => {
     const env = createEnv<{}> (Table.of ("player"));
 
-    const setQuery = (e: Environment<{}>) => set ("query", "select *", e.rec);
-    const setInCall = (e: Environment<{}>) => set ("inCall", true, e.rec);
+    const setQuery = (e: Env<{}>) => set ("query", "select *", e.rec);
+    const setInCall = (e: Env<{}>) => set ("inCall", true, e.rec);
 
     expect (env.extend (setQuery).extend (setInCall))
       .toEqual (env.extend (e => setInCall (e.extend (setQuery))));

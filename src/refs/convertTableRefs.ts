@@ -1,11 +1,11 @@
 import convertCase from "../more/convertCase";
 import keys from "../more/keys";
-import { OptCaseType, TableRefs } from "../types";
+import { CaseType, TableRefs } from "../types";
 import convertLinks from "./convertLinks";
 
 // tableRefs: { tableTo: [["tableFromCol", "tableToCol"]] }
 // tableRefs should be validated before calling this function
-const convertTableRefs = (caseType: OptCaseType, tableRefs: TableRefs) => {
+const convertTableRefs = (caseType: CaseType, tableRefs: TableRefs) => {
   const converted: TableRefs = {};
 
   keys<TableRefs> (tableRefs).forEach (key => {

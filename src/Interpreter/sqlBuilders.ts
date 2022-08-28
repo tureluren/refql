@@ -1,9 +1,9 @@
-import { evolve, get, over, set } from "../Environment2/access";
+import { evolve, get, over, set } from "../Env/access";
 import chain from "../more/chain";
 import concat from "../more/concat";
 import parameterize from "../more/parameterize";
 import Table from "../Table";
-import { Rec, Key, Primitive, Values } from "../types";
+import { Rec, Ref, Primitive, Values } from "../types";
 
 export const byId = (table: Table, id?: string | number, op: "where" | "and" = "and") =>
   over ("query", q => {
@@ -21,19 +21,19 @@ export const fromTable = (table: Table) => chain (
   comps => set ("query", `select ${comps.join (", ")} from ${table.schema ? `${table.schema}.` : ""}${table.name} ${table.as}`)
 );
 
-export const joinOn = (lkeys: Key[], rkeys: Key[], table: Table, xTable: Table) =>
+export const joinOn = (lrefs: Ref[], rrefs: Ref[], table: Table, xTable: Table) =>
   over ("query", query =>
-    lkeys.reduce ((q, lk, idx) => {
-      const rk = rkeys[idx];
+    lrefs.reduce ((q, lr, idx) => {
+      const rk = rrefs[idx];
       const op = idx === 0 ? "" : "and ";
 
-      return `${q} ${op}${xTable.as}.${lk.name} = ${table.as}.${rk.name}`;
+      return `${q} ${op}${xTable.as}.${lr.name} = ${table.as}.${rk.name}`;
 
     }, `${query} join ${xTable.name} as ${xTable.as} on`)
   );
 
-export const keysToComp = (table: Table, keys: Key[]) =>
-  keys.map (k => `${table.as}.${k.name} as ${k.as}`);
+export const refsToComp = (table: Table, refs: Ref[]) =>
+  refs.map (r => `${table.as}.${r.name} as ${r.as}`);
 
 export const paginate = (limit?: number, offset?: number) =>
   over ("query", q => {
@@ -49,19 +49,19 @@ export const paginate = (limit?: number, offset?: number) =>
 export const select = <Params>(comps: string | string[], rec: Rec<Params>) =>
   over ("comps", concat (comps), rec);
 
-export const selectRefs = (table: Table, keys: Key[]) => <Params>(rec: Rec<Params>) =>
-  select (keysToComp (table, keys), rec);
+export const selectRefs = (table: Table, refs: Ref[]) => <Params>(rec: Rec<Params>) =>
+  select (refsToComp (table, refs), rec);
 
-export const whereIn = (lkeys: Key[], rkeys: Key[], rows: any[], table: Table) => chain (
+export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) => chain (
   get ("values"),
   values => {
-    const [query, newValues] = lkeys.reduce (([sql, vals], lk, idx) => {
-      const uniqRows = [...new Set (rows.map (r => r[lk.as]))];
-      const rk = rkeys[idx];
+    const [query, newValues] = lrefs.reduce (([sql, vals], lr, idx) => {
+      const uniqRows = [...new Set (rows.map (r => r[lr.as]))];
+      const rr = rrefs[idx];
       const op = idx === 0 ? "" : "and ";
 
       return [
-        `${sql} ${op}${table.as}.${rk.name} in (${parameterize (values.length, uniqRows.length)})`,
+        `${sql} ${op}${table.as}.${rr.name} in (${parameterize (values.length, uniqRows.length)})`,
         vals.concat (uniqRows)
       ];
     }, ["where", [] as Values]);

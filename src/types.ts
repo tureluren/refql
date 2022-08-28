@@ -1,11 +1,10 @@
-import Environment from "./Environment2";
+import Environment from "./Env";
 import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Parser/nodes";
 import Raw from "./Raw";
 import SqlTag from "./SqlTag";
 import Table from "./Table";
 
-export type CaseType = "camel" | "snake";
-export type OptCaseType = CaseType | undefined;
+export type CaseType = "camel" | "snake" | undefined;
 
 export interface Dict {
   [key: string]: any;
@@ -55,10 +54,10 @@ export type ParamF<Params, Result> = (p: Params, T: Table) => Result;
 
 export interface Keywords<Params, Ran extends boolean = false> extends Dict {
   xtable?: Ran extends false ? string | ParamF<Params, string> : string;
-  lkey?: Ran extends false ? string | ParamF<Params, string> : string;
-  rkey?: Ran extends false ? string | ParamF<Params, string> : string;
-  lxkey?: Ran extends false ? string | ParamF<Params, string> : string;
-  rxkey?: Ran extends false ? string | ParamF<Params, string> : string;
+  lref?: Ran extends false ? string | ParamF<Params, string> : string;
+  rref?: Ran extends false ? string | ParamF<Params, string> : string;
+  lxref?: Ran extends false ? string | ParamF<Params, string> : string;
+  rxref?: Ran extends false ? string | ParamF<Params, string> : string;
   id?: Ran extends false ? number | string | ParamF<Params, number | string> : number | string;
   limit?: Ran extends false ? number | ParamF<Params, number> : number;
   offset?: Ran extends false ? number | ParamF<Params, number> : number;
@@ -107,13 +106,6 @@ export interface Rec<Input> {
   inCall: boolean;
 }
 
-export interface CompiledQuery<Input > {
-  query: string;
-  values: Values;
-  table: Table;
-  next: Next<Input>[];
-}
-
 // export type TagFn = {
 //   (baseTag: RqlTag, ...snippets: any[]): RqlTag;
 //   (baseTag: SqlTag, ...snippets: any[]): SqlTag;
@@ -138,26 +130,27 @@ export type RQLValue<Input, Ran extends boolean = false> =
   ? Primitive | SqlTag<Input> | Raw | Table | ParamF<Input, Primitive | SqlTag<Input> | Raw | Table>
   : Primitive | SqlTag<Input> | Raw | Table;
 
+// use primitive
 export type Values = any[];
 
 export type Querier = (query: string, values: Values) => Promise<any[]>;
 
 export type Rules = [RegExp, string][];
 
-export type Transformations<Input> = {
-  [key in keyof Partial<Rec<Input>>]: (value: Rec<Input>[key]) => Rec<Input>[key];
+export type Transformations<Params> = {
+  [key in keyof Partial<Rec<Params>>]: (value: Rec<Params>[key]) => Rec<Params>[key];
 };
 
-export interface Key {
+export interface Ref {
   name: string;
   as: string;
 }
 
 export interface Refs {
-  lkeys: Key[];
-  rkeys: Key[];
-  lxkeys: Key[];
-  rxkeys: Key[];
+  lrefs: Ref[];
+  rrefs: Ref[];
+  lxrefs: Ref[];
+  rxrefs: Ref[];
 }
 
 export type Pattern<Return, Params, Ran extends boolean> = Partial<{
