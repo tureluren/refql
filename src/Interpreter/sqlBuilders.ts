@@ -3,14 +3,18 @@ import chain from "../more/chain";
 import concat from "../more/concat";
 import parameterize from "../more/parameterize";
 import Table from "../Table";
-import { Rec, Ref, Primitive, Values } from "../types";
+import { Rec, Ref, Primitive } from "../types";
 
-export const byId = (table: Table, id?: string | number, op: "where" | "and" = "and") =>
-  over ("query", q => {
-    if (id != null) {
-      return `${q} ${op} ${table.as}.id = ${id}`;
+export const byId = (table: Table, id?: string | number, op: "where" | "and" = "and") => chain (
+  get ("values"),
+  values => {
+    if (id == null) {
+      return r => r;
     }
-    return q;
+    return evolve ({
+      query: q => `${q} ${op} ${table.as}.id = $${values.length + 1}`,
+      values: concat (id)
+    });
   });
 
 export const castAs = (sql: Primitive | null, as?: string, cast?: string) =>
@@ -35,16 +39,31 @@ export const joinOn = (lrefs: Ref[], rrefs: Ref[], table: Table, xTable: Table) 
 export const refsToComp = (table: Table, refs: Ref[]) =>
   refs.map (r => `${table.as}.${r.name} as ${r.as}`);
 
-export const paginate = (limit?: number, offset?: number) =>
-  over ("query", q => {
+export const paginate = (limit?: number, offset?: number) => chain (
+  get ("values"),
+  values => {
+    if (limit == null && offset == null) {
+      return r => r;
+    }
+
+    let query = ``;
+    const newValues = [];
+
     if (limit != null) {
-      q += ` limit ${limit}`;
+      query += ` limit $${values.length + 1}`;
+      newValues.push (limit);
     }
     if (offset != null) {
-      q += ` offset ${offset}`;
+      query += ` offset $${values.length + newValues.length + 1}`;
+      newValues.push (offset);
     }
-    return q;
-  });
+
+    return evolve ({
+      query: q => `${q}${query}`,
+      values: concat (newValues)
+    });
+  }
+);
 
 export const select = <Params>(comps: string | string[], rec: Rec<Params>) =>
   over ("comps", concat (comps), rec);

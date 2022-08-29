@@ -79,11 +79,20 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordsNod
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  ${Table.of ("player")} {
-    concat:full_name (upper (last_name), ${Raw.of ("' '")}, first_name)
+  ${Table.of ("player")} (limit: ${() => 9}) {
+    id
+    concat:full_name (upper (last_name), ${Raw.of ("' '")}, first_name, ${sql`player.id::text`})
+    ${sql`
+    select count (*)
+    from goal
+    where player_id = player.id
+  `}:goal_count
     - team {
       name
     }
+    ${sql`
+      offset ${8}
+    `}
   }
 `;
 

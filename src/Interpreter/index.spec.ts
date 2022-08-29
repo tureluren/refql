@@ -1,14 +1,10 @@
 import Interpreter from ".";
 import createEnv from "../Env/createEnv";
-import { All, BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, StringLiteral, Variable } from "../Parser/nodes";
+import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "../Parser/nodes";
 import Raw from "../Raw";
+import sql from "../SqlTag/sql";
 import Table from "../Table";
 import format from "../test/format";
-
-/**
- * different case types
- * keywords use
- */
 
 describe ("Interpreter", () => {
   const player = Table.of ("player");
@@ -65,14 +61,19 @@ describe ("Interpreter", () => {
     const space = StringLiteral.of (" ");
     const spaceRaw = Raw.of ("' '");
     const spaceVariable = Variable.of (spaceRaw);
-    const fullName = Call.of ("concat", [upperLastName, space, spaceVariable, firstName], "full_name");
+    const sqlId = Variable.of (sql`player.id::text`);
+    const fullNameAndId = Call.of (
+      "concat",
+      [upperLastName, space, spaceVariable, firstName, sqlId],
+      "full_name_and_id"
+    );
 
     const goalsAst = HasMany.of (goals, [allFields], {});
     const teamAst = BelongsTo.of (team, [allFields], {});
     const gamesAst = ManyToMany.of (games, [allFields], {});
     const rootAst = Root.of (
       player,
-      [identifier, birthday, goalsAst, teamAst, gamesAst, fullName],
+      [identifier, birthday, goalsAst, teamAst, gamesAst, fullNameAndId],
       kws
     );
 
@@ -81,9 +82,9 @@ describe ("Interpreter", () => {
     expect (query).toBe (format (`
       select player.id::text as identifier, player.birthday,
         player.id as goalslref0, player.team_id as teamlref0, player.id as gameslref0,
-        concat (upper (player.last_name), ' ', ' ', player.first_name) as full_name
+        concat (upper (player.last_name), ' ', ' ', player.first_name, player.id::text) as full_name_and_id
       from player player
-      where player.id = 1
+      where player.id = $1
     `));
 
     expect (next).toEqual ([
@@ -94,8 +95,7 @@ describe ("Interpreter", () => {
   });
 
   test ("HasMany", () => {
-    const kws = { id: 1 };
-    const interpret = Interpreter (undefined, kws);
+    const interpret = Interpreter (undefined, {});
 
     const goalsAst = HasMany.of (goals, [allFields], { limit: 5, offset: 10 });
 
@@ -105,17 +105,16 @@ describe ("Interpreter", () => {
       select goals.*, goals.player_id as goalsrref0
       from public.goal goals
       where goals.player_id in ($1,$2,$3)
-      limit 5
-      offset 10
+      limit $4
+      offset $5
     `));
 
-    expect (values).toEqual ([1, 2, 3]);
+    expect (values).toEqual ([1, 2, 3, 5, 10]);
     expect (next).toEqual ([]);
   });
 
   test ("BelongsTo", () => {
-    const kws = { id: 1 };
-    const interpret = Interpreter (undefined, kws);
+    const interpret = Interpreter (undefined, {});
 
     const leagueAst = BelongsTo.of (league, [allFields], { lref: "competition_id", rref: "identifier" });
     const teamAst = BelongsTo.of (team, [allFields, leagueAst], {});
@@ -142,8 +141,7 @@ describe ("Interpreter", () => {
   });
 
   test ("ManyToMany", () => {
-    const kws = { id: 1 };
-    const interpret = Interpreter (undefined, kws);
+    const interpret = Interpreter ("snake", {});
 
     const gamesAst = ManyToMany.of (games, [allFields], {});
 
@@ -162,31 +160,61 @@ describe ("Interpreter", () => {
   });
 
   test ("ManyToMany - multi column ref", () => {
-    const kws = { id: 1 };
-    const interpret = Interpreter (undefined, kws);
+    const interpret = Interpreter ("camel", {});
 
-    const gamesAst = ManyToMany.of (games, [allFields], {
-      lref: "id, team_id",
-      lxref: "player_id, player_team_id",
-      rref: "id, league_id",
-      rxref: "game_id, game_league_id"
-    });
+    const gamesAst = ManyToMany.of (games, [allFields], {});
 
     const { query, next, values } = interpret (gamesAst, createEnv (player, playerGamesRefs2), playerRows);
 
     expect (query).toBe (format (`
       select games.*, games.id as gamesrref0, games.league_id as gamesrref1,
-        player_game.player_id as gameslxref0, player_game.player_team_id as gameslxref1,
-        player_game.game_id as gamesrxref0, player_game.game_league_id as gamesrxref1
+        playerGame.player_id as gameslxref0, playerGame.player_team_id as gameslxref1,
+        playerGame.game_id as gamesrxref0, playerGame.game_league_id as gamesrxref1
       from game games
-      join player_game as player_game
-        on player_game.game_id = games.id
-        and player_game.game_league_id = games.league_id
-      where player_game.player_id in ($1,$2,$3)
-        and player_game.player_team_id in ($4,$5)
+      join playerGame as playerGame
+        on playerGame.game_id = games.id
+        and playerGame.game_league_id = games.league_id
+      where playerGame.player_id in ($1,$2,$3)
+        and playerGame.player_team_id in ($4,$5)
     `));
 
     expect (values).toEqual ([1, 2, 3, 1, 2]);
     expect (next).toEqual ([]);
+  });
+
+  test ("literals and variables", () => {
+    const interpret = Interpreter<{id: number}> (undefined, { id: 1 });
+    const one = StringLiteral.of ("1", "one", "int");
+    const two = NumericLiteral.of (2, "two", "text");
+    const three = Variable.of (3, "three", "text");
+    const t = BooleanLiteral.of (true, "t", "text");
+    const f = BooleanLiteral.of (false, "f", "text");
+    const n = NullLiteral.of (null, "n", "text");
+    const goalCount = Variable.of (sql`
+      select count (*)
+      from goal
+      where player_id = player.id
+    `, "goal_count");
+
+    const byId = Variable.of (sql<{id: number}>`where player.id = ${p => p.id}`);
+
+    const rootAst = Root.of (
+      player,
+      [one, two, three, t, f, n, goalCount, byId],
+      {}
+    );
+
+    const { query, values } = interpret (rootAst, createEnv (player));
+
+    expect (query).toBe (format (`
+      select 
+        '1'::int as one, 2::text as two, $1::text as three,
+        true::text as t, false::text as f, null::text as n,
+        (select count (*) from goal where player_id = player.id) as goal_count
+      from player player
+      where player.id = $2
+    `));
+
+    expect (values).toEqual ([3, 1]);
   });
 });
