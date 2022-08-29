@@ -10,11 +10,11 @@ import {
   NumericLiteral, Root, StringLiteral, Variable
 } from "./nodes";
 
-const rql = <Params> (strings: TemplateStringsArray, ...values: RQLValue<Params>[]) => {
-  return Parser.of (strings.join ("$"), values).Root ();
-};
-
 describe ("Parser type", () => {
+  const rql = <Params> (strings: TemplateStringsArray, ...values: RQLValue<Params>[]) => {
+    return Parser.of (strings.join ("$"), values).Root ();
+  };
+
   test ("create Parser", () => {
     const player = Table.of ("player");
     const str = "$ { * }";

@@ -91,7 +91,7 @@ export type AstNode <Params, Ran extends boolean = false> =
   | Literal<Params, Ran>;
 
 export interface Next<Input> {
-  exp: AstNode <Input, true>;
+  node: AstNode <Input, true>;
   refs: Refs;
 }
 

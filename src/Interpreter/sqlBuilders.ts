@@ -61,10 +61,10 @@ export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) =
       const op = idx === 0 ? "" : "and ";
 
       return [
-        `${sql} ${op}${table.as}.${rr.name} in (${parameterize (values.length, uniqRows.length)})`,
+        `${sql} ${op}${table.as}.${rr.name} in (${parameterize (vals.length, uniqRows.length)})`,
         vals.concat (uniqRows)
       ];
-    }, ["where", [] as Values]);
+    }, ["where", values]);
 
     return evolve ({
       query: q => `${q} ${query}`,

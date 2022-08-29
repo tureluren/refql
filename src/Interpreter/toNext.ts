@@ -12,12 +12,12 @@ const createRef = (table: Table) => (kw: string, refs: string) =>
     as: `${table.as}${kw}${idx}`
   }));
 
-const toNext = (caseType: CaseType) => <Input>(exp: AstNode<Input, true>, rec: Rec<Input>) => {
+const toNext = (caseType: CaseType) => <Params>(node: AstNode<Params, true>, rec: Rec<Params>) => {
   const { table } = rec;
 
   let refs = emptyRefs ();
 
-  exp.cata<void> ({
+  node.cata<void> ({
     BelongsTo: (child, _members, { lref, rref }) => {
       const refOf = createRef (child);
       refs.lrefs = refOf ("lref", lref || convertCase (caseType, child.name + "_id"));
@@ -39,7 +39,7 @@ const toNext = (caseType: CaseType) => <Input>(exp: AstNode<Input, true>, rec: R
 
   return evolve ({
     comps: concat (refsToComp (table, refs.lrefs)),
-    next: concat ({ exp, refs })
+    next: concat ({ node, refs })
   }, rec);
 };
 

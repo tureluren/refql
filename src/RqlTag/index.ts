@@ -20,7 +20,7 @@ const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input,
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
 
-        const rec = interpret (c.exp, createEnv<Input> (compiled.table, c.refs), rows);
+        const rec = interpret (c.node, createEnv<Input> (compiled.table, c.refs), rows);
 
         return go (rec);
 
@@ -30,14 +30,14 @@ const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input,
       ).then (aggs => {
         return rows.map (row => {
           return aggs.reduce ((acc, agg, idx) => {
-            const { exp, refs } = compiled.next[idx];
+            const { node, refs } = compiled.next[idx];
 
             const lrefs = refs.lrefs.map (lr => lr.as);
             const rrefs = refs.rrefs.map (rr => rr.as);
             const lxrefs = refs.lxrefs.map (lxr => lxr.as);
 
-            if (exp instanceof BelongsTo) {
-              acc[exp.table.as || exp.table.name] = agg.find ((r: any) =>
+            if (node instanceof BelongsTo) {
+              acc[node.table.as || node.table.name] = agg.find ((r: any) =>
                 rrefs.reduce ((acc, rr, idx) => acc && (r[rr] === row[lrefs[idx]]), true as boolean)
               );
 
@@ -45,16 +45,16 @@ const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input,
                 delete acc[lr];
               });
 
-            } else if (exp instanceof HasMany) {
-              acc[exp.table.as || exp.table.name] = agg.filter ((r: any) =>
+            } else if (node instanceof HasMany) {
+              acc[node.table.as || node.table.name] = agg.filter ((r: any) =>
                 rrefs.reduce ((acc, rr, idx) => acc && (r[rr] === row[lrefs[idx]]), true as boolean)
               );
 
               lrefs.forEach (lr => {
                 delete acc[lr];
               });
-            } else if (exp instanceof ManyToMany) {
-              acc[exp.table.as || exp.table.name] = agg.filter ((r: any) =>
+            } else if (node instanceof ManyToMany) {
+              acc[node.table.as || node.table.name] = agg.filter ((r: any) =>
                 lxrefs.reduce ((acc, lxr, idx) => acc && (r[lxr] === row[lrefs[idx]]), true as boolean)
               );
             }
