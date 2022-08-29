@@ -46,21 +46,21 @@ export const paginate = (limit?: number, offset?: number) => chain (
       return r => r;
     }
 
-    let query = ``;
-    const newValues = [];
+    let query = ``, vals = [];
 
     if (limit != null) {
       query += ` limit $${values.length + 1}`;
-      newValues.push (limit);
+      vals.push (limit);
     }
+
     if (offset != null) {
-      query += ` offset $${values.length + newValues.length + 1}`;
-      newValues.push (offset);
+      query += ` offset $${values.length + vals.length + 1}`;
+      vals.push (offset);
     }
 
     return evolve ({
       query: q => `${q}${query}`,
-      values: concat (newValues)
+      values: concat (vals)
     });
   }
 );
@@ -74,7 +74,7 @@ export const selectRefs = (table: Table, refs: Ref[]) => <Params>(rec: Rec<Param
 export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) => chain (
   get ("values"),
   values => {
-    const [query, newValues] = lrefs.reduce (([sql, vals], lr, idx) => {
+    const [query, vals] = lrefs.reduce (([sql, vals], lr, idx) => {
       const uniqRows = [...new Set (rows.map (r => r[lr.as]))];
       const rr = rrefs[idx];
       const op = idx === 0 ? "" : "and ";
@@ -87,7 +87,7 @@ export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) =
 
     return evolve ({
       query: q => `${q} ${query}`,
-      values: concat (newValues)
+      values: concat (vals)
     });
   }
 );
