@@ -8,7 +8,7 @@ import { Goal, Player } from "./soccer";
 import SqlTag from "./SqlTag";
 import sql from "./SqlTag/sql";
 import Table from "./Table";
-import { AstNode, RefQLConfig, Dict, CaseType, Keywords, KeywordsNode } from "./types";
+import { AstNode, RefQLConfig, Dict, CaseType, Keywords, KeywordsNode, Querier } from "./types";
 
 // RENAME record to rec
 
@@ -24,34 +24,15 @@ const querier = <T>(query: string, values: any[]) =>
   pool.query<T> (query, values).then (({ rows }) => rows);
 
 const config: RefQLConfig = {
-  caseType: "snake" as CaseType,
-  caseTypeJS: "camel" as CaseType,
-  debug: (query: string, _values: any[]) => {
-    console.log (query);
-    // console.log (_values);
-    // console.log (_ast);
-  },
-  detectRefs: true,
-  onSetupError: (err: Error) => {
-    console.error (err.message);
-  },
-  pluralize: true,
-  plurals: {},
-  refs: {
-    game: {
-      team: [["id", "teams_id"]]
-    }
-  },
-  useSmartAlias: true,
-  querier: (query, values) =>
-    pool.query (query, values).then (({ rows }) => rows)
+  caseType: "snake" as CaseType
 };
 
-const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RqlTag<Input> | SqlTag<Input>, querier:  params: Input) => {
-  return tag.run<Output> (config, params);
+// why? https://medium.com/@nandin-borjigin/partial-type-argument-inference-in-typescript-and-workarounds-for-it-d7c772788b2e
+const makeRun = <Output>(config: RefQLConfig, querier: Querier<Output>) => <Input>(tag: RqlTag<Input> | SqlTag<Input>, params: Input) => {
+  return tag.run (config, querier, params);
 };
 
-const run = makeRun (config);
+const run = makeRun<Player> (config, querier);
 
 const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordsNode<Params>): KeywordsNode<Params> => {
   const newKeywords = { ...ast.keywords, ...keywords };
@@ -120,12 +101,12 @@ const playerGoalsRef = {
 // const query2 = hasManyGoals2 (playerQuery);
 
 
-run (playerQuery, { id: 1, limit: 5 })
-  .then (rows => console.log (rows[1]));
+// run (playerQuery, { id: 1, limit: 5 })
+//   .then (rows => console.log (rows[1]));
 
-// playerQuery.run<Player> (config, { id: 1, limit: 5 }).then (players => {
-//   console.log (players);
-// });
+playerQuery.run<Player> (config, querier, { id: 1, limit: 5 }).then (players => {
+  console.log (players);
+});
 
 const refs = {
   player: {

@@ -14,9 +14,8 @@ import {
 import createEnv from "../Env/createEnv";
 
 
-const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input, true | false>, env: Env<Input>, rows?: any[]) => Rec<Input>) => (compiledQuery: Rec<Input>) => {
-  const go = (compiled: Rec<Input>): Promise<Output[]> => {
-    console.log (compiled);
+const makeGo = <Input>(querier: Querier<any>, interpret: (exp: AstNode<Input, true | false>, env: Env<Input>, rows?: any[]) => Rec<Input>) => (compiledQuery: Rec<Input>) => {
+  const go = (compiled: Rec<Input>): Promise<any[]> => {
     return querier (compiled.query, compiled.values).then (rows => {
       const nextNext = compiled.next.map (c => {
 
@@ -70,14 +69,10 @@ const makeGo = <Input, Output>(querier: Querier, interpret: (exp: AstNode<Input,
 
 // vervang INput door params en
 class RqlTag <Input> {
-  string: string;
-  keys: RQLValue<Input>[];
   ast: KeywordsNode<Input>;
 
   constructor(ast: KeywordsNode<Input>) {
     this.ast = ast;
-    this.string = "";
-    this.keys = [];
   }
 
   concat<Input2>(other: RqlTag<Input2> | SqlTag<Input2>): RqlTag<Input & Input2> {
@@ -103,11 +98,11 @@ class RqlTag <Input> {
     return new RqlTag<Input> (fn (this.ast));
   }
 
-  run<Output>(config: RefQLConfig, querier: any, params: Input): Promise<Output[]> {
+  run<Output>(config: RefQLConfig, querier: Querier<Output>, params: Input): Promise<Output[]> {
 
     const interpret = Interpreter (config.caseType, params);
 
-    const go = makeGo<Input, Output> (config.querier, interpret);
+    const go = makeGo<Input> (querier, interpret);
 
     if (!(this.ast instanceof Root)) {
       throw new Error ("No Root");

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { DBRef, Querier } from "../types";
 
 const refsQuery = `

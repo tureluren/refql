@@ -1,3 +1,4 @@
+// @ts-nocheck
 import compile from "../more/compile";
 import tag from "../more/tag";
 import makeRefs from "../refs/makeRefs";

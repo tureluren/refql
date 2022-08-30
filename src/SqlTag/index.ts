@@ -2,7 +2,7 @@ import convertObject from "../more/convertObject";
 import isRel from "../Rel/isRel";
 import isSub from "../Sub/isSub";
 import Table from "../Table";
-import { Rec, RefQLConfig, Refs, RQLValue } from "../types";
+import { Querier, Rec, RefQLConfig, Refs, RQLValue } from "../types";
 import compileSqlTag from "./compileSqlTag";
 import isSqlTag from "./isSqlTag";
 
@@ -30,12 +30,12 @@ class SqlTag <Input > {
     );
   }
 
-  run<Output>(config: RefQLConfig, params: Input): Promise<Output[]> {
+  run<Output>(_config: RefQLConfig, querier: Querier<Output>, params: Input): Promise<Output[]> {
 
     const [query, values] = this.interpret (params);
     console.log (query);
 
-    return config.querier (query, values);
+    return querier (query, values);
   }
 
   // include(snip: any) {

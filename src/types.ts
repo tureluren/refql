@@ -14,19 +14,10 @@ export type Keys<T> = {
   [K in keyof T]-?: K
 }[keyof T][];
 
+export type Querier<T> = (query: string, values: any[]) => Promise<T[]>;
+
 export interface RefQLConfig extends Dict {
-  // optie om aan te duiden $1 of ? ?
-  // 2 opties wss, symbol en enumarate ?
-  debug?: (query: string, values: any[], ast?: AstNode<any>) => void;
-  detectRefs: boolean;
   caseType?: CaseType;
-  caseTypeJS?: CaseType;
-  onSetupError?: (err: Error) => void;
-  pluralize: boolean;
-  plurals: Plurals;
-  refs: RefsOld;
-  useSmartAlias: boolean;
-  querier: Querier;
 }
 
 export type Link = [string, string];
@@ -137,7 +128,6 @@ export type RQLValue<Params, Ran extends boolean = false> =
   ? JsTypes | SqlTag<Params> | ParamF<Params, JsTypes | SqlTag<Params>>
   : JsTypes | SqlTag<Params>;
 
-export type Querier = (query: string, values: any[]) => Promise<any[]>;
 
 export type Rules = [RegExp, string][];
 
