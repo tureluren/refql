@@ -101,7 +101,7 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
       Variable: (value, as, cast) => {
         if (isRaw (value)) return select (value.value, rec);
 
-        if (isSqlTag<Params> (value)) {
+        if (isSqlTag (value)) {
           if (inCall || as) {
             const [query, newValues] = compileSqlTag (value, values.length, params, parent);
 

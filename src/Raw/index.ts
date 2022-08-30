@@ -1,16 +1,15 @@
-import isString from "../predicate/isString";
-
 class Raw {
   value: string;
-  constructor(value: string) {
-    if (!isString (value)) {
-      throw TypeError ("Raw must wrap a String");
-    }
-    this.value = value;
+  constructor(value: boolean | number | string) {
+    this.value = String (value);
   }
 
-  static of(value: string) {
-    return new Raw (value);
+  toString() {
+    return `Raw (${this.value})`;
+  }
+
+  static of(value: boolean | number | string) {
+    return new Raw (String (value));
   }
 }
 

@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import In from "./In";
 import { rql } from "./index";
 import Raw from "./Raw";
 import raw from "./Raw/raw";
@@ -7,7 +8,7 @@ import { Goal, Player } from "./soccer";
 import SqlTag from "./SqlTag";
 import sql from "./SqlTag/sql";
 import Table from "./Table";
-import { AstNode, RefQLConfig, Dict, Values, CaseType, Keywords, KeywordsNode } from "./types";
+import { AstNode, RefQLConfig, Dict, CaseType, Keywords, KeywordsNode } from "./types";
 
 // RENAME record to rec
 
@@ -19,16 +20,13 @@ const pool = new Pool ({
   port: 5432
 });
 
-const mapSafely = (x: any) => x;
-
-// safeMap, optionele functie die reserved keys stored
-const querier = (query: string, values: any[]) =>
-  pool.query (query, values).then (mapSafely).then (({ rows }) => rows);
+const querier = <T>(query: string, values: any[]) =>
+  pool.query<T> (query, values).then (({ rows }) => rows);
 
 const config: RefQLConfig = {
   caseType: "snake" as CaseType,
   caseTypeJS: "camel" as CaseType,
-  debug: (query: string, _values: Values) => {
+  debug: (query: string, _values: any[]) => {
     console.log (query);
     // console.log (_values);
     // console.log (_ast);
@@ -45,10 +43,11 @@ const config: RefQLConfig = {
     }
   },
   useSmartAlias: true,
-  querier
+  querier: (query, values) =>
+    pool.query (query, values).then (({ rows }) => rows)
 };
 
-const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RqlTag<Input> | SqlTag<Input>, params: Input) => {
+const makeRun = (config: RefQLConfig) => <Input, Output>(tag: RqlTag<Input> | SqlTag<Input>, querier:  params: Input) => {
   return tag.run<Output> (config, params);
 };
 
@@ -79,22 +78,19 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordsNod
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  ${Table.of ("player")} (limit: ${() => 9}) {
+  ${Table.of ("player")} {
     id
-    concat:full_name (upper (last_name), ${Raw.of ("' '")}, first_name, ${sql`player.id::text`})
-    ${sql`
-    select count (*)
-    from goal
-    where player_id = player.id
-  `}:goal_count
     - team {
+      id
       name
     }
     ${sql`
-      offset ${8}
+      where id ${In.of ([1, 2])}
+      and ${Raw.of (1)} = 1
     `}
   }
 `;
+
 
 // const upd = playerQuery.map (ast => updateKeywords<{off: number}> ({
 //   offset: p => p.off
@@ -124,12 +120,12 @@ const playerGoalsRef = {
 // const query2 = hasManyGoals2 (playerQuery);
 
 
-// run<{ id: number }, Player> (playerQuery, { id: 5 })
-//   .then (rows => console.log (rows[1]));
+run (playerQuery, { id: 1, limit: 5 })
+  .then (rows => console.log (rows[1]));
 
-playerQuery.run<Player> (config, { id: 1, limit: 5 }).then (players => {
-  console.log (players[0]);
-});
+// playerQuery.run<Player> (config, { id: 1, limit: 5 }).then (players => {
+//   console.log (players);
+// });
 
 const refs = {
   player: {
@@ -260,3 +256,5 @@ const fullPlayer = paginate (selectPlayer);
 //@ts-ignore
 // const t = Table ("DD");
 // t.foemp ();
+
+console.log ("" + In.of ([1, 2, 3]));

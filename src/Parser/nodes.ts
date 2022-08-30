@@ -156,7 +156,7 @@ export class Identifier<Params, Ran extends boolean = false> {
     return pattern.Identifier! (this.name, this.as, this.cast);
   }
 
-  run(_params: any, _table: Table) {
+  run(_params: Params, _table: Table) {
     return new Identifier<Params, true> (this.name, this.as, this.cast);
   }
 

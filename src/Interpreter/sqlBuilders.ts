@@ -1,9 +1,9 @@
 import { evolve, get, over, set } from "../Env/access";
+import In from "../In";
 import chain from "../more/chain";
 import concat from "../more/concat";
-import parameterize from "../more/parameterize";
 import Table from "../Table";
-import { Rec, Ref, Primitive } from "../types";
+import { Rec, Ref } from "../types";
 
 export const byId = (table: Table, id?: string | number, op: "where" | "and" = "and") => chain (
   get ("values"),
@@ -17,7 +17,7 @@ export const byId = (table: Table, id?: string | number, op: "where" | "and" = "
     });
   });
 
-export const castAs = (sql: Primitive | null, as?: string, cast?: string) =>
+export const castAs = (sql: boolean | null | number | string, as?: string, cast?: string) =>
   `${sql}${cast ? `::${cast}` : ""}${as ? ` as ${as}` : ""}`;
 
 export const fromTable = (table: Table) => chain (
@@ -80,7 +80,7 @@ export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) =
       const op = idx === 0 ? "" : "and ";
 
       return [
-        `${sql} ${op}${table.as}.${rr.name} in (${parameterize (vals.length, uniqRows.length)})`,
+        `${sql} ${op}${table.as}.${rr.name} ${In.of (uniqRows).write (vals.length)}`,
         vals.concat (uniqRows)
       ];
     }, ["where", values]);

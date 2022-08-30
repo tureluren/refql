@@ -9,7 +9,7 @@ import { BelongsTo, HasMany, ManyToMany, Root } from "../Parser/nodes";
 import SqlTag from "../SqlTag";
 import {
   AstNode, Rec, JsonBuildObject,
-  RefQLConfig, RQLValue, Values, Dict, Querier, KeywordsNode, MembersNode
+  RefQLConfig, RQLValue, Dict, Querier, KeywordsNode, MembersNode
 } from "../types";
 import createEnv from "../Env/createEnv";
 
@@ -103,7 +103,7 @@ class RqlTag <Input> {
     return new RqlTag<Input> (fn (this.ast));
   }
 
-  run<Output>(config: RefQLConfig, params: Input): Promise<Output[]> {
+  run<Output>(config: RefQLConfig, querier: any, params: Input): Promise<Output[]> {
 
     const interpret = Interpreter (config.caseType, params);
 

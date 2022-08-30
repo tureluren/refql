@@ -17,7 +17,7 @@ export type Keys<T> = {
 export interface RefQLConfig extends Dict {
   // optie om aan te duiden $1 of ? ?
   // 2 opties wss, symbol en enumarate ?
-  debug?: (query: string, values: Values, ast?: AstNode<any>) => void;
+  debug?: (query: string, values: any[], ast?: AstNode<any>) => void;
   detectRefs: boolean;
   caseType?: CaseType;
   caseTypeJS?: CaseType;
@@ -50,7 +50,7 @@ export type Token = {
   value: string;
 };
 
-export type ParamF<Params, Result> = (p: Params, T: Table) => Result;
+export type ParamF<Params, Ret> = (p: Params, T: Table) => Ret;
 
 export interface Keywords<Params, Ran extends boolean = false> extends Dict {
   xtable?: Ran extends false ? string | ParamF<Params, string> : string;
@@ -100,7 +100,7 @@ export interface Rec<Input> {
   query: string;
   sqlTag: SqlTag<Input>;
   comps: string[];
-  values: Values;
+  values: any[];
   next: Next<Input>[];
   refs: Refs;
   inCall: boolean;
@@ -123,17 +123,21 @@ export interface DBRef {
   constraint: string;
 }
 
-export type Primitive = string | number | boolean | null;
+export type JsTypes =
+  | boolean
+  | null
+  | undefined
+  | number
+  | bigint
+  | string
+  | object;
 
-export type RQLValue<Input, Ran extends boolean = false> =
+export type RQLValue<Params, Ran extends boolean = false> =
   Ran extends false
-  ? Primitive | SqlTag<Input> | Raw | Table | ParamF<Input, Primitive | SqlTag<Input> | Raw | Table>
-  : Primitive | SqlTag<Input> | Raw | Table;
+  ? JsTypes | SqlTag<Params> | ParamF<Params, JsTypes | SqlTag<Params>>
+  : JsTypes | SqlTag<Params>;
 
-// use primitive
-export type Values = any[];
-
-export type Querier = (query: string, values: Values) => Promise<any[]>;
+export type Querier = (query: string, values: any[]) => Promise<any[]>;
 
 export type Rules = [RegExp, string][];
 
@@ -153,17 +157,17 @@ export interface Refs {
   rxrefs: Ref[];
 }
 
-export type Pattern<Return, Params, Ran extends boolean> = Partial<{
-  Root: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
-  HasMany: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
-  BelongsTo: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
-  ManyToMany: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
-  All: (sign: string) => Return;
-  Identifier: (name: string, as?: string, cast?: string) => Return;
-  Variable: (value: RQLValue<Params, Ran>, as?: string, cast?: string) => Return;
-  Call: (name: string, members: AstNode<Params>[], as?: string, cast?: string) => Return;
-  StringLiteral: (value: string, as?: string, cast?: string) => Return;
-  NumericLiteral: (value: number, as?: string, cast?: string) => Return;
-  BooleanLiteral: (value: boolean, as?: string, cast?: string) => Return;
-  NullLiteral: (value: null, as?: string, cast?: string) => Return;
+export type Pattern<Ret, Params, Ran extends boolean> = Partial<{
+  Root: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Ret;
+  HasMany: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Ret;
+  BelongsTo: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Ret;
+  ManyToMany: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Ret;
+  All: (sign: string) => Ret;
+  Identifier: (name: string, as?: string, cast?: string) => Ret;
+  Variable: (value: RQLValue<Params, Ran>, as?: string, cast?: string) => Ret;
+  Call: (name: string, members: AstNode<Params>[], as?: string, cast?: string) => Ret;
+  StringLiteral: (value: string, as?: string, cast?: string) => Ret;
+  NumericLiteral: (value: number, as?: string, cast?: string) => Ret;
+  BooleanLiteral: (value: boolean, as?: string, cast?: string) => Ret;
+  NullLiteral: (value: null, as?: string, cast?: string) => Ret;
 }>;

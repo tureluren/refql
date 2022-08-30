@@ -4,7 +4,7 @@ import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
 import { Rec } from "../types";
 
-const interpretSqlTag = <Input>(params: Input) => (table: Table, correctWhere: boolean = true) => (rec: Rec<Input>) => {
+const interpretSqlTag = <Params>(params: Params) => (table: Table, correctWhere: boolean = true) => (rec: Rec<Params>) => {
   const { sqlTag, values } = rec;
 
   let [query, newValues] = compileSqlTag (sqlTag, values.length, params, table);

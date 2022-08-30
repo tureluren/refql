@@ -117,7 +117,10 @@ describe ("Interpreter", () => {
     const interpret = Interpreter (undefined, {});
 
     const leagueAst = BelongsTo.of (league, [allFields], { lref: "competition_id", rref: "identifier" });
-    const teamAst = BelongsTo.of (team, [allFields, leagueAst], {});
+
+    const byName = Variable.of (sql`where team.name like 'FC%'`);
+
+    const teamAst = BelongsTo.of (team, [allFields, leagueAst, byName], {});
 
     const { query, next, values } = interpret (teamAst, createEnv (team, playerTeamRefs), playerRows);
 
@@ -125,6 +128,7 @@ describe ("Interpreter", () => {
       select team.*, team.competition_id as leaguelref0, team.id as teamrref0
       from team team
       where team.id in ($1,$2)
+      and team.name like 'FC%'
     `));
 
     expect (values).toEqual ([1, 2]);
@@ -183,10 +187,11 @@ describe ("Interpreter", () => {
   });
 
   test ("literals and variables", () => {
-    const interpret = Interpreter<{id: number}> (undefined, { id: 1 });
+    type Params = {id: number; three: number; limit: number};
+    const interpret = Interpreter<Params> (undefined, { id: 1, three: 3, limit: 5 });
     const one = StringLiteral.of ("1", "one", "int");
     const two = NumericLiteral.of (2, "two", "text");
-    const three = Variable.of (3, "three", "text");
+    const three = Variable.of<Params> (p => p.three, "three", "text");
     const t = BooleanLiteral.of (true, "t", "text");
     const f = BooleanLiteral.of (false, "f", "text");
     const n = NullLiteral.of (null, "n", "text");
@@ -196,12 +201,12 @@ describe ("Interpreter", () => {
       where player_id = player.id
     `, "goal_count");
 
-    const byId = Variable.of (sql<{id: number}>`where player.id = ${p => p.id}`);
+    const byId = Variable.of (sql<Params>`where ${(_p, t) => t}.id = ${p => p.id}`);
 
     const rootAst = Root.of (
       player,
       [one, two, three, t, f, n, goalCount, byId],
-      {}
+      { limit: p => p.limit }
     );
 
     const { query, values } = interpret (rootAst, createEnv (player));
@@ -213,8 +218,9 @@ describe ("Interpreter", () => {
         (select count (*) from goal where player_id = player.id) as goal_count
       from player player
       where player.id = $2
+      limit $3
     `));
 
-    expect (values).toEqual ([3, 1]);
+    expect (values).toEqual ([3, 1, 5]);
   });
 });

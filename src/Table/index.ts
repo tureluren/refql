@@ -9,6 +9,10 @@ class Table {
     this.schema = schema;
   }
 
+  toString() {
+    return `Table (${this.name}, ${this.as}, ${this.schema})`;
+  }
+
   static of(name: string, as?: string, schema?: string) {
     return new Table (name, as, schema);
   }
