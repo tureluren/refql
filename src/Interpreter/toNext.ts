@@ -1,7 +1,7 @@
 import { evolve } from "../Env/access";
 import concat from "../more/concat";
 import convertCase from "../more/convertCase";
-import emptyRefs from "../RqlTag/emptyRefs";
+import emptyRefs from "../more/emptyRefs";
 import Table from "../Table";
 import { AstNode, Rec, CaseType } from "../types";
 import { refsToComp } from "./sqlBuilders";

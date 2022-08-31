@@ -1,5 +1,5 @@
 import Env from ".";
-import emptyRefs from "../RqlTag/emptyRefs";
+import emptyRefs from "../more/emptyRefs";
 import sql from "../SqlTag/sql";
 import Table from "../Table";
 import { Refs } from "../types";

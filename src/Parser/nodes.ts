@@ -1,4 +1,3 @@
-import isFunction from "../predicate/isFunction";
 import Table from "../Table";
 import { AstNode, Keywords, Pattern, RQLValue } from "../types";
 import runKeywords from "./runKeywords";
@@ -201,7 +200,7 @@ export class Variable<Params, Ran extends boolean = false> {
   }
 
   run(params: Params, table: Table) {
-    const ran: RQLValue<Params, true> = isFunction (this.value)
+    const ran: RQLValue<Params, true> = typeof this.value === "function"
       ? this.value (params, table)
       : this.value;
 

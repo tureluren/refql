@@ -8,8 +8,8 @@ import {
   HasMany, Identifier, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "./nodes";
-import isTable from "../Table/isTable";
 import identifierToTable from "./identifierToTable";
+import Table from "../Table";
 
 class Parser<Params> {
   str: string;
@@ -66,7 +66,7 @@ class Parser<Params> {
     if (this.isNext ("VARIABLE")) {
       const value = this.spliceValue ();
 
-      if (isTable (value)) {
+      if (value instanceof Table) {
         table = value;
       } else {
         throw new SyntaxError ("Invalid dynamic table, expected instance of Table");

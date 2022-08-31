@@ -1,13 +1,10 @@
 import SqlTag from ".";
-import isIn from "../In/isIn";
-import isFunction from "../predicate/isFunction";
-import isRaw from "../Raw/isRaw";
-import isRqlTag from "../RqlTag/isRqlTag";
+import In from "../In";
+import Raw from "../Raw";
+import RqlTag from "../RqlTag";
 import Table from "../Table";
-import isTable from "../Table/isTable";
 import formatSqlString from "./formatSqlString";
 import formatTlString from "./formatTlString";
-import isSqlTag from "./isSqlTag";
 
 const compileSqlTag = <Params>(tag: SqlTag<Params>, paramIdx: number, params: Params, table: Table): [string, any[]] => {
   const values: any[] = [];
@@ -16,34 +13,32 @@ const compileSqlTag = <Params>(tag: SqlTag<Params>, paramIdx: number, params: Pa
     const { strings, keys } = sqlTag;
 
     return strings.reduce ((acc, str, idx) => {
-
       const s = formatTlString (str);
-
       let k = keys[idx];
 
       if (typeof k !== "undefined") {
 
-        if (isFunction (k)) {
+        if (typeof k === "function") {
           k = k (params, table);
         }
 
-        if (isRqlTag (k)) {
-          throw new Error ("You can't use RQL tags inside SQL Tags");
+        if (k instanceof RqlTag) {
+          throw new Error ("You can't use Rql tags inside Sql Tags");
         }
 
-        if (isSqlTag (k)) {
+        if (k instanceof SqlTag) {
           return `${acc + s} ${go (k)}`;
         }
 
-        if (isTable (k)) {
+        if (k instanceof Table) {
           return `${acc + s} ${k.as}`;
         }
 
-        if (isRaw (k)) {
+        if (k instanceof Raw) {
           return `${acc + s} ${k.value} `;
         }
 
-        if (isIn (k)) {
+        if (k instanceof In) {
           values.push (...k.arr);
           return `${acc + s} ${k.write (paramIdx)} `;
         }

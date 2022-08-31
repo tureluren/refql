@@ -2,13 +2,12 @@ import { Pool } from "pg";
 import In from "./In";
 import { rql } from "./index";
 import Raw from "./Raw";
-import raw from "./Raw/raw";
 import RqlTag from "./RqlTag";
 import { Goal, Player } from "./soccer";
 import SqlTag from "./SqlTag";
 import sql from "./SqlTag/sql";
 import Table from "./Table";
-import { AstNode, RefQLConfig, Dict, CaseType, Keywords, KeywordsNode, Querier } from "./types";
+import { AstNode, RefQLConfig, Dict, CaseType, Keywords, KeywordNode, Querier } from "./types";
 
 // RENAME record to rec
 
@@ -27,14 +26,13 @@ const config: RefQLConfig = {
   caseType: "snake" as CaseType
 };
 
-// why? https://medium.com/@nandin-borjigin/partial-type-argument-inference-in-typescript-and-workarounds-for-it-d7c772788b2e
 const makeRun = <Output>(config: RefQLConfig, querier: Querier<Output>) => <Input>(tag: RqlTag<Input> | SqlTag<Input>, params: Input) => {
   return tag.run (config, querier, params);
 };
 
 const run = makeRun<Player> (config, querier);
 
-const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordsNode<Params>): KeywordsNode<Params> => {
+const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordNode<Params>): KeywordNode<Params> => {
   const newKeywords = { ...ast.keywords, ...keywords };
   return {
     ...ast,
@@ -59,16 +57,12 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordsNod
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  ${Table.of ("player")} {
+  ${Table.of ("player")} (limit: 5, offset: 8) {
     id
-    - team {
+    x game:games {
       id
-      name
+      result
     }
-    ${sql`
-      where id ${In.of ([1, 2])}
-      and ${Raw.of (1)} = 1
-    `}
   }
 `;
 
@@ -105,7 +99,8 @@ const playerGoalsRef = {
 //   .then (rows => console.log (rows[1]));
 
 playerQuery.run<Player> (config, querier, { id: 1, limit: 5 }).then (players => {
-  console.log (players);
+  console.log (players.map (({ games }) => games));
+  // console.log (players);
 });
 
 const refs = {

@@ -1,10 +1,6 @@
-import convertObject from "../more/convertObject";
-import isRel from "../Rel/isRel";
-import isSub from "../Sub/isSub";
 import Table from "../Table";
 import { Querier, Rec, RefQLConfig, Refs, RQLValue } from "../types";
 import compileSqlTag from "./compileSqlTag";
-import isSqlTag from "./isSqlTag";
 
 class SqlTag <Input > {
   strings: TemplateStringsArray;

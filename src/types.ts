@@ -1,6 +1,5 @@
-import Environment from "./Env";
+import Env from "./Env";
 import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "./Parser/nodes";
-import Raw from "./Raw";
 import SqlTag from "./SqlTag";
 import Table from "./Table";
 
@@ -9,10 +8,6 @@ export type CaseType = "camel" | "snake" | undefined;
 export interface Dict {
   [key: string]: any;
 }
-
-export type Keys<T> = {
-  [K in keyof T]-?: K
-}[keyof T][];
 
 export type Querier<T> = (query: string, values: any[]) => Promise<T[]>;
 
@@ -64,14 +59,14 @@ export type Literal <Params, Ran extends boolean = false> =
   | BooleanLiteral<Params, Ran>
   | NullLiteral<Params, Ran>;
 
-export type KeywordsNode <Params, Ran extends boolean = false> =
+export type KeywordNode <Params, Ran extends boolean = false> =
   | Root<Params, Ran>
   | ManyToMany<Params, Ran>
   | HasMany<Params, Ran>
   | BelongsTo<Params, Ran>;
 
 export type MembersNode <Params, Ran extends boolean = false> =
-  | KeywordsNode<Params, Ran>
+  | KeywordNode<Params, Ran>
   | Call<Params, Ran>;
 
 export type AstNode <Params, Ran extends boolean = false> =
@@ -96,12 +91,6 @@ export interface Rec<Input> {
   refs: Refs;
   inCall: boolean;
 }
-
-// export type TagFn = {
-//   (baseTag: RqlTag, ...snippets: any[]): RqlTag;
-//   (baseTag: SqlTag, ...snippets: any[]): SqlTag;
-//   (baseTag: RqlTag | SqlTag, ...snippets: any[]): RqlTag | SqlTag;
-// };
 
 export type TagFn = {
   (baseTag: any, ...snippets: any[]): any;
@@ -161,3 +150,5 @@ export type Pattern<Ret, Params, Ran extends boolean> = Partial<{
   BooleanLiteral: (value: boolean, as?: string, cast?: string) => Ret;
   NullLiteral: (value: null, as?: string, cast?: string) => Ret;
 }>;
+
+export type InterpretF<Params> = (exp: AstNode<Params, true | false>, env: Env<Params>, rows?: any[]) => Rec<Params>;

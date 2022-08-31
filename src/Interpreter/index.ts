@@ -1,10 +1,8 @@
-import isRaw from "../Raw/isRaw";
 import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
-import { AstNode, CaseType, Rec } from "../types";
+import { AstNode, CaseType, InterpretF, Rec } from "../types";
 import convertCase from "../more/convertCase";
 import chain from "../more/chain";
-import isSqlTag from "../SqlTag/isSqlTag";
 import toNext from "./toNext";
 import interpretSqlTag from "./interpretSqlTag";
 import Env from "../Env";
@@ -15,6 +13,8 @@ import {
   byId, castAs, fromTable, joinOn,
   paginate, select, selectRefs, whereIn
 } from "./sqlBuilders";
+import Raw from "../Raw";
+import SqlTag from "../SqlTag";
 
 const Interpreter = <Params> (caseType: CaseType, params: Params) => {
   const next = toNext (caseType);
@@ -24,7 +24,7 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
     members.reduce ((acc, mem) =>
       acc.extend (env => interpret (mem, env)), createEnv<Params> (table, undefined, inCall));
 
-  const interpret = (node: AstNode<Params>, env: Env<Params>, rows?: any[]): Rec<Params> => {
+  const interpret: InterpretF<Params> = (node, env, rows) => {
     const { rec } = env;
     const { values, table: parent, refs, inCall } = rec;
 
@@ -73,8 +73,7 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
         );
 
         return interpretMembers (members, table)
-          .map (selectRefs (table, refs.rrefs))
-          .map (selectRefs (x, concat (refs.rxrefs, refs.lxrefs)))
+          .map (selectRefs (x, refs.lxrefs))
           .map (fromTable (table))
           .map (joinOn (refs.rxrefs, refs.rrefs, table, x))
           .map (whereIn (refs.lrefs, refs.lxrefs, rows, x))
@@ -99,15 +98,15 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
       },
 
       Variable: (value, as, cast) => {
-        if (isRaw (value)) return select (value.value, rec);
+        if (value instanceof Raw) return select (value.value, rec);
 
-        if (isSqlTag (value)) {
+        if (value instanceof SqlTag) {
           if (inCall || as) {
-            const [query, newValues] = compileSqlTag (value, values.length, params, parent);
+            const [query, vals] = compileSqlTag (value, values.length, params, parent);
 
             return evolve ({
               comps: concat (castAs (!inCall ? `(${query})` : query, as, cast)),
-              values: concat (newValues)
+              values: concat (vals)
             }, rec);
           }
 
