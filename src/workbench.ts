@@ -1,13 +1,14 @@
 import { Pool } from "pg";
 import In from "./In";
 import { rql } from "./index";
+import { BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, StringLiteral } from "./Parser/nodes";
 import Raw from "./Raw";
 import RqlTag from "./RqlTag";
 import { Goal, Player } from "./soccer";
 import SqlTag from "./SqlTag";
 import sql from "./SqlTag/sql";
 import Table from "./Table";
-import { AstNode, RefQLConfig, Dict, CaseType, Keywords, KeywordNode, Querier } from "./types";
+import { AstNode, RefQLConfig, Dict, CaseType, Keywords, TableNode, Querier } from "./types";
 
 // RENAME record to rec
 
@@ -32,7 +33,7 @@ const makeRun = <Output>(config: RefQLConfig, querier: Querier<Output>) => <Inpu
 
 const run = makeRun<Player> (config, querier);
 
-const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordNode<Params>): KeywordNode<Params> => {
+const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: TableNode<Params>): TableNode<Params> => {
   const newKeywords = { ...ast.keywords, ...keywords };
   return {
     ...ast,
@@ -41,19 +42,38 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: KeywordNode
 };
 
 
-// const toHasMany = (ast: ASTRelation): ASTRelation => {
-//   return {
-//     ...ast,
-//     type: "HasMany"
-//   } as ASTRelation;
+// const toHasMany = <Params> (ast: TableNode<Params>): HasMany<Params> => {
+//   return HasMany.of (ast.table, ast.members, ast.keywords);
 // };
 
-// const hasMany = <Input> (tag: RqlTag<Input>): RqlTag<Input> => {
-//   return tag.map (toHasMany);
+// const hasMany = <Params> (tag: RqlTag<Params>): RqlTag<Params> => {
+//   return tag.map (ast => {
+//     if (!(
+//       ast instanceof Root ||
+//       ast instanceof HasMany ||
+//       ast instanceof BelongsTo ||
+//       ast instanceof ManyToMany
+//     )) {
+//       // or throw error
+//       return ast;
+//     }
+//     return toHasMany (ast);
+//   });
 // };
 
-// const hasMany2 = <Input> (tag: RqlTag<Input>) => <Input2>(tag2: RqlTag<Input2>): RqlTag<Input & Input2> => {
-//   return tag2.concat (tag.map (toHasMany));
+// const hasMany2 = <Params> (tag: RqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>): RqlTag<Params & Params2> => {
+//   return tag2.concat (tag.map (ast => {
+//     if (!(
+//       ast instanceof Root ||
+//       ast instanceof HasMany ||
+//       ast instanceof BelongsTo ||
+//       ast instanceof ManyToMany
+//     )) {
+//       // or throw error
+//       return ast;
+//     }
+//     return toHasMany (ast);
+//   }));
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
@@ -98,10 +118,10 @@ const playerGoalsRef = {
 // run (playerQuery, { id: 1, limit: 5 })
 //   .then (rows => console.log (rows[1]));
 
-playerQuery.run<Player> (config, querier, { id: 1, limit: 5 }).then (players => {
-  console.log (players.map (({ games }) => games));
-  // console.log (players);
-});
+// playerQuery.run<Player> (config, querier, { id: 1, limit: 5 }).then (players => {
+//   console.log (players.map (({ games }) => games));
+//   // console.log (players);
+// });
 
 const refs = {
   player: {
@@ -228,9 +248,27 @@ const fullPlayer = paginate (selectPlayer);
 // });
 
 
+const playerAst = rql<{}>`
+  player (id:1) {
+    last_name
+  }
+`;
 
-//@ts-ignore
-// const t = Table ("DD");
-// t.foemp ();
+const id = Identifier.of<{}> ("id");
+const name = Identifier.of<{}> ("name");
+const idAst = RqlTag.of<{}> (id);
+const nameAst = new RqlTag<{}> (name);
 
-console.log ("" + In.of ([1, 2, 3]));
+const fullname = Call.of ("concat", []);
+
+const fullnameAst = RqlTag.of (fullname).concat (idAst).concat (nameAst);
+
+console.log (fullname);
+console.log (fullnameAst);
+
+const fullPlayerAst = playerAst.concat (idAst);
+
+// console.log (fullPlayerAst);
+// console.log (idAst.concat (nameAst));
+
+fullPlayerAst.run (config, querier, {}).then (console.log);

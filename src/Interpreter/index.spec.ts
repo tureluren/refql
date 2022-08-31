@@ -68,16 +68,16 @@ describe ("Interpreter", () => {
       "full_name_and_id"
     );
 
-    const goalsAst = HasMany.of (goals, [allFields], {});
-    const teamAst = BelongsTo.of (team, [allFields], {});
-    const gamesAst = ManyToMany.of (games, [allFields], {});
-    const rootAst = Root.of (
+    const goalsNode = HasMany.of (goals, [allFields], {});
+    const teamNode = BelongsTo.of (team, [allFields], {});
+    const gamesNode = ManyToMany.of (games, [allFields], {});
+    const rootNode = Root.of (
       player,
-      [identifier, birthday, goalsAst, teamAst, gamesAst, fullNameAndId],
+      [identifier, birthday, goalsNode, teamNode, gamesNode, fullNameAndId],
       kws
     );
 
-    const { query, next } = interpret (rootAst, createEnv (player));
+    const { query, next } = interpret (rootNode, createEnv (player));
 
     expect (query).toBe (format (`
       select player.id::text as identifier, player.birthday,
@@ -88,18 +88,18 @@ describe ("Interpreter", () => {
     `));
 
     expect (next).toEqual ([
-      { node: goalsAst, refs: playerGoalsRefs },
-      { node: teamAst, refs: playerTeamRefs },
-      { node: gamesAst, refs: playerGamesRefs }
+      { node: goalsNode, refs: playerGoalsRefs },
+      { node: teamNode, refs: playerTeamRefs },
+      { node: gamesNode, refs: playerGamesRefs }
     ]);
   });
 
   test ("HasMany", () => {
     const interpret = Interpreter (undefined, {});
 
-    const goalsAst = HasMany.of (goals, [allFields], { limit: 5, offset: 10 });
+    const goalsNode = HasMany.of (goals, [allFields], { limit: 5, offset: 10 });
 
-    const { query, next, values } = interpret (goalsAst, createEnv (goals, playerGoalsRefs), playerRows);
+    const { query, next, values } = interpret (goalsNode, createEnv (goals, playerGoalsRefs), playerRows);
 
     expect (query).toBe (format (`
       select goals.*, goals.player_id as goalsrref0
@@ -116,13 +116,13 @@ describe ("Interpreter", () => {
   test ("BelongsTo", () => {
     const interpret = Interpreter (undefined, {});
 
-    const leagueAst = BelongsTo.of (league, [allFields], { lref: "competition_id", rref: "identifier" });
+    const leagueNode = BelongsTo.of (league, [allFields], { lref: "competition_id", rref: "identifier" });
 
     const byName = Variable.of (sql`where team.name like 'FC%'`);
 
-    const teamAst = BelongsTo.of (team, [allFields, leagueAst, byName], {});
+    const teamNode = BelongsTo.of (team, [allFields, leagueNode, byName], {});
 
-    const { query, next, values } = interpret (teamAst, createEnv (team, playerTeamRefs), playerRows);
+    const { query, next, values } = interpret (teamNode, createEnv (team, playerTeamRefs), playerRows);
 
     expect (query).toBe (format (`
       select team.*, team.competition_id as leaguelref0, team.id as teamrref0
@@ -134,7 +134,7 @@ describe ("Interpreter", () => {
     expect (values).toEqual ([1, 2]);
 
     expect (next).toEqual ([{
-      node: leagueAst,
+      node: leagueNode,
       refs: {
         lrefs: [{ name: "competition_id", as: "leaguelref0" }],
         rrefs: [{ name: "identifier", as: "leaguerref0" }],
@@ -147,9 +147,9 @@ describe ("Interpreter", () => {
   test ("ManyToMany", () => {
     const interpret = Interpreter ("snake", {});
 
-    const gamesAst = ManyToMany.of (games, [allFields], {});
+    const gamesNode = ManyToMany.of (games, [allFields], {});
 
-    const { query, next, values } = interpret (gamesAst, createEnv (player, playerGamesRefs), playerRows);
+    const { query, next, values } = interpret (gamesNode, createEnv (player, playerGamesRefs), playerRows);
 
     expect (query).toBe (format (`
       select games.*, games.id as gamesrref0,
@@ -166,9 +166,9 @@ describe ("Interpreter", () => {
   test ("ManyToMany - multi column ref", () => {
     const interpret = Interpreter ("camel", {});
 
-    const gamesAst = ManyToMany.of (games, [allFields], {});
+    const gamesNode = ManyToMany.of (games, [allFields], {});
 
-    const { query, next, values } = interpret (gamesAst, createEnv (player, playerGamesRefs2), playerRows);
+    const { query, next, values } = interpret (gamesNode, createEnv (player, playerGamesRefs2), playerRows);
 
     expect (query).toBe (format (`
       select games.*, games.id as gamesrref0, games.league_id as gamesrref1,
@@ -203,13 +203,13 @@ describe ("Interpreter", () => {
 
     const byId = Variable.of (sql<Params>`where ${(_p, t) => t}.id = ${p => p.id}`);
 
-    const rootAst = Root.of (
+    const rootNode = Root.of (
       player,
       [one, two, three, t, f, n, goalCount, byId],
       { limit: p => p.limit }
     );
 
-    const { query, values } = interpret (rootAst, createEnv (player));
+    const { query, values } = interpret (rootNode, createEnv (player));
 
     expect (query).toBe (format (`
       select 

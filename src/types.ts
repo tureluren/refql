@@ -59,20 +59,17 @@ export type Literal <Params, Ran extends boolean = false> =
   | BooleanLiteral<Params, Ran>
   | NullLiteral<Params, Ran>;
 
-export type KeywordNode <Params, Ran extends boolean = false> =
+export type TableNode <Params, Ran extends boolean = false> =
   | Root<Params, Ran>
   | ManyToMany<Params, Ran>
   | HasMany<Params, Ran>
   | BelongsTo<Params, Ran>;
 
-export type MembersNode <Params, Ran extends boolean = false> =
-  | KeywordNode<Params, Ran>
-  | Call<Params, Ran>;
-
 export type AstNode <Params, Ran extends boolean = false> =
   | Identifier<Params, Ran>
   | All<Params, Ran>
-  | MembersNode<Params, Ran>
+  | TableNode<Params, Ran>
+  | Call<Params, Ran>
   | Variable <Params, Ran>
   | Literal<Params, Ran>;
 

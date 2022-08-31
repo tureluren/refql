@@ -72,6 +72,10 @@ class SqlTag <Input > {
     return {} as Rec<Input>;
   }
 
+  static of<Params>(strings: TemplateStringsArray, keys: RQLValue<Params>[]) {
+    return new SqlTag<Params> (strings, keys);
+  }
+
   // static transform<T>(config: RefQLConfig, rows: T[]) {
   //   return rows.map (r => convertObject (config.caseTypeJS, r));
   // }

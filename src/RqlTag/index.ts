@@ -4,41 +4,47 @@
 // import isRel from "../Rel/isRel";
 // import isSub from "../Sub/isSub";
 import Interpreter from "../Interpreter";
-import { Root } from "../Parser/nodes";
+import { BelongsTo, Call, HasMany, ManyToMany, Root, Variable } from "../Parser/nodes";
 import SqlTag from "../SqlTag";
 import {
   AstNode, Rec, InterpretF, JsonBuildObject,
-  RefQLConfig, RQLValue, Dict, Querier, KeywordNode, MembersNode
+  RefQLConfig, RQLValue, Dict, Querier, TableNode
 } from "../types";
 import aggregate from "./aggregate";
 
 class RqlTag <Params> {
-  ast: KeywordNode<Params>;
+  ast: AstNode<Params>;
 
-  constructor(ast: KeywordNode<Params>) {
+  constructor(ast: AstNode<Params>) {
     this.ast = ast;
   }
 
   concat<Params2>(other: RqlTag<Params2> | SqlTag<Params2>): RqlTag<Params & Params2> {
 
-    // of has many of manytomany
-    if (!(this.ast instanceof Root)) {
+    // only nodes with members
+    if (!(
+      this.ast instanceof Root ||
+      this.ast instanceof HasMany ||
+      this.ast instanceof BelongsTo ||
+      this.ast instanceof ManyToMany ||
+      this.ast instanceof Call
+    )) {
       return this;
     }
-    // const newMember: AstNode = other instanceof RqlTag
-    //   ? other.ast
-    //   : { type: "Variable", value: other };
 
-    // const members = this.ast.members.concat (newMember);
+    const newMember = other instanceof RqlTag
+      ? other.ast
+      : Variable.of (other);
 
-    const members = this.ast.members;
+    const members = (this.ast.members as AstNode<Params & Params2>[])
+      .concat (newMember);
 
     return new RqlTag<Params & Params2> (
-      Object.assign ({}, this.ast, { members })
+      Object.assign (Object.create (this.ast.constructor.prototype), this.ast, { members })
     );
   }
 
-  map(fn: (ast: KeywordNode<Params>) => KeywordNode<Params>) {
+  map(fn: (ast: AstNode<Params>) => AstNode<Params>) {
     return new RqlTag<Params> (fn (this.ast));
   }
 
@@ -58,6 +64,10 @@ class RqlTag <Params> {
 
   compile() {
     return {} as Rec<Params>;
+  }
+
+  static of<Params>(ast: AstNode<Params>) {
+    return new RqlTag<Params> (ast);
   }
 }
 
