@@ -1,10 +1,19 @@
+import { Pool } from "pg";
 import RqlTag from ".";
 import { All, HasMany, Identifier, Root } from "../Parser/nodes";
 import Table from "../Table";
+import querier from "../test/querier";
+import userConfig from "../test/userConfig";
 import { TableNode } from "../types";
+import rql from "./rql";
 
 describe ("RqlTag type", () => {
   const player = Table.of ("player");
+  const pool = new Pool (userConfig);
+
+  afterAll (async () => {
+    await pool.end ();
+  });
 
   test ("create RqlTag", () => {
     const node = Root.of (player, [All.of ("*")], {});
@@ -51,5 +60,26 @@ describe ("RqlTag type", () => {
     } catch (err: any) {
       expect (err.message).toBe ("The Root node has no table");
     }
+  });
+
+  test ("aggregate", async () => {
+    const tag = rql`
+      player (limit: 30) { 
+        last_name
+        < goal:goals { minute }
+        - team { 
+          name
+          - league { name }
+        }
+        x game:games { 
+          result 
+        }
+      }
+    `;
+
+    // try different casetype
+    const players = await tag.run ({ caseType: "snake" }, querier (pool), {});
+
+    expect (players.length).toBe (30);
   });
 });
