@@ -13,7 +13,16 @@ export class Root<Params, Ran extends boolean = false> {
     this.keywords = keywords;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  addMember<Params2>(node: AstNode<Params2>): Root<Params & Params2> {
+    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+    return new Root<Params & Params2> (
+      this.table,
+      members,
+      this.keywords as Keywords<Params & Params2>
+    );
+  }
+
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.Root! (this.table, this.members, this.keywords);
   }
 
@@ -41,7 +50,16 @@ export class HasMany<Params, Ran extends boolean = false> {
     this.keywords = keywords;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  addMember<Params2>(node: AstNode<Params2>): HasMany<Params & Params2> {
+    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+    return new HasMany<Params & Params2> (
+      this.table,
+      members,
+      this.keywords as Keywords<Params & Params2>
+    );
+  }
+
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.HasMany! (this.table, this.members, this.keywords);
   }
 
@@ -69,7 +87,16 @@ export class BelongsTo<Params, Ran extends boolean = false> {
     this.keywords = keywords;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  addMember<Params2>(node: AstNode<Params2>): BelongsTo<Params & Params2> {
+    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+    return new BelongsTo<Params & Params2> (
+      this.table,
+      members,
+      this.keywords as Keywords<Params & Params2>
+    );
+  }
+
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.BelongsTo! (this.table, this.members, this.keywords);
   }
 
@@ -97,7 +124,16 @@ export class ManyToMany<Params, Ran extends boolean = false> {
     this.keywords = keywords;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  addMember<Params2>(node: AstNode<Params2>): ManyToMany<Params & Params2> {
+    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+    return new ManyToMany<Params & Params2> (
+      this.table,
+      members,
+      this.keywords as Keywords<Params & Params2>
+    );
+  }
+
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.ManyToMany! (this.table, this.members, this.keywords);
   }
 
@@ -127,7 +163,14 @@ export class Call<Params, Ran extends boolean = false> {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  addMember<Params2>(node: AstNode<Params2>): Call<Params & Params2> {
+    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+    return new Call<Params & Params2> (
+      this.name, members, this.as, this.cast
+    );
+  }
+
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.Call! (this.name, this.members, this.as, this.cast);
   }
 
@@ -151,7 +194,7 @@ export class Identifier<Params, Ran extends boolean = false> {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.Identifier! (this.name, this.as, this.cast);
   }
 
@@ -171,7 +214,7 @@ export class All <Params, Ran extends boolean = false> {
     this.sign = sign;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.All! (this.sign);
   }
 
@@ -195,7 +238,7 @@ export class Variable<Params, Ran extends boolean = false> {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.Variable! (this.value, this.as, this.cast);
   }
 
@@ -227,7 +270,7 @@ export class StringLiteral <Params, Ran extends boolean = false> {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.StringLiteral! (this.value, this.as, this.cast);
   }
 
@@ -251,7 +294,7 @@ export class NumericLiteral <Params, Ran extends boolean = false> {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.NumericLiteral! (this.value, this.as, this.cast);
   }
 
@@ -275,7 +318,7 @@ export class BooleanLiteral <Params, Ran extends boolean = false> {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.BooleanLiteral! (this.value, this.as, this.cast);
   }
 
@@ -299,7 +342,7 @@ export class NullLiteral <Params, Ran extends boolean = false> {
     this.cast = cast;
   }
 
-  cata<R>(pattern: Pattern<R, Params, Ran>) {
+  cata<Return>(pattern: Pattern<Return, Params, Ran>) {
     return pattern.NullLiteral! (this.value, this.as, this.cast);
   }
 

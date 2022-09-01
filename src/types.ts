@@ -36,7 +36,7 @@ export type Token = {
   value: string;
 };
 
-export type ParamF<Params, Ret> = (p: Params, T: Table) => Ret;
+export type ParamF<Params, Return> = (p: Params, T: Table) => Return;
 
 export interface Keywords<Params, Ran extends boolean = false> extends Dict {
   xtable?: Ran extends false ? string | ParamF<Params, string> : string;
@@ -133,19 +133,19 @@ export interface Refs {
   rxrefs: Ref[];
 }
 
-export type Pattern<Ret, Params, Ran extends boolean> = Partial<{
-  Root: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Ret;
-  HasMany: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Ret;
-  BelongsTo: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Ret;
-  ManyToMany: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Ret;
-  All: (sign: string) => Ret;
-  Identifier: (name: string, as?: string, cast?: string) => Ret;
-  Variable: (value: RQLValue<Params, Ran>, as?: string, cast?: string) => Ret;
-  Call: (name: string, members: AstNode<Params>[], as?: string, cast?: string) => Ret;
-  StringLiteral: (value: string, as?: string, cast?: string) => Ret;
-  NumericLiteral: (value: number, as?: string, cast?: string) => Ret;
-  BooleanLiteral: (value: boolean, as?: string, cast?: string) => Ret;
-  NullLiteral: (value: null, as?: string, cast?: string) => Ret;
+export type Pattern<Return, Params, Ran extends boolean> = Partial<{
+  Root: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
+  HasMany: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
+  BelongsTo: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
+  ManyToMany: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
+  All: (sign: string) => Return;
+  Identifier: (name: string, as?: string, cast?: string) => Return;
+  Variable: (value: RQLValue<Params, Ran>, as?: string, cast?: string) => Return;
+  Call: (name: string, members: AstNode<Params>[], as?: string, cast?: string) => Return;
+  StringLiteral: (value: string, as?: string, cast?: string) => Return;
+  NumericLiteral: (value: number, as?: string, cast?: string) => Return;
+  BooleanLiteral: (value: boolean, as?: string, cast?: string) => Return;
+  NullLiteral: (value: null, as?: string, cast?: string) => Return;
 }>;
 
 export type InterpretF<Params> = (exp: AstNode<Params, true | false>, env: Env<Params>, rows?: any[]) => Rec<Params>;

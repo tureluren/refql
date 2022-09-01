@@ -1,73 +1,38 @@
-// import JBOInterpreter from "../JBOInterpreter";
-// import Interpreter from "../Interpreter";
-// import Parser from "../Parser";
-// import isRel from "../Rel/isRel";
-// import isSub from "../Sub/isSub";
 import Interpreter from "../Interpreter";
-import { BelongsTo, Call, HasMany, ManyToMany, Root, Variable } from "../Parser/nodes";
-import SqlTag from "../SqlTag";
-import {
-  AstNode, Rec, InterpretF, JsonBuildObject,
-  RefQLConfig, RQLValue, Dict, Querier, TableNode
-} from "../types";
+import { Root } from "../Parser/nodes";
+import { RefQLConfig, Querier } from "../types";
 import aggregate from "./aggregate";
 
 class RqlTag <Params> {
-  ast: AstNode<Params>;
+  node: Root<Params>;
 
-  constructor(ast: AstNode<Params>) {
-    this.ast = ast;
+  constructor(node: Root<Params>) {
+    if (!(node instanceof Root)) {
+      throw new Error ("RqlTag should hold a Root node");
+    }
+    this.node = node;
   }
 
-  concat<Params2>(other: RqlTag<Params2> | SqlTag<Params2>): RqlTag<Params & Params2> {
+  map<Params2>(fn: (node: Root<Params>) => Root<Params2>) {
+    return new RqlTag<Params2> (fn (this.node));
+  }
 
-    // only nodes with members
-    if (!(
-      this.ast instanceof Root ||
-      this.ast instanceof HasMany ||
-      this.ast instanceof BelongsTo ||
-      this.ast instanceof ManyToMany ||
-      this.ast instanceof Call
-    )) {
-      return this;
+  run<Return>(config: RefQLConfig, querier: Querier<Return>, params: Params): Promise<Return[]> {
+    if (!(this.node instanceof Root)) {
+      throw new Error ("You can only run a RqlTag that holds a Root node");
     }
 
-    const newMember = other instanceof RqlTag
-      ? other.ast
-      : Variable.of (other);
-
-    const members = (this.ast.members as AstNode<Params & Params2>[])
-      .concat (newMember);
-
-    return new RqlTag<Params & Params2> (
-      Object.assign (Object.create (this.ast.constructor.prototype), this.ast, { members })
-    );
-  }
-
-  map(fn: (ast: AstNode<Params>) => AstNode<Params>) {
-    return new RqlTag<Params> (fn (this.ast));
-  }
-
-  run<Output>(config: RefQLConfig, querier: Querier<Output>, params: Params): Promise<Output[]> {
-    if (!(this.ast instanceof Root)) {
-      throw new Error ("No Root");
-    }
-
-    if (!this.ast.hasOwnProperty ("table")) {
-      throw new Error ("No Table");
+    if (!this.node.hasOwnProperty ("table")) {
+      throw new Error ("The Root node has no table");
     }
 
     const interpret = Interpreter (config.caseType, params);
 
-    return aggregate<Params> (querier, interpret, this.ast);
+    return aggregate<Params> (querier, interpret, this.node);
   }
 
-  compile() {
-    return {} as Rec<Params>;
-  }
-
-  static of<Params>(ast: AstNode<Params>) {
-    return new RqlTag<Params> (ast);
+  static of<Params>(node: Root<Params>) {
+    return new RqlTag<Params> (node);
   }
 }
 

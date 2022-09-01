@@ -33,7 +33,7 @@ describe ("Parser type", () => {
     const position = Table.of ("position");
     const spaceRaw = Raw.of ("' '");
 
-    const ast = rql`
+    const node = rql`
       player (id: 1) { 
         id:identifier::text 
         birthday
@@ -87,7 +87,7 @@ describe ("Parser type", () => {
       { id: 1 }
     );
 
-    expect (ast).toEqual (expected);
+    expect (node).toEqual (expected);
   });
 
   test ("variables", () => {
@@ -97,7 +97,7 @@ describe ("Parser type", () => {
     const getLimit = (p: Params) => p.limit;
     const getOffset = (p: Params) => p.offset;
 
-    const ast = rql<Params>`
+    const node = rql<Params>`
       player (id: ${1}, limit: ${getLimit}, offset: ${getOffset}) { 
         id 
         last_name
@@ -116,11 +116,11 @@ describe ("Parser type", () => {
       { id: 1, limit: getLimit, offset: getOffset }
     );
 
-    expect (ast).toEqual (expected);
+    expect (node).toEqual (expected);
   });
 
   test ("literals", () => {
-    const ast = rql`
+    const node = rql`
       player {
         "1":one::int
         2:two::text
@@ -143,7 +143,7 @@ describe ("Parser type", () => {
       {}
     );
 
-    expect (ast).toEqual (expected);
+    expect (node).toEqual (expected);
   });
 
   test ("syntax errors", () => {

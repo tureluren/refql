@@ -62,7 +62,7 @@
       "<rootDir>/src"
     ],
     "testMatch": [
-      "**/?(*.)+(Interpreter\/index.spec).+(ts)"
+      "**/?(*.)+(RqlTag\/index.spec).+(ts)"
     ]
   }
 }

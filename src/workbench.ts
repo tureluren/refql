@@ -33,46 +33,46 @@ const makeRun = <Output>(config: RefQLConfig, querier: Querier<Output>) => <Inpu
 
 const run = makeRun<Player> (config, querier);
 
-const updateKeywords = <Params>(keywords: Keywords<Params>) => (ast: TableNode<Params>): TableNode<Params> => {
-  const newKeywords = { ...ast.keywords, ...keywords };
+const updateKeywords = <Params>(keywords: Keywords<Params>) => (node: TableNode<Params>): TableNode<Params> => {
+  const newKeywords = { ...node.keywords, ...keywords };
   return {
-    ...ast,
+    ...node,
     keywords: newKeywords
-  } as typeof ast;
+  } as typeof node;
 };
 
 
-// const toHasMany = <Params> (ast: TableNode<Params>): HasMany<Params> => {
-//   return HasMany.of (ast.table, ast.members, ast.keywords);
+// const toHasMany = <Params> (node: TableNode<Params>): HasMany<Params> => {
+//   return HasMany.of (node.table, node.members, node.keywords);
 // };
 
 // const hasMany = <Params> (tag: RqlTag<Params>): RqlTag<Params> => {
-//   return tag.map (ast => {
+//   return tag.map (node => {
 //     if (!(
-//       ast instanceof Root ||
-//       ast instanceof HasMany ||
-//       ast instanceof BelongsTo ||
-//       ast instanceof ManyToMany
+//       node instanceof Root ||
+//       node instanceof HasMany ||
+//       node instanceof BelongsTo ||
+//       node instanceof ManyToMany
 //     )) {
 //       // or throw error
-//       return ast;
+//       return node;
 //     }
-//     return toHasMany (ast);
+//     return toHasMany (node);
 //   });
 // };
 
 // const hasMany2 = <Params> (tag: RqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>): RqlTag<Params & Params2> => {
-//   return tag2.concat (tag.map (ast => {
+//   return tag2.concat (tag.map (node => {
 //     if (!(
-//       ast instanceof Root ||
-//       ast instanceof HasMany ||
-//       ast instanceof BelongsTo ||
-//       ast instanceof ManyToMany
+//       node instanceof Root ||
+//       node instanceof HasMany ||
+//       node instanceof BelongsTo ||
+//       node instanceof ManyToMany
 //     )) {
 //       // or throw error
-//       return ast;
+//       return node;
 //     }
-//     return toHasMany (ast);
+//     return toHasMany (node);
 //   }));
 // };
 
@@ -87,9 +87,9 @@ const playerQuery = rql<{ id: number; limit: number }>`
 `;
 
 
-// const upd = playerQuery.map (ast => updateKeywords<{off: number}> ({
+// const upd = playerQuery.map (node => updateKeywords<{off: number}> ({
 //   offset: p => p.off
-// }) (ast));
+// }) (node));
 
 // console.log (upd);
 
@@ -208,18 +208,18 @@ const selectPlayer = sql<{id: number}>`
 //   offset 0
 // `;
 
-const paginate = <Input>(tag: RqlTag<Input> | SqlTag<Input>) =>
-  tag.concat (sql<Input & { limit: number}>`
-    limit ${(params: any) => params.limit}
-    offset 0 
-  `);
+// const paginate = <Input>(tag: RqlTag<Input> | SqlTag<Input>) =>
+//   tag.concat (sql<Input & { limit: number}>`
+//     limit ${(params: any) => params.limit}
+//     offset 0
+//   `);
 
 
 
 
 // compose (orderByName, paginate) (selectPlayer)
 
-const fullPlayer = paginate (selectPlayer);
+// const fullPlayer = paginate (selectPlayer);
 
 
 // run<{limit: number; id: number}, Player> (fullPlayer, { limit: 5, id: 5 }).then (players => {
@@ -235,7 +235,7 @@ const fullPlayer = paginate (selectPlayer);
 //     this.sign = sign;
 //   }
 
-//   cata<R>(pattern: Pattern<R>) {
+//   cata<Return>(pattern: Pattern<Return>) {
 //     return pattern.BelongsTo (this.sign);
 //   }
 // }
@@ -248,27 +248,35 @@ const fullPlayer = paginate (selectPlayer);
 // });
 
 
-const playerAst = rql<{}>`
+// DENK NA OVER NESTEN RQL en ook ${Identifier("last_name")}
+const playerAst = rql<{ id: number}>`
   player (id:1) {
     last_name
   }
 `;
 
-const id = Identifier.of<{}> ("id");
-const name = Identifier.of<{}> ("name");
-const idAst = RqlTag.of<{}> (id);
-const nameAst = new RqlTag<{}> (name);
+const teamAst = rql<{ limit: number }>`
+  team { * }
+`;
 
-const fullname = Call.of ("concat", []);
+const RootToBelongsTo = <Params> (node: Root<Params>) =>
+  BelongsTo.of (node.table, node.members, node.keywords);
 
-const fullnameAst = RqlTag.of (fullname).concat (idAst).concat (nameAst);
+const belongsTo = <Params>(tag: RqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
+  return tag2.map (node => {
+    return node.addMember (RootToBelongsTo (tag.node));
+  });
 
-console.log (fullname);
-console.log (fullnameAst);
+};
 
-const fullPlayerAst = playerAst.concat (idAst);
+// console.log (res);
+const res = belongsTo (teamAst) (playerAst);
 
-// console.log (fullPlayerAst);
-// console.log (idAst.concat (nameAst));
+// const res = playerAst.map (node => {
+//   return node.addMember (toBelongsTo (teamAst.node));
+// });
 
-fullPlayerAst.run (config, querier, {}).then (console.log);
+teamAst.node = BelongsTo.of (Table.of ("team"), [], {});
+
+
+res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log);

@@ -1,26 +1,30 @@
 import RqlTag from ".";
-import sql from "../SqlTag/sql";
-import refQLConfig from "../test/refQLConfig";
+import { All, HasMany, Identifier, Root } from "../Parser/nodes";
+import Table from "../Table";
+import { TableNode } from "../types";
 
 describe ("RqlTag type", () => {
-  test ("create RqlTag", () => {
-    const string = "player { id lastName $ }";
-    const keys = [sql`where id = 1`];
-    const rqlTag = new RqlTag (string, keys);
+  const player = Table.of ("player");
 
-    expect (rqlTag.string).toEqual (string);
-    expect (rqlTag.keys).toEqual (keys);
+  test ("create RqlTag", () => {
+    const node = Root.of (player, [All.of ("*")], {});
+    const tag = RqlTag.of (node);
+
+    expect (tag.node).toEqual (node);
   });
 
-  test ("transform query result", () => {
-    const rows = [
-      { json_build_object: { id: 1, firstName: "John", lastName: "Doe" } },
-      { json_build_object: { id: 2, firstName: "Jane", lastName: "Doe" } }
-    ];
+  test ("Functor", () => {
+    const tag = RqlTag.of (Root.of (player, [All.of ("*")], {}));
 
-    expect (RqlTag.transform (refQLConfig, rows)).toEqual ([
-      { id: 1, firstName: "John", lastName: "Doe" },
-      { id: 2, firstName: "Jane", lastName: "Doe" }
-    ]);
+    expect (tag.map (n => n)).toEqual (tag);
+
+    const addTeam = <Params> (node: TableNode<Params>) =>
+      node.addMember (HasMany.of (node.table, node.members, node.keywords));
+
+    const addLastName = <Params> (node: TableNode<Params>) =>
+      node.addMember (Identifier.of ("last_name"));
+
+    expect (tag.map (n => addLastName (addTeam (n))))
+      .toEqual (tag.map (addTeam).map (addLastName));
   });
 });
