@@ -8,9 +8,8 @@ import { Rec, Ref } from "../types";
 export const byId = (table: Table, id?: string | number, op: "where" | "and" = "and") => chain (
   get ("values"),
   values => {
-    if (id == null) {
-      return r => r;
-    }
+    if (id == null) return r => r;
+
     return evolve ({
       query: q => `${q} ${op} ${table.as}.id = $${values.length + 1}`,
       values: concat (id)
@@ -42,9 +41,7 @@ export const refsToComp = (table: Table, refs: Ref[]) =>
 export const paginate = (limit?: number, offset?: number) => chain (
   get ("values"),
   values => {
-    if (limit == null && offset == null) {
-      return r => r;
-    }
+    if (limit == null && offset == null) return r => r;
 
     let query = ``, vals = [];
 

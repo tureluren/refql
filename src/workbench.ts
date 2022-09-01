@@ -256,7 +256,7 @@ const playerAst = rql<{ id: number}>`
 `;
 
 const teamAst = rql<{ limit: number }>`
-  team { * }
+  tea { * }
 `;
 
 const RootToBelongsTo = <Params> (node: Root<Params>) =>
@@ -279,4 +279,16 @@ const res = belongsTo (teamAst) (playerAst);
 teamAst.node = BelongsTo.of (Table.of ("team"), [], {});
 
 
-res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log);
+res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log).catch (e => {
+  console.log (e.message);
+});
+
+
+const tag = RqlTag.of (Root.of (Table.of ("player"), [], {}));
+(tag as any).node = Identifier.of ("id");
+
+res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 })
+  .then (console.log)
+  .catch (() => {
+    console.log ("HDDHDH");
+  });

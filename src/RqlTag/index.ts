@@ -18,17 +18,21 @@ class RqlTag <Params> {
   }
 
   run<Return>(config: RefQLConfig, querier: Querier<Return>, params: Params): Promise<Return[]> {
-    if (!(this.node instanceof Root)) {
-      throw new Error ("You can only run a RqlTag that holds a Root node");
-    }
+    return new Promise ((res, rej) => {
+      if (!(this.node instanceof Root)) {
+        rej (new Error ("You can only run a RqlTag that holds a Root node"));
+      }
 
-    if (!this.node.hasOwnProperty ("table")) {
-      throw new Error ("The Root node has no table");
-    }
+      if (!this.node.hasOwnProperty ("table")) {
+        rej (new Error ("The Root node has no table"));
+      }
 
-    const interpret = Interpreter (config.caseType, params);
+      const interpret = Interpreter (config.caseType, params);
 
-    return aggregate<Params> (querier, interpret, this.node);
+      aggregate<Params> (querier, interpret, this.node)
+        .then (res)
+        .catch (rej);
+    });
   }
 
   static of<Params>(node: Root<Params>) {
