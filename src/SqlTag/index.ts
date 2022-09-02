@@ -26,16 +26,12 @@ class SqlTag<Params> {
     );
   }
 
-  interpret(params: Params) {
-    return compileSqlTag<Params> (this, 0, params);
-  }
-
   run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]> {
     return new Promise ((res, rej) => {
       let query, values;
 
       try {
-        [query, values] = this.interpret (params);
+        [query, values] = compileSqlTag<Params> (this, 0, params);
       } catch (err: any) {
         rej (err);
         return;
@@ -43,7 +39,6 @@ class SqlTag<Params> {
 
       querier (query, values).then (res).catch (rej);
     });
-
   }
 
   static of<Params>(strings: string[], values: RQLValue<Params>[]) {
