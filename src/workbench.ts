@@ -24,10 +24,10 @@ const querier = <T>(query: string, values: any[]) =>
   pool.query<T> (query, values).then (({ rows }) => rows);
 
 const config: Config = {
-  caseType: "snake" as CaseType
+  caseType: "snake"
 };
 
-const makeRun = <Output>(config: Config, querier: Querier<Output>) => <Input>(tag: RqlTag<Input> | SqlTag<Input>, params: Input) => {
+const makeRun = <Output>(config: Config, querier: Querier<Output>) => <Params>(tag: RqlTag<Params> | SqlTag<Params>, params: Params) => {
   return tag instanceof RqlTag
     ? tag.run (config, querier, params)
     : tag.run (querier, params);
@@ -125,80 +125,7 @@ const playerGoalsRef = {
 //   // console.log (players);
 // });
 
-const refs = {
-  player: {
-    team: { leftKey: "team_id", key: "id" },
-    goal: { leftKey: "id", key: "player_id" },
-    game: {
-      x: "player_game",
-      leftKey: "id",
-      leftXKey: "player_id",
-      key: "id",
-      xKey: "game_id"
-    }
-  },
-  game: {
-    "team/1": { leftKey: "home_team_id", key: "id" },
-    "team/2": { leftKey: "away_team_id", key: "id" }
-  }
-};
 
-
-// const pool = new Pool ({
-//   user: "test",
-//   host: "localhost",
-//   database: "soccer",
-//   password: "test",
-//   port: 5432
-// });
-
-// const querier = (query: string, values: any[]) =>
-//   pool.query (query, values).then (({ rows }) => rows);
-
-// const refQL = RefQL ({
-//   caseType: "snake",
-//   caseTypeJS: "camel",
-//   debug: (query, _values, _ast) => {
-//     console.log (query);
-//     // console.log (_values);
-//     // console.log (_ast);
-//   },
-//   detectRefs: true,
-//   onSetupError: err => {
-//     console.error (err.message);
-//   },
-//   pluralize: true,
-//   plurals: {},
-//   refs: {}
-// }, querier);
-
-// const {
-//   query1, // get one result
-//   query // get multiple results
-// } = refQL;
-
-// async function getPlayer() {
-//   const player = await query1<Player> (rql`
-//     player {
-//       id
-//       lastName
-//       - team {
-//         id
-//         name
-//       }
-//       - position {
-//         id
-//         name
-//       }
-//     }
-//   `);
-
-
-//   // { id: 1, lastName: "Buckley", team: { id: 1, name: "FC Wuharazi" } }
-//   console.log (player);
-// }
-
-// getPlayer ();
 
 
 const selectPlayer = sql<{id: number}>`
@@ -210,8 +137,8 @@ const selectPlayer = sql<{id: number}>`
 //   offset 0
 // `;
 
-// const paginate = <Input>(tag: RqlTag<Input> | SqlTag<Input>) =>
-//   tag.concat (sql<Input & { limit: number}>`
+// const paginate = <Params>(tag: RqlTag<Params> | SqlTag<Params>) =>
+//   tag.concat (sql<Params & { limit: number}>`
 //     limit ${(params: any) => params.limit}
 //     offset 0
 //   `);
@@ -286,29 +213,3 @@ teamAst.node = BelongsTo.of (Table.of ("team"), [], {});
 res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log).catch (e => {
   console.log (e.message);
 });
-
-
-const tag = RqlTag.of (Root.of (Table.of ("player"), [], {}));
-(tag as any).node = Identifier.of ("id");
-
-res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 })
-  .then (console.log)
-  .catch (() => {
-    console.log ("HDDHDH");
-  });
-
-
-const tagsql = sql<{limit: number}>`
-      select ${Raw.of ("id")}::text, last_name,
-        concat(${Raw.of ("last_name")}, ${Raw.of ("' '")}, first_name) as fullname
-      from player
-      where ${Table.of ("player")}.id ${In.of ([2, 3, 4])}
-      ${sql`
-        order by ${Raw.of ("player")}.last_name
-      `}
-      limit ${p => p.limit} offset 1
-    `;
-
-tagsql.run (querier, { limit: 4 }).then (res => {
-  console.log (res);
-}).catch (console.log);

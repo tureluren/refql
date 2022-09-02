@@ -41,15 +41,15 @@ export type Literal <Params, Ran extends boolean = false> =
 
 export type TableNode <Params, Ran extends boolean = false> =
   | Root<Params, Ran>
-  | ManyToMany<Params, Ran>
   | HasMany<Params, Ran>
-  | BelongsTo<Params, Ran>;
+  | BelongsTo<Params, Ran>
+  | ManyToMany<Params, Ran>;
 
 export type AstNode <Params, Ran extends boolean = false> =
-  | Identifier<Params, Ran>
-  | All<Params, Ran>
   | TableNode<Params, Ran>
   | Call<Params, Ran>
+  | All<Params, Ran>
+  | Identifier<Params, Ran>
   | Variable <Params, Ran>
   | Literal<Params, Ran>;
 
@@ -93,18 +93,18 @@ export interface Refs {
   rxrefs: Ref[];
 }
 
-export interface Next<Input> {
-  node: AstNode <Input, true>;
+export interface Next<Params> {
+  node: AstNode <Params, true>;
   refs: Refs;
 }
 
-export interface Rec<Input> {
+export interface Rec<Params> {
   table: Table;
   query: string;
-  sqlTag: SqlTag<Input>;
+  sqlTag: SqlTag<Params>;
   comps: string[];
   values: any[];
-  next: Next<Input>[];
+  next: Next<Params>[];
   refs: Refs;
   inCall: boolean;
 }

@@ -1,6 +1,11 @@
 import Interpreter from ".";
 import createEnv from "../Env/createEnv";
-import { All, BelongsTo, BooleanLiteral, Call, HasMany, Identifier, ManyToMany, NullLiteral, NumericLiteral, Root, StringLiteral, Variable } from "../Parser/nodes";
+import {
+  All, BelongsTo, BooleanLiteral,
+  Call, HasMany, Identifier, ManyToMany,
+  NullLiteral, NumericLiteral, Root,
+  StringLiteral, Variable
+} from "../Parser/nodes";
 import Raw from "../Raw";
 import sql from "../SqlTag/sql";
 import Table from "../Table";

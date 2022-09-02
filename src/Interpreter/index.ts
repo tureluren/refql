@@ -1,20 +1,19 @@
+import { evolve, get, over, set } from "../Env/access";
+import createEnv from "../Env/createEnv";
+import chain from "../more/chain";
+import concat from "../more/concat";
+import convertCase from "../more/convertCase";
+import Raw from "../Raw";
+import SqlTag from "../SqlTag";
 import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
 import { AstNode, CaseType, InterpretF, Rec } from "../types";
-import convertCase from "../more/convertCase";
-import chain from "../more/chain";
-import toNext from "./toNext";
 import interpretSqlTag from "./interpretSqlTag";
-import Env from "../Env";
-import { evolve, get, over, set } from "../Env/access";
-import createEnv from "../Env/createEnv";
-import concat from "../more/concat";
 import {
   byId, castAs, fromTable, joinOn,
   paginate, select, selectRefs, whereIn
 } from "./sqlBuilders";
-import Raw from "../Raw";
-import SqlTag from "../SqlTag";
+import toNext from "./toNext";
 
 const Interpreter = <Params> (caseType: CaseType, params: Params) => {
   const next = toNext (caseType);

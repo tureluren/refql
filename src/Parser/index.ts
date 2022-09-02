@@ -3,12 +3,12 @@ import {
   AstNode, Keywords, Literal,
   RQLValue, Token, TokenType
 } from "../types";
+import identifierToTable from "./identifierToTable";
 import {
   All, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "./nodes";
-import identifierToTable from "./identifierToTable";
 import Table from "../Table";
 
 class Parser<Params> {
