@@ -23,17 +23,17 @@ const toNext = (caseType: CaseType) => <Params>(node: AstNode<Params, true>, rec
       refs.lrefs = refOf ("lref", lref || convertCase (caseType, child.name + "_id"));
       refs.rrefs = refOf ("rref", rref || "id");
     },
-    HasMany: (child, _members, { lkey, rkey }) => {
+    HasMany: (child, _members, { lref, rref }) => {
       const refOf = createRef (child);
-      refs.lrefs = refOf ("lref", lkey || "id");
-      refs.rrefs = refOf ("rref", rkey || convertCase (caseType, table.name + "_id"));
+      refs.lrefs = refOf ("lref", lref || "id");
+      refs.rrefs = refOf ("rref", rref || convertCase (caseType, table.name + "_id"));
     },
-    ManyToMany: (child, _members, { lkey, rkey, lxkey, rxkey }) => {
+    ManyToMany: (child, _members, { lref, rref, lxref, rxref }) => {
       const refOf = createRef (child);
-      refs.lrefs = refOf ("lref", lkey || "id");
-      refs.rrefs = refOf ("rref", rkey || "id");
-      refs.lxrefs = refOf ("lxref", lxkey || convertCase (caseType, table.name + "_id"));
-      refs.rxrefs = refOf ("rxref", rxkey || convertCase (caseType, child.name + "_id"));
+      refs.lrefs = refOf ("lref", lref || "id");
+      refs.rrefs = refOf ("rref", rref || "id");
+      refs.lxrefs = refOf ("lxref", lxref || convertCase (caseType, table.name + "_id"));
+      refs.rxrefs = refOf ("rxref", rxref || convertCase (caseType, child.name + "_id"));
     }
   });
 

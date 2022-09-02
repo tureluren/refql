@@ -1,6 +1,6 @@
 import Interpreter from "../Interpreter";
 import { Root } from "../Parser/nodes";
-import { RefQLConfig, Querier } from "../types";
+import { Config, Querier } from "../types";
 import aggregate from "./aggregate";
 
 class RqlTag <Params> {
@@ -17,14 +17,16 @@ class RqlTag <Params> {
     return new RqlTag<Params2> (fn (this.node));
   }
 
-  run<Return>(config: RefQLConfig, querier: Querier<Return>, params: Params): Promise<Return[]> {
+  run<Return>(config: Config, querier: Querier<Return>, params: Params): Promise<Return[]> {
     return new Promise ((res, rej) => {
       if (!(this.node instanceof Root)) {
         rej (new Error ("You can only run a RqlTag that holds a Root node"));
+        return;
       }
 
       if (!this.node.hasOwnProperty ("table")) {
         rej (new Error ("The Root node has no table"));
+        return;
       }
 
       const interpret = Interpreter (config.caseType, params);

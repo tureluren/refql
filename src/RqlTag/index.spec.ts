@@ -80,7 +80,6 @@ describe ("RqlTag type", () => {
       }
     `;
 
-    // try different casetype
     const players = await tag.run<Player> ({ caseType: "snake" }, querier (pool), {});
     const player = players[0];
     const team = players[0].team;
@@ -88,12 +87,11 @@ describe ("RqlTag type", () => {
     const league = players[0].team.league;
     const game = players[0].games[0];
 
-    expect (Object.keys (player).length).toBe (3);
-    expect (player).toHaveProperty ("last_name");
-    expect (teammate).toHaveProperty ("last_name");
-    expect (team).toHaveProperty ("name");
-    expect (league).toHaveProperty ("name");
-    expect (game).toHaveProperty ("result");
+    expect (Object.keys (player)).toEqual (["last_name", "team", "games"]);
+    expect (Object.keys (team)).toEqual (["name", "league", "players"]);
+    expect (Object.keys (league)).toEqual (["name"]);
+    expect (Object.keys (teammate)).toEqual (["last_name"]);
+    expect (Object.keys (game)).toEqual (["result"]);
 
     expect (players.length).toBe (30);
   });

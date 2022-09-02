@@ -1,84 +1,53 @@
-import Table from "../Table";
-import { Querier, Rec, RefQLConfig, Refs, RQLValue } from "../types";
+import { Querier, RQLValue } from "../types";
 import compileSqlTag from "./compileSqlTag";
 
-class SqlTag <Input > {
-  strings: TemplateStringsArray;
-  keys: RQLValue<Input>[];
+class SqlTag<Params> {
+  strings: string[];
+  values: RQLValue<Params>[];
 
-  constructor(strings: TemplateStringsArray, keys: RQLValue<Input>[]) {
+  constructor(strings: string[], values: RQLValue<Params>[]) {
     this.strings = strings;
-    this.keys = keys;
+    this.values = values;
   }
 
-  concat<Input2 >(other: SqlTag<Input2>) {
+  concat<Params2>(other: SqlTag<Params2>): SqlTag<Params & Params2> {
     const tag1Strings = Array.from (this.strings);
     const lastEl = tag1Strings.pop ();
 
     const tag2Strings = Array.from (other.strings);
     const firstEl = tag2Strings.shift ();
 
-    const nextStrings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
-    const nextKeys: RQLValue<Input & Input2>[] = (<RQLValue<Input & Input2>[]> this.keys).concat (other.keys);
+    const strings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
+    const values = (this.values as RQLValue<Params & Params2>[]).concat (other.values);
 
-    return new SqlTag<Input & Input2> (
-      nextStrings as unknown as TemplateStringsArray, nextKeys
+    return new SqlTag<Params & Params2> (
+      strings, values
     );
   }
 
-  run<Output>(_config: RefQLConfig, querier: Querier<Output>, params: Input): Promise<Output[]> {
-
-    const [query, values] = this.interpret (params);
-    console.log (query);
-
-    return querier (query, values);
+  interpret(params: Params) {
+    return compileSqlTag<Params> (this, 0, params);
   }
 
-  // include(snip: any) {
-  //   if (isRel (snip)) {
-  //     throw new Error ("You can't use a Rel inside SQL Tags");
-  //   }
+  run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]> {
+    return new Promise ((res, rej) => {
+      let query, values;
 
-  //   if (isSub (snip)) {
-  //     throw new Error ("You can't use a Subselect inside SQL Tags");
-  //   }
+      try {
+        [query, values] = this.interpret (params);
+      } catch (err: any) {
+        rej (err);
+        return;
+      }
 
-  //   let nextStrings, nextKeys;
+      querier (query, values).then (res).catch (rej);
+    });
 
-  //   if (isSqlTag (snip)) {
-  //     const tag1Strings = Array.from (this.strings);
-  //     const lastEl = tag1Strings.pop ();
-
-  //     const tag2Strings = Array.from (snip.strings);
-  //     const firstEl = tag2Strings.shift ();
-
-  //     nextStrings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
-  //     nextKeys = this.keys.concat (snip.keys);
-  //   } else {
-  //     nextStrings = this.strings.concat ("");
-  //     nextKeys = this.keys.concat (snip);
-  //   }
-
-  //   return new SqlTag (nextStrings as any, nextKeys);
-  // }
-
-  interpret(params: Input) {
-    return compileSqlTag<Input> (this, 0, params, {} as Table);
   }
 
-  compile(_config: RefQLConfig): Rec<Input> {
-    // const [query, values] = this.interpret ();
-    // return { query, values, next: [], table: {} as Table };
-    return {} as Rec<Input>;
+  static of<Params>(strings: string[], values: RQLValue<Params>[]) {
+    return new SqlTag<Params> (strings, values);
   }
-
-  static of<Params>(strings: TemplateStringsArray, keys: RQLValue<Params>[]) {
-    return new SqlTag<Params> (strings, keys);
-  }
-
-  // static transform<T>(config: RefQLConfig, rows: T[]) {
-  //   return rows.map (r => convertObject (config.caseTypeJS, r));
-  // }
 }
 
 export default SqlTag;

@@ -1,185 +1,75 @@
+import { Pool } from "pg";
 import SqlTag from ".";
-import raw from "../Raw/raw";
-import belongsTo from "../Rel/belongsTo";
+import In from "../In";
+import Raw from "../Raw";
 import rql from "../RqlTag/rql";
-import subselect from "../Sub/subselect";
-import format from "../test/format";
-import refQLConfig from "../test/refQLConfig";
+import { Player } from "../soccer";
+import querier from "../test/querier";
+import userConfig from "../test/userConfig";
 import sql from "./sql";
 
 describe ("SqlTag type", () => {
+  const pool = new Pool (userConfig);
+  const rawLastName = Raw.of ("last_name");
+
+  afterAll (async () => {
+    await pool.end ();
+  });
+
   test ("create SqlTag", () => {
     const strings = ["where id = ", "order by last_name"];
     const keys = [1];
-    const sqlTag = new SqlTag (strings as any, keys);
+    const sqlTag = SqlTag.of (strings as any, keys);
 
     expect (sqlTag.strings).toEqual (strings);
-    expect (sqlTag.keys).toEqual (keys);
+    expect (sqlTag.values).toEqual (keys);
   });
 
-  test ("interpret sqlTag", () => {
-    const sqlSnippet = sql`
-      select id, last_name
-      from player
-    `;
+  test ("Semigroup", () => {
+    const tag = sql`select id, ${rawLastName}`;
+    const tag2 = sql`from player`;
+    const tag3 = sql`where id = ${1}`;
 
-    const [query, values] = sqlSnippet.interpret ();
+    const res = tag.concat (tag2).concat (tag3);
+    const res2 = tag.concat (tag2.concat (tag3));
 
-    expect (query).toBe (format (`
-      select id, last_name
-      from player
-    `));
-
-    expect (values).toEqual ([]);
+    expect (res).toEqual (res2);
+    expect (res.values).toEqual ([rawLastName, 1]);
+    expect (res.strings).toEqual (["select id, ", " from player where id = ", ""]);
   });
 
-  test ("interpret values", () => {
-    const sqlSnippet = sql`
-      select p.id, p.last_name, g.own_goal
-      from player p
-      join goal g on g.player_id = p.id
-      where p.id = ${1}
-      and g.own_goal = ${true}
-      and p.last_name = ${"Doe"}
+  test ("run", async () => {
+    type Params = {
+      limit: number;
+      offset: number;
+    };
+
+    const paginate = sql<Params>`
+      limit ${p => p.limit}    
+      offset ${p => p.offset}    
     `;
 
-    const [query, values] = sqlSnippet.interpret ();
+    const tag = sql<Params>`
+      select id, first_name, ${rawLastName}
+      from player
+      where id not ${In.of ([1, 2, 3])}
+      ${paginate}
+    `;
 
-    expect (query).toBe (format (`
-      select p.id, p.last_name, g.own_goal
-      from player p
-      join goal g on g.player_id = p.id
-      where p.id = $1
-      and g.own_goal = $2
-      and p.last_name = $3
-    `));
+    const players = await tag.run<Player> (querier (pool), { limit: 5, offset: 1 });
 
-    expect (values).toEqual ([1, true, "Doe"]);
+    expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
+    expect (players.length).toBe (5);
   });
 
-  test ("interpret nested sql", () => {
-    const sqlSnippet = sql`
-      select id, last_name
-      from player
-      ${sql`
-        where last_name like 'A%' 
-      `}
-      ${sql`
-        order by last_name
-        ${sql`
-          offset 0 
-          limit ${10}
-        `} 
-      `}
-    `;
-
-    const [query, values] = sqlSnippet.interpret ();
-
-    expect (query).toBe (format (`
-      select id, last_name
-      from player
-      where last_name like 'A%' 
-      order by last_name
-      offset 0 
-      limit $1
-    `));
-
-    expect (values).toEqual ([10]);
-  });
-
-  test ("interpret raw values", () => {
-    const sqlSnippet = sql`
-      select id, last_name
-      from player
-      where ${raw ("id")}::text = ${"1"}
-      or ${raw ("last_name like 'A%'")}
-      order by ${raw ("last_name, first_name")}
-    `;
-
-    const [query, values] = sqlSnippet.interpret ();
-
-    expect (query).toBe (format (`
-      select id, last_name
-      from player
-      where id::text = $1 
-      or last_name like 'A%'
-      order by last_name, first_name
-    `));
-
-    expect (values).toEqual (["1"]);
-  });
-
-  test ("invalid SqlTag", () => {
-    const sqlSnippet = sql`
-      select id, last_name
-      from player
-      where id = ${() => 1}
-    `;
-
-    expect (() => sqlSnippet.interpret ())
-      .toThrowError (new Error ("You can't use Functions inside SQL Tags"));
-
-    const sqlSnippet2 = sql`
-      ${rql`player { id last_name }`}
-      where id = 1
-    `;
-
-    expect (() => sqlSnippet2.interpret ())
-      .toThrowError (new Error ("You can't use RQL tags inside SQL Tags"));
-  });
-
-  test ("transform query result", () => {
-    const rows = [
-      { id: 1, first_name: "John", last_name: "Doe" },
-      { id: 2, first_name: "Jane", last_name: "Doe" }
-    ];
-
-    expect (SqlTag.transform (refQLConfig, rows)).toEqual ([
-      { id: 1, firstName: "John", lastName: "Doe" },
-      { id: 2, firstName: "Jane", lastName: "Doe" }
-    ]);
-
-    expect (SqlTag.transform ({ ...refQLConfig, caseTypeJS: undefined }, rows)).toEqual ([
-      { id: 1, first_name: "John", last_name: "Doe" },
-      { id: 2, first_name: "Jane", last_name: "Doe" }
-    ]);
-  });
-
-  test ("include variable", () => {
-    const getPlayer = sql`
-      select id, last_name
-      from player
-      where id =
-    `.include (1);
-
-    const [query, values] = getPlayer.interpret ();
-
-    expect (query).toBe ("select id, last_name from player where id = $1");
-    expect (values).toEqual ([1]);
-  });
-
-  test ("invalid include", () => {
-    const getPlayer = sql`
-      select id, last_name
-      from player
-    `;
-
-    const getTeam = rql`
-      team {
-        id
-        name
-      } 
-    `;
-
-    const getGoalCount = sql`
-      select count(*) from "goal"
-      where "goal".player_id = id
-    `;
-
-    expect (() => getPlayer.include (belongsTo (getTeam)))
-      .toThrowError (new Error ("You can't use a Rel inside SQL Tags"));
-
-    expect (() => getPlayer.include (subselect ("goalCount", getGoalCount)))
-      .toThrowError (new Error ("You can't use a Subselect inside SQL Tags"));
+  test ("errors", async () => {
+    try {
+      const tag = sql`
+        select ${rql`player { * }`}      
+      `;
+      await tag.run (() => Promise.resolve ([]), {});
+    } catch (err: any) {
+      expect (err.message).toBe ("You can't use Rql tags inside Sql Tags");
+    }
   });
 });

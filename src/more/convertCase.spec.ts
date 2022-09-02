@@ -1,11 +1,11 @@
 import convertCase from "./convertCase";
 
 describe ("more `convertCase` - converts string to specified type case", () => {
-  test ("converted to camel case", () => {
+  test ("camel case", () => {
     expect (convertCase ("camel", "first_name")).toEqual ("firstName");
   });
 
-  test ("converted to snake case", () => {
+  test ("snake case", () => {
     expect (convertCase ("snake", "firstName")).toEqual ("first_name");
   });
 });

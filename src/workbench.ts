@@ -8,7 +8,7 @@ import { Goal, Player } from "./soccer";
 import SqlTag from "./SqlTag";
 import sql from "./SqlTag/sql";
 import Table from "./Table";
-import { AstNode, RefQLConfig, Dict, CaseType, Keywords, TableNode, Querier } from "./types";
+import { AstNode, Config, Dict, CaseType, Keywords, TableNode, Querier } from "./types";
 
 // RENAME record to rec
 
@@ -23,11 +23,11 @@ const pool = new Pool ({
 const querier = <T>(query: string, values: any[]) =>
   pool.query<T> (query, values).then (({ rows }) => rows);
 
-const config: RefQLConfig = {
+const config: Config = {
   caseType: "snake" as CaseType
 };
 
-const makeRun = <Output>(config: RefQLConfig, querier: Querier<Output>) => <Input>(tag: RqlTag<Input> | SqlTag<Input>, params: Input) => {
+const makeRun = <Output>(config: Config, querier: Querier<Output>) => <Input>(tag: RqlTag<Input> | SqlTag<Input>, params: Input) => {
   return tag.run (config, querier, params);
 };
 
@@ -256,7 +256,9 @@ const playerAst = rql<{ id: number}>`
 `;
 
 const teamAst = rql<{ limit: number }>`
-  tea { * }
+  team {
+    * 
+  }
 `;
 
 const RootToBelongsTo = <Params> (node: Root<Params>) =>
