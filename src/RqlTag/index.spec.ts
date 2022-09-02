@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import RqlTag from ".";
 import { All, HasMany, Identifier, Root } from "../Parser/nodes";
+import { Player } from "../soccer";
 import Table from "../Table";
 import querier from "../test/querier";
 import userConfig from "../test/userConfig";
@@ -66,10 +67,12 @@ describe ("RqlTag type", () => {
     const tag = rql`
       player (limit: 30) { 
         last_name
-        < goal:goals { minute }
         - team { 
           name
           - league { name }
+          < player: players {
+            last_name
+          }
         }
         x game:games { 
           result 
@@ -78,7 +81,19 @@ describe ("RqlTag type", () => {
     `;
 
     // try different casetype
-    const players = await tag.run ({ caseType: "snake" }, querier (pool), {});
+    const players = await tag.run<Player> ({ caseType: "snake" }, querier (pool), {});
+    const player = players[0];
+    const team = players[0].team;
+    const teammate = team.players[0];
+    const league = players[0].team.league;
+    const game = players[0].games[0];
+
+    expect (Object.keys (player).length).toBe (3);
+    expect (player).toHaveProperty ("last_name");
+    expect (teammate).toHaveProperty ("last_name");
+    expect (team).toHaveProperty ("name");
+    expect (league).toHaveProperty ("name");
+    expect (game).toHaveProperty ("result");
 
     expect (players.length).toBe (30);
   });
