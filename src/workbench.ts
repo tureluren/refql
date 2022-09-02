@@ -28,7 +28,9 @@ const config: Config = {
 };
 
 const makeRun = <Output>(config: Config, querier: Querier<Output>) => <Input>(tag: RqlTag<Input> | SqlTag<Input>, params: Input) => {
-  return tag.run (config, querier, params);
+  return tag instanceof RqlTag
+    ? tag.run (config, querier, params)
+    : tag.run (querier, params);
 };
 
 const run = makeRun<Player> (config, querier);
@@ -294,3 +296,19 @@ res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 })
   .catch (() => {
     console.log ("HDDHDH");
   });
+
+
+const tagsql = sql<{limit: number}>`
+      select ${Raw.of ("id")}::text, last_name,
+        concat(${Raw.of ("last_name")}, ${Raw.of ("' '")}, first_name) as fullname
+      from player
+      where ${Table.of ("player")}.id ${In.of ([2, 3, 4])}
+      ${sql`
+        order by ${Raw.of ("player")}.last_name
+      `}
+      limit ${p => p.limit} offset 1
+    `;
+
+tagsql.run (querier, { limit: 4 }).then (res => {
+  console.log (res);
+}).catch (console.log);

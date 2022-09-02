@@ -1,12 +1,13 @@
 import { Querier, RQLValue } from "../types";
 import compileSqlTag from "./compileSqlTag";
+import formatTlString from "./formatTlString";
 
 class SqlTag<Params> {
   strings: string[];
   values: RQLValue<Params>[];
 
   constructor(strings: string[], values: RQLValue<Params>[]) {
-    this.strings = strings;
+    this.strings = strings.map (formatTlString);
     this.values = values;
   }
 

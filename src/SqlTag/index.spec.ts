@@ -17,7 +17,7 @@ describe ("SqlTag type", () => {
   });
 
   test ("create SqlTag", () => {
-    const strings = ["where id = ", "order by last_name"];
+    const strings = ["where id =", "order by last_name"];
     const keys = [1];
     const sqlTag = SqlTag.of (strings as any, keys);
 
@@ -35,7 +35,7 @@ describe ("SqlTag type", () => {
 
     expect (res).toEqual (res2);
     expect (res.values).toEqual ([rawLastName, 1]);
-    expect (res.strings).toEqual (["select id, ", " from player where id = ", ""]);
+    expect (res.strings).toEqual (["select id,", "from player where id =", ""]);
   });
 
   test ("run", async () => {

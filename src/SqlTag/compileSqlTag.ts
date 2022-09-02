@@ -4,14 +4,12 @@ import Raw from "../Raw";
 import RqlTag from "../RqlTag";
 import Table from "../Table";
 import formatSqlString from "./formatSqlString";
-import formatTlString from "./formatTlString";
 
 const compileSqlTag = <Params>(tag: SqlTag<Params>, paramIdx: number, params: Params, table?: Table): [string, any[]] => {
   const values: any[] = [];
 
   const go = (sqlTag: SqlTag<Params>): string => {
     return sqlTag.strings.reduce ((acc, str, idx) => {
-      const s = formatTlString (str);
       let value = sqlTag.values[idx];
 
       if (typeof value !== "undefined") {
@@ -25,28 +23,29 @@ const compileSqlTag = <Params>(tag: SqlTag<Params>, paramIdx: number, params: Pa
         }
 
         if (value instanceof SqlTag) {
-          return `${acc + s} ${go (value)}`;
+          return `${acc} ${str} ${go (value)}`;
         }
 
         if (value instanceof Table) {
-          return `${acc + s} ${value.as}`;
+          return `${acc} ${str} ${value.as}`;
         }
 
         if (value instanceof Raw) {
-          return `${acc + s} ${value.value} `;
+          return `${acc} ${str} ${value.value}`;
         }
 
         if (value instanceof In) {
+          const inStr = value.write (paramIdx + values.length);
           values.push (...value.arr);
-          return `${acc + s} ${value.write (paramIdx)} `;
+          return `${acc} ${str} ${inStr}`;
         }
 
         values.push (value);
 
-        return `${acc + s} $${paramIdx + values.length} `;
+        return `${acc} ${str} $${paramIdx + values.length}`;
       }
 
-      return `${acc} ${s}`;
+      return `${acc} ${str}`;
     }, "");
   };
 
