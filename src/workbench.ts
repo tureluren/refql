@@ -79,12 +79,18 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (node: TableNode<
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  ${Table.of ("player")} (limit: 5, offset: 8) {
+  ${Table.of ("player")} (limit: 5) {
     id
-    x game:games {
-      id
-      result
-    }
+    - ${rql`
+      team {
+        id
+        name
+      } 
+    `}
+    last_name
+    ${sql`
+      where id = ${10} 
+    `}
   }
 `;
 
@@ -120,10 +126,9 @@ const playerGoalsRef = {
 // run (playerQuery, { id: 1, limit: 5 })
 //   .then (rows => console.log (rows[1]));
 
-// playerQuery.run<Player> (config, querier, { id: 1, limit: 5 }).then (players => {
-//   console.log (players.map (({ games }) => games));
-//   // console.log (players);
-// });
+playerQuery.run<Player> (config, querier, { id: 1, limit: 5 }).then (players => {
+  console.log (players);
+});
 
 
 
@@ -177,37 +182,36 @@ const selectPlayer = sql<{id: number}>`
 // });
 
 
-// DENK NA OVER NESTEN RQL en ook ${Identifier("last_name")}
-const playerAst = rql<{ id: number}>`
-  player (id:1) {
-    last_name
-  }
-`;
+// const playerAst = rql<{ id: number}>`
+//   player (id:1) {
+//     last_name
+//   }
+// `;
 
-const teamAst = rql<{ limit: number }>`
-  team {
-    * 
-  }
-`;
+// const teamAst = rql<{ limit: number }>`
+//   team {
+//     *
+//   }
+// `;
 
-const RootToBelongsTo = <Params> (node: Root<Params>) =>
-  BelongsTo.of (node.table, node.members, node.keywords);
+// const RootToBelongsTo = <Params> (node: Root<Params>) =>
+//   BelongsTo.of (node.table, node.members, node.keywords);
 
-const belongsTo = <Params>(tag: RqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
-  return tag2.map (node => {
-    return node.addMember (RootToBelongsTo (tag.node));
-  });
+// const belongsTo = <Params>(tag: RqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
+//   return tag2.map (node => {
+//     return node.addMember (RootToBelongsTo (tag.node));
+//   });
 
-};
+// };
 
 // console.log (res);
-const res = belongsTo (teamAst) (playerAst);
+// const res = belongsTo (teamAst) (playerAst);
 
 // const res = playerAst.map (node => {
 //   return node.addMember (toBelongsTo (teamAst.node));
 // });
 
-teamAst.node = BelongsTo.of (Table.of ("team"), [], {});
+// teamAst.node = BelongsTo.of (Table.of ("team"), [], {});
 
 
 // res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log).catch (e => {
@@ -216,24 +220,24 @@ teamAst.node = BelongsTo.of (Table.of ("team"), [], {});
 
 // db- functions
 
-const select = (table: string, columns: string[] = []) => {
-  const members = columns.length
-    ? columns.map (c => Identifier.of (c))
-    : [All.of ("*")];
+// const select = (table: string, columns: string[] = []) => {
+//   const members = columns.length
+//     ? columns.map (c => Identifier.of (c))
+//     : [All.of ("*")];
 
-  const node = Root.of (Table.of (table), members, { limit: 5 });
+//   const node = Root.of (Table.of (table), members, { limit: 5 });
 
-  return RqlTag.of (node);
-};
+//   return RqlTag.of (node);
+// };
 
-const byId = sql<{id: number}>`
-  where id = ${p => p.id}
-`;
+// const byId = sql<{id: number}>`
+//   where id = ${p => p.id}
+// `;
 
-const where = <Params>(tag: SqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
-  return tag2.map (node => node.addMember (Variable.of (tag)));
-};
+// const where = <Params>(tag: SqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
+//   return tag2.map (node => node.addMember (Variable.of (tag)));
+// };
 
 // filter sqlTag
 
-where (byId) (select ("player", ["id", "last_name"])).run<Player> ({}, querier, { id: 5 }).then (console.log);
+// where (byId) (select ("player", ["id", "last_name"])).run<Player> ({}, querier, { id: 5 }).then (console.log);

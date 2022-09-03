@@ -1,9 +1,10 @@
 import Parser from ".";
 import Raw from "../Raw";
+import rql from "../RqlTag/rql";
 import sql from "../SqlTag/sql";
 import Table from "../Table";
 import Tokenizer from "../Tokenizer";
-import { RQLValue, TokenType } from "../types";
+import { TokenType } from "../types";
 import {
   All, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, ManyToMany, NullLiteral,
@@ -11,10 +12,6 @@ import {
 } from "./nodes";
 
 describe ("Parser type", () => {
-  const rql = <Params> (strings: TemplateStringsArray, ...values: RQLValue<Params>[]) => {
-    return Parser.of (strings.join ("$"), values).Root ();
-  };
-
   test ("create Parser", () => {
     const player = Table.of ("player");
     const str = "$ { * }";
@@ -33,7 +30,7 @@ describe ("Parser type", () => {
     const position = Table.of ("position");
     const spaceRaw = Raw.of ("' '");
 
-    const node = rql`
+    const tag = rql`
       player (id: 1) { 
         id:identifier::text 
         birthday
@@ -43,12 +40,14 @@ describe ("Parser type", () => {
         }
         - public.team { 
           name:team_name
-          < player:players {
-            last_name
-            - ${position} {
-              *
+          < ${rql`
+            player:players {
+              last_name
+              - ${position} {
+                *
+              }
             }
-          }
+          `}
         }
         x game:games { result }
       }
@@ -87,7 +86,7 @@ describe ("Parser type", () => {
       { id: 1 }
     );
 
-    expect (node).toEqual (expected);
+    expect (tag.node).toEqual (expected);
   });
 
   test ("variables", () => {
@@ -97,7 +96,7 @@ describe ("Parser type", () => {
     const getLimit = (p: Params) => p.limit;
     const getOffset = (p: Params) => p.offset;
 
-    const node = rql<Params>`
+    const tag = rql<Params>`
       player (id: ${1}, limit: ${getLimit}, offset: ${getOffset}) { 
         id 
         last_name
@@ -116,11 +115,11 @@ describe ("Parser type", () => {
       { id: 1, limit: getLimit, offset: getOffset }
     );
 
-    expect (node).toEqual (expected);
+    expect (tag.node).toEqual (expected);
   });
 
   test ("literals", () => {
-    const node = rql`
+    const tag = rql`
       player {
         "1":one::int
         2:two::text
@@ -143,7 +142,7 @@ describe ("Parser type", () => {
       {}
     );
 
-    expect (node).toEqual (expected);
+    expect (tag.node).toEqual (expected);
   });
 
   test ("syntax errors", () => {

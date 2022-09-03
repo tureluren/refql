@@ -10,6 +10,7 @@ import {
   NumericLiteral, Root, StringLiteral, Variable
 } from "./nodes";
 import Table from "../Table";
+import RqlTag from "../RqlTag";
 
 class Parser<Params> {
   str: string;
@@ -66,7 +67,9 @@ class Parser<Params> {
     if (this.isNext ("VARIABLE")) {
       const value = this.spliceValue ();
 
-      if (value instanceof Table) {
+      if (value instanceof RqlTag) {
+        return value.node;
+      } else if (value instanceof Table) {
         table = value;
       } else {
         throw new SyntaxError ("Invalid dynamic table, expected instance of Table");
@@ -135,6 +138,9 @@ class Parser<Params> {
   }
 
   members() {
+    // if (this.isNext("VARIABLE")) {
+
+    // }
     this.eat ("{");
 
     if (this.isNext ("}")) {
