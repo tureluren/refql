@@ -1,7 +1,7 @@
 import { Pool } from "pg";
 import In from "./In";
 import { rql } from "./index";
-import { BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, StringLiteral } from "./Parser/nodes";
+import { All, BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, StringLiteral, Variable } from "./Parser/nodes";
 import Raw from "./Raw";
 import RqlTag from "./RqlTag";
 import { Goal, Player } from "./soccer";
@@ -21,7 +21,7 @@ const pool = new Pool ({
 });
 
 const querier = <T>(query: string, values: any[]) =>
-  pool.query<T> (query, values).then (({ rows }) => rows);
+  pool.query (query, values).then (({ rows }) => rows as T[]);
 
 const config: Config = {
   caseType: "snake"
@@ -210,6 +210,30 @@ const res = belongsTo (teamAst) (playerAst);
 teamAst.node = BelongsTo.of (Table.of ("team"), [], {});
 
 
-res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log).catch (e => {
-  console.log (e.message);
-});
+// res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log).catch (e => {
+//   console.log (e.message);
+// });
+
+// db- functions
+
+const select = (table: string, columns: string[] = []) => {
+  const members = columns.length
+    ? columns.map (c => Identifier.of (c))
+    : [All.of ("*")];
+
+  const node = Root.of (Table.of (table), members, { limit: 5 });
+
+  return RqlTag.of (node);
+};
+
+const byId = sql<{id: number}>`
+  where id = ${p => p.id}
+`;
+
+const where = <Params>(tag: SqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
+  return tag2.map (node => node.addMember (Variable.of (tag)));
+};
+
+// filter sqlTag
+
+where (byId) (select ("player", ["id", "last_name"])).run<Player> ({}, querier, { id: 5 }).then (console.log);
