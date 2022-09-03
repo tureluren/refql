@@ -147,7 +147,7 @@ describe ("Parser type", () => {
 
   test ("syntax errors", () => {
     expect (() => rql`${"player"} { id }`)
-      .toThrowError (new SyntaxError ("Invalid dynamic table, expected instance of Table"));
+      .toThrowError (new SyntaxError ("Invalid dynamic RqlTag/Table, expected instance of RqlTag/Table"));
 
     expect (() => rql`player (id: *) { id }`)
       .toThrowError (new SyntaxError ('Only Literals or Variables are allowed as keywords, not: "*"'));

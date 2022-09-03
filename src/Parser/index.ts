@@ -65,14 +65,14 @@ class Parser<Params> {
     let table;
 
     if (this.isNext ("VARIABLE")) {
-      const value = this.spliceValue ();
+      let value = this.spliceValue ();
 
       if (value instanceof RqlTag) {
         return value.node;
       } else if (value instanceof Table) {
         table = value;
       } else {
-        throw new SyntaxError ("Invalid dynamic table, expected instance of Table");
+        throw new SyntaxError ("Invalid dynamic RqlTag/Table, expected instance of RqlTag/Table");
       }
 
     } else {

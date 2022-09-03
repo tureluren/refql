@@ -81,14 +81,14 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (node: TableNode<
 const playerQuery = rql<{ id: number; limit: number }>`
   ${Table.of ("player")} (limit: 5) {
     id
-    - ${rql`
+    - ${() => rql`
       team {
         id
         name
       } 
     `}
     last_name
-    ${sql`
+    ${() => sql`
       where id = ${10} 
     `}
   }
