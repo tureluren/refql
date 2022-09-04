@@ -56,7 +56,7 @@ describe ("Interpreter", () => {
 
   test ("Root", () => {
     const kws = { id: 1 };
-    const interpret = Interpreter (undefined, kws);
+    const interpret = Interpreter (kws);
 
     const identifier = Identifier.of ("id", "identifier", "text");
     const birthday = Identifier.of ("birthday");
@@ -100,7 +100,7 @@ describe ("Interpreter", () => {
   });
 
   test ("Root - provided refs", () => {
-    const interpret = Interpreter ("snake", {});
+    const interpret = Interpreter ({});
 
     const goalsNode = HasMany.of (goals, [allFields], { lref: "ID", rref: "PLAYERID" });
     const teamNode = BelongsTo.of (team, [allFields], { lref: "TEAMID", rref: "ID" });
@@ -146,7 +146,7 @@ describe ("Interpreter", () => {
   });
 
   test ("HasMany", () => {
-    const interpret = Interpreter (undefined, {});
+    const interpret = Interpreter ({});
 
     const goalsNode = HasMany.of (goals, [allFields], { limit: 5, offset: 10 });
 
@@ -165,7 +165,7 @@ describe ("Interpreter", () => {
   });
 
   test ("BelongsTo", () => {
-    const interpret = Interpreter (undefined, {});
+    const interpret = Interpreter ({});
 
     const leagueNode = BelongsTo.of (league, [allFields], { lref: "competition_id", rref: "identifier" });
 
@@ -196,7 +196,7 @@ describe ("Interpreter", () => {
   });
 
   test ("ManyToMany", () => {
-    const interpret = Interpreter ("snake", {});
+    const interpret = Interpreter ({});
 
     const gamesNode = ManyToMany.of (games, [allFields], { xtable: "PLAYERGAME" });
 
@@ -214,7 +214,7 @@ describe ("Interpreter", () => {
   });
 
   test ("ManyToMany - multi column ref", () => {
-    const interpret = Interpreter ("camel", {});
+    const interpret = Interpreter ({});
 
     const gamesNode = ManyToMany.of (games, [allFields], {});
 
@@ -222,13 +222,13 @@ describe ("Interpreter", () => {
 
     expect (query).toBe (format (`
       select games.*, 
-        playerGame.player_id as gameslxref0, playerGame.player_team_id as gameslxref1
+        player_game.player_id as gameslxref0, player_game.player_team_id as gameslxref1
       from game games
-      join playerGame as playerGame
-        on playerGame.game_id = games.id
-        and playerGame.game_league_id = games.league_id
-      where playerGame.player_id in ($1,$2,$3)
-        and playerGame.player_team_id in ($4,$5)
+      join player_game as player_game
+        on player_game.game_id = games.id
+        and player_game.game_league_id = games.league_id
+      where player_game.player_id in ($1,$2,$3)
+        and player_game.player_team_id in ($4,$5)
     `));
 
     expect (values).toEqual ([1, 2, 3, 1, 2]);
@@ -237,7 +237,7 @@ describe ("Interpreter", () => {
 
   test ("literals and variables", () => {
     type Params = {id: number; three: number; limit: number};
-    const interpret = Interpreter<Params> (undefined, { id: 1, three: 3, limit: 5 });
+    const interpret = Interpreter<Params> ({ id: 1, three: 3, limit: 5 });
     const one = StringLiteral.of ("1", "one", "int");
     const two = NumericLiteral.of (2, "two", "text");
     const three = Variable.of<Params> (p => p.three, "three", "text");

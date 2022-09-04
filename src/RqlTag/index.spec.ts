@@ -48,7 +48,7 @@ describe ("RQLTag type", () => {
       const tag = RQLTag.of (Root.of (player, [], {}));
       (tag as any).node = id;
 
-      await tag.run ({}, () => Promise.resolve ([]), {});
+      await tag.run (() => Promise.resolve ([]), {});
     } catch (err: any) {
       expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
     }
@@ -57,7 +57,7 @@ describe ("RQLTag type", () => {
       const tag = RQLTag.of (Root.of (player, [], {}));
       delete (tag as any).node.table;
 
-      await tag.run ({}, () => Promise.resolve ([]), {});
+      await tag.run (() => Promise.resolve ([]), {});
     } catch (err: any) {
       expect (err.message).toBe ("The Root node has no table");
     }
@@ -80,7 +80,7 @@ describe ("RQLTag type", () => {
       }
     `;
 
-    const players = await tag.run<Player> ({ caseType: "snake" }, querier (pool), {});
+    const players = await tag.run<Player> (querier (pool), {});
     const player = players[0];
     const team = players[0].team;
     const teammate = team.players[0];

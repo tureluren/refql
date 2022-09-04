@@ -1,10 +1,9 @@
 import { evolve } from "../Env/access";
 import concat from "../more/concat";
-import convertCase from "../more/convertCase";
 import emptyRefs from "../more/emptyRefs";
 import { ASTNode } from "../Parser/nodes";
 import Table from "../Table";
-import { Rec, CaseType } from "../types";
+import { Rec } from "../types";
 import { refsToComp } from "./sqlBuilders";
 
 const createRef = (table: Table) => (kw: string, refs: string) =>
@@ -13,7 +12,7 @@ const createRef = (table: Table) => (kw: string, refs: string) =>
     as: `${table.as}${kw}${idx}`
   }));
 
-const toNext = (caseType: CaseType) => <Params>(node: ASTNode<Params, true>, rec: Rec<Params>) => {
+const next = <Params>(node: ASTNode<Params, true>, rec: Rec<Params>) => {
   const { table } = rec;
 
   let refs = emptyRefs ();
@@ -21,20 +20,20 @@ const toNext = (caseType: CaseType) => <Params>(node: ASTNode<Params, true>, rec
   node.cata<void> ({
     BelongsTo: (child, _members, { lref, rref }) => {
       const refOf = createRef (child);
-      refs.lrefs = refOf ("lref", lref || convertCase (caseType, child.name + "_id"));
+      refs.lrefs = refOf ("lref", lref || child.name + "_id");
       refs.rrefs = refOf ("rref", rref || "id");
     },
     HasMany: (child, _members, { lref, rref }) => {
       const refOf = createRef (child);
       refs.lrefs = refOf ("lref", lref || "id");
-      refs.rrefs = refOf ("rref", rref || convertCase (caseType, table.name + "_id"));
+      refs.rrefs = refOf ("rref", rref || table.name + "_id");
     },
     ManyToMany: (child, _members, { lref, rref, lxref, rxref }) => {
       const refOf = createRef (child);
       refs.lrefs = refOf ("lref", lref || "id");
       refs.rrefs = refOf ("rref", rref || "id");
-      refs.lxrefs = refOf ("lxref", lxref || convertCase (caseType, table.name + "_id"));
-      refs.rxrefs = refOf ("rxref", rxref || convertCase (caseType, child.name + "_id"));
+      refs.lxrefs = refOf ("lxref", lxref || table.name + "_id");
+      refs.rxrefs = refOf ("rxref", rxref || child.name + "_id");
     }
   });
 
@@ -44,4 +43,4 @@ const toNext = (caseType: CaseType) => <Params>(node: ASTNode<Params, true>, rec
   }, rec);
 };
 
-export default toNext;
+export default next;

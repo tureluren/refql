@@ -69,7 +69,7 @@ describe ("SQLTag type", () => {
       `;
       await tag.run (() => Promise.resolve ([]), {});
     } catch (err: any) {
-      expect (err.message).toBe ("You can't use RQL tags inside SQL Tags");
+      expect (err.message).toBe ("You can't use RQL Tags inside SQL Tags");
     }
   });
 });

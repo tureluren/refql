@@ -8,9 +8,7 @@ import { Goal, Player } from "./soccer";
 import SQLTag from "./SQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
-import { RefQLConfig, ObjectMap, CaseType, Keywords, TableNode, Querier } from "./types";
-
-// RENAME record to rec
+import { ObjectMap, Keywords, TableNode, Querier } from "./types";
 
 const pool = new Pool ({
   user: "test",
@@ -23,17 +21,11 @@ const pool = new Pool ({
 const querier = <T>(query: string, values: any[]) =>
   pool.query (query, values).then (({ rows }) => rows as T[]);
 
-const config: RefQLConfig = {
-  caseType: "snake"
+const makeRun = <Output>(querier: Querier<Output>) => <Params>(tag: RQLTag<Params> | SQLTag<Params>, params: Params) => {
+  return tag.run (querier, params);
 };
 
-const makeRun = <Output>(config: RefQLConfig, querier: Querier<Output>) => <Params>(tag: RQLTag<Params> | SQLTag<Params>, params: Params) => {
-  return tag instanceof RQLTag
-    ? tag.run (config, querier, params)
-    : tag.run (querier, params);
-};
-
-const run = makeRun<Player> (config, querier);
+const run = makeRun<Player> (querier);
 
 const updateKeywords = <Params>(keywords: Keywords<Params>) => (node: TableNode<Params>): TableNode<Params> => {
   const newKeywords = { ...node.keywords, ...keywords };
@@ -123,7 +115,7 @@ const playerGoalsRef = {
 // run (playerQuery, { id: 1, limit: 5 })
 //   .then (rows => console.log (rows[1]));
 
-playerQuery.run<Player> (config, querier, { id: 1, limit: 5 }).then (players => {
+playerQuery.run<Player> (querier, { id: 1, limit: 5 }).then (players => {
   console.log (players);
 });
 
@@ -231,4 +223,4 @@ const where = <Params>(tag: SQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) 
   return tag2.map (node => node.addMember (Variable.of (tag)));
 };
 
-where (byId) (select ("player", [])).run<Player> ({}, querier, { id: 5 }).then (console.log);
+where (byId) (select ("player", [])).run<Player> (querier, { id: 5 }).then (console.log);

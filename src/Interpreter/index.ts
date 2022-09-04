@@ -2,22 +2,20 @@ import { evolve, get, over, set } from "../Env/access";
 import createEnv from "../Env/createEnv";
 import chain from "../more/chain";
 import concat from "../more/concat";
-import convertCase from "../more/convertCase";
 import { ASTNode } from "../Parser/nodes";
 import Raw from "../Raw";
 import SQLTag from "../SQLTag";
 import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
-import { CaseType, InterpretF, Rec } from "../types";
+import { InterpretF, Rec } from "../types";
 import interpretSQLTag from "./interpretSQLTag";
 import {
   byId, castAs, fromTable, joinOn,
   paginate, select, selectRefs, whereIn
 } from "./sqlBuilders";
-import toNext from "./toNext";
+import next from "./next";
 
-const Interpreter = <Params> (caseType: CaseType, params: Params) => {
-  const next = toNext (caseType);
+const Interpreter = <Params> (params: Params) => {
   const includeSQL = interpretSQLTag (params);
 
   const interpretMembers = (members: ASTNode<Params>[], table: Table, inCall = false) =>
@@ -69,7 +67,7 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
         if (!rows) return next (patched, rec);
 
         const x = Table.of (
-          xtable || convertCase (caseType, `${parent.name}_${table.name}`)
+          xtable || `${parent.name}_${table.name}`
         );
 
         return interpretMembers (members, table)

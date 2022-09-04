@@ -11,12 +11,6 @@ export interface ObjectMap {
   [key: string]: any;
 }
 
-export type CaseType = "camel" | "snake" | undefined;
-
-export interface RefQLConfig extends ObjectMap {
-  caseType?: CaseType;
-}
-
 export type Querier<T> = (query: string, values: any[]) => Promise<T[]>;
 
 export type Rules = [RegExp, string][];
