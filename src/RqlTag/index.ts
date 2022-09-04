@@ -1,26 +1,26 @@
 import Interpreter from "../Interpreter";
 import { Root } from "../Parser/nodes";
-import { Config, Querier } from "../types";
+import { RefQLConfig, Querier } from "../types";
 import aggregate from "./aggregate";
 
-class RqlTag <Params> {
+class RQLTag <Params> {
   node: Root<Params>;
 
   constructor(node: Root<Params>) {
     if (!(node instanceof Root)) {
-      throw new Error ("RqlTag should hold a Root node");
+      throw new Error ("RQLTag should hold a Root node");
     }
     this.node = node;
   }
 
   map<Params2>(fn: (node: Root<Params>) => Root<Params2>) {
-    return new RqlTag<Params2> (fn (this.node));
+    return new RQLTag<Params2> (fn (this.node));
   }
 
-  run<Return>(config: Config, querier: Querier<Return>, params: Params): Promise<Return[]> {
+  run<Return>(config: RefQLConfig, querier: Querier<Return>, params: Params): Promise<Return[]> {
     return new Promise ((res, rej) => {
       if (!(this.node instanceof Root)) {
-        rej (new Error ("You can only run a RqlTag that holds a Root node"));
+        rej (new Error ("You can only run a RQLTag that holds a Root node"));
         return;
       }
 
@@ -38,8 +38,8 @@ class RqlTag <Params> {
   }
 
   static of<Params>(node: Root<Params>) {
-    return new RqlTag<Params> (node);
+    return new RQLTag<Params> (node);
   }
 }
 
-export default RqlTag;
+export default RQLTag;

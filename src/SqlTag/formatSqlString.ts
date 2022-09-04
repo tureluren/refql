@@ -1,4 +1,4 @@
-const formatSqlString = (sql: string) =>
+const formatSQLString = (sql: string) =>
   sql
     // replace multispaces with a single space
     .replace (/\s\s+/g, " ")
@@ -17,4 +17,4 @@ const formatSqlString = (sql: string) =>
     // trim
     .trim ();
 
-export default formatSqlString;
+export default formatSQLString;

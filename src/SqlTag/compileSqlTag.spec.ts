@@ -2,10 +2,10 @@ import In from "../In";
 import Raw from "../Raw";
 import Table from "../Table";
 import format from "../test/format";
-import compileSqlTag from "./compileSqlTag";
+import compileSQLTag from "./compileSQLTag";
 import sql from "./sql";
 
-describe ("SqlTag `compileSqlTag` - compile a SqlTag into a tuple of query and values", () => {
+describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and values", () => {
   test ("compiled", () => {
     const tag = sql<{limit: number}>`
       select ${Raw.of ("id")}::text, last_name,
@@ -18,7 +18,7 @@ describe ("SqlTag `compileSqlTag` - compile a SqlTag into a tuple of query and v
       limit ${p => p.limit} offset 1
     `;
 
-    const [query, values] = compileSqlTag (tag, 0, { limit: 30 });
+    const [query, values] = compileSQLTag (tag, 0, { limit: 30 });
 
     expect (query).toBe (format (`
       select id::text, last_name,

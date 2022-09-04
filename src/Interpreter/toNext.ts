@@ -2,7 +2,7 @@ import { evolve } from "../Env/access";
 import concat from "../more/concat";
 import convertCase from "../more/convertCase";
 import emptyRefs from "../more/emptyRefs";
-import { AstNode } from "../Parser/nodes";
+import { ASTNode } from "../Parser/nodes";
 import Table from "../Table";
 import { Rec, CaseType } from "../types";
 import { refsToComp } from "./sqlBuilders";
@@ -13,7 +13,7 @@ const createRef = (table: Table) => (kw: string, refs: string) =>
     as: `${table.as}${kw}${idx}`
   }));
 
-const toNext = (caseType: CaseType) => <Params>(node: AstNode<Params, true>, rec: Rec<Params>) => {
+const toNext = (caseType: CaseType) => <Params>(node: ASTNode<Params, true>, rec: Rec<Params>) => {
   const { table } = rec;
 
   let refs = emptyRefs ();

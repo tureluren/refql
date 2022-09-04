@@ -3,12 +3,12 @@ import In from "./In";
 import { rql } from "./index";
 import { All, BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, StringLiteral, Variable } from "./Parser/nodes";
 import Raw from "./Raw";
-import RqlTag from "./RqlTag";
+import RQLTag from "./RQLTag";
 import { Goal, Player } from "./soccer";
-import SqlTag from "./SqlTag";
-import sql from "./SqlTag/sql";
+import SQLTag from "./SQLTag";
+import sql from "./SQLTag/sql";
 import Table from "./Table";
-import { Config, Dict, CaseType, Keywords, TableNode, Querier } from "./types";
+import { RefQLConfig, ObjectMap, CaseType, Keywords, TableNode, Querier } from "./types";
 
 // RENAME record to rec
 
@@ -23,12 +23,12 @@ const pool = new Pool ({
 const querier = <T>(query: string, values: any[]) =>
   pool.query (query, values).then (({ rows }) => rows as T[]);
 
-const config: Config = {
+const config: RefQLConfig = {
   caseType: "snake"
 };
 
-const makeRun = <Output>(config: Config, querier: Querier<Output>) => <Params>(tag: RqlTag<Params> | SqlTag<Params>, params: Params) => {
-  return tag instanceof RqlTag
+const makeRun = <Output>(config: RefQLConfig, querier: Querier<Output>) => <Params>(tag: RQLTag<Params> | SQLTag<Params>, params: Params) => {
+  return tag instanceof RQLTag
     ? tag.run (config, querier, params)
     : tag.run (querier, params);
 };
@@ -48,7 +48,7 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (node: TableNode<
 //   return HasMany.of (node.table, node.members, node.keywords);
 // };
 
-// const hasMany = <Params> (tag: RqlTag<Params>): RqlTag<Params> => {
+// const hasMany = <Params> (tag: RQLTag<Params>): RQLTag<Params> => {
 //   return tag.map (node => {
 //     if (!(
 //       node instanceof Root ||
@@ -63,7 +63,7 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (node: TableNode<
 //   });
 // };
 
-// const hasMany2 = <Params> (tag: RqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>): RqlTag<Params & Params2> => {
+// const hasMany2 = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>): RQLTag<Params & Params2> => {
 //   return tag2.concat (tag.map (node => {
 //     if (!(
 //       node instanceof Root ||
@@ -139,7 +139,7 @@ const selectPlayer = sql<{id: number}>`
 //   offset 0
 // `;
 
-// const paginate = <Params>(tag: RqlTag<Params> | SqlTag<Params>) =>
+// const paginate = <Params>(tag: RQLTag<Params> | SQLTag<Params>) =>
 //   tag.concat (sql<Params & { limit: number}>`
 //     limit ${(params: any) => params.limit}
 //     offset 0
@@ -194,7 +194,7 @@ const selectPlayer = sql<{id: number}>`
 // const RootToBelongsTo = <Params> (node: Root<Params>) =>
 //   BelongsTo.of (node.table, node.members, node.keywords);
 
-// const belongsTo = <Params>(tag: RqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
+// const belongsTo = <Params>(tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
 //   return tag2.map (node => {
 //     return node.addMember (RootToBelongsTo (tag.node));
 //   });
@@ -227,7 +227,7 @@ const byId = sql<{id: number}>`
   where id = ${p => p.id}
 `;
 
-const where = <Params>(tag: SqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
+const where = <Params>(tag: SQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
   return tag2.map (node => node.addMember (Variable.of (tag)));
 };
 

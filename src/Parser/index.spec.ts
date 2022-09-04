@@ -1,7 +1,7 @@
 import Parser from ".";
 import Raw from "../Raw";
-import rql from "../RqlTag/rql";
-import sql from "../SqlTag/sql";
+import rql from "../RQLTag/rql";
+import sql from "../SQLTag/sql";
 import Table from "../Table";
 import Tokenizer from "../Tokenizer";
 import { TokenType } from "../types";
@@ -90,7 +90,7 @@ describe ("Parser type", () => {
   });
 
   test ("variables", () => {
-    const orderBySql = sql`order by player.last_name`;
+    const orderBySQL = sql`order by player.last_name`;
     type Params = { limit: number; offset: number };
 
     const getLimit = (p: Params) => p.limit;
@@ -100,14 +100,14 @@ describe ("Parser type", () => {
       player (id: ${1}, limit: ${getLimit}, offset: ${getOffset}) { 
         id 
         last_name
-        ${orderBySql}
+        ${orderBySQL}
       }
     `;
 
     const player = Table.of ("player");
     const id = Identifier.of ("id");
     const lastName = Identifier.of ("last_name");
-    const orderBy = Variable.of (orderBySql);
+    const orderBy = Variable.of (orderBySQL);
 
     const expected = Root.of<Params> (
       player,
@@ -147,7 +147,7 @@ describe ("Parser type", () => {
 
   test ("syntax errors", () => {
     expect (() => rql`${"player"} { id }`)
-      .toThrowError (new SyntaxError ("Invalid dynamic RqlTag/Table, expected instance of RqlTag/Table"));
+      .toThrowError (new SyntaxError ("Invalid dynamic RQLTag/Table, expected instance of RQLTag/Table"));
 
     expect (() => rql`player (id: *) { id }`)
       .toThrowError (new SyntaxError ('Only Literals or Variables are allowed as keywords, not: "*"'));
@@ -168,13 +168,13 @@ describe ("Parser type", () => {
       .toThrowError (new SyntaxError ('Unexpected token: "\"player"\", expected: "IDENTIFIER"'));
 
     expect (() => rql`player ${{}}`)
-      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of AstNode"));
+      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
 
     expect (() => rql`player ${[]}`)
-      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of AstNode"));
+      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
 
     expect (() => rql`player ${["name"]}`)
-      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of AstNode"));
+      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
 
     const parser = Parser.of ("player { * }", []);
     parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };

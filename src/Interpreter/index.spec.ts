@@ -7,7 +7,7 @@ import {
   StringLiteral, Variable
 } from "../Parser/nodes";
 import Raw from "../Raw";
-import sql from "../SqlTag/sql";
+import sql from "../SQLTag/sql";
 import Table from "../Table";
 import format from "../test/format";
 

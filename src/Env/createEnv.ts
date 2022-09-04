@@ -1,6 +1,6 @@
 import Env from ".";
 import emptyRefs from "../more/emptyRefs";
-import sql from "../SqlTag/sql";
+import sql from "../SQLTag/sql";
 import Table from "../Table";
 import { Refs } from "../types";
 

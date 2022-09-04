@@ -213,42 +213,42 @@ const seedGames = async () => {
     });
   });
 
-  const gamesSql = games.reduce ((acc, game) => {
+  const gamesSQL = games.reduce ((acc, game) => {
     return `${acc} (${game.homeTeamId}, ${game.awayTeamId}, ${game.leagueId}, '${game.result}'),`;
   }, 'insert into "game" (home_team_id, away_team_id, league_id, result) values').slice (0, -1);
 
-  const playersSql = games.flatMap (game => game.players).reduce ((acc, player) => {
+  const playersSQL = games.flatMap (game => game.players).reduce ((acc, player) => {
     return `${acc} (${player.playerId}, ${player.gameId}),`;
   }, 'insert into "player_game" (player_id, game_id) values').slice (0, -1);
 
-  const goalsSql = goals.reduce ((acc, goal) => {
+  const goalsSQL = goals.reduce ((acc, goal) => {
     return `${acc} (${goal.gameId}, ${goal.playerId}, ${goal.minute}, ${goal.ownGoal}),`;
   }, 'insert into "goal" (game_id, player_id, minute, own_goal) values').slice (0, -1);
 
-  const assistsSql = assists.reduce ((acc, assist) => {
+  const assistsSQL = assists.reduce ((acc, assist) => {
     return `${acc} (${assist.goalId}, ${assist.gameId}, ${assist.playerId}),`;
   }, 'insert into "assist" (goal_id, game_id, player_id) values').slice (0, -1);
 
   await query ('delete from "game"');
   await query ("alter sequence game_id_seq restart with 1");
-  await query (gamesSql);
+  await query (gamesSQL);
 
   log.info ("seed games", "games successfully seeded");
 
   await query ('delete from "player_game"');
-  await query (playersSql);
+  await query (playersSQL);
 
   log.info ("seed player_games", "player_games successfully seeded");
 
   await query ('delete from "goal"');
   await query ("alter sequence goal_id_seq restart with 1");
-  await query (goalsSql);
+  await query (goalsSQL);
 
   log.info ("seed goals", "goals successfully seeded");
 
   await query ('delete from "assist"');
   await query ("alter sequence assist_id_seq restart with 1");
-  await query (assistsSql);
+  await query (assistsSQL);
 
   log.info ("seed assists", "assists successfully seeded");
 

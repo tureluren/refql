@@ -1,14 +1,14 @@
-import SqlTag from ".";
+import SQLTag from ".";
 import In from "../In";
 import Raw from "../Raw";
-import RqlTag from "../RqlTag";
+import RQLTag from "../RQLTag";
 import Table from "../Table";
-import formatSqlString from "./formatSqlString";
+import formatSQLString from "./formatSQLString";
 
-const compileSqlTag = <Params>(tag: SqlTag<Params>, paramIdx: number, params: Params, table?: Table): [string, any[]] => {
+const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Params, table?: Table): [string, any[]] => {
   const values: any[] = [];
 
-  const go = (sqlTag: SqlTag<Params>): string => {
+  const go = (sqlTag: SQLTag<Params>): string => {
     return sqlTag.strings.reduce ((acc, str, idx) => {
       let value = sqlTag.values[idx];
 
@@ -18,11 +18,11 @@ const compileSqlTag = <Params>(tag: SqlTag<Params>, paramIdx: number, params: Pa
           value = value (params, table);
         }
 
-        if (value instanceof RqlTag) {
-          throw new Error ("You can't use Rql tags inside Sql Tags");
+        if (value instanceof RQLTag) {
+          throw new Error ("You can't use RQL tags inside SQL Tags");
         }
 
-        if (value instanceof SqlTag) {
+        if (value instanceof SQLTag) {
           return `${acc} ${str} ${go (value)}`;
         }
 
@@ -49,7 +49,7 @@ const compileSqlTag = <Params>(tag: SqlTag<Params>, paramIdx: number, params: Pa
     }, "");
   };
 
-  return [formatSqlString (go (tag)), values];
+  return [formatSQLString (go (tag)), values];
 };
 
-export default compileSqlTag;
+export default compileSQLTag;

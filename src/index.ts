@@ -1,5 +1,5 @@
-import rql from "./RqlTag/rql";
-import sql from "./SqlTag/sql";
+import rql from "./RQLTag/rql";
+import sql from "./SQLTag/sql";
 
 export * from "./types";
 

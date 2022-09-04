@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import RqlTag from ".";
+import RQLTag from ".";
 import { All, HasMany, Identifier, Root } from "../Parser/nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
@@ -8,7 +8,7 @@ import userConfig from "../test/userConfig";
 import { TableNode } from "../types";
 import rql from "./rql";
 
-describe ("RqlTag type", () => {
+describe ("RQLTag type", () => {
   const player = Table.of ("player");
   const pool = new Pool (userConfig);
 
@@ -16,15 +16,15 @@ describe ("RqlTag type", () => {
     await pool.end ();
   });
 
-  test ("create RqlTag", () => {
+  test ("create RQLTag", () => {
     const node = Root.of (player, [All.of ("*")], {});
-    const tag = RqlTag.of (node);
+    const tag = RQLTag.of (node);
 
     expect (tag.node).toEqual (node);
   });
 
   test ("Functor", () => {
-    const tag = RqlTag.of (Root.of (player, [All.of ("*")], {}));
+    const tag = RQLTag.of (Root.of (player, [All.of ("*")], {}));
 
     expect (tag.map (n => n)).toEqual (tag);
 
@@ -41,20 +41,20 @@ describe ("RqlTag type", () => {
   test ("errors", async () => {
     const id = Identifier.of ("id");
 
-    expect (() => (RqlTag as any).of (id))
-      .toThrowError (new Error ("RqlTag should hold a Root node"));
+    expect (() => (RQLTag as any).of (id))
+      .toThrowError (new Error ("RQLTag should hold a Root node"));
 
     try {
-      const tag = RqlTag.of (Root.of (player, [], {}));
+      const tag = RQLTag.of (Root.of (player, [], {}));
       (tag as any).node = id;
 
       await tag.run ({}, () => Promise.resolve ([]), {});
     } catch (err: any) {
-      expect (err.message).toBe ("You can only run a RqlTag that holds a Root node");
+      expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
     }
 
     try {
-      const tag = RqlTag.of (Root.of (player, [], {}));
+      const tag = RQLTag.of (Root.of (player, [], {}));
       delete (tag as any).node.table;
 
       await tag.run ({}, () => Promise.resolve ([]), {});

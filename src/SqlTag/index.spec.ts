@@ -1,14 +1,14 @@
 import { Pool } from "pg";
-import SqlTag from ".";
+import SQLTag from ".";
 import In from "../In";
 import Raw from "../Raw";
-import rql from "../RqlTag/rql";
+import rql from "../RQLTag/rql";
 import { Player } from "../soccer";
 import querier from "../test/querier";
 import userConfig from "../test/userConfig";
 import sql from "./sql";
 
-describe ("SqlTag type", () => {
+describe ("SQLTag type", () => {
   const pool = new Pool (userConfig);
   const rawLastName = Raw.of ("last_name");
 
@@ -16,10 +16,10 @@ describe ("SqlTag type", () => {
     await pool.end ();
   });
 
-  test ("create SqlTag", () => {
+  test ("create SQLTag", () => {
     const strings = ["where id =", "order by last_name"];
     const keys = [1];
-    const sqlTag = SqlTag.of (strings as any, keys);
+    const sqlTag = SQLTag.of (strings as any, keys);
 
     expect (sqlTag.strings).toEqual (strings);
     expect (sqlTag.values).toEqual (keys);
@@ -69,7 +69,7 @@ describe ("SqlTag type", () => {
       `;
       await tag.run (() => Promise.resolve ([]), {});
     } catch (err: any) {
-      expect (err.message).toBe ("You can't use Rql tags inside Sql Tags");
+      expect (err.message).toBe ("You can't use RQL tags inside SQL Tags");
     }
   });
 });

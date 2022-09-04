@@ -1,17 +1,17 @@
-import { Querier, RQLValue } from "../types";
-import compileSqlTag from "./compileSqlTag";
-import formatTlString from "./formatTlString";
+import { Querier, RefQLValue } from "../types";
+import compileSQLTag from "./compileSQLTag";
+import formatTLString from "./formatTLString";
 
-class SqlTag<Params> {
+class SQLTag<Params> {
   strings: string[];
-  values: RQLValue<Params>[];
+  values: RefQLValue<Params>[];
 
-  constructor(strings: string[], values: RQLValue<Params>[]) {
-    this.strings = strings.map (formatTlString);
+  constructor(strings: string[], values: RefQLValue<Params>[]) {
+    this.strings = strings.map (formatTLString);
     this.values = values;
   }
 
-  concat<Params2>(other: SqlTag<Params2>): SqlTag<Params & Params2> {
+  concat<Params2>(other: SQLTag<Params2>): SQLTag<Params & Params2> {
     const tag1Strings = Array.from (this.strings);
     const lastEl = tag1Strings.pop ();
 
@@ -19,9 +19,9 @@ class SqlTag<Params> {
     const firstEl = tag2Strings.shift ();
 
     const strings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
-    const values = (this.values as RQLValue<Params & Params2>[]).concat (other.values);
+    const values = (this.values as RefQLValue<Params & Params2>[]).concat (other.values);
 
-    return new SqlTag<Params & Params2> (
+    return new SQLTag<Params & Params2> (
       strings, values
     );
   }
@@ -31,7 +31,7 @@ class SqlTag<Params> {
       let query, values;
 
       try {
-        [query, values] = compileSqlTag<Params> (this, 0, params);
+        [query, values] = compileSQLTag<Params> (this, 0, params);
       } catch (err: any) {
         rej (err);
         return;
@@ -41,9 +41,9 @@ class SqlTag<Params> {
     });
   }
 
-  static of<Params>(strings: string[], values: RQLValue<Params>[]) {
-    return new SqlTag<Params> (strings, values);
+  static of<Params>(strings: string[], values: RefQLValue<Params>[]) {
+    return new SQLTag<Params> (strings, values);
   }
 }
 
-export default SqlTag;
+export default SQLTag;

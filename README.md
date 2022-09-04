@@ -90,7 +90,7 @@ getPlayer();
 * [Relationships](#relationships)
 * [Keywords](#keywords)
 * [Subselects](#subselects)
-* [SqlTag](#sqltag)
+* [SQLTag](#sqltag)
 * [Aliases](#aliases)
 * [Casts](#casts)
 * [Functions](#functions)
@@ -311,7 +311,7 @@ const querier = (query: string, values: any[]) =>
 ```
 
 ## Relationships
-This is where RefQL really shines. To include referenced data, you only need to pass a single query with relationship signs to the tag function ` rql`` ` and run it. Imagine doing this with SQL, using join clauses or running multiple queries and end up with data that isn't aggregated. With PostgreSQL you can always use the built-in JSON function [json_build_object](https://www.postgresql.org/docs/current/functions-json.html) in combination with [json_agg](https://www.postgresql.org/docs/9.5/functions-aggregate.html) to get a fully aggregated result with a single query. Though, writing these out can be very time-consuming, and you may find that they don't look so clean. Creating a query with the tag function ` rql`` ` will create a RqlTag object that will be parsed into an AST and interpreted into SQL.
+This is where RefQL really shines. To include referenced data, you only need to pass a single query with relationship signs to the tag function ` rql`` ` and run it. Imagine doing this with SQL, using join clauses or running multiple queries and end up with data that isn't aggregated. With PostgreSQL you can always use the built-in JSON function [json_build_object](https://www.postgresql.org/docs/current/functions-json.html) in combination with [json_agg](https://www.postgresql.org/docs/9.5/functions-aggregate.html) to get a fully aggregated result with a single query. Though, writing these out can be very time-consuming, and you may find that they don't look so clean. Creating a query with the tag function ` rql`` ` will create a RQLTag object that will be parsed into an AST and interpreted into SQL.
 
 > RefQL relies heavily on references. They are either [provided](#refs-option-object-default-) by you, [detected](#detectrefs-option-boolean-default-true) or guessed. These last 2 work very well when your database model is logically constructed and uses logical names for foreign keys.
 
@@ -429,7 +429,7 @@ interface Keywords {
   links?: Link[];
   refs?: TableRefs;
   xTable?: string;
-  orderBy?: SqlTag | ((t: Table) => SqlTag);
+  orderBy?: SQLTag | ((t: Table) => SQLTag);
   id?: number | string;
   limit?: number;
   offset?: number;
@@ -654,7 +654,7 @@ player (id: 1) {
 // }
 ```
 
-### orderBy (SqlTag | ((t: Table) => SqlTag))
+### orderBy (SQLTag | ((t: Table) => SQLTag))
 To sort [has many](#has-many) and [many to many](#many-to-many) relationships. RefQL uses the [json_agg](https://www.postgresql.org/docs/9.5/functions-aggregate.html) function where the *order_by_clause* is one of the arguments. It is separate from the rest of the query, which is why the desicision was made that it should be passed as a keyword.
 
 ```ts
@@ -682,7 +682,7 @@ team (id: 1) {
 ```
 
 ## Subselects
-To include a nested select expression. A subselect must be a SqlTag since RQLTags can't be nested. The symbol for a subselect is a an ampersand sign `&`.
+To include a nested select expression. A subselect must be a SQLTag since RQLTags can't be nested. The symbol for a subselect is a an ampersand sign `&`.
 
 ```ts
 const subselect = t => sql`
@@ -731,8 +731,8 @@ const player = await query1<Player> (rql`
 // { id: "1", birthYear: 1991 }
 ```
 
-## SqlTag
-When you encounter something more complex that you can't solve with the RqlTag or if you like writing sql, you can always fall back on the SqlTag using the tag function ` sql`` `.
+## SQLTag
+When you encounter something more complex that you can't solve with the RQLTag or if you like writing sql, you can always fall back on the SQLTag using the tag function ` sql`` `.
 
 ### Select
 
@@ -867,7 +867,7 @@ const player = await query1<Player> (rql`
 ```
 
 ## Table
-The type Table represents the current table you are working on. It is passed to a function that returns an SqlTag. This gives you the table in closure and allows you to use it as an alias in the SqlTag. 
+The type Table represents the current table you are working on. It is passed to a function that returns an SQLTag. This gives you the table in closure and allows you to use it as an alias in the SQLTag. 
 
 ```ts
 const player = await query1<Player> (rql`
@@ -907,7 +907,7 @@ const player = await query1<Player> (rql`
 ```
 
 ## Combining query components
-RefQL provides a number of helper functions to combine independent query components with each other. Note that the first component always needs to be a RqlTag or a SqlTag.
+RefQL provides a number of helper functions to combine independent query components with each other. Note that the first component always needs to be a RQLTag or a SQLTag.
 
 ```ts
 import { 

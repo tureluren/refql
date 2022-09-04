@@ -1,24 +1,24 @@
 import Tokenizer from "../Tokenizer";
 import {
-  Keywords, Literal, RQLValue, Token, TokenType
+  Keywords, Literal, RefQLValue, Token, TokenType
 } from "../types";
 import identifierToTable from "./identifierToTable";
 import {
-  All, AstNode, BelongsTo, BooleanLiteral, Call,
+  All, ASTNode, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "./nodes";
 import Table from "../Table";
-import RqlTag from "../RqlTag";
+import RQLTag from "../RQLTag";
 
 class Parser<Params> {
   str: string;
-  values: RQLValue<Params>[];
+  values: RefQLValue<Params>[];
   idx: number;
   tokenizer: Tokenizer;
   lookahead: Token;
 
-  constructor(str: string, values: RQLValue<Params>[]) {
+  constructor(str: string, values: RefQLValue<Params>[]) {
     this.str = str;
     this.values = values;
     this.idx = 0;
@@ -66,12 +66,12 @@ class Parser<Params> {
     if (this.isNext ("VARIABLE")) {
       let value = this.spliceValue ();
 
-      if (value instanceof RqlTag) {
+      if (value instanceof RQLTag) {
         return value.node;
       } else if (value instanceof Table) {
         table = value;
       } else {
-        throw new SyntaxError ("Invalid dynamic RqlTag/Table, expected instance of RqlTag/Table");
+        throw new SyntaxError ("Invalid dynamic RQLTag/Table, expected instance of RQLTag/Table");
       }
 
     } else {
@@ -142,9 +142,9 @@ class Parser<Params> {
       if (
         !Array.isArray (members) ||
         !members.length ||
-        !members.reduce ((acc, m) => acc && m instanceof AstNode, true)
+        !members.reduce ((acc, m) => acc && m instanceof ASTNode, true)
       ) {
-        throw new SyntaxError ("Invalid dynamic members, expected non-empty Array of AstNode");
+        throw new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode");
       }
       return members;
     }
@@ -155,7 +155,7 @@ class Parser<Params> {
       throw new SyntaxError ("A table block should have at least one member");
     }
 
-    const members: AstNode<Params>[] = [];
+    const members: ASTNode<Params>[] = [];
 
     do {
       const member = this.Member ();
@@ -175,7 +175,7 @@ class Parser<Params> {
 
   arguments() {
     this.eat ("(");
-    const argumentList: AstNode<Params>[] = [];
+    const argumentList: ASTNode<Params>[] = [];
 
     if (!this.isNext (")")) {
       do {
@@ -222,7 +222,7 @@ class Parser<Params> {
     return value;
   }
 
-  Member(): AstNode<Params> {
+  Member(): ASTNode<Params> {
     if (this.isNextLiteral ()) {
       return this.Literal ();
     }
@@ -244,7 +244,7 @@ class Parser<Params> {
     throw new SyntaxError (`Unknown Member Type: "${this.lookahead.type}"`);
   }
 
-  Argument(): AstNode<Params> {
+  Argument(): ASTNode<Params> {
     if (this.isNextLiteral ()) {
       return this.Literal ();
     }
@@ -338,7 +338,7 @@ class Parser<Params> {
       || type === "null";
   }
 
-  static of<Params>(str: string, values: RQLValue<Params>[]) {
+  static of<Params>(str: string, values: RefQLValue<Params>[]) {
     return new Parser (str, values);
   }
 }

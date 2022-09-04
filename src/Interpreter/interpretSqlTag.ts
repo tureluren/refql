@@ -1,13 +1,13 @@
 import { evolve } from "../Env/access";
 import concat from "../more/concat";
-import compileSqlTag from "../SqlTag/compileSqlTag";
+import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
 import { Rec } from "../types";
 
-const interpretSqlTag = <Params>(params: Params) => (table: Table, correctWhere: boolean = true) => (rec: Rec<Params>) => {
+const interpretSQLTag = <Params>(params: Params) => (table: Table, correctWhere: boolean = true) => (rec: Rec<Params>) => {
   const { sqlTag, values } = rec;
 
-  let [query, newValues] = compileSqlTag (sqlTag, values.length, params, table);
+  let [query, newValues] = compileSQLTag (sqlTag, values.length, params, table);
 
   if (!query) return rec;
 
@@ -23,4 +23,4 @@ const interpretSqlTag = <Params>(params: Params) => (table: Table, correctWhere:
   }) (rec);
 };
 
-export default interpretSqlTag;
+export default interpretSQLTag;

@@ -3,13 +3,13 @@ import createEnv from "../Env/createEnv";
 import chain from "../more/chain";
 import concat from "../more/concat";
 import convertCase from "../more/convertCase";
-import { AstNode } from "../Parser/nodes";
+import { ASTNode } from "../Parser/nodes";
 import Raw from "../Raw";
-import SqlTag from "../SqlTag";
-import compileSqlTag from "../SqlTag/compileSqlTag";
+import SQLTag from "../SQLTag";
+import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
 import { CaseType, InterpretF, Rec } from "../types";
-import interpretSqlTag from "./interpretSqlTag";
+import interpretSQLTag from "./interpretSQLTag";
 import {
   byId, castAs, fromTable, joinOn,
   paginate, select, selectRefs, whereIn
@@ -18,9 +18,9 @@ import toNext from "./toNext";
 
 const Interpreter = <Params> (caseType: CaseType, params: Params) => {
   const next = toNext (caseType);
-  const includeSql = interpretSqlTag (params);
+  const includeSQL = interpretSQLTag (params);
 
-  const interpretMembers = (members: AstNode<Params>[], table: Table, inCall = false) =>
+  const interpretMembers = (members: ASTNode<Params>[], table: Table, inCall = false) =>
     members.reduce ((acc, mem) =>
       acc.extend (env => interpret (mem, env)), createEnv<Params> (table, undefined, inCall));
 
@@ -35,7 +35,7 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
         interpretMembers (members, table)
           .map (fromTable (table))
           .map (byId (table, id, "where"))
-          .map (includeSql (table, id != null))
+          .map (includeSQL (table, id != null))
           .map (paginate (limit, offset))
           .rec,
 
@@ -47,7 +47,7 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
           .map (fromTable (table))
           .map (whereIn (refs.lrefs, refs.rrefs, rows, table))
           .map (byId (table, id))
-          .map (includeSql (table))
+          .map (includeSQL (table))
           .map (paginate (limit, offset))
           .rec;
       },
@@ -60,7 +60,7 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
           .map (fromTable (table))
           .map (whereIn (refs.lrefs, refs.rrefs, rows, table))
           .map (byId (table, id))
-          .map (includeSql (table))
+          .map (includeSQL (table))
           .map (paginate (limit, offset))
           .rec;
       },
@@ -78,7 +78,7 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
           .map (joinOn (refs.rxrefs, refs.rrefs, table, x))
           .map (whereIn (refs.lrefs, refs.lxrefs, rows, x))
           .map (byId (table, id))
-          .map (includeSql (table))
+          .map (includeSQL (table))
           .map (paginate (limit, offset))
           .rec;
       },
@@ -100,9 +100,9 @@ const Interpreter = <Params> (caseType: CaseType, params: Params) => {
       Variable: (value, as, cast) => {
         if (value instanceof Raw) return select (value.value, rec);
 
-        if (value instanceof SqlTag) {
+        if (value instanceof SQLTag) {
           if (inCall || as) {
-            const [query, vals] = compileSqlTag (value, values.length, params, parent);
+            const [query, vals] = compileSQLTag (value, values.length, params, parent);
 
             return evolve ({
               comps: concat (castAs (!inCall ? `(${query})` : query, as, cast)),

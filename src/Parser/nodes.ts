@@ -1,26 +1,26 @@
 import Table from "../Table";
-import { Keywords, Pattern, RQLValue } from "../types";
+import { Keywords, Pattern, RefQLValue } from "../types";
 import runKeywords from "./runKeywords";
 
-export abstract class AstNode <Params, Ran extends boolean = false> {
+export abstract class ASTNode <Params, Ran extends boolean = false> {
   abstract cata<Return>(pattern: Pattern<Return, Params, Ran>): Return;
-  abstract run(params: Params, table: Table): AstNode<Params, true>;
+  abstract run(params: Params, table: Table): ASTNode<Params, true>;
 }
 
-export class Root<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class Root<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   table: Table;
-  members: AstNode<Params>[];
+  members: ASTNode<Params>[];
   keywords: Keywords<Params, Ran>;
 
-  constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+  constructor(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
     super ();
     this.table = table;
     this.members = members;
     this.keywords = keywords;
   }
 
-  addMember<Params2>(node: AstNode<Params2>): Root<Params & Params2> {
-    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+  addMember<Params2>(node: ASTNode<Params2>): Root<Params & Params2> {
+    const members = (this.members as ASTNode<Params & Params2>[]).concat (node);
     return new Root<Params & Params2> (
       this.table,
       members,
@@ -40,25 +40,25 @@ export class Root<Params, Ran extends boolean = false> extends AstNode<Params, R
     );
   }
 
-  static of<Params, Ran extends boolean = false>(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+  static of<Params, Ran extends boolean = false>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
     return new Root<Params, Ran> (table, members, keywords);
   }
 }
 
-export class HasMany<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class HasMany<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   table: Table;
-  members: AstNode<Params>[];
+  members: ASTNode<Params>[];
   keywords: Keywords<Params, Ran>;
 
-  constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+  constructor(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
     super ();
     this.table = table;
     this.members = members;
     this.keywords = keywords;
   }
 
-  addMember<Params2>(node: AstNode<Params2>): HasMany<Params & Params2> {
-    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+  addMember<Params2>(node: ASTNode<Params2>): HasMany<Params & Params2> {
+    const members = (this.members as ASTNode<Params & Params2>[]).concat (node);
     return new HasMany<Params & Params2> (
       this.table,
       members,
@@ -78,25 +78,25 @@ export class HasMany<Params, Ran extends boolean = false> extends AstNode<Params
     );
   }
 
-  static of<Params, Ran extends boolean = false>(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+  static of<Params, Ran extends boolean = false>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
     return new HasMany<Params, Ran> (table, members, keywords);
   }
 }
 
-export class BelongsTo<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class BelongsTo<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   table: Table;
-  members: AstNode<Params>[];
+  members: ASTNode<Params>[];
   keywords: Keywords<Params, Ran>;
 
-  constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+  constructor(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
     super ();
     this.table = table;
     this.members = members;
     this.keywords = keywords;
   }
 
-  addMember<Params2>(node: AstNode<Params2>): BelongsTo<Params & Params2> {
-    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+  addMember<Params2>(node: ASTNode<Params2>): BelongsTo<Params & Params2> {
+    const members = (this.members as ASTNode<Params & Params2>[]).concat (node);
     return new BelongsTo<Params & Params2> (
       this.table,
       members,
@@ -116,25 +116,25 @@ export class BelongsTo<Params, Ran extends boolean = false> extends AstNode<Para
     );
   }
 
-  static of<Params, Ran extends boolean = false>(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+  static of<Params, Ran extends boolean = false>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
     return new BelongsTo<Params, Ran> (table, members, keywords);
   }
 }
 
-export class ManyToMany<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class ManyToMany<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   table: Table;
-  members: AstNode<Params>[];
+  members: ASTNode<Params>[];
   keywords: Keywords<Params, Ran>;
 
-  constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+  constructor(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
     super ();
     this.table = table;
     this.members = members;
     this.keywords = keywords;
   }
 
-  addMember<Params2>(node: AstNode<Params2>): ManyToMany<Params & Params2> {
-    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+  addMember<Params2>(node: ASTNode<Params2>): ManyToMany<Params & Params2> {
+    const members = (this.members as ASTNode<Params & Params2>[]).concat (node);
     return new ManyToMany<Params & Params2> (
       this.table,
       members,
@@ -154,18 +154,18 @@ export class ManyToMany<Params, Ran extends boolean = false> extends AstNode<Par
     );
   }
 
-  static of<Params, Ran extends boolean = false>(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+  static of<Params, Ran extends boolean = false>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
     return new ManyToMany<Params, Ran> (table, members, keywords);
   }
 }
 
-export class Call<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class Call<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   name: string;
-  members: AstNode<Params>[];
+  members: ASTNode<Params>[];
   as?: string;
   cast?: string;
 
-  constructor(name: string, args: AstNode<Params>[], as?: string, cast?: string) {
+  constructor(name: string, args: ASTNode<Params>[], as?: string, cast?: string) {
     super ();
     this.name = name;
     this.members = args;
@@ -173,8 +173,8 @@ export class Call<Params, Ran extends boolean = false> extends AstNode<Params, R
     this.cast = cast;
   }
 
-  addMember<Params2>(node: AstNode<Params2>): Call<Params & Params2> {
-    const members = (this.members as AstNode<Params & Params2>[]).concat (node);
+  addMember<Params2>(node: ASTNode<Params2>): Call<Params & Params2> {
+    const members = (this.members as ASTNode<Params & Params2>[]).concat (node);
     return new Call<Params & Params2> (
       this.name, members, this.as, this.cast
     );
@@ -188,12 +188,12 @@ export class Call<Params, Ran extends boolean = false> extends AstNode<Params, R
     return new Call<Params, true> (this.name, this.members, this.as, this.cast);
   }
 
-  static of<Params, Ran extends boolean = false>(name: string, args: AstNode<Params>[], as?: string, cast?: string) {
+  static of<Params, Ran extends boolean = false>(name: string, args: ASTNode<Params>[], as?: string, cast?: string) {
     return new Call<Params, Ran> (name, args, as, cast);
   }
 }
 
-export class Identifier<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class Identifier<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   name: string;
   as?: string;
   cast?: string;
@@ -218,7 +218,7 @@ export class Identifier<Params, Ran extends boolean = false> extends AstNode<Par
   }
 }
 
-export class All <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class All <Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   sign: string;
 
   constructor(sign: string) {
@@ -239,12 +239,12 @@ export class All <Params, Ran extends boolean = false> extends AstNode<Params, R
   }
 }
 
-export class Variable<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
-  value: RQLValue<Params, Ran>;
+export class Variable<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
+  value: RefQLValue<Params, Ran>;
   as?: string;
   cast?: string;
 
-  constructor(value: RQLValue<Params, Ran>, as?: string, cast?: string) {
+  constructor(value: RefQLValue<Params, Ran>, as?: string, cast?: string) {
     super ();
     this.value = value;
     this.as = as;
@@ -256,7 +256,7 @@ export class Variable<Params, Ran extends boolean = false> extends AstNode<Param
   }
 
   run(params: Params, table: Table) {
-    const ran: RQLValue<Params, true> = typeof this.value === "function"
+    const ran: RefQLValue<Params, true> = typeof this.value === "function"
       ? this.value (params, table)
       : this.value;
 
@@ -267,12 +267,12 @@ export class Variable<Params, Ran extends boolean = false> extends AstNode<Param
     );
   }
 
-  static of<Params, Ran extends boolean = false>(value: RQLValue<Params, Ran>, as?: string, cast?: string) {
+  static of<Params, Ran extends boolean = false>(value: RefQLValue<Params, Ran>, as?: string, cast?: string) {
     return new Variable<Params, Ran> (value, as, cast);
   }
 }
 
-export class StringLiteral <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class StringLiteral <Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   value: string;
   as?: string;
   cast?: string;
@@ -297,7 +297,7 @@ export class StringLiteral <Params, Ran extends boolean = false> extends AstNode
   }
 }
 
-export class NumericLiteral <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class NumericLiteral <Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   value: number;
   as?: string;
   cast?: string;
@@ -322,7 +322,7 @@ export class NumericLiteral <Params, Ran extends boolean = false> extends AstNod
   }
 }
 
-export class BooleanLiteral <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class BooleanLiteral <Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   value: boolean;
   as?: string;
   cast?: string;
@@ -347,7 +347,7 @@ export class BooleanLiteral <Params, Ran extends boolean = false> extends AstNod
   }
 }
 
-export class NullLiteral <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
+export class NullLiteral <Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   value: null;
   as?: string;
   cast?: string;
