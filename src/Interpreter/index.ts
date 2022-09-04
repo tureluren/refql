@@ -3,11 +3,12 @@ import createEnv from "../Env/createEnv";
 import chain from "../more/chain";
 import concat from "../more/concat";
 import convertCase from "../more/convertCase";
+import { AstNode } from "../Parser/nodes";
 import Raw from "../Raw";
 import SqlTag from "../SqlTag";
 import compileSqlTag from "../SqlTag/compileSqlTag";
 import Table from "../Table";
-import { AstNode, CaseType, InterpretF, Rec } from "../types";
+import { CaseType, InterpretF, Rec } from "../types";
 import interpretSqlTag from "./interpretSqlTag";
 import {
   byId, castAs, fromTable, joinOn,

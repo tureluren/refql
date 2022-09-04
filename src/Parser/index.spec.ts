@@ -49,7 +49,7 @@ describe ("Parser type", () => {
             }
           `}
         }
-        x game:games { result }
+        x game:games ${[All.of ("*")]}
       }
     `;
 
@@ -78,7 +78,7 @@ describe ("Parser type", () => {
 
     const games = Table.of ("game", "games");
     const result = Identifier.of ("result");
-    const gamesAst = ManyToMany.of (games, [result], {});
+    const gamesAst = ManyToMany.of (games, [All.of ("*")], {});
 
     const expected = Root.of (
       player,
@@ -166,6 +166,15 @@ describe ("Parser type", () => {
 
     expect (() => rql`"player" {}`)
       .toThrowError (new SyntaxError ('Unexpected token: "\"player"\", expected: "IDENTIFIER"'));
+
+    expect (() => rql`player ${{}}`)
+      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of AstNode"));
+
+    expect (() => rql`player ${[]}`)
+      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of AstNode"));
+
+    expect (() => rql`player ${["name"]}`)
+      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of AstNode"));
 
     const parser = Parser.of ("player { * }", []);
     parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };

@@ -1,13 +1,19 @@
 import Table from "../Table";
-import { AstNode, Keywords, Pattern, RQLValue } from "../types";
+import { Keywords, Pattern, RQLValue } from "../types";
 import runKeywords from "./runKeywords";
 
-export class Root<Params, Ran extends boolean = false> {
+export abstract class AstNode <Params, Ran extends boolean = false> {
+  abstract cata<Return>(pattern: Pattern<Return, Params, Ran>): Return;
+  abstract run(params: Params, table: Table): AstNode<Params, true>;
+}
+
+export class Root<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   table: Table;
   members: AstNode<Params>[];
   keywords: Keywords<Params, Ran>;
 
   constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+    super ();
     this.table = table;
     this.members = members;
     this.keywords = keywords;
@@ -39,12 +45,13 @@ export class Root<Params, Ran extends boolean = false> {
   }
 }
 
-export class HasMany<Params, Ran extends boolean = false> {
+export class HasMany<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   table: Table;
   members: AstNode<Params>[];
   keywords: Keywords<Params, Ran>;
 
   constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+    super ();
     this.table = table;
     this.members = members;
     this.keywords = keywords;
@@ -76,12 +83,13 @@ export class HasMany<Params, Ran extends boolean = false> {
   }
 }
 
-export class BelongsTo<Params, Ran extends boolean = false> {
+export class BelongsTo<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   table: Table;
   members: AstNode<Params>[];
   keywords: Keywords<Params, Ran>;
 
   constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+    super ();
     this.table = table;
     this.members = members;
     this.keywords = keywords;
@@ -113,12 +121,13 @@ export class BelongsTo<Params, Ran extends boolean = false> {
   }
 }
 
-export class ManyToMany<Params, Ran extends boolean = false> {
+export class ManyToMany<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   table: Table;
   members: AstNode<Params>[];
   keywords: Keywords<Params, Ran>;
 
   constructor(table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) {
+    super ();
     this.table = table;
     this.members = members;
     this.keywords = keywords;
@@ -150,13 +159,14 @@ export class ManyToMany<Params, Ran extends boolean = false> {
   }
 }
 
-export class Call<Params, Ran extends boolean = false> {
+export class Call<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   name: string;
   members: AstNode<Params>[];
   as?: string;
   cast?: string;
 
   constructor(name: string, args: AstNode<Params>[], as?: string, cast?: string) {
+    super ();
     this.name = name;
     this.members = args;
     this.as = as;
@@ -183,12 +193,13 @@ export class Call<Params, Ran extends boolean = false> {
   }
 }
 
-export class Identifier<Params, Ran extends boolean = false> {
+export class Identifier<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   name: string;
   as?: string;
   cast?: string;
 
   constructor(name: string, as?: string, cast?: string) {
+    super ();
     this.name = name;
     this.as = as;
     this.cast = cast;
@@ -207,10 +218,11 @@ export class Identifier<Params, Ran extends boolean = false> {
   }
 }
 
-export class All <Params, Ran extends boolean = false> {
+export class All <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   sign: string;
 
   constructor(sign: string) {
+    super ();
     this.sign = sign;
   }
 
@@ -227,12 +239,13 @@ export class All <Params, Ran extends boolean = false> {
   }
 }
 
-export class Variable<Params, Ran extends boolean = false> {
+export class Variable<Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   value: RQLValue<Params, Ran>;
   as?: string;
   cast?: string;
 
   constructor(value: RQLValue<Params, Ran>, as?: string, cast?: string) {
+    super ();
     this.value = value;
     this.as = as;
     this.cast = cast;
@@ -259,12 +272,13 @@ export class Variable<Params, Ran extends boolean = false> {
   }
 }
 
-export class StringLiteral <Params, Ran extends boolean = false> {
+export class StringLiteral <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   value: string;
   as?: string;
   cast?: string;
 
   constructor(value: string, as?: string, cast?: string) {
+    super ();
     this.value = value;
     this.as = as;
     this.cast = cast;
@@ -283,12 +297,13 @@ export class StringLiteral <Params, Ran extends boolean = false> {
   }
 }
 
-export class NumericLiteral <Params, Ran extends boolean = false> {
+export class NumericLiteral <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   value: number;
   as?: string;
   cast?: string;
 
   constructor(value: number, as?: string, cast?: string) {
+    super ();
     this.value = value;
     this.as = as;
     this.cast = cast;
@@ -307,12 +322,13 @@ export class NumericLiteral <Params, Ran extends boolean = false> {
   }
 }
 
-export class BooleanLiteral <Params, Ran extends boolean = false> {
+export class BooleanLiteral <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   value: boolean;
   as?: string;
   cast?: string;
 
   constructor(value: boolean, as?: string, cast?: string) {
+    super ();
     this.value = value;
     this.as = as;
     this.cast = cast;
@@ -331,12 +347,13 @@ export class BooleanLiteral <Params, Ran extends boolean = false> {
   }
 }
 
-export class NullLiteral <Params, Ran extends boolean = false> {
+export class NullLiteral <Params, Ran extends boolean = false> extends AstNode<Params, Ran> {
   value: null;
   as?: string;
   cast?: string;
 
   constructor(value: null, as?: string, cast?: string) {
+    super ();
     this.value = value;
     this.as = as;
     this.cast = cast;

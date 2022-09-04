@@ -1,11 +1,10 @@
 import Tokenizer from "../Tokenizer";
 import {
-  AstNode, Keywords, Literal,
-  RQLValue, Token, TokenType
+  Keywords, Literal, RQLValue, Token, TokenType
 } from "../types";
 import identifierToTable from "./identifierToTable";
 import {
-  All, BelongsTo, BooleanLiteral, Call,
+  All, AstNode, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "./nodes";
@@ -138,9 +137,18 @@ class Parser<Params> {
   }
 
   members() {
-    // if (this.isNext("VARIABLE")) {
+    if (this.isNext ("VARIABLE")) {
+      const members = this.spliceValue ();
+      if (
+        !Array.isArray (members) ||
+        !members.length ||
+        !members.reduce ((acc, m) => acc && m instanceof AstNode, true)
+      ) {
+        throw new SyntaxError ("Invalid dynamic members, expected non-empty Array of AstNode");
+      }
+      return members;
+    }
 
-    // }
     this.eat ("{");
 
     if (this.isNext ("}")) {

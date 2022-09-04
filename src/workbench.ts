@@ -8,7 +8,7 @@ import { Goal, Player } from "./soccer";
 import SqlTag from "./SqlTag";
 import sql from "./SqlTag/sql";
 import Table from "./Table";
-import { AstNode, Config, Dict, CaseType, Keywords, TableNode, Querier } from "./types";
+import { Config, Dict, CaseType, Keywords, TableNode, Querier } from "./types";
 
 // RENAME record to rec
 
@@ -81,11 +81,8 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (node: TableNode<
 const playerQuery = rql<{ id: number; limit: number }>`
   ${Table.of ("player")} (limit: 5) {
     id
-    - ${() => rql`
-      team {
-        id
-        name
-      } 
+    - ${rql`
+      team { * }
     `}
     last_name
     ${() => sql`
@@ -220,24 +217,18 @@ const selectPlayer = sql<{id: number}>`
 
 // db- functions
 
-// const select = (table: string, columns: string[] = []) => {
-//   const members = columns.length
-//     ? columns.map (c => Identifier.of (c))
-//     : [All.of ("*")];
+const select = (table: string, columns: string[] = []) => {
+  return rql`
+    ${Table.of (table)} ${columns.length ? columns.map (c => Identifier.of (c)) : [All.of ("*")]} 
+  `;
+};
 
-//   const node = Root.of (Table.of (table), members, { limit: 5 });
+const byId = sql<{id: number}>`
+  where id = ${p => p.id}
+`;
 
-//   return RqlTag.of (node);
-// };
+const where = <Params>(tag: SqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
+  return tag2.map (node => node.addMember (Variable.of (tag)));
+};
 
-// const byId = sql<{id: number}>`
-//   where id = ${p => p.id}
-// `;
-
-// const where = <Params>(tag: SqlTag<Params>) => <Params2>(tag2: RqlTag<Params2>) => {
-//   return tag2.map (node => node.addMember (Variable.of (tag)));
-// };
-
-// filter sqlTag
-
-// where (byId) (select ("player", ["id", "last_name"])).run<Player> ({}, querier, { id: 5 }).then (console.log);
+where (byId) (select ("player", [])).run<Player> ({}, querier, { id: 5 }).then (console.log);

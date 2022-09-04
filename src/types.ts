@@ -1,8 +1,8 @@
 import Env from "./Env";
 import {
-  All, BelongsTo, BooleanLiteral, Call,
-  HasMany, Identifier, ManyToMany, NullLiteral,
-  NumericLiteral, Root, StringLiteral, Variable
+  AstNode, BelongsTo, BooleanLiteral,
+  HasMany, ManyToMany, NullLiteral,
+  NumericLiteral, Root, StringLiteral
 } from "./Parser/nodes";
 import SqlTag from "./SqlTag";
 import Table from "./Table";
@@ -44,14 +44,6 @@ export type TableNode <Params, Ran extends boolean = false> =
   | HasMany<Params, Ran>
   | BelongsTo<Params, Ran>
   | ManyToMany<Params, Ran>;
-
-export type AstNode <Params, Ran extends boolean = false> =
-  | TableNode<Params, Ran>
-  | Call<Params, Ran>
-  | All<Params, Ran>
-  | Identifier<Params, Ran>
-  | Variable <Params, Ran>
-  | Literal<Params, Ran>;
 
 export type Pattern<Return, Params, Ran extends boolean> = Partial<{
   Root: (table: Table, members: AstNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
@@ -124,7 +116,7 @@ export type JsTypes =
 
 export type RQLValue<Params, Ran extends boolean = false> =
   Ran extends false
-  ? JsTypes | SqlTag<Params> | ParamF<Params, JsTypes | SqlTag<Params>>
-  : JsTypes | SqlTag<Params>;
+  ? JsTypes | ParamF<Params, JsTypes>
+  : JsTypes;
 
 export type InterpretF<Params> = (exp: AstNode<Params, true | false>, env: Env<Params>, rows?: any[]) => Rec<Params>;
