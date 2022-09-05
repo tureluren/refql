@@ -247,6 +247,7 @@ const rootToBelongsTo = <Params> (node: TableNode<Params>) => {
 };
 
 // NOT A SEMIGROUP, because semigroup laws don't goe
+// but it is a functor thout, so you can use map to compose stuff
 const getPlayerById2 =
   playerById.map (node => node.addMember (rootToBelongsTo (teams.node)));
 
