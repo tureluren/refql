@@ -1,6 +1,6 @@
-import Table from "../Table";
-import { Keywords, Pattern, RefQLValue } from "../types";
-import runKeywords from "./runKeywords";
+import Table from "../Table/index.ts";
+import { Keywords, Pattern, RefQLValue } from "../types.ts";
+import runKeywords from "./runKeywords.ts";
 
 export abstract class ASTNode<Params, Ran extends boolean = false> {
   abstract cata<Return>(pattern: Pattern<Return, Params, Ran>): Return;

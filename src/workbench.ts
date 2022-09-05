@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { pipe } from "fp-ts/function";
 import In from "./In";
 import { rql } from "./index";
 import { All, BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, StringLiteral, Variable } from "./Parser/nodes";
@@ -8,7 +9,7 @@ import { Goal, Player } from "./soccer";
 import SQLTag from "./SQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
-import { ObjectMap, Keywords, TableNode, Querier } from "./types";
+import { StringMap, Keywords, TableNode, Querier } from "./types";
 
 const pool = new Pool ({
   user: "test",
@@ -18,8 +19,10 @@ const pool = new Pool ({
   port: 5432
 });
 
-const querier = <T>(query: string, values: any[]) =>
-  pool.query (query, values).then (({ rows }) => rows as T[]);
+const querier = <T>(query: string, values: any[]) => {
+  console.log (query);
+  return pool.query (query, values).then (({ rows }) => rows as T[]);
+};
 
 const makeRun = <Output>(querier: Querier<Output>) => <Params>(tag: RQLTag<Params> | SQLTag<Params>, params: Params) => {
   return tag.run (querier, params);
@@ -36,24 +39,7 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (node: TableNode<
 };
 
 
-// const toHasMany = <Params> (node: TableNode<Params>): HasMany<Params> => {
-//   return HasMany.of (node.table, node.members, node.keywords);
-// };
 
-// const hasMany = <Params> (tag: RQLTag<Params>): RQLTag<Params> => {
-//   return tag.map (node => {
-//     if (!(
-//       node instanceof Root ||
-//       node instanceof HasMany ||
-//       node instanceof BelongsTo ||
-//       node instanceof ManyToMany
-//     )) {
-//       // or throw error
-//       return node;
-//     }
-//     return toHasMany (node);
-//   });
-// };
 
 // const hasMany2 = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>): RQLTag<Params & Params2> => {
 //   return tag2.concat (tag.map (node => {
@@ -115,9 +101,9 @@ const playerGoalsRef = {
 // run (playerQuery, { id: 1, limit: 5 })
 //   .then (rows => console.log (rows[1]));
 
-playerQuery.run<Player> (querier, { id: 1, limit: 5 }).then (players => {
-  console.log (players);
-});
+// playerQuery.run<Player> (querier, { id: 1, limit: 5 }).then (players => {
+//   console.log (players);
+// });
 
 
 
@@ -208,19 +194,94 @@ const selectPlayer = sql<{id: number}>`
 // });
 
 // db- functions
+const players = rql<{}>`
+  player { * }
+`;
 
-const select = (table: string, columns: string[] = []) => {
-  return rql`
-    ${Table.of (table)} ${columns.length ? columns.map (c => Identifier.of (c)) : [All.of ("*")]} 
-  `;
+const teams = rql<{}>`
+  team { * }
+`;
+
+const leagues = rql<{}>`
+  league { * }
+`;
+
+const goals = rql<{}>`
+  goal { * }
+`;
+
+// natural transformation
+const rootToHasMany = <Params> (node: TableNode<Params>) => {
+  return HasMany.of (node.table, node.members, node.keywords);
 };
 
-const byId = sql<{id: number}>`
+const rootToBelongsTo = <Params> (node: TableNode<Params>) => {
+  return BelongsTo.of<Params> (node.table, node.members, node.keywords);
+};
+
+const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
+  return tag2.map (node => node.addMember (rootToHasMany (tag.node)));
+};
+
+const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
+  return tag2.map (node => node.addMember (rootToBelongsTo (tag.node)));
+};
+
+const select = (table: Table, columns: string[] = []) => {
+  const members = columns.length ? columns.map (col => Identifier.of (col)) : [All.of ("*")];
+  return rql<{}>`${table} ${members}`;
+};
+
+const byIdTag = sql<{id: number}>`
+  where ${(_p, t) => t}.id = ${p => p.id}
+`;
+
+const byId = <Params>(tag: RQLTag<Params>) =>
+  tag.concat (byIdTag);
+
+const paginateTag = sql<{limit: number; offset: number}>`
+  limit ${p => p.limit}
+  offset ${p => p.offset}
+`;
+
+const paginate = <Params>(tag: RQLTag<Params>) =>
+  tag.concat (paginateTag);
+
+// where (byId) (select ("player", [])).run<Player> (querier, { id: 5 }).then (console.log);
+const getTeams = pipe (
+  teams,
+  belongsTo (leagues)
+);
+
+const getGoals = pipe (
+  goals,
+  paginate
+);
+
+const getPlayer = pipe (
+  players,
+  belongsTo (getTeams),
+  hasMany (getGoals),
+  byId
+);
+
+
+run (getPlayer, { id: 9, limit: 4, offset: 4 }).then (console.log);
+
+// REMOVE FPTS
+
+const byIdd = sql<{id: number}>`
   where id = ${p => p.id}
 `;
 
-const where = <Params>(tag: SQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
-  return tag2.map (node => node.addMember (Variable.of (tag)));
-};
+const playerr = sql`
+  select * from player
+`;
 
-where (byId) (select ("player", [])).run<Player> (querier, { id: 5 }).then (console.log);
+// semigroup bewijs
+const getPlayerById =
+  playerr.concat (byIdd);
+
+// different approach met pipe
+
+run (getPlayerById, { id: 1 }).then (console.log);

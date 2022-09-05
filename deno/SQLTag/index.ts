@@ -1,6 +1,7 @@
-import { Querier, RefQLValue } from "../types";
-import compileSQLTag from "./compileSQLTag";
-import formatTLString from "./formatTLString";
+import RQLTag from "../RQLTag/index.ts";
+import { Querier, RefQLValue } from "../types.ts";
+import compileSQLTag from "./compileSQLTag.ts";
+import formatTLString from "./formatTLString.ts";
 
 class SQLTag<Params> {
   strings: string[];
@@ -11,7 +12,10 @@ class SQLTag<Params> {
     this.values = values;
   }
 
-  concat<Params2>(other: SQLTag<Params2>): SQLTag<Params & Params2> {
+  concat<Params2>(other: RQLTag<Params2> | SQLTag<Params2>): SQLTag<Params & Params2> {
+    if (other instanceof RQLTag) {
+      return new SQLTag<Params & Params2> (this.strings, this.values);
+    }
     const tag1Strings = Array.from (this.strings);
     const lastEl = tag1Strings.pop ();
 

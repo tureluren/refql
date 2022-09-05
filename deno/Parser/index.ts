@@ -1,15 +1,15 @@
-import Tokenizer from "../Tokenizer";
+import Tokenizer from "../Tokenizer/index.ts";
 import {
   Keywords, Literal, RefQLValue, Token, TokenType
-} from "../types";
-import identifierToTable from "./identifierToTable";
+} from "../types.ts";
+import identifierToTable from "./identifierToTable.ts";
 import {
   All, ASTNode, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "./nodes";
-import Table from "../Table";
-import RQLTag from "../RQLTag";
+import Table from "../Table/index.ts";
+import RQLTag from "../RQLTag/index.ts";
 
 class Parser<Params> {
   str: string;
@@ -90,8 +90,10 @@ class Parser<Params> {
 
         if (this.isNextLiteral ()) {
           value = this.Literal ().value;
+
         } else if (this.isNext ("VARIABLE")) {
           value = this.spliceValue ();
+
         } else {
           throw new SyntaxError (
             `Only Literals or Variables are allowed as keywords, not: "${this.lookahead.type}"`
@@ -144,7 +146,6 @@ class Parser<Params> {
       ) {
         throw new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode");
       }
-
       return members;
     }
 

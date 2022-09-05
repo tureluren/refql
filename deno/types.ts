@@ -1,11 +1,11 @@
-import Env from "./Env";
+import Env from "./Env/index.ts";
 import {
   ASTNode, BelongsTo, BooleanLiteral,
   HasMany, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral
 } from "./Parser/nodes";
-import SQLTag from "./SQLTag";
-import Table from "./Table";
+import SQLTag from "./SQLTag/index.ts";
+import Table from "./Table/index.ts";
 
 export interface StringMap {
   [key: string]: any;

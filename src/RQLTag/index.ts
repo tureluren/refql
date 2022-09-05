@@ -1,5 +1,6 @@
 import Interpreter from "../Interpreter";
-import { Root } from "../Parser/nodes";
+import { Root, Variable } from "../Parser/nodes";
+import SQLTag from "../SQLTag";
 import { Querier } from "../types";
 import aggregate from "./aggregate";
 
@@ -11,6 +12,14 @@ class RQLTag <Params> {
       throw new Error ("RQLTag should hold a Root node");
     }
     this.node = node;
+  }
+
+  concat<Params2>(other: RQLTag<Params2> | SQLTag<Params2>): RQLTag<Params & Params2> {
+    const member = other instanceof SQLTag
+      ? Variable.of (other)
+      : other.node;
+
+    return this.map (node => node.addMember (member));
   }
 
   map<Params2>(fn: (node: Root<Params>) => Root<Params2>) {
