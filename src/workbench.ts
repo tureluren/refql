@@ -30,13 +30,6 @@ const makeRun = <Output>(querier: Querier<Output>) => <Params>(tag: RQLTag<Param
 
 const run = makeRun<Player> (querier);
 
-const updateKeywords = <Params>(keywords: Keywords<Params>) => (node: TableNode<Params>): TableNode<Params> => {
-  const newKeywords = { ...node.keywords, ...keywords };
-  return {
-    ...node,
-    keywords: newKeywords
-  } as typeof node;
-};
 
 
 
@@ -194,20 +187,95 @@ const selectPlayer = sql<{id: number}>`
 // });
 
 // db- functions
-const players = rql<{}>`
-  player { * }
+
+// REMOVE FPTS
+
+// enkel bij sql tag gebruiken
+
+
+const playerr = sql`
+  select * from player
 `;
 
+const byId = sql<{id: number}>`
+  where id = ${p => p.id}
+`;
+
+const getPlayerById =
+  playerr.concat (byId);
+
+// semigroup bewijs
+
+const orderBy = sql<{ col: string; dir?: string }>`
+  order by ${p => Raw.of (p.col)} ${p => Raw.of (p.dir || "asc")}
+`;
+
+const paginate = sql<{limit: number; offset: number}>`
+  limit ${p => p.limit}
+  offset ${p => p.offset}
+`;
+
+const getPlayers =
+  playerr.concat (orderBy).concat (paginate);
+
+// different approach met pipe
+
+// run (getPlayers, { col: "last_name", limit: 5, offset: 0, dir: "desc" }).then (console.log);
+
+//INTRODUCE RQL
+
+// same example
+const playerById = rql<{ id: number }>`
+  player (id: ${p => p.id}) { 
+    id
+    first_name
+    last_name 
+  }
+`;
+
+// players.run (querier, { id: 4 });
 const teams = rql<{}>`
-  team { * }
+  team { 
+    * 
+  }
 `;
 
+
+// NT
+const rootToBelongsTo = <Params> (node: TableNode<Params>) => {
+  return BelongsTo.of<Params> (node.table, node.members, node.keywords);
+};
+
+// NOT A SEMIGROUP, because semigroup laws don't goe
+const getPlayerById2 =
+  playerById.map (node => node.addMember (rootToBelongsTo (teams.node)));
+
+// ALT, graphqlish - indicating a that a player belongs to a team, less reusable though
+const playerByIdAlt = rql<{ id: number }>`
+  player (id: ${p => p.id}) { 
+    id
+    first_name
+    last_name 
+    - team {
+      *
+    }
+  }
+`;
+
+// playersAlt with dyamic table and belongsto
+
+
+const players = rql<{ id: number }>`
+  player (id: ${p => p.id}) { 
+    *
+  }
+`;
 const leagues = rql<{}>`
   league { * }
 `;
 
-const goals = rql<{}>`
-  goal { * }
+const goals = rql<{goalLimit?: number}>`
+  goal (limit: ${p => p.goalLimit}) { * }
 `;
 
 // natural transformation
@@ -215,17 +283,14 @@ const rootToHasMany = <Params> (node: TableNode<Params>) => {
   return HasMany.of (node.table, node.members, node.keywords);
 };
 
-const rootToBelongsTo = <Params> (node: TableNode<Params>) => {
-  return BelongsTo.of<Params> (node.table, node.members, node.keywords);
+const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
+  return tag2.map (node => node.addMember (rootToBelongsTo (tag.node)));
 };
 
 const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
   return tag2.map (node => node.addMember (rootToHasMany (tag.node)));
 };
 
-const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
-  return tag2.map (node => node.addMember (rootToBelongsTo (tag.node)));
-};
 
 const select = (table: Table, columns: string[] = []) => {
   const members = columns.length ? columns.map (col => Identifier.of (col)) : [All.of ("*")];
@@ -236,16 +301,6 @@ const byIdTag = sql<{id: number}>`
   where ${(_p, t) => t}.id = ${p => p.id}
 `;
 
-const byId = <Params>(tag: RQLTag<Params>) =>
-  tag.concat (byIdTag);
-
-const paginateTag = sql<{limit: number; offset: number}>`
-  limit ${p => p.limit}
-  offset ${p => p.offset}
-`;
-
-const paginate = <Params>(tag: RQLTag<Params>) =>
-  tag.concat (paginateTag);
 
 // where (byId) (select ("player", [])).run<Player> (querier, { id: 5 }).then (console.log);
 const getTeams = pipe (
@@ -253,35 +308,25 @@ const getTeams = pipe (
   belongsTo (leagues)
 );
 
+const updateKeywords = <Params>(keywords: Keywords<Params>) => (tag: RQLTag<Params>) => {
+  return tag.map (node => {
+    const newKeywords = { ...node.keywords, ...keywords };
+    return Object.assign (node, { keywords: newKeywords });
+  });
+};
+
+const playerGoalsRefs = { lref: "id" };
+
 const getGoals = pipe (
   goals,
-  paginate
+  updateKeywords (playerGoalsRefs)
 );
 
 const getPlayer = pipe (
   players,
   belongsTo (getTeams),
-  hasMany (getGoals),
-  byId
+  hasMany (getGoals)
 );
 
 
-run (getPlayer, { id: 9, limit: 4, offset: 4 }).then (console.log);
-
-// REMOVE FPTS
-
-const byIdd = sql<{id: number}>`
-  where id = ${p => p.id}
-`;
-
-const playerr = sql`
-  select * from player
-`;
-
-// semigroup bewijs
-const getPlayerById =
-  playerr.concat (byIdd);
-
-// different approach met pipe
-
-run (getPlayerById, { id: 1 }).then (console.log);
+run (getPlayer, { id: 9, goalLimit: 4 }).then (console.log);
