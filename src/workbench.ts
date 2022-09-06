@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import mySql from "mysql2";
 import { pipe } from "fp-ts/function";
 import In from "./In";
 import { rql } from "./index";
@@ -19,16 +20,38 @@ const pool = new Pool ({
   port: 5432
 });
 
+const mySqlPool = mySql.createPool ({
+  user: "test",
+  host: "localhost",
+  database: "soccer",
+  password: "test",
+  port: 5432,
+  multipleStatements: true
+});
+
 const querier = <T>(query: string, values: any[]) => {
   console.log (query);
   return pool.query (query, values).then (({ rows }) => rows as T[]);
 };
 
+const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
+  new Promise ((res, rej) => {
+    const qry = query.replace (/\$\d/g, "?");
+    console.log (qry);
+    mySqlPool.query (qry, values, (error, rows) => {
+      if (error) {
+        rej (error);
+        return;
+      }
+      res (rows as T[]);
+    });
+  });
+
 const makeRun = <Output>(querier: Querier<Output>) => <Params>(tag: RQLTag<Params> | SQLTag<Params>, params: Params) => {
   return tag.run (querier, params);
 };
 
-const run = makeRun<Player> (querier);
+const run = makeRun<Player> (mySQLQuerier);
 
 
 
@@ -234,6 +257,7 @@ const playerById = rql<{ id: number }>`
 `;
 
 // players.run (querier, { id: 4 });
+
 const teams = rql<{}>`
   team { 
     * 
@@ -331,3 +355,5 @@ const getPlayer = pipe (
 
 
 run (getPlayer, { id: 9, goalLimit: 4 }).then (console.log);
+
+// MY SQL QUERIER na uitleg postgresQuerier

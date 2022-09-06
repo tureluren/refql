@@ -3,7 +3,15 @@
 const Chance = require ("chance");
 const log = require ("npmlog");
 const mapDBError = require ("./mapDBError");
-const query = require ("./query");
+let db;
+let usingPg = false;
+
+if (process.env.DB_TYPE === "pg") {
+  db = require ("./pg");
+  usingPg = true;
+} else if (process.env.DB_TYPE === "mysql") {
+  db = require ("./mysql");
+}
 
 const chance = new Chance ();
 
@@ -28,11 +36,15 @@ const seedLeagues = async () => {
   const sql = Object.keys (leagues).reduce ((acc, key) => {
     const league = leagues[key];
     return `${acc} ('${league}'),`;
-  }, 'insert into "league" (name) values').slice (0, -1);
+  }, "insert into `league` (`name`) values").slice (0, -1);
 
-  await query ('delete from "league"');
-  await query ("alter sequence league_id_seq restart with 1");
-  await query (sql);
+  await db.query ("delete from `league`");
+  if (usingPg) {
+    await db.query ("alter sequence league_id_seq restart with 1");
+  } else {
+    await db.query ("alter table `league` auto_increment = 1");
+  }
+  await db.query (sql);
 
   log.info ("seed leagues", "leagues successfully seeded");
 };
@@ -59,11 +71,15 @@ const seedTeams = async () => {
   const sql = Object.keys (teams).reduce ((acc, key) => {
     const team = teams[key];
     return `${acc} ('${team.name}', ${team.leagueId}),`;
-  }, 'insert into "team" (name, league_id) values').slice (0, -1);
+  }, "insert into `team` (`name`, `league_id`) values").slice (0, -1);
 
-  await query ('delete from "team"');
-  await query ("alter sequence team_id_seq restart with 1");
-  await query (sql);
+  await db.query ("delete from `team`");
+  if (usingPg) {
+    await db.query ("alter sequence team_id_seq restart with 1");
+  } else {
+    await db.query ("alter table `team` auto_increment = 1");
+  }
+  await db.query (sql);
 
   log.info ("seed teams", "teams successfully seeded");
 };
@@ -80,7 +96,12 @@ const seedPlayers = async () => {
       const lastName = chance.last ().replace (/'/g, "''");
       const fullName = firstName + " " + lastName;
       const positionId = idx + 1;
-      const birthday = chance.birthday ({ string: true, year: chance.year ({ min: 1985, max: 2004 }) });
+      let birthday = chance.birthday ({ string: true, year: chance.year ({ min: 1985, max: 2004 }) });
+
+      if (!usingPg) {
+        const [m, d, y] = birthday.split ("/");
+        birthday = `${y}-${m}-${d}`;
+      }
 
       if (!players[fullName]) {
         players[fullName] = { firstName, lastName, teamId, positionId, birthday };
@@ -94,11 +115,17 @@ const seedPlayers = async () => {
   const sql = Object.keys (players).reduce ((acc, key) => {
     const player = players[key];
     return `${acc} ('${player.firstName}', '${player.lastName}', ${player.teamId}, ${player.positionId}, '${player.birthday}'),`;
-  }, 'insert into "player" (first_name, last_name, team_id, position_id, birthday) values').slice (0, -1);
+  }, "insert into `player` (`first_name`, `last_name`, `team_id`, `position_id`, `birthday`) values").slice (0, -1);
 
-  await query ('delete from "player"');
-  await query ("alter sequence player_id_seq restart with 1");
-  await query (sql);
+  await db.query ("delete from `player`");
+
+  if (usingPg) {
+    await db.query ("alter sequence player_id_seq restart with 1");
+  } else {
+    await db.query ("alter table `player` auto_increment = 1");
+  }
+
+  await db.query (sql);
 
   log.info ("seed players", "players successfully seeded");
 };
@@ -215,43 +242,54 @@ const seedGames = async () => {
 
   const gamesSQL = games.reduce ((acc, game) => {
     return `${acc} (${game.homeTeamId}, ${game.awayTeamId}, ${game.leagueId}, '${game.result}'),`;
-  }, 'insert into "game" (home_team_id, away_team_id, league_id, result) values').slice (0, -1);
+  }, "insert into `game` (`home_team_id`, `away_team_id`, `league_id`, `result`) values").slice (0, -1);
 
   const playersSQL = games.flatMap (game => game.players).reduce ((acc, player) => {
     return `${acc} (${player.playerId}, ${player.gameId}),`;
-  }, 'insert into "player_game" (player_id, game_id) values').slice (0, -1);
+  }, "insert into `player_game` (`player_id`, `game_id`) values").slice (0, -1);
 
   const goalsSQL = goals.reduce ((acc, goal) => {
     return `${acc} (${goal.gameId}, ${goal.playerId}, ${goal.minute}, ${goal.ownGoal}),`;
-  }, 'insert into "goal" (game_id, player_id, minute, own_goal) values').slice (0, -1);
+  }, "insert into `goal` (`game_id`, `player_id`, `minute`, `own_goal`) values").slice (0, -1);
 
   const assistsSQL = assists.reduce ((acc, assist) => {
     return `${acc} (${assist.goalId}, ${assist.gameId}, ${assist.playerId}),`;
-  }, 'insert into "assist" (goal_id, game_id, player_id) values').slice (0, -1);
+  }, "insert into `assist` (`goal_id`, `game_id`, `player_id`) values").slice (0, -1);
 
-  await query ('delete from "game"');
-  await query ("alter sequence game_id_seq restart with 1");
-  await query (gamesSQL);
+  await db.query ("delete from `game`");
+  if (usingPg) {
+    await db.query ("alter sequence game_id_seq restart with 1");
+  } else {
+    await db.query ("alter table `game` auto_increment = 1");
+  }
+  await db.query (gamesSQL);
 
   log.info ("seed games", "games successfully seeded");
 
-  await query ('delete from "player_game"');
-  await query (playersSQL);
+  await db.query ("delete from `player_game`");
+  await db.query (playersSQL);
 
   log.info ("seed player_games", "player_games successfully seeded");
 
-  await query ('delete from "goal"');
-  await query ("alter sequence goal_id_seq restart with 1");
-  await query (goalsSQL);
+  await db.query ("delete from `goal`");
+  if (usingPg) {
+    await db.query ("alter sequence goal_id_seq restart with 1");
+  } else {
+    await db.query ("alter table `goal` auto_increment = 1");
+  }
+  await db.query (goalsSQL);
 
   log.info ("seed goals", "goals successfully seeded");
 
-  await query ('delete from "assist"');
-  await query ("alter sequence assist_id_seq restart with 1");
-  await query (assistsSQL);
+  await db.query ("delete from `assist`");
+  if (usingPg) {
+    await db.query ("alter sequence assist_id_seq restart with 1");
+  } else {
+    await db.query ("alter table `assist` auto_increment = 1");
+  }
+  await db.query (assistsSQL);
 
   log.info ("seed assists", "assists successfully seeded");
-
 };
 
 const seed = async () => {

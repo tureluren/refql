@@ -90,10 +90,8 @@ class Parser<Params> {
 
         if (this.isNextLiteral ()) {
           value = this.Literal ().value;
-
         } else if (this.isNext ("VARIABLE")) {
           value = this.spliceValue ();
-
         } else {
           throw new SyntaxError (
             `Only Literals or Variables are allowed as keywords, not: "${this.lookahead.type}"`
@@ -146,6 +144,7 @@ class Parser<Params> {
       ) {
         throw new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode");
       }
+
       return members;
     }
 
