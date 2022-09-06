@@ -1,9 +1,9 @@
-const userConfig = {
-  user: process.env.DB_USER || "test",
-  host: process.env.DB_HOST || "localhost",
-  database: process.env.DB_NAME || "soccer",
-  password: process.env.DB_PASSWORD || "test",
-  port: process.env.DB_PORT ? Number (process.env.DB_PORT) : 5432
-};
+const userConfig = (db: "pg" | "mysql") => ({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: Number (process.env[`${db.toUpperCase ()}_PORT`])
+});
 
 export default userConfig;

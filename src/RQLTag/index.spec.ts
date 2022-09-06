@@ -1,19 +1,23 @@
+import { createPool } from "mysql2";
 import { Pool } from "pg";
 import RQLTag from ".";
 import { All, HasMany, Identifier, Root } from "../Parser/nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
-import querier from "../test/querier";
+import mySQLQuerier from "../test/mySQLQuerier";
+import pgQuerier from "../test/pgQuerier";
 import userConfig from "../test/userConfig";
-import { TableNode } from "../types";
+import { Querier, TableNode } from "../types";
 import rql from "./rql";
 
 describe ("RQLTag type", () => {
   const player = Table.of ("player");
-  const pool = new Pool (userConfig);
+  const pgPool = new Pool (userConfig ("pg"));
+  const mySQLPool = createPool (userConfig ("mysql"));
 
   afterAll (async () => {
-    await pool.end ();
+    await pgPool.end ();
+    mySQLPool.end ();
   });
 
   test ("create RQLTag", () => {
@@ -80,19 +84,24 @@ describe ("RQLTag type", () => {
       }
     `;
 
-    const players = await tag.run<Player> (querier (pool), {});
-    const player = players[0];
-    const team = players[0].team;
-    const teammate = team.players[0];
-    const league = players[0].team.league;
-    const game = players[0].games[0];
+    const testPlayers = async (querier: Querier<Player>) => {
+      const players = await tag.run<Player> (querier, {});
+      const player = players[0];
+      const team = players[0].team;
+      const teammate = team.players[0];
+      const league = players[0].team.league;
+      const game = players[0].games[0];
 
-    expect (Object.keys (player)).toEqual (["last_name", "team", "games"]);
-    expect (Object.keys (team)).toEqual (["name", "league", "players"]);
-    expect (Object.keys (league)).toEqual (["name"]);
-    expect (Object.keys (teammate)).toEqual (["last_name"]);
-    expect (Object.keys (game)).toEqual (["result"]);
+      expect (Object.keys (player)).toEqual (["last_name", "team", "games"]);
+      expect (Object.keys (team)).toEqual (["name", "league", "players"]);
+      expect (Object.keys (league)).toEqual (["name"]);
+      expect (Object.keys (teammate)).toEqual (["last_name"]);
+      expect (Object.keys (game)).toEqual (["result"]);
+      expect (players.length).toBe (30);
+    };
 
-    expect (players.length).toBe (30);
+
+    await testPlayers (pgQuerier (pgPool));
+    await testPlayers (mySQLQuerier (mySQLPool));
   });
 });
