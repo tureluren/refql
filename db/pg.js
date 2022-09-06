@@ -56,6 +56,7 @@ const waitForConnection = () => {
 };
 
 module.exports = {
+  pool,
   query,
   readSettingTable,
   readSchemaVersion,

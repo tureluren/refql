@@ -10,7 +10,7 @@ if (process.env.DB_TYPE === "pg") {
   db = require ("./pg");
   usingPg = true;
 } else if (process.env.DB_TYPE === "mysql") {
-  db = require ("./mysql");
+  db = require ("./mySQL");
 }
 
 const chance = new Chance ();
@@ -298,6 +298,7 @@ const seed = async () => {
     await seedTeams ();
     await seedPlayers ();
     await seedGames ();
+    db.pool.end ();
 
     process.exit (0);
   } catch (err) {

@@ -15,8 +15,8 @@ describe ("RQLTag type", () => {
   const pgPool = new Pool (userConfig ("pg"));
   const mySQLPool = createPool (userConfig ("mysql"));
 
-  afterAll (async () => {
-    await pgPool.end ();
+  afterAll (() => {
+    pgPool.end ();
     mySQLPool.end ();
   });
 

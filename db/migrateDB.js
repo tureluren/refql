@@ -10,7 +10,7 @@ let db;
 if (process.env.DB_TYPE === "pg") {
   db = require ("./pg");
 } else if (process.env.DB_TYPE === "mysql") {
-  db = require ("./mysql");
+  db = require ("./mySQL");
 }
 
 const readFile = path =>
@@ -59,14 +59,16 @@ const migrateDB = async () => {
   try {
     await db.waitForConnection ();
     const settingTable = await db.readSettingTable ();
+
     if (!settingTable) {
       await runInitial ();
     }
+
     const schemaVersion = await db.readSchemaVersion ();
     const updates = await listUpdates (schemaVersion);
     await runUpdates (updates);
-
     log.info ("database", "Database check completed");
+    db.pool.end ();
     process.exit (0);
   } catch (err) {
     const errMessage = mapDBError (err);

@@ -16,8 +16,8 @@ describe ("SQLTag type", () => {
   const mySQLPool = createPool (userConfig ("mysql"));
   const rawLastName = Raw.of ("last_name");
 
-  afterAll (async () => {
-    await pgPool.end ();
+  afterAll (() => {
+    pgPool.end ();
     mySQLPool.end ();
   });
 
