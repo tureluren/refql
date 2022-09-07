@@ -71,6 +71,9 @@
     ],
     "testMatch": [
       "**/?(*.)+(spec|test).+(ts)"
+    ],
+    "coveragePathIgnorePatterns" : [
+      "<rootDir>/src/test" 
     ]
   }
 }
