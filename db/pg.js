@@ -14,7 +14,12 @@ const pool = new Pool ({
 const query = async (sql, values = []) => {
   const client = await pool.connect ();
   try {
-    const { rows } = await client.query (sql.replace (/`/g, '"'), values);
+    const { rows } = await client.query (
+      sql
+        .replace (/`/g, '"')
+        .replace (/integer auto_increment/g, "serial"),
+      values
+    );
     return rows;
   } catch (err) {
     throw err;

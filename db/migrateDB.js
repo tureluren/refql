@@ -7,10 +7,12 @@ const mapDBError = require ("./mapDBError");
 
 let db;
 
-if (process.env.DB_TYPE === "pg") {
-  db = require ("./pg");
-} else if (process.env.DB_TYPE === "mysql") {
+if (process.env.DB_TYPE === "mysql") {
   db = require ("./mySQL");
+} else if (process.env.DB_TYPE === "mariadb") {
+  db = require ("./mariaDB");
+} else {
+  db = require ("./pg");
 }
 
 const readFile = path =>

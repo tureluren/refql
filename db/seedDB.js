@@ -6,11 +6,13 @@ const mapDBError = require ("./mapDBError");
 let db;
 let usingPg = false;
 
-if (process.env.DB_TYPE === "pg") {
+if (process.env.DB_TYPE === "mysql") {
+  db = require ("./mySQL");
+} else if (process.env.DB_TYPE === "mariadb") {
+  db = require ("./mariaDB");
+} else {
   db = require ("./pg");
   usingPg = true;
-} else if (process.env.DB_TYPE === "mysql") {
-  db = require ("./mySQL");
 }
 
 const chance = new Chance ();

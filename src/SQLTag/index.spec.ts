@@ -1,10 +1,12 @@
-import { createPool } from "mysql2";
-import { Pool } from "pg";
+import mariaDB from "mariadb";
+import mySQL from "mysql2";
+import pg from "pg";
 import SQLTag from ".";
 import In from "../In";
 import Raw from "../Raw";
 import rql from "../RQLTag/rql";
 import { Player } from "../soccer";
+import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import userConfig from "../test/userConfig";
@@ -12,13 +14,24 @@ import { Querier } from "../types";
 import sql from "./sql";
 
 describe ("SQLTag type", () => {
-  const pgPool = new Pool (userConfig ("pg"));
-  const mySQLPool = createPool (userConfig ("mysql"));
+  let pool: any;
+  let querier: Querier<Player>;
+
+  if (process.env.DB_TYPE === "mysql") {
+    pool = mySQL.createPool (userConfig ("mysql"));
+    querier = mySQLQuerier (pool);
+  } else if (process.env.DB_TYPE === "mariadb") {
+    pool = mariaDB.createPool (userConfig ("mariadb"));
+    querier = mariaDBQuerier (pool);
+  } else {
+    pool = new pg.Pool (userConfig ("pg"));
+    querier = pgQuerier (pool);
+  }
+
   const rawLastName = Raw.of ("last_name");
 
   afterAll (() => {
-    pgPool.end ();
-    mySQLPool.end ();
+    pool.end ();
   });
 
   test ("create SQLTag", () => {
@@ -61,15 +74,11 @@ describe ("SQLTag type", () => {
       ${paginate}
     `;
 
-    const testPlayers = async (querier: Querier<Player>) => {
-      const players = await tag.run<Player> (querier, { limit: 5, offset: 1 });
+    const players = await tag.run<Player> (querier, { limit: 5, offset: 1 });
 
-      expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
-      expect (players.length).toBe (5);
-    };
+    expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
+    expect (players.length).toBe (5);
 
-    await testPlayers (pgQuerier (pgPool));
-    await testPlayers (mySQLQuerier (mySQLPool));
   });
 
   test ("errors", async () => {

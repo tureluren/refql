@@ -44,11 +44,11 @@ const waitForConnection = () => {
         return;
       } catch (e) {
         if (attempts === 10) {
-          rej (new Error ("Waited for 30 seconds, MySql is still not set up"));
+          rej (new Error ("Waited for 30 seconds, MySQL is still not set up"));
           return;
         }
         attempts += 1;
-        log.info ("database", "MySql is still setting up, sleeping 3 seconds...");
+        log.info ("database", "MySQL is still setting up, sleeping 3 seconds...");
         await new Promise (resolve => setTimeout (resolve, 3000));
       }
     }

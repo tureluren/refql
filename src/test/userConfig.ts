@@ -1,4 +1,4 @@
-const userConfig = (db: "pg" | "mysql") => ({
+const userConfig = (db: "pg" | "mysql" | "mariadb") => ({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,

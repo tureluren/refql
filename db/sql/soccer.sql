@@ -1,5 +1,5 @@
 create table `setting` (
-  `id` serial,
+  `id` integer auto_increment,
   `key_name` varchar(50) not null,
   `key_value` varchar(50) not null,
   primary key (`id`)

@@ -1,24 +1,24 @@
 create table `league` (
-  `id` serial,
+  `id` integer auto_increment,
   `name` text,
   primary key (`id`)
 );
 
 create table `team` (
-  `id` serial,
+  `id` integer auto_increment,
   `name` text,
   `league_id` integer references `league` (`id`),
   primary key (`id`)
 );
 
 create table `position` (
-  `id` serial,
+  `id` integer auto_increment,
   `name` text,
   primary key (`id`)
 );
 
 create table `player` (
-  `id` serial,
+  `id` integer auto_increment,
   `first_name` text,
   `last_name` text,
   `birthday` date,
@@ -28,7 +28,7 @@ create table `player` (
 );
 
 create table `game` (
-  `id` serial,
+  `id` integer auto_increment,
   `home_team_id` integer references `team` (`id`),
   `away_team_id` integer references `team` (`id`),
   `league_id` integer references `league` (`id`),
@@ -43,7 +43,7 @@ create table `player_game` (
 );
 
 create table `goal` (
-  `id` serial,
+  `id` integer auto_increment,
   `game_id` integer references `game` (`id`),
   `player_id` integer references `player` (`id`),
   `own_goal` boolean default false,
@@ -53,7 +53,7 @@ create table `goal` (
 );
 
 create table `assist` (
-  `id` serial,
+  `id` integer auto_increment,
   `game_id` integer references `game` (`id`),
   `goal_id` integer references `goal` (`id`),
   `player_id` integer references `player` (`id`),
