@@ -1,8 +1,5 @@
 # RefQL
-A Node.js library for retrieving data from a PostgreSQL database with an interesting query language included.
-
-## Introduction
-RefQL is about retrieving referenced data in an elegant, non-painful and no-nosense way (see [relationships](#relationships)). If you are a fan of simple, traditional REST API endpoints and not of GraphQL, but you do want that GraphQL feeling when querying a database, RefQL is for you. 
+A Node.js library for composing and running SQL queries.
 
 ## Installation
 ```bash
@@ -14,7 +11,19 @@ npm install refql
 ## Getting started
 ```ts
 import { Pool } from "pg";
-import { RefQL, rql, sql } from "refql";
+import { rql, sql } from "refql";
+
+const player = sql`
+  select id, first_name, last_name
+  from player
+`;
+
+const byId = sql<{id: number}>`
+  where id = ${p => p.id}
+`;
+
+const getPlayerById =
+  player.concat (byId);
 
 const pool = new Pool ({
   user: "test",
@@ -24,64 +33,23 @@ const pool = new Pool ({
   port: 5432
 });
 
-const querier = (query: string, values: any[]) =>
-  pool.query (query, values).then (({ rows }) => rows);
+const querier = <T>(query: string, values: any[]) => {
+  return pool.query (query, values).then (({ rows }) => rows as T[]);
+};
 
-const refQL = RefQL ({
-  caseType: "snake",
-  caseTypeJS: "camel",
-  debug: (query, _values, _ast) => {
-    console.log (query);
-    // console.log (_values);
-    // console.log (_ast);
-  },
-  detectRefs: true,
-  onSetupError: err => {
-    console.error (err.message);
-  },
-  pluralize: true,
-  plurals: {},
-  refs: {}
-}, querier);
+getPlayerById.run (querier, { id: 1 }).then (console.log);
+// [{ id: 1, first_name: "Estelle", last_name: "Vangelisti" }]
 
-const { 
-  query1, // get one result
-  query, // get multiple results
-} = refQL;
+const alternative = rql<{id: number}>`
+  player (id: ${p => p.id}) {
+    id
+    first_name
+    last_name
+  }
+`;
 
-async function getPlayer() {
-  const player = await query1<Player> (rql`
-    player (id: 1) {
-      id
-      lastName
-      - team {
-        id
-        name
-      }
-    }
-  `);
-
-  const alternative = await query1<Player> (rql`
-    player {
-      id
-      lastName
-      - team {
-        id
-        name
-      }
-      ${t => sql`
-        where ${t}.id = 1 
-      `}
-    }
-  `);
-
-  // { id: 1, lastName: "Buckley", team: { id: 1, name: "FC Wuharazi" } }
-  console.log (player);
-  // { id: 1, lastName: "Buckley", team: { id: 1, name: "FC Wuharazi" } }
-  console.log (alternative);
-}
-
-getPlayer();
+alternative.run (querier, { id: 1 }).then (console.log);
+// [{ id: 1, first_name: "Estelle", last_name: "Vangelisti" }]
 
 ```
 ## Table of contents

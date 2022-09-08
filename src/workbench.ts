@@ -216,8 +216,9 @@ const selectPlayer = sql<{id: number}>`
 // enkel bij sql tag gebruiken
 
 
-const playerr = sql`
-  select * from player
+const player = sql`
+  select id, first_name, last_name
+  from player
 `;
 
 const byId = sql<{id: number}>`
@@ -225,7 +226,9 @@ const byId = sql<{id: number}>`
 `;
 
 const getPlayerById =
-  playerr.concat (byId);
+  player.concat (byId);
+
+getPlayerById.run (querier, { id: 1 }).then (console.log);
 
 // semigroup bewijs
 
@@ -239,7 +242,7 @@ const paginate = sql<{limit: number; offset: number}>`
 `;
 
 const getPlayers =
-  playerr.concat (orderBy).concat (paginate);
+  player.concat (orderBy).concat (paginate);
 
 // different approach met pipe
 
