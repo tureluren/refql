@@ -13,8 +13,8 @@ class RQLTag <Params> {
     this.node = node;
   }
 
-  map<Params2>(fn: (node: Root<Params>) => Root<Params2>) {
-    return new RQLTag<Params2> (fn (this.node));
+  map<Params2>(f: (node: Root<Params>) => Root<Params2>) {
+    return new RQLTag<Params2> (f (this.node));
   }
 
   run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]> {

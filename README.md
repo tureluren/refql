@@ -22,8 +22,12 @@ const byId = sql<{id: number}>`
   where id = ${p => p.id}
 `;
 
+// getPlayerId :: SQLTag ()
 const getPlayerById =
   player.concat (byId);
+
+// query: 
+// values: [1]
 
 const pool = new Pool ({
   user: "test",

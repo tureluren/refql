@@ -7,12 +7,12 @@ class Env<Params> {
     this.rec = Object.assign ({}, rec);
   }
 
-  extend(fn: (env: Env<Params>) => Rec<Params>) {
-    return new Env<Params> (fn (this));
+  extend(f: (env: Env<Params>) => Rec<Params>) {
+    return new Env<Params> (f (this));
   }
 
-  map(fn: (rec: Rec<Params>) => Rec<Params>) {
-    return new Env<Params> (fn (this.rec));
+  map(f: (rec: Rec<Params>) => Rec<Params>) {
+    return new Env<Params> (f (this.rec));
   }
 
   static of<Params>(rec: Rec<Params>) {

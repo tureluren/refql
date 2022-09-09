@@ -31,6 +31,7 @@ const mySqlPool = mySql.createPool ({
 
 const querier = <T>(query: string, values: any[]) => {
   console.log (query);
+  console.log (values);
   return pool.query (query, values).then (({ rows }) => rows as T[]);
 };
 
@@ -127,6 +128,10 @@ const playerGoalsRef = {
 const selectPlayer = sql<{id: number}>`
   select * from player
 `;
+
+const buh = selectPlayer["fantasy-land/map"] (x => x.concat ("b"));
+console.log (selectPlayer);
+console.log (buh);
 
 // const paginate = sql<{}, any>`
 //   limit 5

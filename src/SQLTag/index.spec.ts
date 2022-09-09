@@ -30,6 +30,11 @@ describe ("SQLTag type", () => {
 
   const rawLastName = Raw.of ("last_name");
 
+  const inc = (values: any[]) => values.map (x => x + 1);
+  const mult = (values: any[]) => values.map (x => x * x);
+  const limit = (strings: string[]) => strings.concat ("limit 10");
+  const offset = (strings: string[]) => strings.concat ("offset 0");
+
   afterAll (() => {
     pool.end ();
   });
@@ -54,6 +59,34 @@ describe ("SQLTag type", () => {
     expect (res).toEqual (res2);
     expect (res.values).toEqual ([rawLastName, 1]);
     expect (res.strings).toEqual (["select id,", "from player where id =", ""]);
+  });
+
+  test ("Functor", () => {
+    const tag = sql`select * from player where id = ${1}`;
+
+    expect (tag.map (v => v)).toEqual (tag);
+
+    expect (tag.map (v => mult (inc (v))))
+      .toEqual (tag.map (inc).map (mult));
+  });
+
+  test ("Functor left", () => {
+    const tag = sql`select * from player`;
+
+    expect (tag.mapLeft (s => s)).toEqual (tag);
+
+
+    expect (tag.mapLeft (s => offset (limit (s))))
+      .toEqual (tag.mapLeft (limit).mapLeft (offset));
+  });
+
+  test ("Bifunctor", () => {
+    const tag = sql`select * from player where id > ${1}`;
+
+    expect (tag.bimap (s => s, v => v)).toEqual (tag);
+
+    expect (tag.bimap (s => offset (limit (s)), v => mult (inc (v))))
+      .toEqual (tag.bimap (limit, inc).bimap (offset, mult));
   });
 
   test ("run", async () => {

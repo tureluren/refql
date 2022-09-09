@@ -26,6 +26,22 @@ class SQLTag<Params> {
     );
   }
 
+  map<Params2>(f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]) {
+    return new SQLTag<Params2> (this.strings, f (this.values));
+  }
+
+  ["fantasy-land/map"]<Params2>(f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2> {
+    return this.map (f);
+  }
+
+  mapLeft(f: (strings: string[]) => string[]) {
+    return new SQLTag<Params> (f (this.strings), this.values);
+  }
+
+  bimap<Params2>(g: (strings: string[]) => string[], f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]) {
+    return new SQLTag<Params2> (g (this.strings), f (this.values));
+  }
+
   run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]> {
     return new Promise ((res, rej) => {
       let query, values;
