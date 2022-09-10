@@ -66,7 +66,7 @@ const Interpreter = <Params> (params: Params) => {
       ManyToMany: (table, members, { id, limit, offset, xtable }) => {
         if (!rows) return next (patched, rec);
 
-        const x = Table.of (
+        const x = Table (
           xtable || `${parent.name}_${table.name}`
         );
 
@@ -96,9 +96,9 @@ const Interpreter = <Params> (params: Params) => {
       },
 
       Variable: (value, as, cast) => {
-        if (value instanceof Raw) return select (value.value, rec);
+        if (Raw.isRaw (value)) return select (value.value, rec);
 
-        if (value instanceof SQLTag) {
+        if (SQLTag.isSQLTag<Params> (value)) {
           if (inCall || as) {
             const [query, vals] = compileSQLTag (value, values.length, params, parent);
 

@@ -11,7 +11,7 @@ export interface StringMap {
   [key: string]: any;
 }
 
-export type Querier<T> = (query: string, values: any[]) => Promise<T[]>;
+export type Querier<T = any> = (query: string, values: any[]) => Promise<T[]>;
 
 export type Rules = [RegExp, string][];
 
@@ -84,7 +84,7 @@ export interface Next<Params> {
   refs: Refs;
 }
 
-export interface Rec<Params> {
+export interface Rec<Params = {}> {
   table: Table;
   query: string;
   sqlTag: SQLTag<Params>;
@@ -108,7 +108,7 @@ export type BuiltIn =
   | string
   | object;
 
-export type RefQLValue<Params, Ran extends boolean = false> =
+export type RefQLValue<Params = {}, Ran extends boolean = false> =
   Ran extends false
   ? BuiltIn | SQLTag<Params> | ParamF<Params, BuiltIn | SQLTag<Params>>
   : BuiltIn | SQLTag<Params>;

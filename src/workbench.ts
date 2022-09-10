@@ -20,14 +20,14 @@ const pool = new Pool ({
   port: 5432
 });
 
-const mySqlPool = mySql.createPool ({
-  user: "test",
-  host: "localhost",
-  database: "soccer",
-  password: "test",
-  port: 5432,
-  multipleStatements: true
-});
+// const mySqlPool = mySql.createPool ({
+//   user: "test",
+//   host: "localhost",
+//   database: "soccer",
+//   password: "test",
+//   port: 5432,
+//   multipleStatements: true
+// });
 
 const querier = <T>(query: string, values: any[]) => {
   console.log (query);
@@ -35,24 +35,24 @@ const querier = <T>(query: string, values: any[]) => {
   return pool.query (query, values).then (({ rows }) => rows as T[]);
 };
 
-const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
-  new Promise ((res, rej) => {
-    const qry = query.replace (/\$\d/g, "?");
-    console.log (qry);
-    mySqlPool.query (qry, values, (error, rows) => {
-      if (error) {
-        rej (error);
-        return;
-      }
-      res (rows as T[]);
-    });
-  });
+// const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
+//   new Promise ((res, rej) => {
+//     const qry = query.replace (/\$\d/g, "?");
+//     console.log (qry);
+//     mySqlPool.query (qry, values, (error, rows) => {
+//       if (error) {
+//         rej (error);
+//         return;
+//       }
+//       res (rows as T[]);
+//     });
+//   });
 
 const makeRun = <Output>(querier: Querier<Output>) => <Params>(tag: RQLTag<Params> | SQLTag<Params>, params: Params) => {
   return tag.run (querier, params);
 };
 
-const run = makeRun<Player> (mySQLQuerier);
+const run = makeRun<Player> (querier);
 
 
 
@@ -74,7 +74,7 @@ const run = makeRun<Player> (mySQLQuerier);
 // };
 
 const playerQuery = rql<{ id: number; limit: number }>`
-  ${Table.of ("player")} (limit: 5) {
+  ${Table ("player")} (limit: 5) {
     id
     - ${rql`
       team { * }
@@ -129,7 +129,7 @@ const selectPlayer = sql<{id: number}>`
   select * from player
 `;
 
-const buh = selectPlayer["fantasy-land/map"] (x => x.concat ("b"));
+const buh = selectPlayer;
 console.log (selectPlayer);
 console.log (buh);
 
@@ -207,7 +207,7 @@ console.log (buh);
 //   return node.addMember (toBelongsTo (teamAst.node));
 // });
 
-// teamAst.node = BelongsTo.of (Table.of ("team"), [], {});
+// teamAst.node = BelongsTo.of (Table ("team"), [], {});
 
 
 // res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log).catch (e => {
@@ -238,7 +238,7 @@ getPlayerById.run (querier, { id: 1 }).then (console.log);
 // semigroup bewijs
 
 const orderBy = sql<{ col: string; dir?: string }>`
-  order by ${p => Raw.of (p.col)} ${p => Raw.of (p.dir || "asc")}
+  order by ${p => Raw (p.col)} ${p => Raw (p.dir || "asc")}
 `;
 
 const paginate = sql<{limit: number; offset: number}>`
@@ -362,6 +362,6 @@ const getPlayer = pipe (
 );
 
 
-run (getPlayer, { id: 9, goalLimit: 4 }).then (console.log);
+// run (getPlayer, { id: 9, goalLimit: 4 }).then (console.log);
 
 // MY SQL QUERIER na uitleg postgresQuerier

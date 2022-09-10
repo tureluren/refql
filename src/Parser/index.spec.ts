@@ -13,9 +13,9 @@ import {
 
 describe ("Parser type", () => {
   test ("create Parser", () => {
-    const player = Table.of ("player");
+    const player = Table ("player");
     const str = "$ { * }";
-    const parser = Parser.of (str, [player]);
+    const parser = new Parser (str, [player]);
     const tokenizer = Tokenizer.of (str);
     const lookahead = tokenizer.getNextToken ();
 
@@ -27,8 +27,8 @@ describe ("Parser type", () => {
   });
 
   test ("references", () => {
-    const position = Table.of ("position");
-    const spaceRaw = Raw.of ("' '");
+    const position = Table ("position");
+    const spaceRaw = Raw ("' '");
 
     const tag = rql`
       player (id: 1) { 
@@ -53,7 +53,7 @@ describe ("Parser type", () => {
       }
     `;
 
-    const player = Table.of ("player");
+    const player = Table ("player");
     const identifier = Identifier.of ("id", "identifier", "text");
     const birthday = Identifier.of ("birthday");
 
@@ -64,19 +64,19 @@ describe ("Parser type", () => {
     const spaceVariable = Variable.of (spaceRaw);
     const fullName = Call.of ("concat", [upperLastName, space, spaceVariable, firstName], "full_name");
 
-    const goals = Table.of ("goal", "goals");
+    const goals = Table ("goal", "goals");
     const minute = Identifier.of ("minute");
     const goalsAst = HasMany.of (goals, [minute], { limit: 5, offset: 0 });
 
-    const team = Table.of ("team", undefined, "public");
+    const team = Table ("team", undefined, "public");
     const name = Identifier.of ("name", "team_name");
-    const players = Table.of ("player", "players");
+    const players = Table ("player", "players");
     const allPositionFields = All.of ("*");
     const positionAst = BelongsTo.of (position, [allPositionFields], {});
     const playersAst = HasMany.of (players, [lastName, positionAst], {});
     const teamAst = BelongsTo.of (team, [name, playersAst], {});
 
-    const games = Table.of ("game", "games");
+    const games = Table ("game", "games");
     const result = Identifier.of ("result");
     const gamesAst = ManyToMany.of (games, [All.of ("*")], {});
 
@@ -104,7 +104,7 @@ describe ("Parser type", () => {
       }
     `;
 
-    const player = Table.of ("player");
+    const player = Table ("player");
     const id = Identifier.of ("id");
     const lastName = Identifier.of ("last_name");
     const orderBy = Variable.of (orderBySQL);
@@ -129,7 +129,7 @@ describe ("Parser type", () => {
       }
     `;
 
-    const player = Table.of ("player");
+    const player = Table ("player");
     const one = StringLiteral.of ("1", "one", "int");
     const two = NumericLiteral.of (2, "two", "text");
     const t = BooleanLiteral.of (true, "t", "text");
@@ -176,7 +176,7 @@ describe ("Parser type", () => {
     expect (() => rql`player ${["name"]}`)
       .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
 
-    const parser = Parser.of ("player { * }", []);
+    const parser = new Parser ("player { * }", []);
     parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };
 
     expect (() => parser.Literal ())

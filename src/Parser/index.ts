@@ -68,7 +68,7 @@ class Parser<Params> {
 
       if (value instanceof RQLTag) {
         return value.node;
-      } else if (value instanceof Table) {
+      } else if (Table.isTable (value)) {
         table = value;
       } else {
         throw new SyntaxError ("Invalid dynamic RQLTag/Table, expected instance of RQLTag/Table");
@@ -335,10 +335,6 @@ class Parser<Params> {
       || type === "true"
       || type === "false"
       || type === "null";
-  }
-
-  static of<Params>(str: string, values: RefQLValue<Params>[]) {
-    return new Parser (str, values);
   }
 }
 

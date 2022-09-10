@@ -28,7 +28,7 @@ describe ("SQLTag type", () => {
     querier = pgQuerier (pool);
   }
 
-  const rawLastName = Raw.of ("last_name");
+  const rawLastName = Raw ("last_name");
 
   const inc = (values: any[]) => values.map (x => x + 1);
   const mult = (values: any[]) => values.map (x => x * x);
@@ -42,7 +42,7 @@ describe ("SQLTag type", () => {
   test ("create SQLTag", () => {
     const strings = ["where id =", "order by last_name"];
     const keys = [1];
-    const sqlTag = SQLTag.of (strings as any, keys);
+    const sqlTag = SQLTag (strings as any, keys);
 
     expect (sqlTag.strings).toEqual (strings);
     expect (sqlTag.values).toEqual (keys);
@@ -103,7 +103,7 @@ describe ("SQLTag type", () => {
     const tag = sql<Params>`
       select id, first_name, ${rawLastName}
       from player
-      where id not ${In.of ([1, 2, 3])}
+      where id not ${In ([1, 2, 3])}
       ${paginate}
     `;
 

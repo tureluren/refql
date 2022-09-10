@@ -8,12 +8,12 @@ import sql from "./sql";
 describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and values", () => {
   test ("compiled", () => {
     const tag = sql<{limit: number}>`
-      select ${Raw.of ("id")}::text, last_name,
-        concat(${Raw.of ("first_name")}, ${Raw.of ("' '")}, last_name) as fullname
+      select ${Raw ("id")}::text, last_name,
+        concat(${Raw ("first_name")}, ${Raw ("' '")}, last_name) as fullname
       from player
-      where ${Table.of ("player")}.id ${In.of ([1, 2, 3])}
+      where ${Table ("player")}.id ${In ([1, 2, 3])}
       ${sql`
-        order by ${Raw.of ("player")}.last_name
+        order by ${Raw ("player")}.last_name
       `}
       limit ${p => p.limit} offset 1
     `;

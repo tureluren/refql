@@ -8,7 +8,7 @@ import createEnv from "./createEnv";
 describe ("Env type", () => {
   test ("create Env", () => {
     const rec = {
-      table: Table.of ("player"),
+      table: Table ("player"),
       sqlTag: sql``,
       query: "",
       values: [],
@@ -18,13 +18,13 @@ describe ("Env type", () => {
       inCall: false
     };
 
-    const env = Env.of (rec);
+    const env = Env (rec);
 
     expect (env.rec).toEqual (rec);
   });
 
   test ("Functor", () => {
-    const env = createEnv<{}> (Table.of ("player"));
+    const env = createEnv<{}> (Table ("player"));
 
     expect (env.map (r => r)).toEqual (env);
 
@@ -37,7 +37,7 @@ describe ("Env type", () => {
   });
 
   test ("Extend", () => {
-    const env = createEnv<{}> (Table.of ("player"));
+    const env = createEnv<{}> (Table ("player"));
 
     const setQuery = (e: Env<{}>) => set ("query", "select *", e.rec);
     const setInCall = (e: Env<{}>) => set ("inCall", true, e.rec);

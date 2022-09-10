@@ -22,19 +22,19 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
           throw new Error ("You can't use RQL Tags inside SQL Tags");
         }
 
-        if (value instanceof SQLTag) {
+        if (SQLTag.isSQLTag<Params> (value)) {
           return `${acc} ${str} ${go (value)}`;
         }
 
-        if (value instanceof Table) {
+        if (Table.isTable (value)) {
           return `${acc} ${str} ${value.as}`;
         }
 
-        if (value instanceof Raw) {
+        if (Raw.isRaw (value)) {
           return `${acc} ${str} ${value.value}`;
         }
 
-        if (value instanceof In) {
+        if (In.isIn (value)) {
           const inStr = value.write (paramIdx + values.length);
           values.push (...value.arr);
           return `${acc} ${str} ${inStr}`;

@@ -77,7 +77,7 @@ export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) =
       const op = idx === 0 ? "" : "and ";
 
       return [
-        `${sql} ${op}${table.as}.${rr.name} ${In.of (uniqRows).write (vals.length)}`,
+        `${sql} ${op}${table.as}.${rr.name} ${In (uniqRows).write (vals.length)}`,
         vals.concat (uniqRows)
       ];
     }, ["where", values]);

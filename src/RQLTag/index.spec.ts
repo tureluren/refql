@@ -27,7 +27,7 @@ describe ("RQLTag type", () => {
     querier = pgQuerier (pool);
   }
 
-  const player = Table.of ("player");
+  const player = Table ("player");
 
   afterAll (() => {
     pool.end ();

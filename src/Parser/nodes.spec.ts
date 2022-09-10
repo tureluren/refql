@@ -16,10 +16,10 @@ describe ("Nodes", () => {
     xtable?: string;
   };
 
-  const player = Table.of ("player");
-  const goal = Table.of ("goal");
-  const game = Table.of ("game");
-  const team = Table.of ("team");
+  const player = Table ("player");
+  const goal = Table ("goal");
+  const game = Table ("game");
+  const team = Table ("team");
 
   const root = Root.of<Params> (player, [], {
     id: p => p.id!,

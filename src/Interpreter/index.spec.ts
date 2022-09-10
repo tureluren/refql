@@ -12,11 +12,11 @@ import Table from "../Table";
 import format from "../test/format";
 
 describe ("Interpreter", () => {
-  const player = Table.of ("player");
-  const goals = Table.of ("goal", "goals", "public");
-  const team = Table.of ("team");
-  const games = Table.of ("game", "games");
-  const league = Table.of ("league");
+  const player = Table ("player");
+  const goals = Table ("goal", "goals", "public");
+  const team = Table ("team");
+  const games = Table ("game", "games");
+  const league = Table ("league");
 
   const allFields = All.of ("*");
 
@@ -64,7 +64,7 @@ describe ("Interpreter", () => {
     const upperLastName = Call.of ("upper", [lastName]);
     const firstName = Identifier.of ("first_name");
     const space = StringLiteral.of (" ");
-    const spaceRaw = Raw.of ("' '");
+    const spaceRaw = Raw ("' '");
     const spaceVariable = Variable.of (spaceRaw);
     const sqlId = Variable.of (sql`player.id::text`);
     const fullNameAndId = Call.of (
