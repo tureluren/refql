@@ -14,6 +14,7 @@ function Raw(value: boolean | number | string) {
 
   return raw;
 }
+
 Raw.prototype = Object.create (prototype);
 
 function toString(this: Raw) {

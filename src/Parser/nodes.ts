@@ -1,6 +1,69 @@
 import Table from "../Table";
-import { Keywords, Pattern, RefQLValue } from "../types";
+import { Keywords, Pattern, RefQLValue, TableNode } from "../types";
 import runKeywords from "./runKeywords";
+
+// Kan weg ?
+interface ASTNode2<Params = {}, Ran extends boolean = false> {}
+
+const astNodePrototype = {
+  constructor: ASTNode2
+};
+
+function ASTNode2() {
+  throw new Error ("can't");
+}
+
+ASTNode2.prototype = Object.create (astNodePrototype);
+
+
+interface Root2<Params = {}, Ran extends boolean = false> {
+  table: Table;
+  members: ASTNode2<Params>[];
+  keywords: Keywords<Params, Ran>;
+  addMember<Params2 = {}>(node: ASTNode2<Params2>): Root2<Params & Params2>;
+  cata<Return = any>(pattern: Pattern<Return, Params, Ran>): Return;
+  run(params: Params, _table: Table): Root2<Params, true>;
+}
+
+function Root2<Params = {}, Ran extends boolean = true>(table: Table, members: ASTNode2<Params>[], keywords: Keywords<Params, Ran>) {
+  let root: Root2<Params, Ran> = Object.create (Root2.prototype);
+  root.table = table;
+  root.members = members;
+  root.keywords = keywords;
+
+  return root;
+}
+
+// isASTNode
+
+Root2.prototype = Object.create ({
+  constructor: Root2,
+  addMember
+});
+
+function addMember(this: TableNode, node: ASTNode2) {
+  const members = this.members.concat (node as any);
+  return this.constructor (
+    this.table,
+    members,
+    this.keywords
+  );
+}
+
+
+// function cata(this: Root2, pattern: Pattern) {
+//   return pattern.Root! (this.table, this.members, this.keywords);
+// }
+
+// function run<Params = {}>(this: Root2, params: Params, _table: Table) {
+//   return Root2<Params, true> (
+//     this.table,
+//     this.members,
+//     runKeywords (params, this.table, this.keywords)
+//   );
+// }
+
+// ---------------------------------------------------
 
 export abstract class ASTNode<Params = {}, Ran extends boolean = false> {
   abstract cata<Return>(pattern: Pattern<Return, Params, Ran>): Return;
@@ -39,10 +102,6 @@ export class Root<Params = {}, Ran extends boolean = false> extends ASTNode<Para
       runKeywords (params, this.table, this.keywords)
     );
   }
-
-  static of<Params, Ran extends boolean = false>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
-    return new Root<Params, Ran> (table, members, keywords);
-  }
 }
 
 export class HasMany<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -76,10 +135,6 @@ export class HasMany<Params, Ran extends boolean = false> extends ASTNode<Params
       this.members,
       runKeywords (params, this.table, this.keywords)
     );
-  }
-
-  static of<Params, Ran extends boolean = false>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
-    return new HasMany<Params, Ran> (table, members, keywords);
   }
 }
 
@@ -115,10 +170,6 @@ export class BelongsTo<Params, Ran extends boolean = false> extends ASTNode<Para
       runKeywords (params, this.table, this.keywords)
     );
   }
-
-  static of<Params, Ran extends boolean = false>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
-    return new BelongsTo<Params, Ran> (table, members, keywords);
-  }
 }
 
 export class ManyToMany<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -153,10 +204,6 @@ export class ManyToMany<Params, Ran extends boolean = false> extends ASTNode<Par
       runKeywords (params, this.table, this.keywords)
     );
   }
-
-  static of<Params, Ran extends boolean = false>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) {
-    return new ManyToMany<Params, Ran> (table, members, keywords);
-  }
 }
 
 export class Call<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -187,10 +234,6 @@ export class Call<Params, Ran extends boolean = false> extends ASTNode<Params, R
   run(_params: Params, _table: Table) {
     return new Call<Params, true> (this.name, this.members, this.as, this.cast);
   }
-
-  static of<Params, Ran extends boolean = false>(name: string, args: ASTNode<Params>[], as?: string, cast?: string) {
-    return new Call<Params, Ran> (name, args, as, cast);
-  }
 }
 
 export class Identifier<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -212,10 +255,6 @@ export class Identifier<Params, Ran extends boolean = false> extends ASTNode<Par
   run(_params: Params, _table: Table) {
     return new Identifier<Params, true> (this.name, this.as, this.cast);
   }
-
-  static of<Params, Ran extends boolean = false>(name: string, as?: string, cast?: string) {
-    return new Identifier<Params, Ran> (name, as, cast);
-  }
 }
 
 export class All <Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -232,10 +271,6 @@ export class All <Params, Ran extends boolean = false> extends ASTNode<Params, R
 
   run(_params: Params, _table: Table) {
     return new All<Params, true> (this.sign);
-  }
-
-  static of<Params, Ran extends boolean = false>(sign: string) {
-    return new All<Params, Ran> (sign);
   }
 }
 
@@ -266,10 +301,6 @@ export class Variable<Params, Ran extends boolean = false> extends ASTNode<Param
       this.cast
     );
   }
-
-  static of<Params, Ran extends boolean = false>(value: RefQLValue<Params, Ran>, as?: string, cast?: string) {
-    return new Variable<Params, Ran> (value, as, cast);
-  }
 }
 
 export class StringLiteral <Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -290,10 +321,6 @@ export class StringLiteral <Params, Ran extends boolean = false> extends ASTNode
 
   run(_params: Params, _table: Table) {
     return new StringLiteral<Params, true> (this.value, this.as, this.cast);
-  }
-
-  static of<Params, Ran extends boolean = false>(value: string, as?: string, cast?: string) {
-    return new StringLiteral<Params, Ran> (value, as, cast);
   }
 }
 
@@ -316,10 +343,6 @@ export class NumericLiteral <Params, Ran extends boolean = false> extends ASTNod
   run(_params: Params, _table: Table) {
     return new NumericLiteral<Params, true> (this.value, this.as, this.cast);
   }
-
-  static of<Params, Ran extends boolean = false>(value: number, as?: string, cast?: string) {
-    return new NumericLiteral<Params, Ran> (value, as, cast);
-  }
 }
 
 export class BooleanLiteral <Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -340,10 +363,6 @@ export class BooleanLiteral <Params, Ran extends boolean = false> extends ASTNod
 
   run(_params: Params, _table: Table) {
     return new BooleanLiteral<Params, true> (this.value, this.as, this.cast);
-  }
-
-  static of<Params, Ran extends boolean = false>(value: boolean, as?: string, cast?: string) {
-    return new BooleanLiteral<Params, Ran> (value, as, cast);
   }
 }
 
@@ -366,8 +385,8 @@ export class NullLiteral <Params, Ran extends boolean = false> extends ASTNode<P
   run(_params: Params, _table: Table) {
     return new NullLiteral<Params, true> (this.value, this.as, this.cast);
   }
-
-  static of<Params, Ran extends boolean = false>(value: null, as?: string, cast?: string) {
-    return new NullLiteral<Params, Ran> (value, as, cast);
-  }
 }
+
+const aRoot = Root2 (Table ("player"), [], {}).addMember (new Identifier ("jd"));
+
+console.log (aRoot);

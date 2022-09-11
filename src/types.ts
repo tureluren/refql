@@ -33,13 +33,13 @@ export type Literal <Params, Ran extends boolean = false> =
   | BooleanLiteral<Params, Ran>
   | NullLiteral<Params, Ran>;
 
-export type TableNode <Params, Ran extends boolean = false> =
+export type TableNode <Params = {}, Ran extends boolean = false> =
   | Root<Params, Ran>
   | HasMany<Params, Ran>
   | BelongsTo<Params, Ran>
   | ManyToMany<Params, Ran>;
 
-export type Pattern<Return, Params, Ran extends boolean> = Partial<{
+export type Pattern<Return = any, Params = {}, Ran extends boolean = false> = Partial<{
   Root: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
   HasMany: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
   BelongsTo: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
@@ -56,7 +56,7 @@ export type Pattern<Return, Params, Ran extends boolean> = Partial<{
 
 export type ParamF<Params, Return> = (p: Params, T?: Table) => Return;
 
-export interface Keywords<Params, Ran extends boolean = false> extends StringMap {
+export interface Keywords<Params = {}, Ran extends boolean = false> extends StringMap {
   xtable?: Ran extends false ? string | ParamF<Params, string> : string;
   lref?: Ran extends false ? string | ParamF<Params, string> : string;
   rref?: Ran extends false ? string | ParamF<Params, string> : string;

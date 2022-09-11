@@ -49,38 +49,38 @@ describe ("Parser type", () => {
             }
           `}
         }
-        x game:games ${[All.of ("*")]}
+        x game:games ${[new All ("*")]}
       }
     `;
 
     const player = Table ("player");
-    const identifier = Identifier.of ("id", "identifier", "text");
-    const birthday = Identifier.of ("birthday");
+    const identifier = new Identifier ("id", "identifier", "text");
+    const birthday = new Identifier ("birthday");
 
-    const lastName = Identifier.of ("last_name");
-    const upperLastName = Call.of ("upper", [lastName]);
-    const firstName = Identifier.of ("first_name");
-    const space = StringLiteral.of (" ");
-    const spaceVariable = Variable.of (spaceRaw);
-    const fullName = Call.of ("concat", [upperLastName, space, spaceVariable, firstName], "full_name");
+    const lastName = new Identifier ("last_name");
+    const upperLastName = new Call ("upper", [lastName]);
+    const firstName = new Identifier ("first_name");
+    const space = new StringLiteral (" ");
+    const spaceVariable = new Variable (spaceRaw);
+    const fullName = new Call ("concat", [upperLastName, space, spaceVariable, firstName], "full_name");
 
     const goals = Table ("goal", "goals");
-    const minute = Identifier.of ("minute");
-    const goalsAst = HasMany.of (goals, [minute], { limit: 5, offset: 0 });
+    const minute = new Identifier ("minute");
+    const goalsAst = new HasMany (goals, [minute], { limit: 5, offset: 0 });
 
     const team = Table ("team", undefined, "public");
-    const name = Identifier.of ("name", "team_name");
+    const name = new Identifier ("name", "team_name");
     const players = Table ("player", "players");
-    const allPositionFields = All.of ("*");
-    const positionAst = BelongsTo.of (position, [allPositionFields], {});
-    const playersAst = HasMany.of (players, [lastName, positionAst], {});
-    const teamAst = BelongsTo.of (team, [name, playersAst], {});
+    const allPositionFields = new All ("*");
+    const positionAst = new BelongsTo (position, [allPositionFields], {});
+    const playersAst = new HasMany (players, [lastName, positionAst], {});
+    const teamAst = new BelongsTo (team, [name, playersAst], {});
 
     const games = Table ("game", "games");
-    const result = Identifier.of ("result");
-    const gamesAst = ManyToMany.of (games, [All.of ("*")], {});
+    const result = new Identifier ("result");
+    const gamesAst = new ManyToMany (games, [new All ("*")], {});
 
-    const expected = Root.of (
+    const expected = new Root (
       player,
       [identifier, birthday, fullName, goalsAst, teamAst, gamesAst],
       { id: 1 }
@@ -105,11 +105,11 @@ describe ("Parser type", () => {
     `;
 
     const player = Table ("player");
-    const id = Identifier.of ("id");
-    const lastName = Identifier.of ("last_name");
-    const orderBy = Variable.of (orderBySQL);
+    const id = new Identifier ("id");
+    const lastName = new Identifier ("last_name");
+    const orderBy = new Variable (orderBySQL);
 
-    const expected = Root.of<Params> (
+    const expected = new Root<Params> (
       player,
       [id, lastName, orderBy],
       { id: 1, limit: getLimit, offset: getOffset }
@@ -130,13 +130,13 @@ describe ("Parser type", () => {
     `;
 
     const player = Table ("player");
-    const one = StringLiteral.of ("1", "one", "int");
-    const two = NumericLiteral.of (2, "two", "text");
-    const t = BooleanLiteral.of (true, "t", "text");
-    const f = BooleanLiteral.of (false, "f", "text");
-    const n = NullLiteral.of (null, "n", "text");
+    const one = new StringLiteral ("1", "one", "int");
+    const two = new NumericLiteral (2, "two", "text");
+    const t = new BooleanLiteral (true, "t", "text");
+    const f = new BooleanLiteral (false, "f", "text");
+    const n = new NullLiteral (null, "n", "text");
 
-    const expected = Root.of (
+    const expected = new Root (
       player,
       [one, two, t, f, n],
       {}

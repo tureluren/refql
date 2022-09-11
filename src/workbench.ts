@@ -191,7 +191,7 @@ console.log (buh);
 // `;
 
 // const RootToBelongsTo = <Params> (node: Root<Params>) =>
-//   BelongsTo.of (node.table, node.members, node.keywords);
+//   new BelongsTo (node.table, node.members, node.keywords);
 
 // const belongsTo = <Params>(tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
 //   return tag2.map (node => {
@@ -207,7 +207,7 @@ console.log (buh);
 //   return node.addMember (toBelongsTo (teamAst.node));
 // });
 
-// teamAst.node = BelongsTo.of (Table ("team"), [], {});
+// teamAst.node = new BelongsTo (Table ("team"), [], {});
 
 
 // res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log).catch (e => {
@@ -275,7 +275,7 @@ const teams = rql<{}>`
 
 // NT
 const rootToBelongsTo = <Params> (node: TableNode<Params>) => {
-  return BelongsTo.of<Params> (node.table, node.members, node.keywords);
+  return new BelongsTo<Params> (node.table, node.members, node.keywords);
 };
 
 // NOT A SEMIGROUP, because semigroup laws don't goe
@@ -313,7 +313,7 @@ const goals = rql<{goalLimit?: number}>`
 
 // natural transformation
 const rootToHasMany = <Params> (node: TableNode<Params>) => {
-  return HasMany.of (node.table, node.members, node.keywords);
+  return new HasMany (node.table, node.members, node.keywords);
 };
 
 const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
@@ -326,7 +326,7 @@ const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2
 
 
 const select = (table: Table, columns: string[] = []) => {
-  const members = columns.length ? columns.map (col => Identifier.of (col)) : [All.of ("*")];
+  const members = columns.length ? columns.map (col => new Identifier (col)) : [new All ("*")];
   return rql<{}>`${table} ${members}`;
 };
 

@@ -18,7 +18,7 @@ describe ("Interpreter", () => {
   const games = Table ("game", "games");
   const league = Table ("league");
 
-  const allFields = All.of ("*");
+  const allFields = new All ("*");
 
   const playerRows = [
     { first_name: "John", last_name: "Doe", goalslref0: 1, teamlref0: 1, gameslref0: 1, gameslref1: 1 },
@@ -58,25 +58,25 @@ describe ("Interpreter", () => {
     const kws = { id: 1 };
     const interpret = Interpreter (kws);
 
-    const identifier = Identifier.of ("id", "identifier", "text");
-    const birthday = Identifier.of ("birthday");
-    const lastName = Identifier.of ("last_name");
-    const upperLastName = Call.of ("upper", [lastName]);
-    const firstName = Identifier.of ("first_name");
-    const space = StringLiteral.of (" ");
+    const identifier = new Identifier ("id", "identifier", "text");
+    const birthday = new Identifier ("birthday");
+    const lastName = new Identifier ("last_name");
+    const upperLastName = new Call ("upper", [lastName]);
+    const firstName = new Identifier ("first_name");
+    const space = new StringLiteral (" ");
     const spaceRaw = Raw ("' '");
-    const spaceVariable = Variable.of (spaceRaw);
-    const sqlId = Variable.of (sql`player.id::text`);
-    const fullNameAndId = Call.of (
+    const spaceVariable = new Variable (spaceRaw);
+    const sqlId = new Variable (sql`player.id::text`);
+    const fullNameAndId = new Call (
       "concat",
       [upperLastName, space, spaceVariable, firstName, sqlId],
       "full_name_and_id"
     );
 
-    const goalsNode = HasMany.of (goals, [allFields], {});
-    const teamNode = BelongsTo.of (team, [allFields], {});
-    const gamesNode = ManyToMany.of (games, [allFields], {});
-    const rootNode = Root.of (
+    const goalsNode = new HasMany (goals, [allFields], {});
+    const teamNode = new BelongsTo (team, [allFields], {});
+    const gamesNode = new ManyToMany (games, [allFields], {});
+    const rootNode = new Root (
       player,
       [identifier, birthday, goalsNode, teamNode, gamesNode, fullNameAndId],
       kws
@@ -102,13 +102,13 @@ describe ("Interpreter", () => {
   test ("Root - provided refs", () => {
     const interpret = Interpreter ({});
 
-    const goalsNode = HasMany.of (goals, [allFields], { lref: "ID", rref: "PLAYERID" });
-    const teamNode = BelongsTo.of (team, [allFields], { lref: "TEAMID", rref: "ID" });
-    const gamesNode = ManyToMany.of (games, [allFields], {
+    const goalsNode = new HasMany (goals, [allFields], { lref: "ID", rref: "PLAYERID" });
+    const teamNode = new BelongsTo (team, [allFields], { lref: "TEAMID", rref: "ID" });
+    const gamesNode = new ManyToMany (games, [allFields], {
       lref: "ID", lxref: "PLAYERID", rxref: "GAMEID", rref: "ID"
     });
 
-    const rootNode = Root.of (player, [goalsNode, teamNode, gamesNode], {});
+    const rootNode = new Root (player, [goalsNode, teamNode, gamesNode], {});
 
     const { query, next } = interpret (rootNode, createEnv (player));
 
@@ -148,7 +148,7 @@ describe ("Interpreter", () => {
   test ("HasMany", () => {
     const interpret = Interpreter ({});
 
-    const goalsNode = HasMany.of (goals, [allFields], { limit: 5, offset: 10 });
+    const goalsNode = new HasMany (goals, [allFields], { limit: 5, offset: 10 });
 
     const { query, next, values } = interpret (goalsNode, createEnv (goals, playerGoalsRefs), playerRows);
 
@@ -167,11 +167,11 @@ describe ("Interpreter", () => {
   test ("BelongsTo", () => {
     const interpret = Interpreter ({});
 
-    const leagueNode = BelongsTo.of (league, [allFields], { lref: "competition_id", rref: "identifier" });
+    const leagueNode = new BelongsTo (league, [allFields], { lref: "competition_id", rref: "identifier" });
 
-    const byName = Variable.of (sql`where team.name like 'FC%'`);
+    const byName = new Variable (sql`where team.name like 'FC%'`);
 
-    const teamNode = BelongsTo.of (team, [allFields, leagueNode, byName], {});
+    const teamNode = new BelongsTo (team, [allFields, leagueNode, byName], {});
 
     const { query, next, values } = interpret (teamNode, createEnv (team, playerTeamRefs), playerRows);
 
@@ -198,7 +198,7 @@ describe ("Interpreter", () => {
   test ("ManyToMany", () => {
     const interpret = Interpreter ({});
 
-    const gamesNode = ManyToMany.of (games, [allFields], { xtable: "PLAYERGAME" });
+    const gamesNode = new ManyToMany (games, [allFields], { xtable: "PLAYERGAME" });
 
     const { query, next, values } = interpret (gamesNode, createEnv (player, playerGamesRefs), playerRows);
 
@@ -216,7 +216,7 @@ describe ("Interpreter", () => {
   test ("ManyToMany - multi column ref", () => {
     const interpret = Interpreter ({});
 
-    const gamesNode = ManyToMany.of (games, [allFields], {});
+    const gamesNode = new ManyToMany (games, [allFields], {});
 
     const { query, next, values } = interpret (gamesNode, createEnv (player, playerGamesRefs2), playerRows);
 
@@ -238,21 +238,21 @@ describe ("Interpreter", () => {
   test ("literals and variables", () => {
     type Params = {id: number; three: number; limit: number};
     const interpret = Interpreter<Params> ({ id: 1, three: 3, limit: 5 });
-    const one = StringLiteral.of ("1", "one", "int");
-    const two = NumericLiteral.of (2, "two", "text");
-    const three = Variable.of<Params> (p => p.three, "three", "text");
-    const t = BooleanLiteral.of (true, "t", "text");
-    const f = BooleanLiteral.of (false, "f", "text");
-    const n = NullLiteral.of (null, "n", "text");
-    const goalCount = Variable.of (sql`
+    const one = new StringLiteral ("1", "one", "int");
+    const two = new NumericLiteral (2, "two", "text");
+    const three = new Variable<Params> (p => p.three, "three", "text");
+    const t = new BooleanLiteral (true, "t", "text");
+    const f = new BooleanLiteral (false, "f", "text");
+    const n = new NullLiteral (null, "n", "text");
+    const goalCount = new Variable (sql`
       select count (*)
       from goal
       where player_id = player.id
     `, "goal_count");
 
-    const byId = Variable.of (sql<Params>`where ${(_p, t) => t}.id = ${p => p.id}`);
+    const byId = new Variable (sql<Params>`where ${(_p, t) => t}.id = ${p => p.id}`);
 
-    const rootNode = Root.of<Params> (
+    const rootNode = new Root<Params> (
       player,
       [one, two, three, t, f, n, goalCount, byId],
       { limit: p => p.limit }
