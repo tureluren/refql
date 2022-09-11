@@ -95,10 +95,6 @@ class Tokenizer {
     this.idx += matched[0].length;
     return matched[0];
   }
-
-  static of(str: string) {
-    return new Tokenizer (str);
-  }
 }
 
 export default Tokenizer;

@@ -35,13 +35,13 @@ describe ("RQLTag type", () => {
 
   test ("create RQLTag", () => {
     const node = Root.of (player, [All.of ("*")], {});
-    const tag = RQLTag.of (node);
+    const tag = RQLTag (node);
 
     expect (tag.node).toEqual (node);
   });
 
   test ("Functor", () => {
-    const tag = RQLTag.of (Root.of (player, [All.of ("*")], {}));
+    const tag = RQLTag (Root.of (player, [All.of ("*")], {}));
 
     expect (tag.map (n => n)).toEqual (tag);
 
@@ -58,11 +58,11 @@ describe ("RQLTag type", () => {
   test ("errors", async () => {
     const id = Identifier.of ("id");
 
-    expect (() => (RQLTag as any).of (id))
+    expect (() => (RQLTag as any) (id))
       .toThrowError (new Error ("RQLTag should hold a Root node"));
 
     try {
-      const tag = RQLTag.of (Root.of (player, [], {}));
+      const tag = RQLTag (Root.of (player, [], {}));
       (tag as any).node = id;
 
       await tag.run (() => Promise.resolve ([]), {});
@@ -71,7 +71,7 @@ describe ("RQLTag type", () => {
     }
 
     try {
-      const tag = RQLTag.of (Root.of (player, [], {}));
+      const tag = RQLTag (Root.of (player, [], {}));
       delete (tag as any).node.table;
 
       await tag.run (() => Promise.resolve ([]), {});

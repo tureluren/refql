@@ -22,7 +22,7 @@ class Parser<Params> {
     this.str = str;
     this.values = values;
     this.idx = 0;
-    this.tokenizer = Tokenizer.of (str);
+    this.tokenizer = new Tokenizer (str);
     this.lookahead = this.tokenizer.getNextToken ();
   }
 
@@ -66,7 +66,7 @@ class Parser<Params> {
     if (this.isNext ("VARIABLE")) {
       let value = this.spliceValue ();
 
-      if (value instanceof RQLTag) {
+      if (RQLTag.isRQLTag<Params> (value)) {
         return value.node;
       } else if (Table.isTable (value)) {
         table = value;

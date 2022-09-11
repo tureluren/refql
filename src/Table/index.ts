@@ -1,23 +1,3 @@
-// class Table {
-//   name: string;
-//   as: string;
-//   schema?: string;
-
-//   constructor(name: string, as?: string, schema?: string) {
-//     this.name = name;
-//     this.as = as || name;
-//     this.schema = schema;
-//   }
-
-//   toString() {
-//     return `Table (${this.name}, ${this.as}, ${this.schema})`;
-//   }
-
-//   static of(name: string, as?: string, schema?: string) {
-//     return new Table (name, as, schema);
-//   }
-// }
-
 interface Table {
   name: string;
   as: string;
@@ -31,7 +11,7 @@ const prototype = {
 };
 
 function Table(name: string, as?: string, schema?: string) {
-  let table: Table = Object.create (prototype);
+  let table: Table = Object.create (Table.prototype);
   table.name = name;
   table.as = as || name;
   table.schema = schema;
@@ -39,12 +19,14 @@ function Table(name: string, as?: string, schema?: string) {
   return table;
 }
 
+Table.prototype = Object.create (prototype);
+
 function toString(this: Table) {
   return `Table (${this.name}, ${this.as}, ${this.schema})`;
 }
 
 Table.isTable = function (value: any): value is Table {
-  return value.constructor == Table;
+  return value instanceof Table;
 };
 
 export default Table;

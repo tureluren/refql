@@ -2,12 +2,12 @@ import Table from "../Table";
 import { Keywords, Pattern, RefQLValue } from "../types";
 import runKeywords from "./runKeywords";
 
-export abstract class ASTNode<Params, Ran extends boolean = false> {
+export abstract class ASTNode<Params = {}, Ran extends boolean = false> {
   abstract cata<Return>(pattern: Pattern<Return, Params, Ran>): Return;
   abstract run(params: Params, table: Table): ASTNode<Params, true>;
 }
 
-export class Root<Params, Ran extends boolean = false> extends ASTNode<Params, Ran> {
+export class Root<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   table: Table;
   members: ASTNode<Params>[];
   keywords: Keywords<Params, Ran>;

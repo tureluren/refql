@@ -16,7 +16,7 @@ describe ("Parser type", () => {
     const player = Table ("player");
     const str = "$ { * }";
     const parser = new Parser (str, [player]);
-    const tokenizer = Tokenizer.of (str);
+    const tokenizer = new Tokenizer (str);
     const lookahead = tokenizer.getNextToken ();
 
     expect (parser.str).toBe (str);

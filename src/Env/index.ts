@@ -1,25 +1,5 @@
 import { Rec } from "../types";
 
-// class Env<Params> {
-//   rec: Rec<Params>;
-
-//   constructor(rec: Rec<Params>) {
-//     this.rec = Object.assign ({}, rec);
-//   }
-
-//   extend(f: (env: Env<Params>) => Rec<Params>) {
-//     return new Env<Params> (f (this));
-//   }
-
-//   map(f: (rec: Rec<Params>) => Rec<Params>) {
-//     return new Env<Params> (f (this.rec));
-//   }
-
-//   static of<Params>(rec: Rec<Params>) {
-//     return new Env<Params> (rec);
-//   }
-// }
-
 interface Env<Params = {}> {
   rec: Rec<Params>;
   extend(f: (env: Env<Params>) => Rec<Params>): Env<Params>;
@@ -32,11 +12,13 @@ const prototype = {
 };
 
 function Env<Params = {}>(rec: Rec<Params>) {
-  let env: Env<Params> = Object.create (prototype);
+  let env: Env<Params> = Object.create (Env.prototype);
   env.rec = Object.assign ({}, rec);
 
   return env;
 }
+
+Env.prototype = Object.create (prototype);
 
 function extend(this: Env, f: (env: Env) => Rec) {
   return Env (f (this));
