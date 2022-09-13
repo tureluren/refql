@@ -21,18 +21,18 @@ describe ("Nodes", () => {
   const game = Table ("game");
   const team = Table ("team");
 
-  const root = new Root<Params> (player, [], {
+  const root = Root<Params> (player, [], {
     id: p => p.id!,
     limit: p => p.limit!,
     offset: p => p.offset!
   });
 
-  const hasMany = new HasMany<Params> (goal, [], {
+  const hasMany = HasMany<Params> (goal, [], {
     lref: p => p.lref!,
     rref: p => p.rref!
   });
 
-  const manyToMany = new ManyToMany<Params> (game, [], {
+  const manyToMany = ManyToMany<Params> (game, [], {
     lref: p => p.lref!,
     rref: p => p.rref!,
     lxref: p => p.lxref!,
@@ -40,7 +40,7 @@ describe ("Nodes", () => {
     xtable: p => p.xtable!
   });
 
-  const belongsTo = new BelongsTo<Params> (team, [], {
+  const belongsTo = BelongsTo<Params> (team, [], {
     lref: p => p.lref!,
     rref: p => p.rref!
   });
@@ -63,9 +63,9 @@ describe ("Nodes", () => {
   });
 
   test ("add member", () => {
-    const id = new Identifier ("id");
-    const name = new Identifier ("name");
-    const nameId = new Call ("concat", [name]);
+    const id = Identifier ("id");
+    const name = Identifier ("name");
+    const nameId = Call ("concat", [name]);
 
     expect (root.addMember (id).members).toEqual ([id]);
     expect (hasMany.addMember (id).members).toEqual ([id]);

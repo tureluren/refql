@@ -16,3 +16,5 @@ export const FL = {
   reduce: "fantasy-land/reduce",
   zero: "fantasy-land/zero"
 };
+
+export const refqlType = Symbol ("@@type");

@@ -2,7 +2,7 @@ import Table from ".";
 
 describe ("Table type", () => {
   test ("create Table", () => {
-    const player = new Table ("player", "p", "public");
+    const player = Table ("player", "p", "public");
 
     expect (player.name).toBe ("player");
     expect (player.as).toBe ("p");

@@ -130,8 +130,8 @@ const selectPlayer = sql<{id: number}>`
 `;
 
 const buh = selectPlayer;
-console.log (selectPlayer);
-console.log (buh);
+// console.log (selectPlayer);
+// console.log (buh);
 
 // const paginate = sql<{}, any>`
 //   limit 5
@@ -170,7 +170,7 @@ console.log (buh);
 //   }
 // }
 
-// const exp = new HasMany ("-");
+// const exp = HasMany ("-");
 
 // const res = exp.cata<string> ({
 //   BelongsTo: x => x,
@@ -191,7 +191,7 @@ console.log (buh);
 // `;
 
 // const RootToBelongsTo = <Params> (node: Root<Params>) =>
-//   new BelongsTo (node.table, node.members, node.keywords);
+//   BelongsTo (node.table, node.members, node.keywords);
 
 // const belongsTo = <Params>(tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
 //   return tag2.map (node => {
@@ -207,7 +207,7 @@ console.log (buh);
 //   return node.addMember (toBelongsTo (teamAst.node));
 // });
 
-// teamAst.node = new BelongsTo (Table ("team"), [], {});
+// teamAst.node = BelongsTo (Table ("team"), [], {});
 
 
 // res.run<Player> ({ caseType: "snake" }, querier, { id: 3, limit: 4 }).then (console.log).catch (e => {
@@ -233,7 +233,7 @@ const byId = sql<{id: number}>`
 const getPlayerById =
   player.concat (byId);
 
-getPlayerById.run (querier, { id: 1 }).then (console.log);
+// getPlayerById.run (querier, { id: 1 }).then (console.log);
 
 // semigroup bewijs
 
@@ -275,7 +275,7 @@ const teams = rql<{}>`
 
 // NT
 const rootToBelongsTo = <Params> (node: TableNode<Params>) => {
-  return new BelongsTo<Params> (node.table, node.members, node.keywords);
+  return BelongsTo<Params> (node.table, node.members, node.keywords);
 };
 
 // NOT A SEMIGROUP, because semigroup laws don't goe
@@ -313,7 +313,7 @@ const goals = rql<{goalLimit?: number}>`
 
 // natural transformation
 const rootToHasMany = <Params> (node: TableNode<Params>) => {
-  return new HasMany (node.table, node.members, node.keywords);
+  return HasMany (node.table, node.members, node.keywords);
 };
 
 const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
@@ -326,7 +326,7 @@ const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2
 
 
 const select = (table: Table, columns: string[] = []) => {
-  const members = columns.length ? columns.map (col => new Identifier (col)) : [new All ("*")];
+  const members = columns.length ? columns.map (col => Identifier (col)) : [All ("*")];
   return rql<{}>`${table} ${members}`;
 };
 

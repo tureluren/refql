@@ -27,7 +27,7 @@ export type Token = {
   value: string;
 };
 
-export type Literal <Params, Ran extends boolean = false> =
+export type Literal <Params = {}, Ran extends boolean = false> =
   | StringLiteral<Params, Ran>
   | NumericLiteral<Params, Ran>
   | BooleanLiteral<Params, Ran>

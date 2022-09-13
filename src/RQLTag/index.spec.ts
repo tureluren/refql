@@ -34,35 +34,35 @@ describe ("RQLTag type", () => {
   });
 
   test ("create RQLTag", () => {
-    const node = new Root (player, [new All ("*")], {});
+    const node = Root (player, [All ("*")], {});
     const tag = RQLTag (node);
 
     expect (tag.node).toEqual (node);
   });
 
   test ("Functor", () => {
-    const tag = RQLTag (new Root (player, [new All ("*")], {}));
+    const tag = RQLTag (Root (player, [All ("*")], {}));
 
     expect (tag.map (n => n)).toEqual (tag);
 
     const addTeam = <Params> (node: TableNode<Params>) =>
-      node.addMember (new HasMany (node.table, node.members, node.keywords));
+      node.addMember (HasMany (node.table, node.members, node.keywords));
 
     const addLastName = <Params> (node: TableNode<Params>) =>
-      node.addMember (new Identifier ("last_name"));
+      node.addMember (Identifier ("last_name"));
 
     expect (tag.map (n => addLastName (addTeam (n))))
       .toEqual (tag.map (addTeam).map (addLastName));
   });
 
   test ("errors", async () => {
-    const id = new Identifier ("id");
+    const id = Identifier ("id");
 
     expect (() => (RQLTag as any) (id))
       .toThrowError (new Error ("RQLTag should hold a Root node"));
 
     try {
-      const tag = RQLTag (new Root (player, [], {}));
+      const tag = RQLTag (Root (player, [], {}));
       (tag as any).node = id;
 
       await tag.run (() => Promise.resolve ([]), {});
@@ -71,7 +71,7 @@ describe ("RQLTag type", () => {
     }
 
     try {
-      const tag = RQLTag (new Root (player, [], {}));
+      const tag = RQLTag (Root (player, [], {}));
       delete (tag as any).node.table;
 
       await tag.run (() => Promise.resolve ([]), {});

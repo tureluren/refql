@@ -11,14 +11,14 @@ import {
 import Table from "../Table";
 import RQLTag from "../RQLTag";
 
-class Parser<Params> {
+class Parser {
   str: string;
-  values: RefQLValue<Params>[];
+  values: RefQLValue[];
   idx: number;
   tokenizer: Tokenizer;
   lookahead: Token;
 
-  constructor(str: string, values: RefQLValue<Params>[]) {
+  constructor(str: string, values: RefQLValue[]) {
     this.str = str;
     this.values = values;
     this.idx = 0;
@@ -29,35 +29,35 @@ class Parser<Params> {
   Root() {
     const { table, members, keywords } = this.Table ();
 
-    return new Root (table, members, keywords);
+    return Root (table, members, keywords);
   }
 
   HasMany() {
     this.eat ("<");
     const { table, members, keywords } = this.Table ();
 
-    return new HasMany (table, members, keywords);
+    return HasMany (table, members, keywords);
   }
 
   BelongsTo() {
     this.eat ("-");
     const { table, members, keywords } = this.Table ();
 
-    return new BelongsTo (table, members, keywords);
+    return BelongsTo (table, members, keywords);
   }
 
   ManyToMany() {
     this.eat ("x");
     const { table, members, keywords } = this.Table ();
 
-    return new ManyToMany (table, members, keywords);
+    return ManyToMany (table, members, keywords);
   }
 
   Identifier() {
     const name = this.eat ("IDENTIFIER").value;
     const [as, cast] = this.castAs ();
 
-    return new Identifier (name, as, cast);
+    return Identifier (name, as, cast);
   }
 
   Table() {
@@ -66,7 +66,7 @@ class Parser<Params> {
     if (this.isNext ("VARIABLE")) {
       let value = this.spliceValue ();
 
-      if (RQLTag.isRQLTag<Params> (value)) {
+      if (RQLTag.isRQLTag (value)) {
         return value.node;
       } else if (Table.isTable (value)) {
         table = value;
@@ -78,14 +78,14 @@ class Parser<Params> {
       table = identifierToTable (this.Schema (), this.Identifier ());
     }
 
-    let keywords: Keywords<Params> = {};
+    let keywords: Keywords = {};
 
     if (this.isNext ("(")) {
       this.eat ("(");
 
       do {
         let value;
-        const keyword = this.eat ("IDENTIFIER").value as keyof Keywords<Params>;
+        const keyword = this.eat ("IDENTIFIER").value as keyof Keywords;
         this.eat (":");
 
         if (this.isNextLiteral ()) {
@@ -111,7 +111,7 @@ class Parser<Params> {
   All() {
     const sign = this.eat ("*").value;
 
-    return new All (sign);
+    return All (sign);
   }
 
   Schema() {
@@ -124,14 +124,14 @@ class Parser<Params> {
     this.eat ("VARIABLE");
     const key = this.values[this.idx];
     const [as, cast] = this.castAs ();
-    const variable = new Variable (key, as, cast);
+    const variable = Variable (key, as, cast);
     this.idx += 1;
 
     return variable;
   }
 
-  Call(identifier: Identifier<Params>) {
-    return new Call (identifier.name, this.arguments (), identifier.as, identifier.cast);
+  Call(identifier: Identifier) {
+    return Call (identifier.name, this.arguments (), identifier.as, identifier.cast);
   }
 
   members() {
@@ -154,13 +154,13 @@ class Parser<Params> {
       throw new SyntaxError ("A table block should have at least one member");
     }
 
-    const members: ASTNode<Params>[] = [];
+    const members: ASTNode[] = [];
 
     do {
       const member = this.Member ();
 
       if (this.isNext ("(")) {
-        members.push (this.Call (member as Identifier<Params>));
+        members.push (this.Call (member as Identifier));
       } else {
         members.push (member);
       }
@@ -174,14 +174,14 @@ class Parser<Params> {
 
   arguments() {
     this.eat ("(");
-    const argumentList: ASTNode<Params>[] = [];
+    const argumentList: ASTNode[] = [];
 
     if (!this.isNext (")")) {
       do {
         const argument = this.Argument ();
 
         if (this.isNext ("(")) {
-          argumentList.push (this.Call (argument as Identifier<Params>));
+          argumentList.push (this.Call (argument as Identifier));
         } else {
           argumentList.push (argument);
         }
@@ -221,7 +221,7 @@ class Parser<Params> {
     return value;
   }
 
-  Member(): ASTNode<Params> {
+  Member(): ASTNode {
     if (this.isNextLiteral ()) {
       return this.Literal ();
     }
@@ -243,7 +243,7 @@ class Parser<Params> {
     throw new SyntaxError (`Unknown Member Type: "${this.lookahead.type}"`);
   }
 
-  Argument(): ASTNode<Params> {
+  Argument(): ASTNode {
     if (this.isNextLiteral ()) {
       return this.Literal ();
     }
@@ -257,7 +257,7 @@ class Parser<Params> {
     throw new SyntaxError (`Unknown Argument Type: "${this.lookahead.type}"`);
   }
 
-  Literal(): Literal<Params> {
+  Literal(): Literal {
     switch (this.lookahead.type) {
       case "NUMBER":
         return this.NumericLiteral ();
@@ -278,14 +278,14 @@ class Parser<Params> {
     this.eat (value ? "true" : "false");
     const [as, cast] = this.castAs ();
 
-    return new BooleanLiteral (value, as, cast);
+    return BooleanLiteral (value, as, cast);
   }
 
   NullLiteral() {
     this.eat ("null");
     const [as, cast] = this.castAs ();
 
-    return new NullLiteral (null, as, cast);
+    return NullLiteral (null, as, cast);
   }
 
   StringLiteral() {
@@ -293,14 +293,14 @@ class Parser<Params> {
     const value = token.value.slice (1, -1);
     const [as, cast] = this.castAs ();
 
-    return new StringLiteral (value, as, cast);
+    return StringLiteral (value, as, cast);
   }
 
   NumericLiteral() {
     const token = this.eat ("NUMBER");
     const [as, cast] = this.castAs ();
 
-    return new NumericLiteral (Number (token.value), as, cast);
+    return NumericLiteral (Number (token.value), as, cast);
   }
 
   eat(tokenType: TokenType) {

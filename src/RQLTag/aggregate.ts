@@ -32,13 +32,13 @@ const aggregate = <Params>(querier: Querier<any>, interpret: InterpretF<Params>,
             const rrefs = refs.rrefs.map (rr => rr.as);
             const lxrefs = refs.lxrefs.map (lxr => lxr.as);
 
-            if (node instanceof BelongsTo) {
+            if (BelongsTo.isBelongsTo (node)) {
               agg[node.table.as] = match (row, nextRows, lrefs, rrefs)[0];
 
-            } else if (node instanceof HasMany) {
+            } else if (HasMany.isHasMany (node)) {
               agg[node.table.as] = match (row, nextRows, lrefs, rrefs);
 
-            } else if (node instanceof ManyToMany) {
+            } else if (ManyToMany.isManyToMany (node)) {
               agg[node.table.as] = match (row, nextRows, lrefs, lxrefs);
             }
 

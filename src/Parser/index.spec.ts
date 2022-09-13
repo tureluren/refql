@@ -49,38 +49,38 @@ describe ("Parser type", () => {
             }
           `}
         }
-        x game:games ${[new All ("*")]}
+        x game:games ${[All ("*")]}
       }
     `;
 
     const player = Table ("player");
-    const identifier = new Identifier ("id", "identifier", "text");
-    const birthday = new Identifier ("birthday");
+    const identifier = Identifier ("id", "identifier", "text");
+    const birthday = Identifier ("birthday");
 
-    const lastName = new Identifier ("last_name");
-    const upperLastName = new Call ("upper", [lastName]);
-    const firstName = new Identifier ("first_name");
-    const space = new StringLiteral (" ");
-    const spaceVariable = new Variable (spaceRaw);
-    const fullName = new Call ("concat", [upperLastName, space, spaceVariable, firstName], "full_name");
+    const lastName = Identifier ("last_name");
+    const upperLastName = Call ("upper", [lastName]);
+    const firstName = Identifier ("first_name");
+    const space = StringLiteral (" ");
+    const spaceVariable = Variable (spaceRaw);
+    const fullName = Call ("concat", [upperLastName, space, spaceVariable, firstName], "full_name");
 
     const goals = Table ("goal", "goals");
-    const minute = new Identifier ("minute");
-    const goalsAst = new HasMany (goals, [minute], { limit: 5, offset: 0 });
+    const minute = Identifier ("minute");
+    const goalsAst = HasMany (goals, [minute], { limit: 5, offset: 0 });
 
     const team = Table ("team", undefined, "public");
-    const name = new Identifier ("name", "team_name");
+    const name = Identifier ("name", "team_name");
     const players = Table ("player", "players");
-    const allPositionFields = new All ("*");
-    const positionAst = new BelongsTo (position, [allPositionFields], {});
-    const playersAst = new HasMany (players, [lastName, positionAst], {});
-    const teamAst = new BelongsTo (team, [name, playersAst], {});
+    const allPositionFields = All ("*");
+    const positionAst = BelongsTo (position, [allPositionFields], {});
+    const playersAst = HasMany (players, [lastName, positionAst], {});
+    const teamAst = BelongsTo (team, [name, playersAst], {});
 
     const games = Table ("game", "games");
-    const result = new Identifier ("result");
-    const gamesAst = new ManyToMany (games, [new All ("*")], {});
+    const result = Identifier ("result");
+    const gamesAst = ManyToMany (games, [All ("*")], {});
 
-    const expected = new Root (
+    const expected = Root (
       player,
       [identifier, birthday, fullName, goalsAst, teamAst, gamesAst],
       { id: 1 }
@@ -105,11 +105,11 @@ describe ("Parser type", () => {
     `;
 
     const player = Table ("player");
-    const id = new Identifier ("id");
-    const lastName = new Identifier ("last_name");
-    const orderBy = new Variable (orderBySQL);
+    const id = Identifier ("id");
+    const lastName = Identifier ("last_name");
+    const orderBy = Variable (orderBySQL);
 
-    const expected = new Root<Params> (
+    const expected = Root<Params> (
       player,
       [id, lastName, orderBy],
       { id: 1, limit: getLimit, offset: getOffset }
@@ -130,13 +130,13 @@ describe ("Parser type", () => {
     `;
 
     const player = Table ("player");
-    const one = new StringLiteral ("1", "one", "int");
-    const two = new NumericLiteral (2, "two", "text");
-    const t = new BooleanLiteral (true, "t", "text");
-    const f = new BooleanLiteral (false, "f", "text");
-    const n = new NullLiteral (null, "n", "text");
+    const one = StringLiteral ("1", "one", "int");
+    const two = NumericLiteral (2, "two", "text");
+    const t = BooleanLiteral (true, "t", "text");
+    const f = BooleanLiteral (false, "f", "text");
+    const n = NullLiteral (null, "n", "text");
 
-    const expected = new Root (
+    const expected = Root (
       player,
       [one, two, t, f, n],
       {}
