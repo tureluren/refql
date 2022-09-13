@@ -5,10 +5,7 @@ import runKeywords from "./runKeywords";
 export interface ASTNode<Params = {}, Ran extends boolean = false> {
   cata<Return = any>(pattern: Pattern<Return, Params, Ran>): Return;
   run(params: Params, table: Table): ASTNode<Params, true>;
-}
-
-export function ASTNode() {
-  throw new Error ("can't");
+  isASTNode(): boolean;
 }
 
 export interface Root<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -17,7 +14,6 @@ export interface Root<Params = {}, Ran extends boolean = false> extends ASTNode<
   keywords: Keywords<Params, Ran>;
   addMember<Params2 = {}>(node: ASTNode<Params2>): Root<Params & Params2>;
   run(params: Params, table: Table): Root<Params, true>;
-  // isASTNode(): boolean;
 }
 
 export interface HasMany<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -139,11 +135,6 @@ ManyToMany.isManyToMany = function (value: any): value is ManyToMany {
   return value instanceof ManyToMany;
 };
 
-Root.prototype = Object.create (ASTNode.prototype);
-HasMany.prototype = Object.create (ASTNode.prototype);
-BelongsTo.prototype = Object.create (ASTNode.prototype);
-ManyToMany.prototype = Object.create (ASTNode.prototype);
-
 // ---------------------------------------------------
 
 export interface Call<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
@@ -160,7 +151,8 @@ const callPrototype = {
   constructor: Call,
   addMember: Call$prototype$addMember,
   cata: Call$prototype$cata,
-  run: Call$prototype$run
+  run: Call$prototype$run,
+  isASTNode: true
 };
 
 export function Call<Params = {}>(name: string, members: ASTNode<Params>[], as?: string, cast?: string) {
@@ -190,8 +182,6 @@ function Call$prototype$run(this: Call, _params: StringMap, _table: Table) {
   return Call (this.name, this.members, this.as, this.cast);
 }
 
-Call.prototype = Object.create (ASTNode.prototype);
-
 export interface Identifier<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   name: string;
   as?: string;
@@ -203,7 +193,8 @@ export interface Identifier<Params = {}, Ran extends boolean = false> extends AS
 const identifierPrototype = {
   constructor: Call,
   cata: Identifier$prototype$cata,
-  run: Identifier$prototype$run
+  run: Identifier$prototype$run,
+  isASTNode: true
 };
 
 export function Identifier<Params = {}>(name: string, as?: string, cast?: string) {
@@ -226,8 +217,6 @@ function Identifier$prototype$run(this: Identifier, _params: StringMap, _table: 
   return Identifier (this.name, this.as, this.cast);
 }
 
-Identifier.prototype = Object.create (ASTNode.prototype);
-
 export interface All<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   sign: string;
   run(params: Params, table: Table): All<Params, true>;
@@ -237,7 +226,8 @@ export interface All<Params = {}, Ran extends boolean = false> extends ASTNode<P
 const allPrototype = {
   constructor: Call,
   cata: All$prototype$cata,
-  run: All$prototype$run
+  run: All$prototype$run,
+  isASTNode: true
 };
 
 export function All<Params = {}>(sign: string) {
@@ -259,7 +249,6 @@ function All$prototype$run(this: All, _params: StringMap, _table: Table) {
 }
 
 
-All.prototype = Object.create (ASTNode.prototype);
 
 export interface Variable<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
   value: RefQLValue<Params, Ran>;
@@ -272,7 +261,8 @@ export interface Variable<Params = {}, Ran extends boolean = false> extends ASTN
 const variablePrototype = {
   constructor: Call,
   cata: Variable$prototype$cata,
-  run: Variable$prototype$run
+  run: Variable$prototype$run,
+  isASTNode: true
 };
 
 export function Variable<Params = {}>(value: RefQLValue<Params>, as?: string, cast?: string) {
@@ -300,11 +290,11 @@ function Variable$prototype$run(this: Variable, params: StringMap, table: Table)
 }
 
 
-Variable.prototype = Object.create (ASTNode.prototype);
 
 const literalPrototype = {
   cata: Literal$prototype$cata,
-  run: Literal$prototype$run
+  run: Literal$prototype$run,
+  isASTNode: true
 };
 
 function Literal$prototype$cata(this: Literal, pattern: StringMap) {
@@ -395,12 +385,6 @@ export function NullLiteral<Params = {}>(value: null, as?: string, cast?: string
 
   return nullLiteral;
 }
-
-StringLiteral.prototype = Object.create (ASTNode.prototype);
-NumericLiteral.prototype = Object.create (ASTNode.prototype);
-BooleanLiteral.prototype = Object.create (ASTNode.prototype);
-NullLiteral.prototype = Object.create (ASTNode.prototype);
-
 
 
 // export abstract class ASTNode<Params = {}, Ran extends boolean = false> {

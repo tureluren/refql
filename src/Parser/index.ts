@@ -140,7 +140,7 @@ class Parser {
       if (
         !Array.isArray (members) ||
         !members.length ||
-        !members.reduce ((acc, m) => acc && m instanceof ASTNode, true)
+        !members.reduce ((acc, m) => acc && m.isASTNode, true)
       ) {
         throw new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode");
       }
