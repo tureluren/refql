@@ -1,6 +1,6 @@
 import { refqlType } from "../consts";
 import Table from "../Table";
-import { Keywords, Pattern, RefQLValue, StringMap } from "../types";
+import { CastAs, Keywords, Pattern, RefQLValue, StringMap } from "../types";
 import runKeywords from "./runKeywords";
 
 export interface ASTNode<Params = {}, Ran extends boolean = false> {
@@ -130,11 +130,9 @@ ManyToMany.isManyToMany = function <Params = {}> (value: any): value is ManyToMa
   return value[refqlType] === manyToManyType;
 };
 
-export interface Call<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
+export interface Call<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran>, CastAs {
   name: string;
   members: ASTNode<Params>[];
-  as?: string;
-  cast?: string;
   addMember<Params2 = {}>(node: ASTNode<Params2>): ManyToMany<Params & Params2>;
   run(params: Params, table: Table): Call<Params, true>;
 }
@@ -173,10 +171,8 @@ function Call$prototype$run(this: Call, _params: StringMap, _table: Table) {
   return Call (this.name, this.members, this.as, this.cast);
 }
 
-export interface Identifier<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
+export interface Identifier<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran>, CastAs {
   name: string;
-  as?: string;
-  cast?: string;
   run(params: Params, table: Table): Identifier<Params, true>;
 }
 
@@ -235,10 +231,8 @@ function All$prototype$run(this: All, _params: StringMap, _table: Table) {
   return All (this.sign);
 }
 
-export interface Variable<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
+export interface Variable<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran>, CastAs {
   value: RefQLValue<Params, Ran>;
-  as?: string;
-  cast?: string;
   run(params: Params, table: Table): Variable<Params, true>;
 }
 
@@ -272,10 +266,8 @@ function Variable$prototype$run(this: Variable, params: StringMap, table: Table)
   return Variable (ran, this.as, this.cast);
 }
 
-export interface Literal<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
+export interface Literal<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran>, CastAs {
   value: string | number | boolean | null;
-  as?: string;
-  cast?: string;
 }
 
 const literalPrototype = {

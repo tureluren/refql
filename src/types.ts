@@ -23,6 +23,11 @@ export type Token = {
   value: string;
 };
 
+export interface CastAs {
+  as?: string;
+  cast?: string;
+}
+
 export type Pattern<Return = any, Params = {}, Ran extends boolean = false> = Partial<{
   Root: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
   HasMany: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
