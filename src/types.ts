@@ -1,9 +1,5 @@
 import Env from "./Env";
-import {
-  ASTNode, BelongsTo, BooleanLiteral,
-  HasMany, ManyToMany, NullLiteral,
-  NumericLiteral, Root, StringLiteral
-} from "./Parser/nodes";
+import { ASTNode } from "./Parser/nodes";
 import SQLTag from "./SQLTag";
 import Table from "./Table";
 
@@ -26,18 +22,6 @@ export type Token = {
   type: TokenType | null;
   value: string;
 };
-
-export type Literal <Params = {}, Ran extends boolean = false> =
-  | StringLiteral<Params, Ran>
-  | NumericLiteral<Params, Ran>
-  | BooleanLiteral<Params, Ran>
-  | NullLiteral<Params, Ran>;
-
-export type TableNode <Params = {}, Ran extends boolean = false> =
-  | Root<Params, Ran>
-  | HasMany<Params, Ran>
-  | BelongsTo<Params, Ran>
-  | ManyToMany<Params, Ran>;
 
 export type Pattern<Return = any, Params = {}, Ran extends boolean = false> = Partial<{
   Root: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;

@@ -2,14 +2,14 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import RQLTag from ".";
-import { All, HasMany, Identifier, Root } from "../Parser/nodes";
+import { All, HasMany, Identifier, Root, TableNode } from "../Parser/nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import userConfig from "../test/userConfig";
-import { Querier, TableNode } from "../types";
+import { Querier } from "../types";
 import rql from "./rql";
 
 describe ("RQLTag type", () => {
@@ -45,10 +45,10 @@ describe ("RQLTag type", () => {
 
     expect (tag.map (n => n)).toEqual (tag);
 
-    const addTeam = <Params> (node: TableNode<Params>) =>
+    const addTeam = <Params> (node: Root<Params>) =>
       node.addMember (HasMany (node.table, node.members, node.keywords));
 
-    const addLastName = <Params> (node: TableNode<Params>) =>
+    const addLastName = <Params> (node: Root<Params>) =>
       node.addMember (Identifier ("last_name"));
 
     expect (tag.map (n => addLastName (addTeam (n))))

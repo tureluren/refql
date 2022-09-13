@@ -1,11 +1,11 @@
 import Tokenizer from "../Tokenizer";
 import {
-  Keywords, Literal, RefQLValue, Token, TokenType
+  Keywords, RefQLValue, Token, TokenType
 } from "../types";
 import identifierToTable from "./identifierToTable";
 import {
   All, ASTNode, BelongsTo, BooleanLiteral, Call,
-  HasMany, Identifier, ManyToMany, NullLiteral,
+  HasMany, Identifier, Literal, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "./nodes";
 import Table from "../Table";

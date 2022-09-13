@@ -15,7 +15,7 @@ const prototype = {
 };
 
 function RQLTag<Params = {}>(node: Root<Params>) {
-  if (!(node instanceof Root)) {
+  if (!(Root.isRoot (node))) {
     throw new Error ("RQLTag should hold a Root node");
   }
 
@@ -33,7 +33,7 @@ function map(this: RQLTag, f: (node: Root) => Root) {
 
 function run<Params>(this: RQLTag<Params>, querier: Querier, params: Params) {
   return new Promise ((res, rej) => {
-    if (!(this.node instanceof Root)) {
+    if (!(Root.isRoot (this.node))) {
       rej (new Error ("You can only run a RQLTag that holds a Root node"));
       return;
     }

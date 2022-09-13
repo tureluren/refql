@@ -4,7 +4,6 @@ interface Table {
   name: string;
   as: string;
   schema?: string;
-  [refqlType]: string;
   toString: () => string;
 }
 

@@ -3,14 +3,14 @@ import mySql from "mysql2";
 import { pipe } from "fp-ts/function";
 import In from "./In";
 import { rql } from "./index";
-import { All, BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, StringLiteral, Variable } from "./Parser/nodes";
+import { All, BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, StringLiteral, TableNode, Variable } from "./Parser/nodes";
 import Raw from "./Raw";
 import RQLTag from "./RQLTag";
 import { Goal, Player } from "./soccer";
 import SQLTag from "./SQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
-import { StringMap, Keywords, TableNode, Querier } from "./types";
+import { StringMap, Keywords, Querier } from "./types";
 
 const pool = new Pool ({
   user: "test",
