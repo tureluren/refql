@@ -43,21 +43,6 @@ export interface Root<Params = {}, Ran extends boolean = false> extends TableNod
   run(params: Params, table: Table): Root<Params, true>;
 }
 
-export interface HasMany<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
-  addMember<Params2 = {}>(node: ASTNode<Params2>): HasMany<Params & Params2>;
-  run(params: Params, table: Table): HasMany<Params, true>;
-}
-
-export interface BelongsTo<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
-  addMember<Params2 = {}>(node: ASTNode<Params2>): BelongsTo<Params & Params2>;
-  run(params: Params, table: Table): BelongsTo<Params, true>;
-}
-
-export interface ManyToMany<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
-  addMember<Params2 = {}>(node: ASTNode<Params2>): ManyToMany<Params & Params2>;
-  run(params: Params, table: Table): ManyToMany<Params, true>;
-}
-
 const rootType = "refql/Root";
 
 export function Root<Params = {}>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params>) {
@@ -75,6 +60,11 @@ export function Root<Params = {}>(table: Table, members: ASTNode<Params>[], keyw
 Root.isRoot = function <Params = {}> (value: any): value is Root<Params> {
   return value[refqlType] === rootType;
 };
+
+export interface HasMany<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
+  addMember<Params2 = {}>(node: ASTNode<Params2>): HasMany<Params & Params2>;
+  run(params: Params, table: Table): HasMany<Params, true>;
+}
 
 const hasManyType = "refql/HasMany";
 
@@ -94,6 +84,11 @@ HasMany.isHasMany = function <Params = {}> (value: any): value is HasMany<Params
   return value[refqlType] === hasManyType;
 };
 
+export interface BelongsTo<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
+  addMember<Params2 = {}>(node: ASTNode<Params2>): BelongsTo<Params & Params2>;
+  run(params: Params, table: Table): BelongsTo<Params, true>;
+}
+
 const belongsToType = "refql/BelongsTo";
 
 export function BelongsTo<Params = {}>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params>) {
@@ -111,6 +106,11 @@ export function BelongsTo<Params = {}>(table: Table, members: ASTNode<Params>[],
 BelongsTo.isBelongsTo = function <Params = {}> (value: any): value is BelongsTo<Params> {
   return value[refqlType] === belongsToType;
 };
+
+export interface ManyToMany<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
+  addMember<Params2 = {}>(node: ASTNode<Params2>): ManyToMany<Params & Params2>;
+  run(params: Params, table: Table): ManyToMany<Params, true>;
+}
 
 const manyToManyType = "refql/ManyToMany";
 
@@ -324,7 +324,6 @@ export function NumericLiteral<Params = {}>(value: number, as?: string, cast?: s
 
   return numericLiteral;
 }
-
 
 export interface BooleanLiteral<Params = {}, Ran extends boolean = false> extends Literal<Params, Ran> {
   value: boolean;
