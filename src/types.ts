@@ -76,7 +76,7 @@ export interface Next {
 export interface Rec {
   table: Table;
   query: string;
-  sqlTag: SQLTag;
+  sqlTag: SQLTag<{}>;
   comps: string[];
   values: any[];
   next: Next[];

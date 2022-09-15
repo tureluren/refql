@@ -1,6 +1,6 @@
 import { refqlType } from "../consts";
 import Table from "../Table";
-import { CastAs, Pattern, StringMap } from "../types";
+import { CastAs, Keywords, Pattern, StringMap } from "../types";
 import runKeywords from "./runKeywords";
 
 export interface ASTNode {
@@ -12,11 +12,11 @@ const astNodePrototype = {
   isASTNode: true
 };
 
-export interface TableNode extends ASTNode {
+export interface TableNode<Params> extends ASTNode {
   table: Table;
   members: ASTNode[];
-  keywords: StringMap;
-  addMember(node: ASTNode): TableNode;
+  keywords: Keywords<Params>;
+  addMember<Params2>(node: ASTNode | TableNode<Params2>): TableNode<Params & Params2>;
 }
 
 const tableNodePrototype = Object.assign ({}, astNodePrototype, {
@@ -24,7 +24,7 @@ const tableNodePrototype = Object.assign ({}, astNodePrototype, {
   cata: TableNode$prototype$cata
 });
 
-function TableNode$prototype$addMember(this: TableNode, node: ASTNode) {
+function TableNode$prototype$addMember<Params>(this: TableNode<Params>, node: ASTNode) {
   return this.constructor (
     this.table,
     this.members.concat (node),
@@ -32,7 +32,7 @@ function TableNode$prototype$addMember(this: TableNode, node: ASTNode) {
   );
 }
 
-function TableNode$prototype$cata(this: TableNode, pattern: StringMap, params: StringMap) {
+function TableNode$prototype$cata <Params>(this: TableNode<Params>, pattern: StringMap, params: StringMap) {
   return pattern[this.constructor.name] (
     this.table,
     this.members,
@@ -40,14 +40,14 @@ function TableNode$prototype$cata(this: TableNode, pattern: StringMap, params: S
   );
 }
 
-export interface Root extends TableNode {
-  addMember(node: ASTNode): Root;
+export interface Root<Params> extends TableNode<Params> {
+  addMember<Params2>(node: ASTNode | TableNode<Params2>): Root<Params & Params2>;
 }
 
 const rootType = "refql/Root";
 
-export function Root(table: Table, members: ASTNode[], keywords: StringMap) {
-  let root: Root = Object.create (
+export function Root<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+  let root: Root<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: Root, [refqlType]: rootType })
   );
 
@@ -58,18 +58,18 @@ export function Root(table: Table, members: ASTNode[], keywords: StringMap) {
   return root;
 }
 
-Root.isRoot = function (value: any): value is Root {
+Root.isRoot = function<Params> (value: any): value is Root<Params> {
   return value[refqlType] === rootType;
 };
 
-export interface HasMany extends TableNode {
-  addMember(node: ASTNode): HasMany;
+export interface HasMany<Params> extends TableNode<Params> {
+  addMember<Params2>(node: ASTNode | TableNode<Params2>): HasMany<Params & Params2>;
 }
 
 const hasManyType = "refql/HasMany";
 
-export function HasMany(table: Table, members: ASTNode[], keywords: StringMap) {
-  let hasMany: HasMany = Object.create (
+export function HasMany<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+  let hasMany: HasMany<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: HasMany, [refqlType]: hasManyType })
   );
 
@@ -80,18 +80,18 @@ export function HasMany(table: Table, members: ASTNode[], keywords: StringMap) {
   return hasMany;
 }
 
-HasMany.isHasMany = function (value: any): value is HasMany {
+HasMany.isHasMany = function <Params> (value: any): value is HasMany<Params> {
   return value[refqlType] === hasManyType;
 };
 
-export interface BelongsTo extends TableNode {
-  addMember (node: ASTNode): BelongsTo;
+export interface BelongsTo<Params> extends TableNode<Params> {
+  addMember<Params2>(node: ASTNode | TableNode<Params2>): BelongsTo<Params & Params2>;
 }
 
 const belongsToType = "refql/BelongsTo";
 
-export function BelongsTo(table: Table, members: ASTNode[], keywords: StringMap) {
-  let belongsTo: BelongsTo = Object.create (
+export function BelongsTo<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+  let belongsTo: BelongsTo<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: BelongsTo, [refqlType]: belongsToType })
   );
 
@@ -102,18 +102,18 @@ export function BelongsTo(table: Table, members: ASTNode[], keywords: StringMap)
   return belongsTo;
 }
 
-BelongsTo.isBelongsTo = function (value: any): value is BelongsTo {
+BelongsTo.isBelongsTo = function<Params> (value: any): value is BelongsTo<Params> {
   return value[refqlType] === belongsToType;
 };
 
-export interface ManyToMany extends TableNode {
-  addMember(node: ASTNode): ManyToMany;
+export interface ManyToMany<Params> extends TableNode<Params> {
+  addMember<Params2>(node: ASTNode | TableNode<Params2>): ManyToMany<Params & Params2>;
 }
 
 const manyToManyType = "refql/ManyToMany";
 
-export function ManyToMany(table: Table, members: ASTNode[], keywords: StringMap) {
-  let manyToMany: ManyToMany = Object.create (
+export function ManyToMany<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+  let manyToMany: ManyToMany<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: ManyToMany, [refqlType]: manyToManyType })
   );
 
@@ -124,12 +124,13 @@ export function ManyToMany(table: Table, members: ASTNode[], keywords: StringMap
   return manyToMany;
 }
 
-ManyToMany.isManyToMany = function (value: any): value is ManyToMany {
+ManyToMany.isManyToMany = function <Params> (value: any): value is ManyToMany<Params> {
   return value[refqlType] === manyToManyType;
 };
 
 export interface Call extends ASTNode, CastAs {
   name: string;
+  // geen tablenodes!!!
   members: ASTNode[];
   addMember(node: ASTNode): Call;
 }
@@ -309,3 +310,9 @@ export function NullLiteral(value: null, as?: string, cast?: string) {
 
   return nullLiteral;
 }
+
+const ro = Root<{limit: number}> (Table ("player"), [], {})
+  .addMember (Identifier ("a"))
+  .addMember (BelongsTo<{ id: number}> (Table ("team"), [], {}));
+
+console.log (ro);

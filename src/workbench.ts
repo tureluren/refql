@@ -274,7 +274,7 @@ const teams = rql<{ limit: number}>`
 
 
 // NT
-const rootToBelongsTo = (node: TableNode) => {
+const rootToBelongsTo = <Params>(node: TableNode<Params>) => {
   return BelongsTo (node.table, node.members, node.keywords);
 };
 
@@ -315,15 +315,15 @@ const goals = rql<{goalLimit?: number}>`
 });
 
 // natural transformation
-const rootToHasMany = (node: TableNode) => {
+const rootToHasMany = <Params>(node: TableNode<Params>) => {
   return HasMany (node.table, node.members, node.keywords);
 };
 
-const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
+const belongsTo = <Params>(tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
   return tag2.map (node => node.addMember (rootToBelongsTo (tag.node)));
 };
 
-const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>): RQLTag<Params2 & Params> => {
+const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
   return tag2.map (node => node.addMember (rootToHasMany (tag.node)));
 };
 
