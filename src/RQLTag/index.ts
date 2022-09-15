@@ -3,9 +3,9 @@ import { Root } from "../Parser/nodes";
 import { Querier } from "../types";
 import aggregate from "./aggregate";
 
-interface RQLTag <Params = {}> {
-  node: Root<Params>;
-  map<Params2 = {}>(f: (node: Root<Params>) => Root<Params2>): RQLTag<Params2>;
+interface RQLTag <Params> {
+  node: Root;
+  map(f: (node: Root) => Root): RQLTag<Params>;
   run<Return = any>(querier: Querier<Return>, params: Params): Promise<Return[]>;
 }
 
@@ -14,7 +14,7 @@ const prototype = {
   map, "fantasy-land/map": map, run
 };
 
-function RQLTag<Params = {}>(node: Root<Params>) {
+function RQLTag<Params>(node: Root) {
   if (!(Root.isRoot (node))) {
     throw new Error ("RQLTag should hold a Root node");
   }
@@ -27,7 +27,7 @@ function RQLTag<Params = {}>(node: Root<Params>) {
 
 RQLTag.prototype = Object.create (prototype);
 
-function map(this: RQLTag, f: (node: Root) => Root) {
+function map<Params>(this: RQLTag<Params>, f: (node: Root) => Root) {
   return RQLTag (f (this.node));
 }
 

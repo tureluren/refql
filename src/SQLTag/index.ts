@@ -2,14 +2,14 @@ import { Querier, RefQLValue } from "../types";
 import compileSQLTag from "./compileSQLTag";
 import formatTLString from "./formatTLString";
 
-interface SQLTag<Params = {}> {
+interface SQLTag<Params> {
   strings: string[];
   values: RefQLValue<Params>[];
   concat<Params2 = {}>(other: SQLTag<Params2>): SQLTag<Params & Params2>;
-  map<Params2 = {}>(f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
+  map(f: (values: RefQLValue<Params>[]) => RefQLValue<Params>[]): SQLTag<Params>;
   "fantasy-land/map": typeof map;
   mapLeft(f: (strings: string[]) => string[]): SQLTag<Params>;
-  bimap<Params2 = {}>(g: (strings: string[]) => string[], f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
+  bimap(g: (strings: string[]) => string[], f: (values: RefQLValue<Params>[]) => RefQLValue<Params>[]): SQLTag<Params>;
   run<Return = any>(querier: Querier<Return>, params: Params): Promise<Return[]>;
 }
 
@@ -19,7 +19,7 @@ const prototype = {
   mapLeft, bimap, run
 };
 
-function SQLTag<Params = {}>(strings: string[], values: RefQLValue<Params>[]) {
+function SQLTag<Params>(strings: string[], values: RefQLValue<Params>[]) {
   let tag: SQLTag<Params> = Object.create (SQLTag.prototype);
   tag.strings = strings.map (formatTLString);
   tag.values = values;
@@ -29,7 +29,7 @@ function SQLTag<Params = {}>(strings: string[], values: RefQLValue<Params>[]) {
 
 SQLTag.prototype = Object.create (prototype);
 
-function concat(this: SQLTag, other: SQLTag): SQLTag {
+function concat<Params, Params2>(this: SQLTag<Params>, other: SQLTag<Params>): SQLTag<Params & Params2> {
   const tag1Strings = Array.from (this.strings);
   const lastEl = tag1Strings.pop ();
 
@@ -42,15 +42,15 @@ function concat(this: SQLTag, other: SQLTag): SQLTag {
   return SQLTag (strings, values);
 }
 
-function map(this: SQLTag, f: (values: RefQLValue[]) => RefQLValue[]) {
+function map<Params>(this: SQLTag<Params>, f: (values: RefQLValue[]) => RefQLValue[]) {
   return SQLTag (this.strings, f (this.values));
 }
 
-function mapLeft(this: SQLTag, f: (strings: string[]) => string[]) {
+function mapLeft<Params>(this: SQLTag<Params>, f: (strings: string[]) => string[]) {
   return SQLTag (f (this.strings), this.values);
 }
 
-function bimap(this: SQLTag, g: (strings: string[]) => string[], f: (values: RefQLValue[]) => RefQLValue[]) {
+function bimap<Params>(this: SQLTag<Params>, g: (strings: string[]) => string[], f: (values: RefQLValue[]) => RefQLValue[]) {
   return SQLTag (g (this.strings), f (this.values));
 }
 

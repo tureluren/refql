@@ -28,15 +28,15 @@ export interface CastAs {
   cast?: string;
 }
 
-export type Pattern<Return = any, Params = {}, Ran extends boolean = false> = Partial<{
-  Root: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
-  HasMany: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
-  BelongsTo: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
-  ManyToMany: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, Ran>) => Return;
+export type Pattern<Params, Return> = Partial<{
+  Root: (table: Table, members: ASTNode[], keywords: Keywords<Params, true>) => Return;
+  HasMany: (table: Table, members: ASTNode[], keywords: Keywords<Params, true>) => Return;
+  BelongsTo: (table: Table, members: ASTNode[], keywords: Keywords<Params, true>) => Return;
+  ManyToMany: (table: Table, members: ASTNode[], keywords: Keywords<Params, true>) => Return;
   All: (sign: string) => Return;
   Identifier: (name: string, as?: string, cast?: string) => Return;
-  Variable: (value: RefQLValue<Params, Ran>, as?: string, cast?: string) => Return;
-  Call: (name: string, members: ASTNode<Params>[], as?: string, cast?: string) => Return;
+  Variable: (value: RefQLValue<Params, true>, as?: string, cast?: string) => Return;
+  Call: (name: string, members: ASTNode[], as?: string, cast?: string) => Return;
   StringLiteral: (value: string, as?: string, cast?: string) => Return;
   NumericLiteral: (value: number, as?: string, cast?: string) => Return;
   BooleanLiteral: (value: boolean, as?: string, cast?: string) => Return;
@@ -68,18 +68,18 @@ export interface Refs {
   rxrefs: Ref[];
 }
 
-export interface Next<Params> {
-  node: ASTNode <Params, true>;
+export interface Next {
+  node: ASTNode;
   refs: Refs;
 }
 
-export interface Rec<Params = {}> {
+export interface Rec<Params> {
   table: Table;
   query: string;
   sqlTag: SQLTag<Params>;
   comps: string[];
   values: any[];
-  next: Next<Params>[];
+  next: Next[];
   refs: Refs;
   inCall: boolean;
 }
@@ -102,4 +102,4 @@ export type RefQLValue<Params = {}, Ran extends boolean = false> =
   ? BuiltIn | SQLTag<Params> | ParamF<Params, BuiltIn | SQLTag<Params>>
   : BuiltIn | SQLTag<Params>;
 
-export type InterpretF<Params> = (exp: ASTNode<Params, true | false>, env: Env<Params>, rows?: any[]) => Rec<Params>;
+export type InterpretF<Params> = (exp: ASTNode, env: Env<Params>, rows?: any[]) => Rec<Params>;

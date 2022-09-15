@@ -3,9 +3,8 @@ import Table from "../Table";
 import { CastAs, Keywords, Pattern, RefQLValue, StringMap } from "../types";
 import runKeywords from "./runKeywords";
 
-export interface ASTNode<Params = {}, Ran extends boolean = false> {
-  cata<Return = any>(pattern: Pattern<Return, Params, Ran>): Return;
-  run(params: Params, table: Table): ASTNode<Params, true>;
+export interface ASTNode {
+  cata<Params, Return>(pattern: Pattern<Params, Return>, params: Params, table: Table): Return;
   isASTNode: boolean;
 }
 
@@ -13,41 +12,43 @@ const astNodePrototype = {
   isASTNode: true
 };
 
-export interface TableNode<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
+export interface TableNode extends ASTNode {
   table: Table;
-  members: ASTNode<Params>[];
-  keywords: Keywords<Params, Ran>;
-  addMember<Params2 = {}>(node: ASTNode<Params2>): TableNode<Params & Params2>;
+  members: ASTNode[];
+  keywords: StringMap;
+  addMember(node: ASTNode): TableNode;
 }
 
-const tableNodePrototype = {
+const tableNodePrototype = Object.assign ({}, astNodePrototype, {
   addMember: TableNode$prototype$addMember,
-  cata: TableNode$prototype$cata,
-  run: TableNode$prototype$run
-};
+  cata: TableNode$prototype$cata
+});
 
 function TableNode$prototype$addMember(this: TableNode, node: ASTNode) {
-  return this.constructor (this.table, this.members.concat (node), this.keywords);
+  return this.constructor (
+    this.table,
+    this.members.concat (node),
+    this.keywords
+  );
 }
 
-function TableNode$prototype$cata(this: TableNode, pattern: StringMap) {
-  return pattern[this.constructor.name] (this.table, this.members, this.keywords);
+function TableNode$prototype$cata(this: TableNode, pattern: StringMap, params: StringMap) {
+  return pattern[this.constructor.name] (
+    this.table,
+    this.members,
+    runKeywords (params, this.table, this.keywords)
+  );
 }
 
-function TableNode$prototype$run(this: TableNode, params: StringMap, _table: Table) {
-  return this.constructor (this.table, this.members, runKeywords (params, this.table, this.keywords));
-}
-
-export interface Root<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
-  addMember<Params2 = {}>(node: ASTNode<Params2>): Root<Params & Params2>;
-  run(params: Params, table: Table): Root<Params, true>;
+export interface Root extends TableNode {
+  addMember(node: ASTNode): Root;
 }
 
 const rootType = "refql/Root";
 
-export function Root<Params = {}>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params>) {
-  let root: Root<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, tableNodePrototype, { constructor: Root, [refqlType]: rootType })
+export function Root<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+  let root: Root = Object.create (
+    Object.assign ({}, tableNodePrototype, { constructor: Root, [refqlType]: rootType })
   );
 
   root.table = table;
@@ -57,20 +58,19 @@ export function Root<Params = {}>(table: Table, members: ASTNode<Params>[], keyw
   return root;
 }
 
-Root.isRoot = function <Params = {}> (value: any): value is Root<Params> {
+Root.isRoot = function (value: any): value is Root {
   return value[refqlType] === rootType;
 };
 
-export interface HasMany<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
-  addMember<Params2 = {}>(node: ASTNode<Params2>): HasMany<Params & Params2>;
-  run(params: Params, table: Table): HasMany<Params, true>;
+export interface HasMany extends TableNode {
+  addMember(node: ASTNode): HasMany;
 }
 
 const hasManyType = "refql/HasMany";
 
-export function HasMany<Params = {}>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params>) {
-  let hasMany: HasMany<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, tableNodePrototype, { constructor: HasMany, [refqlType]: hasManyType })
+export function HasMany<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+  let hasMany: HasMany = Object.create (
+    Object.assign ({}, tableNodePrototype, { constructor: HasMany, [refqlType]: hasManyType })
   );
 
   hasMany.table = table;
@@ -80,20 +80,19 @@ export function HasMany<Params = {}>(table: Table, members: ASTNode<Params>[], k
   return hasMany;
 }
 
-HasMany.isHasMany = function <Params = {}> (value: any): value is HasMany<Params> {
+HasMany.isHasMany = function (value: any): value is HasMany {
   return value[refqlType] === hasManyType;
 };
 
-export interface BelongsTo<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
-  addMember<Params2 = {}>(node: ASTNode<Params2>): BelongsTo<Params & Params2>;
-  run(params: Params, table: Table): BelongsTo<Params, true>;
+export interface BelongsTo extends TableNode {
+  addMember (node: ASTNode): BelongsTo;
 }
 
 const belongsToType = "refql/BelongsTo";
 
-export function BelongsTo<Params = {}>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params>) {
-  let belongsTo: BelongsTo<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, tableNodePrototype, { constructor: BelongsTo, [refqlType]: belongsToType })
+export function BelongsTo<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+  let belongsTo: BelongsTo = Object.create (
+    Object.assign ({}, tableNodePrototype, { constructor: BelongsTo, [refqlType]: belongsToType })
   );
 
   belongsTo.table = table;
@@ -103,20 +102,19 @@ export function BelongsTo<Params = {}>(table: Table, members: ASTNode<Params>[],
   return belongsTo;
 }
 
-BelongsTo.isBelongsTo = function <Params = {}> (value: any): value is BelongsTo<Params> {
+BelongsTo.isBelongsTo = function (value: any): value is BelongsTo {
   return value[refqlType] === belongsToType;
 };
 
-export interface ManyToMany<Params = {}, Ran extends boolean = false> extends TableNode<Params, Ran> {
-  addMember<Params2 = {}>(node: ASTNode<Params2>): ManyToMany<Params & Params2>;
-  run(params: Params, table: Table): ManyToMany<Params, true>;
+export interface ManyToMany extends TableNode {
+  addMember(node: ASTNode): ManyToMany;
 }
 
 const manyToManyType = "refql/ManyToMany";
 
-export function ManyToMany<Params = {}>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params>) {
-  let manyToMany: ManyToMany<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, tableNodePrototype, { constructor: ManyToMany, [refqlType]: manyToManyType })
+export function ManyToMany<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+  let manyToMany: ManyToMany = Object.create (
+    Object.assign ({}, tableNodePrototype, { constructor: ManyToMany, [refqlType]: manyToManyType })
   );
 
   manyToMany.table = table;
@@ -126,26 +124,24 @@ export function ManyToMany<Params = {}>(table: Table, members: ASTNode<Params>[]
   return manyToMany;
 }
 
-ManyToMany.isManyToMany = function <Params = {}> (value: any): value is ManyToMany<Params> {
+ManyToMany.isManyToMany = function (value: any): value is ManyToMany {
   return value[refqlType] === manyToManyType;
 };
 
-export interface Call<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran>, CastAs {
+export interface Call extends ASTNode, CastAs {
   name: string;
-  members: ASTNode<Params>[];
-  addMember<Params2 = {}>(node: ASTNode<Params2>): ManyToMany<Params & Params2>;
-  run(params: Params, table: Table): Call<Params, true>;
+  members: ASTNode[];
+  addMember(node: ASTNode): Call;
 }
 
 const callPrototype = {
   constructor: Call,
   addMember: Call$prototype$addMember,
-  cata: Call$prototype$cata,
-  run: Call$prototype$run
+  cata: Call$prototype$cata
 };
 
-export function Call<Params = {}>(name: string, members: ASTNode<Params>[], as?: string, cast?: string) {
-  let call: Call<Params> = Object.create (
+export function Call(name: string, members: ASTNode[], as?: string, cast?: string) {
+  let call: Call = Object.create (
     Object.assign ({}, astNodePrototype, callPrototype)
   );
 
@@ -167,25 +163,17 @@ function Call$prototype$cata(this: Call, pattern: StringMap) {
   return pattern.Call (this.name, this.members, this.as, this.cast);
 }
 
-function Call$prototype$run(this: Call, _params: StringMap, _table: Table) {
-  return Call (this.name, this.members, this.as, this.cast);
-}
-
-export interface Identifier<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran>, CastAs {
+export interface Identifier extends ASTNode, CastAs {
   name: string;
-  run(params: Params, table: Table): Identifier<Params, true>;
 }
 
-const identifierPrototype = {
+const identifierPrototype = Object.assign ({}, astNodePrototype, {
   constructor: Identifier,
-  cata: Identifier$prototype$cata,
-  run: Identifier$prototype$run
-};
+  cata: Identifier$prototype$cata
+});
 
-export function Identifier<Params = {}>(name: string, as?: string, cast?: string) {
-  let identifier: Identifier<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, identifierPrototype)
-  );
+export function Identifier(name: string, as?: string, cast?: string) {
+  let identifier: Identifier = Object.create (identifierPrototype);
 
   identifier.name = name;
   identifier.as = as;
@@ -198,25 +186,17 @@ function Identifier$prototype$cata(this: Identifier, pattern: StringMap) {
   return pattern.Identifier (this.name, this.as, this.cast);
 }
 
-function Identifier$prototype$run(this: Identifier, _params: StringMap, _table: Table) {
-  return Identifier (this.name, this.as, this.cast);
-}
-
-export interface All<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran> {
+export interface All extends ASTNode {
   sign: string;
-  run(params: Params, table: Table): All<Params, true>;
 }
 
-const allPrototype = {
+const allPrototype = Object.assign ({}, astNodePrototype, {
   constructor: All,
-  cata: All$prototype$cata,
-  run: All$prototype$run
-};
+  cata: All$prototype$cata
+});
 
-export function All<Params = {}>(sign: string) {
-  let all: All<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, allPrototype)
-  );
+export function All(sign: string) {
+  let all: All = Object.create (allPrototype);
 
   all.sign = sign;
 
@@ -227,25 +207,17 @@ function All$prototype$cata(this: All, pattern: StringMap) {
   return pattern.All (this.sign);
 }
 
-function All$prototype$run(this: All, _params: StringMap, _table: Table) {
-  return All (this.sign);
+export interface Variable extends ASTNode, CastAs {
+  value: any;
 }
 
-export interface Variable<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran>, CastAs {
-  value: RefQLValue<Params, Ran>;
-  run(params: Params, table: Table): Variable<Params, true>;
-}
-
-const variablePrototype = {
+const variablePrototype = Object.assign ({}, astNodePrototype, {
   constructor: Variable,
-  cata: Variable$prototype$cata,
-  run: Variable$prototype$run
-};
+  cata: Variable$prototype$cata
+});
 
-export function Variable<Params = {}>(value: RefQLValue<Params>, as?: string, cast?: string) {
-  let variable: Variable<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, variablePrototype)
-  );
+export function Variable<Params>(value: RefQLValue<Params>, as?: string, cast?: string) {
+  let variable: Variable = Object.create (variablePrototype);
 
   variable.value = value;
   variable.as = as;
@@ -254,43 +226,33 @@ export function Variable<Params = {}>(value: RefQLValue<Params>, as?: string, ca
   return variable;
 }
 
-function Variable$prototype$cata(this: Variable, pattern: StringMap) {
-  return pattern.Variable (this.value, this.as, this.cast);
-}
-
-function Variable$prototype$run(this: Variable, params: StringMap, table: Table) {
+function Variable$prototype$cata(this: Variable, pattern: StringMap, params: StringMap, table: Table) {
   const ran: RefQLValue = typeof this.value === "function"
     ? this.value (params, table)
     : this.value;
 
-  return Variable (ran, this.as, this.cast);
+  return pattern.Variable (ran, this.as, this.cast);
 }
 
-export interface Literal<Params = {}, Ran extends boolean = false> extends ASTNode<Params, Ran>, CastAs {
+export interface Literal extends ASTNode, CastAs {
   value: string | number | boolean | null;
 }
 
-const literalPrototype = {
-  cata: Literal$prototype$cata,
-  run: Literal$prototype$run
-};
+const literalPrototype = Object.assign ({}, astNodePrototype, {
+  cata: Literal$prototype$cata
+});
 
 function Literal$prototype$cata(this: Literal, pattern: StringMap) {
   return pattern[this.constructor.name] (this.value, this.as, this.cast);
 }
 
-function Literal$prototype$run(this: Literal, _params: StringMap, _table: Table) {
-  return this.constructor (this.value, this.as, this.cast);
-}
-
-export interface StringLiteral<Params = {}, Ran extends boolean = false> extends Literal<Params, Ran> {
+export interface StringLiteral extends Literal {
   value: string;
-  run(params: Params, table: Table): StringLiteral<Params, true>;
 }
 
-export function StringLiteral<Params = {}>(value: string, as?: string, cast?: string) {
-  let stringLiteral: StringLiteral<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, literalPrototype, { constructor: StringLiteral })
+export function StringLiteral(value: string, as?: string, cast?: string) {
+  let stringLiteral: StringLiteral = Object.create (
+    Object.assign ({}, literalPrototype, { constructor: StringLiteral })
   );
 
   stringLiteral.value = value;
@@ -300,14 +262,13 @@ export function StringLiteral<Params = {}>(value: string, as?: string, cast?: st
   return stringLiteral;
 }
 
-export interface NumericLiteral<Params = {}, Ran extends boolean = false> extends Literal<Params, Ran> {
+export interface NumericLiteral extends Literal {
   value: number;
-  run(params: Params, table: Table): NumericLiteral<Params, true>;
 }
 
-export function NumericLiteral<Params = {}>(value: number, as?: string, cast?: string) {
-  let numericLiteral: NumericLiteral<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, literalPrototype, { constructor: NumericLiteral })
+export function NumericLiteral(value: number, as?: string, cast?: string) {
+  let numericLiteral: NumericLiteral = Object.create (
+    Object.assign ({}, literalPrototype, { constructor: NumericLiteral })
   );
 
   numericLiteral.value = value;
@@ -317,14 +278,13 @@ export function NumericLiteral<Params = {}>(value: number, as?: string, cast?: s
   return numericLiteral;
 }
 
-export interface BooleanLiteral<Params = {}, Ran extends boolean = false> extends Literal<Params, Ran> {
+export interface BooleanLiteral extends Literal {
   value: boolean;
-  run(params: Params, table: Table): BooleanLiteral<Params, true>;
 }
 
-export function BooleanLiteral<Params = {}>(value: boolean, as?: string, cast?: string) {
-  let booleanLiteral: BooleanLiteral<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, literalPrototype, { constructor: BooleanLiteral })
+export function BooleanLiteral(value: boolean, as?: string, cast?: string) {
+  let booleanLiteral: BooleanLiteral = Object.create (
+    Object.assign ({}, literalPrototype, { constructor: BooleanLiteral })
   );
 
   booleanLiteral.value = value;
@@ -334,14 +294,13 @@ export function BooleanLiteral<Params = {}>(value: boolean, as?: string, cast?: 
   return booleanLiteral;
 }
 
-export interface NullLiteral<Params = {}, Ran extends boolean = false> extends Literal<Params, Ran> {
+export interface NullLiteral extends Literal {
   value: null;
-  run(params: Params, table: Table): NullLiteral<Params, true>;
 }
 
-export function NullLiteral<Params = {}>(value: null, as?: string, cast?: string) {
-  let nullLiteral: NullLiteral<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, literalPrototype, { constructor: NullLiteral })
+export function NullLiteral(value: null, as?: string, cast?: string) {
+  let nullLiteral: NullLiteral = Object.create (
+    Object.assign ({}, literalPrototype, { constructor: NullLiteral })
   );
 
   nullLiteral.value = value;

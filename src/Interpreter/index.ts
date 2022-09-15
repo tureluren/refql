@@ -17,8 +17,9 @@ import next from "./next";
 
 const Interpreter = <Params> (params: Params) => {
   const includeSQL = interpretSQLTag (params);
+  const toNext = next (params);
 
-  const interpretMembers = (members: ASTNode<Params>[], table: Table, inCall = false) =>
+  const interpretMembers = (members: ASTNode[], table: Table, inCall = false) =>
     members.reduce ((acc, mem) =>
       acc.extend (env => interpret (mem, env)), createEnv<Params> (table, undefined, inCall));
 
@@ -26,9 +27,7 @@ const Interpreter = <Params> (params: Params) => {
     const { rec } = env;
     const { values, table: parent, refs, inCall } = rec;
 
-    const patched = node.run (params, parent);
-
-    return patched.cata<Rec<Params>> ({
+    return node.cata<Params, Rec<Params>> ({
       Root: (table, members, { id, limit, offset }) =>
         interpretMembers (members, table)
           .map (fromTable (table))
@@ -38,7 +37,7 @@ const Interpreter = <Params> (params: Params) => {
           .rec,
 
       HasMany: (table, members, { id, limit, offset }) => {
-        if (!rows) return next (patched, rec);
+        if (!rows) return toNext (node, rec);
 
         return interpretMembers (members, table)
           .map (selectRefs (table, refs.rrefs))
@@ -51,7 +50,7 @@ const Interpreter = <Params> (params: Params) => {
       },
 
       BelongsTo: (table, members, { id, limit, offset }) => {
-        if (!rows) return next (patched, rec);
+        if (!rows) return toNext (node, rec);
 
         return interpretMembers (members, table)
           .map (selectRefs (table, refs.rrefs))
@@ -64,7 +63,7 @@ const Interpreter = <Params> (params: Params) => {
       },
 
       ManyToMany: (table, members, { id, limit, offset, xtable }) => {
-        if (!rows) return next (patched, rec);
+        if (!rows) return toNext (node, rec);
 
         const x = Table (
           xtable || `${parent.name}_${table.name}`
@@ -134,7 +133,7 @@ const Interpreter = <Params> (params: Params) => {
 
       NullLiteral: (value, as, cast) =>
         select (castAs (value, as, cast), rec)
-    });
+    }, params, parent);
   };
 
   return interpret;

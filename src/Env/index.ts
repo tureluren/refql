@@ -1,6 +1,6 @@
 import { Rec } from "../types";
 
-interface Env<Params = {}> {
+interface Env<Params> {
   rec: Rec<Params>;
   extend(f: (env: Env<Params>) => Rec<Params>): Env<Params>;
   map(f: (rec: Rec<Params>) => Rec<Params>): Env<Params>;
@@ -20,11 +20,11 @@ function Env<Params = {}>(rec: Rec<Params>) {
 
 Env.prototype = Object.create (prototype);
 
-function extend(this: Env, f: (env: Env) => Rec) {
+function extend<Params>(this: Env<Params>, f: (env: Env<Params>) => Rec<Params>) {
   return Env (f (this));
 }
 
-function map(this: Env, f: (rec: Rec) => Rec) {
+function map<Params>(this: Env<Params>, f: (rec: Rec<Params>) => Rec<Params>) {
   return Env (f (this.rec));
 }
 

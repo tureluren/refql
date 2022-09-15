@@ -12,12 +12,12 @@ const createRef = (table: Table) => (kw: string, refs: string) =>
     as: `${table.as}${kw}${idx}`
   }));
 
-const next = <Params>(node: ASTNode<Params, true>, rec: Rec<Params>) => {
+const next = <Params>(params: Params) => (node: ASTNode, rec: Rec<Params>) => {
   const { table } = rec;
 
   let refs = emptyRefs ();
 
-  node.cata<void> ({
+  node.cata<Params, void> ({
     BelongsTo: (child, _members, { lref, rref }) => {
       const refOf = createRef (child);
       refs.lrefs = refOf ("lref", lref || child.name + "_id");
@@ -35,7 +35,7 @@ const next = <Params>(node: ASTNode<Params, true>, rec: Rec<Params>) => {
       refs.lxrefs = refOf ("lxref", lxref || table.name + "_id");
       refs.rxrefs = refOf ("rxref", rxref || child.name + "_id");
     }
-  });
+  }, params, table);
 
   return evolve ({
     comps: concat (refsToComp (table, refs.lrefs)),

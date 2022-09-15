@@ -266,7 +266,7 @@ const playerById = rql<{ id: number }>`
 
 // players.run (querier, { id: 4 });
 
-const teams = rql<{}>`
+const teams = rql<{ limit: number}>`
   team { 
     * 
   }
@@ -274,8 +274,8 @@ const teams = rql<{}>`
 
 
 // NT
-const rootToBelongsTo = <Params> (node: TableNode<Params>) => {
-  return BelongsTo<Params> (node.table, node.members, node.keywords);
+const rootToBelongsTo = (node: TableNode) => {
+  return BelongsTo (node.table, node.members, node.keywords);
 };
 
 // NOT A SEMIGROUP, because semigroup laws don't goe
@@ -312,15 +312,15 @@ const goals = rql<{goalLimit?: number}>`
 `;
 
 // natural transformation
-const rootToHasMany = <Params> (node: TableNode<Params>) => {
+const rootToHasMany = (node: TableNode) => {
   return HasMany (node.table, node.members, node.keywords);
 };
 
-const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
+const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>): RQLTag<Params2 & Params> => {
   return tag2.map (node => node.addMember (rootToBelongsTo (tag.node)));
 };
 
-const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
+const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>): RQLTag<Params2 & Params> => {
   return tag2.map (node => node.addMember (rootToHasMany (tag.node)));
 };
 
