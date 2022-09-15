@@ -1,7 +1,7 @@
 import SQLTag from ".";
-import { RefQLValue } from "../types";
+import { RefQLValue, StringMap } from "../types";
 
-const sql = <Params = {}> (strings: TemplateStringsArray, ...values: RefQLValue<Params>[]) =>
+const sql = <Params extends StringMap = {}> (strings: TemplateStringsArray, ...values: RefQLValue<Params>[]) =>
   SQLTag<Params> (strings as unknown as string[], values);
 
 export default sql;

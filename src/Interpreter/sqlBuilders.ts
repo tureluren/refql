@@ -62,10 +62,10 @@ export const paginate = (limit?: number, offset?: number) => chain (
   }
 );
 
-export const select = <Params>(comps: string | string[], rec: Rec<Params>) =>
+export const select = (comps: string | string[], rec: Rec) =>
   over ("comps", concat (comps), rec);
 
-export const selectRefs = (table: Table, refs: Ref[]) => <Params>(rec: Rec<Params>) =>
+export const selectRefs = (table: Table, refs: Ref[]) => (rec: Rec) =>
   select (refsToComp (table, refs), rec);
 
 export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) => chain (

@@ -45,7 +45,7 @@ export type Pattern<Params, Return> = Partial<{
 
 export type ParamF<Params, Return> = (p: Params, T?: Table) => Return;
 
-export interface Keywords<Params = {}, Ran extends boolean = false> extends StringMap {
+export interface Keywords<Params, Ran extends boolean = false> extends StringMap {
   xtable?: Ran extends false ? string | ParamF<Params, string> : string;
   lref?: Ran extends false ? string | ParamF<Params, string> : string;
   rref?: Ran extends false ? string | ParamF<Params, string> : string;
@@ -73,10 +73,10 @@ export interface Next {
   refs: Refs;
 }
 
-export interface Rec<Params> {
+export interface Rec {
   table: Table;
   query: string;
-  sqlTag: SQLTag<Params>;
+  sqlTag: SQLTag;
   comps: string[];
   values: any[];
   next: Next[];
@@ -84,8 +84,8 @@ export interface Rec<Params> {
   inCall: boolean;
 }
 
-export type Transformations<Params> = {
-  [key in keyof Partial<Rec<Params>>]: (value: Rec<Params>[key]) => Rec<Params>[key];
+export type Transformations = {
+  [key in keyof Partial<Rec>]: (value: Rec[key]) => Rec[key];
 };
 
 export type BuiltIn =
@@ -97,9 +97,9 @@ export type BuiltIn =
   | string
   | object;
 
-export type RefQLValue<Params = {}, Ran extends boolean = false> =
+export type RefQLValue<Params, Ran extends boolean = false> =
   Ran extends false
   ? BuiltIn | SQLTag<Params> | ParamF<Params, BuiltIn | SQLTag<Params>>
   : BuiltIn | SQLTag<Params>;
 
-export type InterpretF<Params> = (exp: ASTNode, env: Env<Params>, rows?: any[]) => Rec<Params>;
+export type InterpretF = (exp: ASTNode, env: Env, rows?: any[]) => Rec;

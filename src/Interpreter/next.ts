@@ -12,7 +12,7 @@ const createRef = (table: Table) => (kw: string, refs: string) =>
     as: `${table.as}${kw}${idx}`
   }));
 
-const next = <Params>(params: Params) => (node: ASTNode, rec: Rec<Params>) => {
+const next = <Params>(params: Params) => (node: ASTNode, rec: Rec) => {
   const { table } = rec;
 
   let refs = emptyRefs ();

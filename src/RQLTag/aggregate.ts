@@ -16,11 +16,11 @@ const match = (row: any, nextRows: any[], lrefs: string[], rrefs: string[]) =>
     return matched;
   });
 
-const aggregate = <Params>(querier: Querier<any>, interpret: InterpretF<Params>, node: Root) => {
-  const go = (compiled: Rec<Params>): Promise<any[]> => {
+const aggregate = (querier: Querier<any>, interpret: InterpretF, node: Root) => {
+  const go = (compiled: Rec): Promise<any[]> => {
     return querier (compiled.query, compiled.values).then (rows => {
       const next = compiled.next.map (nxt =>
-        go (interpret (nxt.node, createEnv<Params> (compiled.table, nxt.refs), rows))
+        go (interpret (nxt.node, createEnv (compiled.table, nxt.refs), rows))
       );
 
       return Promise.all (next).then (nextData =>
@@ -53,7 +53,7 @@ const aggregate = <Params>(querier: Querier<any>, interpret: InterpretF<Params>,
     });
   };
 
-  return go (interpret (node, createEnv<Params> (node.table)));
+  return go (interpret (node, createEnv (node.table)));
 };
 
 export default aggregate;

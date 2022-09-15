@@ -24,7 +24,7 @@ describe ("Env type", () => {
   });
 
   test ("Functor", () => {
-    const env = createEnv<{}> (Table ("player"));
+    const env = createEnv (Table ("player"));
 
     expect (env.map (r => r)).toEqual (env);
 
@@ -37,10 +37,10 @@ describe ("Env type", () => {
   });
 
   test ("Extend", () => {
-    const env = createEnv<{}> (Table ("player"));
+    const env = createEnv (Table ("player"));
 
-    const setQuery = (e: Env<{}>) => set ("query", "select *", e.rec);
-    const setInCall = (e: Env<{}>) => set ("inCall", true, e.rec);
+    const setQuery = (e: Env) => set ("query", "select *", e.rec);
+    const setInCall = (e: Env) => set ("inCall", true, e.rec);
 
     expect (env.extend (setQuery).extend (setInCall))
       .toEqual (env.extend (e => setInCall (e.extend (setQuery))));

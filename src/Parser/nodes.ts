@@ -1,6 +1,6 @@
 import { refqlType } from "../consts";
 import Table from "../Table";
-import { CastAs, Keywords, Pattern, RefQLValue, StringMap } from "../types";
+import { CastAs, Pattern, StringMap } from "../types";
 import runKeywords from "./runKeywords";
 
 export interface ASTNode {
@@ -46,7 +46,7 @@ export interface Root extends TableNode {
 
 const rootType = "refql/Root";
 
-export function Root<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+export function Root(table: Table, members: ASTNode[], keywords: StringMap) {
   let root: Root = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: Root, [refqlType]: rootType })
   );
@@ -68,7 +68,7 @@ export interface HasMany extends TableNode {
 
 const hasManyType = "refql/HasMany";
 
-export function HasMany<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+export function HasMany(table: Table, members: ASTNode[], keywords: StringMap) {
   let hasMany: HasMany = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: HasMany, [refqlType]: hasManyType })
   );
@@ -90,7 +90,7 @@ export interface BelongsTo extends TableNode {
 
 const belongsToType = "refql/BelongsTo";
 
-export function BelongsTo<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+export function BelongsTo(table: Table, members: ASTNode[], keywords: StringMap) {
   let belongsTo: BelongsTo = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: BelongsTo, [refqlType]: belongsToType })
   );
@@ -112,7 +112,7 @@ export interface ManyToMany extends TableNode {
 
 const manyToManyType = "refql/ManyToMany";
 
-export function ManyToMany<Params>(table: Table, members: ASTNode[], keywords: Keywords<Params>) {
+export function ManyToMany(table: Table, members: ASTNode[], keywords: StringMap) {
   let manyToMany: ManyToMany = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: ManyToMany, [refqlType]: manyToManyType })
   );
@@ -216,7 +216,7 @@ const variablePrototype = Object.assign ({}, astNodePrototype, {
   cata: Variable$prototype$cata
 });
 
-export function Variable<Params>(value: RefQLValue<Params>, as?: string, cast?: string) {
+export function Variable(value: any, as?: string, cast?: string) {
   let variable: Variable = Object.create (variablePrototype);
 
   variable.value = value;
@@ -227,7 +227,7 @@ export function Variable<Params>(value: RefQLValue<Params>, as?: string, cast?: 
 }
 
 function Variable$prototype$cata(this: Variable, pattern: StringMap, params: StringMap, table: Table) {
-  const ran: RefQLValue = typeof this.value === "function"
+  const ran = typeof this.value === "function"
     ? this.value (params, table)
     : this.value;
 

@@ -1,8 +1,8 @@
 import RQLTag from ".";
 import Parser from "../Parser";
-import { RefQLValue } from "../types";
+import { RefQLValue, StringMap } from "../types";
 
-const rql = <Params = {}> (strings: TemplateStringsArray, ...values: RefQLValue<Params>[]) => {
+const rql = <Params extends StringMap = {}> (strings: TemplateStringsArray, ...values: RefQLValue<Params>[]) => {
   const parser = new Parser (strings.join ("$"), values);
 
   return RQLTag<Params> (parser.Root ());

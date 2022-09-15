@@ -1,7 +1,5 @@
 import Tokenizer from "../Tokenizer";
-import {
-  Keywords, RefQLValue, Token, TokenType
-} from "../types";
+import { StringMap, Token, TokenType } from "../types";
 import identifierToTable from "./identifierToTable";
 import {
   All, ASTNode, BelongsTo, BooleanLiteral, Call,
@@ -13,12 +11,12 @@ import RQLTag from "../RQLTag";
 
 class Parser {
   str: string;
-  values: RefQLValue[];
+  values: any[];
   idx: number;
   tokenizer: Tokenizer;
   lookahead: Token;
 
-  constructor(str: string, values: RefQLValue[]) {
+  constructor(str: string, values: any[]) {
     this.str = str;
     this.values = values;
     this.idx = 0;
@@ -78,14 +76,14 @@ class Parser {
       table = identifierToTable (this.Schema (), this.Identifier ());
     }
 
-    let keywords: Keywords = {};
+    let keywords: StringMap = {};
 
     if (this.isNext ("(")) {
       this.eat ("(");
 
       do {
         let value;
-        const keyword = this.eat ("IDENTIFIER").value as keyof Keywords;
+        const keyword = this.eat ("IDENTIFIER").value;
         this.eat (":");
 
         if (this.isNextLiteral ()) {

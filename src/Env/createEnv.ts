@@ -4,9 +4,9 @@ import sql from "../SQLTag/sql";
 import Table from "../Table";
 import { Refs } from "../types";
 
-const createEnv = <Params>(table: Table, refs?: Refs, inCall = false) => Env ({
+const createEnv = (table: Table, refs?: Refs, inCall = false) => Env ({
   table,
-  sqlTag: sql<Params>``,
+  sqlTag: sql``,
   query: "",
   values: [],
   next: [],

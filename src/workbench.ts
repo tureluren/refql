@@ -309,14 +309,17 @@ const leagues = rql<{}>`
 
 const goals = rql<{goalLimit?: number}>`
   goal (limit: ${p => p.goalLimit}) { * }
-`;
+`.map (node => {
+  node.keywords = { lref: "dd" };
+  return node;
+});
 
 // natural transformation
 const rootToHasMany = (node: TableNode) => {
   return HasMany (node.table, node.members, node.keywords);
 };
 
-const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>): RQLTag<Params2 & Params> => {
+const belongsTo = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
   return tag2.map (node => node.addMember (rootToBelongsTo (tag.node)));
 };
 

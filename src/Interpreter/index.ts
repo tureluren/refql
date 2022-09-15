@@ -21,13 +21,13 @@ const Interpreter = <Params> (params: Params) => {
 
   const interpretMembers = (members: ASTNode[], table: Table, inCall = false) =>
     members.reduce ((acc, mem) =>
-      acc.extend (env => interpret (mem, env)), createEnv<Params> (table, undefined, inCall));
+      acc.extend (env => interpret (mem, env)), createEnv (table, undefined, inCall));
 
-  const interpret: InterpretF<Params> = (node, env, rows) => {
+  const interpret: InterpretF = (node, env, rows) => {
     const { rec } = env;
     const { values, table: parent, refs, inCall } = rec;
 
-    return node.cata<Params, Rec<Params>> ({
+    return node.cata<Params, Rec> ({
       Root: (table, members, { id, limit, offset }) =>
         interpretMembers (members, table)
           .map (fromTable (table))

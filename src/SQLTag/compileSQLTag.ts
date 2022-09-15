@@ -5,7 +5,7 @@ import RQLTag from "../RQLTag";
 import Table from "../Table";
 import formatSQLString from "./formatSQLString";
 
-const compileSQLTag = <Params = {}>(tag: SQLTag<Params>, paramIdx: number, params: Params, table?: Table): [string, any[]] => {
+const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Params, table?: Table): [string, any[]] => {
   const values: any[] = [];
 
   const go = (sqlTag: SQLTag<Params>): string => {
@@ -19,6 +19,7 @@ const compileSQLTag = <Params = {}>(tag: SQLTag<Params>, paramIdx: number, param
         }
 
         if (RQLTag.isRQLTag<Params> (value)) {
+          value.map;
           throw new Error ("You can't use RQL Tags inside SQL Tags");
         }
 
