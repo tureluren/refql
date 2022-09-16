@@ -1,9 +1,9 @@
 import { evolve } from "../Env/access";
-import concat from "../more/concat";
-import emptyRefs from "../more/emptyRefs";
+import concat from "../common/concat";
+import emptyRefs from "../Env/emptyRefs";
+import Rec from "../Env/Rec";
 import { ASTNode } from "../Parser/nodes";
 import Table from "../Table";
-import { Rec } from "../types";
 import { refsToComp } from "./sqlBuilders";
 
 const createRef = (table: Table) => (kw: string, refs: string) =>

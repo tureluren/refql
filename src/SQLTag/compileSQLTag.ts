@@ -19,7 +19,6 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
         }
 
         if (RQLTag.isRQLTag<Params> (value)) {
-          value.map;
           throw new Error ("You can't use RQL Tags inside SQL Tags");
         }
 

@@ -1,4 +1,8 @@
-import { Rec, Transformations } from "../types";
+import Rec from "./Rec";
+
+type Transformations = {
+  [key in keyof Partial<Rec>]: (value: Rec[key]) => Rec[key];
+};
 
 export function evolve <K extends keyof Rec>(tfs: Transformations): (rec: Rec) => Rec;
 export function evolve <K extends keyof Rec>(tfs: Transformations, rec: Rec): Rec;

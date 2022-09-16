@@ -1,19 +1,22 @@
 import { evolve, get, over, set } from "../Env/access";
+import Env from "../Env";
 import createEnv from "../Env/createEnv";
-import chain from "../more/chain";
-import concat from "../more/concat";
+import Rec from "../Env/Rec";
+import chain from "../common/chain";
+import concat from "../common/concat";
 import { ASTNode } from "../Parser/nodes";
 import Raw from "../Raw";
 import SQLTag from "../SQLTag";
 import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
-import { InterpretF, Rec } from "../types";
 import interpretSQLTag from "./interpretSQLTag";
 import {
   byId, castAs, fromTable, joinOn,
   paginate, select, selectRefs, whereIn
 } from "./sqlBuilders";
 import next from "./next";
+
+export type InterpretF = (exp: ASTNode, env: Env, rows?: any[]) => Rec;
 
 const Interpreter = <Params> (params: Params) => {
   const includeSQL = interpretSQLTag (params);

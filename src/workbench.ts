@@ -3,14 +3,14 @@ import mySql from "mysql2";
 import { pipe } from "fp-ts/function";
 import In from "./In";
 import { rql } from "./index";
-import { All, BelongsTo, Call, HasMany, Identifier, ManyToMany, Root, StringLiteral, TableNode, Variable } from "./Parser/nodes";
+import { All, BelongsTo, Call, HasMany, Identifier, Keywords, ManyToMany, Root, StringLiteral, TableNode, Variable } from "./Parser/nodes";
 import Raw from "./Raw";
 import RQLTag from "./RQLTag";
 import { Goal, Player } from "./soccer";
 import SQLTag from "./SQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
-import { StringMap, Keywords, Querier } from "./types";
+import { StringMap, Querier } from "./common/types";
 
 const pool = new Pool ({
   user: "test",
@@ -368,3 +368,23 @@ const getPlayer = pipe (
 // run (getPlayer, { id: 9, goalLimit: 4 }).then (console.log);
 
 // MY SQL QUERIER na uitleg postgresQuerier
+
+
+const tag = sql<{id: number}>`
+  where id = ${p => p.id}
+`;
+
+const varTag = Variable (tag);
+
+const rqlTag = rql`
+  player {
+    *
+  }
+`.map (node => {
+  const newNode = node.addMember (Variable (tag));
+  return newNode;
+});
+
+rqlTag.run (querier, { id: 4 });
+
+console.log (rqlTag);

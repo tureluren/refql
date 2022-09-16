@@ -1,5 +1,5 @@
-import Tokenizer from "../Tokenizer";
-import { StringMap, Token, TokenType } from "../types";
+import { StringMap } from "../common/types";
+import Tokenizer, { Token, TokenType } from "../Tokenizer";
 import identifierToTable from "./identifierToTable";
 import {
   All, ASTNode, BelongsTo, BooleanLiteral, Call,

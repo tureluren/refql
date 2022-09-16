@@ -1,4 +1,5 @@
-import { Querier, RefQLValue } from "../types";
+import { flBimap, flConcat, flMap, refqlType } from "../common/consts";
+import { Querier, RefQLValue } from "../common/types";
 import compileSQLTag from "./compileSQLTag";
 import formatTLString from "./formatTLString";
 
@@ -6,28 +7,34 @@ interface SQLTag<Params> {
   strings: string[];
   values: RefQLValue<Params>[];
   concat<Params2>(other: SQLTag<Params2>): SQLTag<Params & Params2>;
+  [flConcat]: SQLTag<Params>["concat"];
   map<Params2>(f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
-  "fantasy-land/map": typeof map;
+  [flMap]: SQLTag<Params>["map"];
   mapLeft(f: (strings: string[]) => string[]): SQLTag<Params>;
   bimap<Params2>(g: (strings: string[]) => string[], f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
+  [flBimap]: SQLTag<Params>["bimap"];
+  map<Params2>(f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
   run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]>;
 }
 
+const sqlTagType = "refql/SQLTag";
+
 const prototype = {
   constructor: SQLTag,
-  concat, map, "fantasy-land/map": map,
-  mapLeft, bimap, run
+  [refqlType]: sqlTagType,
+  concat, [flConcat]: concat,
+  map, [flMap]: map,
+  bimap, [flBimap]: bimap,
+  mapLeft, run
 };
 
 function SQLTag<Params>(strings: string[], values: RefQLValue<Params>[]) {
-  let tag: SQLTag<Params> = Object.create (SQLTag.prototype);
+  let tag: SQLTag<Params> = Object.create (prototype);
   tag.strings = strings.map (formatTLString);
   tag.values = values;
 
   return tag;
 }
-
-SQLTag.prototype = Object.create (prototype);
 
 function concat<Params, Params2>(this: SQLTag<Params>, other: SQLTag<Params2>) {
   const tag1Strings = Array.from (this.strings);
@@ -54,7 +61,7 @@ function bimap<Params, Params2>(this: SQLTag<Params>, g: (strings: string[]) => 
   return SQLTag<Params2> (g (this.strings), f (this.values));
 }
 
-function run<Params>(this: SQLTag<Params>, querier: Querier, params: Params) {
+function run<Params, Return>(this: SQLTag<Params>, querier: Querier<Return>, params: Params) {
   return new Promise ((res, rej) => {
     let query, values;
 
@@ -70,7 +77,7 @@ function run<Params>(this: SQLTag<Params>, querier: Querier, params: Params) {
 }
 
 SQLTag.isSQLTag = function <Params> (value: any): value is SQLTag<Params> {
-  return value instanceof SQLTag;
+  return value != null && value[refqlType] === sqlTagType;
 };
 
 export default SQLTag;

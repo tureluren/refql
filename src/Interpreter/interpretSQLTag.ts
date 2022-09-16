@@ -1,9 +1,9 @@
 import { evolve } from "../Env/access";
-import concat from "../more/concat";
+import Rec from "../Env/Rec";
+import concat from "../common/concat";
 import SQLTag from "../SQLTag";
 import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
-import { Rec } from "../types";
 
 const interpretSQLTag = <Params>(params: Params) => (table: Table, correctWhere: boolean = true) => (rec: Rec) => {
   const { sqlTag, values } = rec;

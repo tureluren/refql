@@ -1,4 +1,14 @@
-import { Token, TokenType } from "../types";
+export type TokenType =
+  | "::" | ":" | "{" | "}"
+  | "(" | ")" | "," | "VARIABLE"
+  | "true" | "false" | "null" | "NUMBER"
+  | "<" | "-" | "x" | "*" | "SCHEMA"
+  | "IDENTIFIER" | "STRING" | "EOF";
+
+export type Token = {
+  type: TokenType | null;
+  value: string;
+};
 
 const tokens: [RegExp, TokenType | null][] = [
   // Whitespace

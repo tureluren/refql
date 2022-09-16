@@ -1,6 +1,6 @@
 import RQLTag from ".";
+import { RefQLValue } from "../common/types";
 import Parser from "../Parser";
-import { RefQLValue } from "../types";
 
 const rql = <Params> (strings: TemplateStringsArray, ...values: RefQLValue<Params>[]) => {
   const parser = new Parser (strings.join ("$"), values);

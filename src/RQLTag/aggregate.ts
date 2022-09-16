@@ -1,6 +1,8 @@
+import { Querier } from "../common/types";
 import createEnv from "../Env/createEnv";
+import Rec from "../Env/Rec";
+import { InterpretF } from "../Interpreter";
 import { BelongsTo, HasMany, ManyToMany, Root } from "../Parser/nodes";
-import { InterpretF, Querier, Rec } from "../types";
 
 const match = (row: any, nextRows: any[], lrefs: string[], rrefs: string[]) =>
   nextRows.filter ((r: any) =>

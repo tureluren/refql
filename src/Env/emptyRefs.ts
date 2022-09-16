@@ -1,4 +1,4 @@
-import { Refs } from "../types";
+import { Refs } from "../common/types";
 
 const emptyRefs = (): Refs => ({
   lrefs: [],

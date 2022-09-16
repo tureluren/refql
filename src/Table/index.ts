@@ -1,4 +1,4 @@
-import { refqlType } from "../consts";
+import { refqlType } from "../common/consts";
 
 interface Table {
   name: string;
@@ -29,7 +29,7 @@ function toString(this: Table) {
 }
 
 Table.isTable = function (value: any): value is Table {
-  return value[refqlType] === tableType;
+  return value != null && value[refqlType] === tableType;
 };
 
 export default Table;

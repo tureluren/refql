@@ -1,28 +1,31 @@
+import { refqlType } from "../common/consts";
+
 interface Raw {
   value: string;
   toString: () => string;
 }
 
+const rawType = "refql/Raw";
+
 const prototype = {
   constructor: Raw,
+  [refqlType]: rawType,
   toString
 };
 
 function Raw(value: boolean | number | string) {
-  let raw: Raw = Object.create (Raw.prototype);
+  let raw: Raw = Object.create (prototype);
   raw.value = String (value);
 
   return raw;
 }
-
-Raw.prototype = Object.create (prototype);
 
 function toString(this: Raw) {
   return `Raw (${this.value})`;
 }
 
 Raw.isRaw = function (value: any): value is Raw {
-  return value instanceof Raw;
+  return value != null && value[refqlType] === rawType;
 };
 
 export default Raw;

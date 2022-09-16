@@ -1,7 +1,38 @@
-import { refqlType } from "../consts";
+import { refqlType } from "../common/consts";
+import { ParamF, RefQLValue, StringMap } from "../common/types";
 import Table from "../Table";
-import { CastAs, Keywords, Pattern, StringMap } from "../types";
 import runKeywords from "./runKeywords";
+
+interface CastAs {
+  as?: string;
+  cast?: string;
+}
+
+export interface Keywords<Params, Ran extends boolean = false> extends StringMap {
+  xtable?: Ran extends false ? string | ParamF<Params, string> : string;
+  lref?: Ran extends false ? string | ParamF<Params, string> : string;
+  rref?: Ran extends false ? string | ParamF<Params, string> : string;
+  lxref?: Ran extends false ? string | ParamF<Params, string> : string;
+  rxref?: Ran extends false ? string | ParamF<Params, string> : string;
+  id?: Ran extends false ? number | string | ParamF<Params, number | string> : number | string;
+  limit?: Ran extends false ? number | ParamF<Params, number> : number;
+  offset?: Ran extends false ? number | ParamF<Params, number> : number;
+}
+
+type Pattern<Params, Return> = Partial<{
+  Root: (table: Table, members: ASTNode[], keywords: Keywords<Params, true>) => Return;
+  HasMany: (table: Table, members: ASTNode[], keywords: Keywords<Params, true>) => Return;
+  BelongsTo: (table: Table, members: ASTNode[], keywords: Keywords<Params, true>) => Return;
+  ManyToMany: (table: Table, members: ASTNode[], keywords: Keywords<Params, true>) => Return;
+  All: (sign: string) => Return;
+  Identifier: (name: string, as?: string, cast?: string) => Return;
+  Variable: (value: RefQLValue<Params, true>, as?: string, cast?: string) => Return;
+  Call: (name: string, members: ASTNode[], as?: string, cast?: string) => Return;
+  StringLiteral: (value: string, as?: string, cast?: string) => Return;
+  NumericLiteral: (value: number, as?: string, cast?: string) => Return;
+  BooleanLiteral: (value: boolean, as?: string, cast?: string) => Return;
+  NullLiteral: (value: null, as?: string, cast?: string) => Return;
+}>;
 
 export interface ASTNode {
   cata<Params, Return>(pattern: Pattern<Params, Return>, params: Params, table: Table): Return;
@@ -16,7 +47,8 @@ export interface TableNode<Params> extends ASTNode {
   table: Table;
   members: ASTNode[];
   keywords: Keywords<Params>;
-  addMember<Params2>(node: ASTNode | TableNode<Params2>): TableNode<Params & Params2>;
+  // maak type voor TableNode<Params2> | Variable<Params2>, zie ok interfaces root, belongs to, has many, manytomany
+  addMember<Params2>(node: ASTNode | TableNode<Params2> | Variable<Params2>): TableNode<Params & Params2>;
 }
 
 const tableNodePrototype = Object.assign ({}, astNodePrototype, {
@@ -32,7 +64,7 @@ function TableNode$prototype$addMember<Params>(this: TableNode<Params>, node: AS
   );
 }
 
-function TableNode$prototype$cata <Params>(this: TableNode<Params>, pattern: StringMap, params: StringMap) {
+function TableNode$prototype$cata <Params>(this: TableNode<Params>, pattern: StringMap, params: Params) {
   return pattern[this.constructor.name] (
     this.table,
     this.members,
@@ -41,7 +73,7 @@ function TableNode$prototype$cata <Params>(this: TableNode<Params>, pattern: Str
 }
 
 export interface Root<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode | TableNode<Params2>): Root<Params & Params2>;
+  addMember<Params2>(node: ASTNode | TableNode<Params2> | Variable<Params2>): Root<Params & Params2>;
 }
 
 const rootType = "refql/Root";
@@ -59,11 +91,11 @@ export function Root<Params>(table: Table, members: ASTNode[], keywords: Keyword
 }
 
 Root.isRoot = function<Params> (value: any): value is Root<Params> {
-  return value[refqlType] === rootType;
+  return value != null && value[refqlType] === rootType;
 };
 
 export interface HasMany<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode | TableNode<Params2>): HasMany<Params & Params2>;
+  addMember<Params2>(node: ASTNode | TableNode<Params2> | Variable<Params2>): HasMany<Params & Params2>;
 }
 
 const hasManyType = "refql/HasMany";
@@ -81,11 +113,11 @@ export function HasMany<Params>(table: Table, members: ASTNode[], keywords: Keyw
 }
 
 HasMany.isHasMany = function <Params> (value: any): value is HasMany<Params> {
-  return value[refqlType] === hasManyType;
+  return value != null && value[refqlType] === hasManyType;
 };
 
 export interface BelongsTo<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode | TableNode<Params2>): BelongsTo<Params & Params2>;
+  addMember<Params2>(node: ASTNode | TableNode<Params2> | Variable<Params2>): BelongsTo<Params & Params2>;
 }
 
 const belongsToType = "refql/BelongsTo";
@@ -103,11 +135,11 @@ export function BelongsTo<Params>(table: Table, members: ASTNode[], keywords: Ke
 }
 
 BelongsTo.isBelongsTo = function<Params> (value: any): value is BelongsTo<Params> {
-  return value[refqlType] === belongsToType;
+  return value != null && value[refqlType] === belongsToType;
 };
 
 export interface ManyToMany<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode | TableNode<Params2>): ManyToMany<Params & Params2>;
+  addMember<Params2>(node: ASTNode | TableNode<Params2> | Variable<Params2>): ManyToMany<Params & Params2>;
 }
 
 const manyToManyType = "refql/ManyToMany";
@@ -125,7 +157,7 @@ export function ManyToMany<Params>(table: Table, members: ASTNode[], keywords: K
 }
 
 ManyToMany.isManyToMany = function <Params> (value: any): value is ManyToMany<Params> {
-  return value[refqlType] === manyToManyType;
+  return value != null && value[refqlType] === manyToManyType;
 };
 
 export interface Call extends ASTNode, CastAs {
@@ -208,8 +240,8 @@ function All$prototype$cata(this: All, pattern: StringMap) {
   return pattern.All (this.sign);
 }
 
-export interface Variable extends ASTNode, CastAs {
-  value: any;
+export interface Variable<Params> extends ASTNode, CastAs {
+  value: RefQLValue<Params>;
 }
 
 const variablePrototype = Object.assign ({}, astNodePrototype, {
@@ -217,8 +249,8 @@ const variablePrototype = Object.assign ({}, astNodePrototype, {
   cata: Variable$prototype$cata
 });
 
-export function Variable(value: any, as?: string, cast?: string) {
-  let variable: Variable = Object.create (variablePrototype);
+export function Variable<Params>(value: RefQLValue<Params>, as?: string, cast?: string) {
+  let variable: Variable<Params> = Object.create (variablePrototype);
 
   variable.value = value;
   variable.as = as;
@@ -227,7 +259,7 @@ export function Variable(value: any, as?: string, cast?: string) {
   return variable;
 }
 
-function Variable$prototype$cata(this: Variable, pattern: StringMap, params: StringMap, table: Table) {
+function Variable$prototype$cata<Params>(this: Variable<Params>, pattern: StringMap, params: Params, table: Table) {
   const ran = typeof this.value === "function"
     ? this.value (params, table)
     : this.value;
@@ -310,9 +342,3 @@ export function NullLiteral(value: null, as?: string, cast?: string) {
 
   return nullLiteral;
 }
-
-const ro = Root<{limit: number}> (Table ("player"), [], {})
-  .addMember (Identifier ("a"))
-  .addMember (BelongsTo<{ id: number}> (Table ("team"), [], {}));
-
-console.log (ro);

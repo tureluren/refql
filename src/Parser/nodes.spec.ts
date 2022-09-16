@@ -45,23 +45,6 @@ describe ("Nodes", () => {
     rref: p => p.rref!
   });
 
-  test ("run nodes", () => {
-    const patchedRoot = root.run ({ id: 1, limit: 5, offset: 10 }, player);
-    const patchedHasMany = hasMany.run ({ lref: "ID", rref: "PLAYERID" }, goal);
-    const patchedBelongsTo = belongsTo.run ({ lref: "TEAMID", rref: "ID" }, goal);
-    const patchedManyToMany = manyToMany.run (
-      { lref: "ID", lxref: "PLAYERID", rxref: "GAMEID", rref: "ID", xtable: "PLAYERGAME" },
-      goal
-    );
-
-    expect (patchedRoot.keywords).toEqual ({ id: 1, limit: 5, offset: 10 });
-    expect (patchedHasMany.keywords).toEqual ({ lref: "ID", rref: "PLAYERID" });
-    expect (patchedBelongsTo.keywords).toEqual ({ lref: "TEAMID", rref: "ID" });
-    expect (patchedManyToMany.keywords).toEqual (
-      { lref: "ID", lxref: "PLAYERID", rxref: "GAMEID", rref: "ID", xtable: "PLAYERGAME" }
-    );
-  });
-
   test ("add member", () => {
     const id = Identifier ("id");
     const name = Identifier ("name");

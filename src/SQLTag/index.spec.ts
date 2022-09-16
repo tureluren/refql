@@ -2,6 +2,8 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import SQLTag from ".";
+import { flBimap, flConcat, flMap } from "../common/consts";
+import { Querier } from "../common/types";
 import In from "../In";
 import Raw from "../Raw";
 import rql from "../RQLTag/rql";
@@ -10,7 +12,6 @@ import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import userConfig from "../test/userConfig";
-import { Querier } from "../types";
 import sql from "./sql";
 
 describe ("SQLTag type", () => {
@@ -53,8 +54,8 @@ describe ("SQLTag type", () => {
     const tag2 = sql`from player`;
     const tag3 = sql`where id = ${1}`;
 
-    const res = tag.concat (tag2).concat (tag3);
-    const res2 = tag.concat (tag2.concat (tag3));
+    const res = tag[flConcat] (tag2)[flConcat] (tag3);
+    const res2 = tag[flConcat] (tag2[flConcat] (tag3));
 
     expect (res).toEqual (res2);
     expect (res.values).toEqual ([rawLastName, 1]);
@@ -64,10 +65,10 @@ describe ("SQLTag type", () => {
   test ("Functor", () => {
     const tag = sql`select * from player where id = ${1}`;
 
-    expect (tag.map (v => v)).toEqual (tag);
+    expect (tag[flMap] (v => v)).toEqual (tag);
 
-    expect (tag.map (v => mult (inc (v))))
-      .toEqual (tag.map (inc).map (mult));
+    expect (tag[flMap] (v => mult (inc (v))))
+      .toEqual (tag[flMap] (inc)[flMap] (mult));
   });
 
   test ("Functor left", () => {
@@ -83,10 +84,10 @@ describe ("SQLTag type", () => {
   test ("Bifunctor", () => {
     const tag = sql`select * from player where id > ${1}`;
 
-    expect (tag.bimap (s => s, v => v)).toEqual (tag);
+    expect (tag[flBimap] (s => s, v => v)).toEqual (tag);
 
-    expect (tag.bimap (s => offset (limit (s)), v => mult (inc (v))))
-      .toEqual (tag.bimap (limit, inc).bimap (offset, mult));
+    expect (tag[flBimap] (s => offset (limit (s)), v => mult (inc (v))))
+      .toEqual (tag[flBimap] (limit, inc)[flBimap] (offset, mult));
   });
 
   test ("run", async () => {

@@ -1,24 +1,27 @@
-interface In<T = any> {
+import { refqlType } from "../common/consts";
+
+interface In<T> {
   arr: T[];
   write(paramIdx: number): string;
   toString: () => string;
 }
 
+const inType = "refql/In";
+
 const prototype = {
   constructor: In,
+  [refqlType]: inType,
   write, toString
 };
 
-function In<T = any>(arr: T[]) {
-  let inn: In<T> = Object.create (In.prototype);
+function In<T>(arr: T[]) {
+  let inn: In<T> = Object.create (prototype);
   inn.arr = arr;
 
   return inn;
 }
 
-In.prototype = Object.create (prototype);
-
-function write(this: In, paramIdx: number) {
+function write<T>(this: In<T>, paramIdx: number) {
   let paramStr = "";
 
   for (let idx = 0; idx < this.arr.length; idx++) {
@@ -29,12 +32,12 @@ function write(this: In, paramIdx: number) {
   return `in (${paramStr})`;
 }
 
-function toString(this: In) {
+function toString<T>(this: In<T>) {
   return `In ([${this.arr}])`;
 }
 
-In.isIn = function <T = any> (value: any): value is In<T> {
-  return value instanceof In;
+In.isIn = function <T> (value: any): value is In<T> {
+  return value != null && value[refqlType] === inType;
 };
 
 export default In;

@@ -1,10 +1,10 @@
 import Parser from ".";
+import { TokenType } from "../common/types";
 import Raw from "../Raw";
 import rql from "../RQLTag/rql";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import Tokenizer from "../Tokenizer";
-import { TokenType } from "../types";
 import {
   All, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, ManyToMany, NullLiteral,
