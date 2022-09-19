@@ -1,8 +1,8 @@
-import { evolve } from "../Env/access";
 import concat from "../common/concat";
+import { evolve } from "../Env/access";
 import emptyRefs from "../Env/emptyRefs";
 import Rec from "../Env/Rec";
-import { ASTNode } from "../Parser/nodes";
+import { ASTNode } from "../nodes";
 import Table from "../Table";
 import { refsToComp } from "./sqlBuilders";
 
@@ -12,12 +12,12 @@ const createRef = (table: Table) => (kw: string, refs: string) =>
     as: `${table.as}${kw}${idx}`
   }));
 
-const next = <Params>(params: Params) => (node: ASTNode, rec: Rec) => {
+const next = <Params>(params: Params) => (node: ASTNode<Params>, rec: Rec) => {
   const { table } = rec;
 
   let refs = emptyRefs ();
 
-  node.cata<Params, void> ({
+  node.cata<void> ({
     BelongsTo: (child, _members, { lref, rref }) => {
       const refOf = createRef (child);
       refs.lrefs = refOf ("lref", lref || child.name + "_id");

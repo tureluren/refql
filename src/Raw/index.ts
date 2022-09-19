@@ -1,7 +1,9 @@
-import { refqlType } from "../common/consts";
+import { flMap, refqlType } from "../common/consts";
 
 interface Raw {
   value: string;
+  map(f: (value: string) => string): Raw;
+  [flMap]: Raw["map"];
   toString: () => string;
 }
 
@@ -10,6 +12,7 @@ const rawType = "refql/Raw";
 const prototype = {
   constructor: Raw,
   [refqlType]: rawType,
+  map, [flMap]: map,
   toString
 };
 
@@ -22,6 +25,11 @@ function Raw(value: boolean | number | string) {
 
 function toString(this: Raw) {
   return `Raw (${this.value})`;
+}
+
+
+function map(this: Raw, f: (value: string) => string) {
+  return Raw (f (this.value));
 }
 
 Raw.isRaw = function (value: any): value is Raw {

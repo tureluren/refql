@@ -1,5 +1,5 @@
 import { flBimap, flConcat, flMap, refqlType } from "../common/consts";
-import { Querier, RefQLValue } from "../common/types";
+import { Querier, RefQLValue, StringMap } from "../common/types";
 import compileSQLTag from "./compileSQLTag";
 import formatTLString from "./formatTLString";
 
@@ -36,7 +36,7 @@ function SQLTag<Params>(strings: string[], values: RefQLValue<Params>[]) {
   return tag;
 }
 
-function concat<Params, Params2>(this: SQLTag<Params>, other: SQLTag<Params2>) {
+function concat(this: SQLTag<unknown>, other: SQLTag<unknown>) {
   const tag1Strings = Array.from (this.strings);
   const lastEl = tag1Strings.pop ();
 
@@ -46,22 +46,22 @@ function concat<Params, Params2>(this: SQLTag<Params>, other: SQLTag<Params2>) {
   const strings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
   const values = this.values.concat (other.values);
 
-  return SQLTag<Params & Params2> (strings, values);
+  return SQLTag (strings, values);
 }
 
-function map<Params, Params2>(this: SQLTag<Params>, f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]) {
-  return SQLTag<Params2> (this.strings, f (this.values));
+function map(this: SQLTag<unknown>, f: (values: RefQLValue<unknown>[]) => RefQLValue<unknown>[]) {
+  return SQLTag<unknown> (this.strings, f (this.values));
 }
 
-function mapLeft<Params>(this: SQLTag<Params>, f: (strings: string[]) => string[]) {
+function mapLeft(this: SQLTag<unknown>, f: (strings: string[]) => string[]) {
   return SQLTag (f (this.strings), this.values);
 }
 
-function bimap<Params, Params2>(this: SQLTag<Params>, g: (strings: string[]) => string[], f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]) {
-  return SQLTag<Params2> (g (this.strings), f (this.values));
+function bimap(this: SQLTag<unknown>, g: (strings: string[]) => string[], f: (values: RefQLValue<unknown>[]) => RefQLValue<unknown>[]) {
+  return SQLTag (g (this.strings), f (this.values));
 }
 
-function run<Params, Return>(this: SQLTag<Params>, querier: Querier<Return>, params: Params) {
+function run(this: SQLTag<unknown>, querier: Querier<StringMap>, params: unknown) {
   return new Promise ((res, rej) => {
     let query, values;
 

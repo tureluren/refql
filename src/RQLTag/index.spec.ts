@@ -4,7 +4,7 @@ import pg from "pg";
 import RQLTag from ".";
 import { flMap } from "../common/consts";
 import { Querier } from "../common/types";
-import { All, HasMany, Identifier, Root } from "../Parser/nodes";
+import { All, HasMany, Identifier, Root } from "../nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
 import mariaDBQuerier from "../test/mariaDBQuerier";

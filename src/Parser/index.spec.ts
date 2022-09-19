@@ -1,15 +1,14 @@
 import Parser from ".";
-import { TokenType } from "../common/types";
-import Raw from "../Raw";
-import rql from "../RQLTag/rql";
-import sql from "../SQLTag/sql";
-import Table from "../Table";
-import Tokenizer from "../Tokenizer";
 import {
   All, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
-} from "./nodes";
+} from "../nodes";
+import Raw from "../Raw";
+import rql from "../RQLTag/rql";
+import sql from "../SQLTag/sql";
+import Table from "../Table";
+import Tokenizer, { TokenType } from "../Tokenizer";
 
 describe ("Parser type", () => {
   test ("create Parser", () => {

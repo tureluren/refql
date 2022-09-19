@@ -5,7 +5,7 @@ import {
   Call, HasMany, Identifier, ManyToMany,
   NullLiteral, NumericLiteral, Root,
   StringLiteral, Variable
-} from "../Parser/nodes";
+} from "../nodes";
 import Raw from "../Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";

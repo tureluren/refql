@@ -1,7 +1,7 @@
 import { flMap, refqlType } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
 import Interpreter from "../Interpreter";
-import { Root } from "../Parser/nodes";
+import Root from "../nodes/Root";
 import aggregate from "./aggregate";
 
 interface RQLTag<Params> {
@@ -30,11 +30,11 @@ function RQLTag<Params>(node: Root<Params>) {
   return tag;
 }
 
-function map<Params, Params2>(this: RQLTag<Params>, f: (node: Root<Params>) => Root<Params2>) {
+function map(this: RQLTag<unknown>, f: (node: Root<unknown>) => Root<unknown>) {
   return RQLTag (f (this.node));
 }
 
-function run<Params, Return>(this: RQLTag<Params>, querier: Querier<Return>, params: StringMap) {
+function run(this: RQLTag<unknown>, querier: Querier<StringMap>, params: unknown) {
   return new Promise ((res, rej) => {
     if (!(Root.isRoot (this.node))) {
       rej (new Error ("You can only run a RQLTag that holds a Root node"));

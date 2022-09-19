@@ -4,7 +4,7 @@ import createEnv from "../Env/createEnv";
 import Rec from "../Env/Rec";
 import chain from "../common/chain";
 import concat from "../common/concat";
-import { ASTNode } from "../Parser/nodes";
+import { ASTNode } from "../nodes";
 import Raw from "../Raw";
 import SQLTag from "../SQLTag";
 import compileSQLTag from "../SQLTag/compileSQLTag";
@@ -16,21 +16,21 @@ import {
 } from "./sqlBuilders";
 import next from "./next";
 
-export type InterpretF = (exp: ASTNode, env: Env, rows?: any[]) => Rec;
+export type InterpretF<Params> = (exp: ASTNode<Params>, env: Env, rows?: any[]) => Rec;
 
 const Interpreter = <Params> (params: Params) => {
   const includeSQL = interpretSQLTag (params);
   const toNext = next (params);
 
-  const interpretMembers = (members: ASTNode[], table: Table, inCall = false) =>
+  const interpretMembers = (members: ASTNode<Params>[], table: Table, inCall = false) =>
     members.reduce ((acc, mem) =>
       acc.extend (env => interpret (mem, env)), createEnv (table, undefined, inCall));
 
-  const interpret: InterpretF = (node, env, rows) => {
+  const interpret: InterpretF<Params> = (node, env, rows) => {
     const { rec } = env;
     const { values, table: parent, refs, inCall } = rec;
 
-    return node.cata<Params, Rec> ({
+    return node.cata<Rec> ({
       Root: (table, members, { id, limit, offset }) =>
         interpretMembers (members, table)
           .map (fromTable (table))

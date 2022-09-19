@@ -5,18 +5,17 @@ export interface StringMap {
   [key: string]: any;
 }
 
-export type Querier<T> = (query: string, values: any[]) => Promise<T[]>;
+export type Querier<T> = (query: string, values: any[]) =>
+  Promise<T[]>;
 
 export type BuiltIn =
-  | boolean
-  | null
-  | undefined
-  | number
-  | bigint
-  | string
+  | boolean | null
+  | undefined | number
+  | bigint | string
   | object;
 
-export type ParamF<Params, Return> = (p: Params, T?: Table) => Return;
+export type ParamF<Params, Return> = (p: Params, T?: Table) =>
+  Return;
 
 export type RefQLValue<Params, Ran extends boolean = false> =
   Ran extends false
@@ -24,13 +23,10 @@ export type RefQLValue<Params, Ran extends boolean = false> =
   : BuiltIn | SQLTag<Params>;
 
 export interface Ref {
-  name: string;
-  as: string;
+  name: string; as: string;
 }
 
 export interface Refs {
-  lrefs: Ref[];
-  rrefs: Ref[];
-  lxrefs: Ref[];
-  rxrefs: Ref[];
+  lrefs: Ref[]; rrefs: Ref[];
+  lxrefs: Ref[]; rxrefs: Ref[];
 }

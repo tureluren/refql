@@ -1,8 +1,8 @@
-import { Querier } from "../common/types";
+import { Querier, StringMap } from "../common/types";
 import createEnv from "../Env/createEnv";
 import Rec from "../Env/Rec";
 import { InterpretF } from "../Interpreter";
-import { BelongsTo, HasMany, ManyToMany, Root } from "../Parser/nodes";
+import { BelongsTo, HasMany, ManyToMany, Root } from "../nodes";
 
 const match = (row: any, nextRows: any[], lrefs: string[], rrefs: string[]) =>
   nextRows.filter ((r: any) =>
@@ -18,7 +18,7 @@ const match = (row: any, nextRows: any[], lrefs: string[], rrefs: string[]) =>
     return matched;
   });
 
-const aggregate = <Params>(querier: Querier<any>, interpret: InterpretF, node: Root<Params>) => {
+const aggregate = (querier: Querier<StringMap>, interpret: InterpretF<unknown>, node: Root<unknown>) => {
   const go = (compiled: Rec): Promise<any[]> => {
     return querier (compiled.query, compiled.values).then (rows => {
       const next = compiled.next.map (nxt =>

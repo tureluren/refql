@@ -2,7 +2,7 @@ import Table from "../Table";
 import {
   BelongsTo, Call, HasMany,
   Identifier, ManyToMany, Root
-} from "./nodes";
+} from ".";
 
 describe ("Nodes", () => {
   type Params = {

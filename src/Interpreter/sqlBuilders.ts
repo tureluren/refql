@@ -1,9 +1,9 @@
-import { evolve, get, over, set } from "../Env/access";
-import Rec from "../Env/Rec";
-import In from "../In";
 import chain from "../common/chain";
 import concat from "../common/concat";
 import { Ref } from "../common/types";
+import { evolve, get, over, set } from "../Env/access";
+import Rec from "../Env/Rec";
+import In from "../In";
 import Table from "../Table";
 
 export const byId = (table: Table, id?: string | number, op: "where" | "and" = "and") => chain (

@@ -1,17 +1,17 @@
 import { Refs } from "../common/types";
-import { ASTNode } from "../Parser/nodes";
+import { ASTNode } from "../nodes";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
 
 export interface Next {
-  node: ASTNode;
+  node: ASTNode<unknown>;
   refs: Refs;
 }
 
 export default interface Rec {
   table: Table;
   query: string;
-  sqlTag: SQLTag<{}>;
+  sqlTag: SQLTag<unknown>;
   comps: string[];
   values: any[];
   next: Next[];

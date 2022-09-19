@@ -3,7 +3,7 @@ import mySql from "mysql2";
 import { pipe } from "fp-ts/function";
 import In from "./In";
 import { rql } from "./index";
-import { All, BelongsTo, Call, HasMany, Identifier, Keywords, ManyToMany, Root, StringLiteral, TableNode, Variable } from "./Parser/nodes";
+import { All, BelongsTo, Call, HasMany, Identifier, Keywords, ManyToMany, StringLiteral, Variable } from "./nodes";
 import Raw from "./Raw";
 import RQLTag from "./RQLTag";
 import { Goal, Player } from "./soccer";
@@ -11,6 +11,7 @@ import SQLTag from "./SQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
 import { StringMap, Querier } from "./common/types";
+import TableNode from "./nodes/TableNode";
 
 const pool = new Pool ({
   user: "test",
@@ -320,7 +321,7 @@ const rootToHasMany = <Params>(node: TableNode<Params>) => {
 };
 
 const belongsTo = <Params>(tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
-  return tag2.map (node => node.addMember (rootToBelongsTo (tag.node)));
+  return tag2.map (node => node.addMember (tag.node.toBelongsTo ()));
 };
 
 const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {

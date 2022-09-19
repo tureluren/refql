@@ -1,13 +1,12 @@
 import { StringMap } from "../common/types";
-import Tokenizer, { Token, TokenType } from "../Tokenizer";
-import identifierToTable from "./identifierToTable";
 import {
   All, ASTNode, BelongsTo, BooleanLiteral, Call,
   HasMany, Identifier, Literal, ManyToMany, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
-} from "./nodes";
-import Table from "../Table";
+} from "../nodes";
 import RQLTag from "../RQLTag";
+import Table from "../Table";
+import Tokenizer, { Token, TokenType } from "../Tokenizer";
 
 class Parser {
   str: string;
@@ -73,7 +72,8 @@ class Parser {
       }
 
     } else {
-      table = identifierToTable (this.Schema (), this.Identifier ());
+      const tableId = this.Identifier ();
+      table = Table (tableId.name, tableId.as, this.Schema ());
     }
 
     let keywords: StringMap = {};
@@ -152,7 +152,7 @@ class Parser {
       throw new SyntaxError ("A table block should have at least one member");
     }
 
-    const members: ASTNode[] = [];
+    const members: ASTNode<unknown>[] = [];
 
     do {
       const member = this.Member ();
@@ -172,7 +172,7 @@ class Parser {
 
   arguments() {
     this.eat ("(");
-    const argumentList: ASTNode[] = [];
+    const argumentList: ASTNode<unknown>[] = [];
 
     if (!this.isNext (")")) {
       do {
@@ -219,7 +219,7 @@ class Parser {
     return value;
   }
 
-  Member(): ASTNode {
+  Member(): ASTNode<unknown> {
     if (this.isNextLiteral ()) {
       return this.Literal ();
     }
@@ -241,7 +241,7 @@ class Parser {
     throw new SyntaxError (`Unknown Member Type: "${this.lookahead.type}"`);
   }
 
-  Argument(): ASTNode {
+  Argument(): ASTNode<unknown> {
     if (this.isNextLiteral ()) {
       return this.Literal ();
     }
