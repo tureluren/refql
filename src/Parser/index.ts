@@ -72,8 +72,9 @@ class Parser {
       }
 
     } else {
+      const schema = this.Schema ();
       const tableId = this.Identifier ();
-      table = Table (tableId.name, tableId.as, this.Schema ());
+      table = Table (tableId.name, tableId.as, schema);
     }
 
     let keywords: StringMap = {};

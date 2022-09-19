@@ -22,6 +22,8 @@ describe ("Env type", () => {
     const env = Env (rec);
 
     expect (env.rec).toEqual (rec);
+    expect (Env.isEnv (env)).toBe (true);
+    expect (Env.isEnv ({})).toBe (false);
   });
 
   test ("Functor", () => {

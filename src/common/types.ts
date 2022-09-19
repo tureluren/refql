@@ -30,3 +30,8 @@ export interface Refs {
   lrefs: Ref[]; rrefs: Ref[];
   lxrefs: Ref[]; rxrefs: Ref[];
 }
+
+export interface CastAs {
+  as?: string;
+  cast?: string;
+}

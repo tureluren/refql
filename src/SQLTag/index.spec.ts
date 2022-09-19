@@ -43,10 +43,12 @@ describe ("SQLTag type", () => {
   test ("create SQLTag", () => {
     const strings = ["where id =", "order by last_name"];
     const keys = [1];
-    const sqlTag = SQLTag (strings as any, keys);
+    const tag = SQLTag (strings as any, keys);
 
-    expect (sqlTag.strings).toEqual (strings);
-    expect (sqlTag.values).toEqual (keys);
+    expect (tag.strings).toEqual (strings);
+    expect (tag.values).toEqual (keys);
+    expect (SQLTag.isSQLTag (tag)).toBe (true);
+    expect (SQLTag.isSQLTag ({})).toBe (false);
   });
 
   test ("Semigroup", () => {

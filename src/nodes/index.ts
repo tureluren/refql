@@ -3,7 +3,6 @@ import ASTNode from "./ASTNode";
 import BelongsTo from "./BelongsTo";
 import BooleanLiteral from "./BooleanLiteral";
 import Call from "./Call";
-import CastAs from "./CastAs";
 import HasMany from "./HasMany";
 import Identifier from "./Identifier";
 import Literal from "./Literal";
@@ -21,7 +20,6 @@ export {
   BelongsTo,
   BooleanLiteral,
   Call,
-  CastAs,
   HasMany,
   Identifier,
   Keywords,

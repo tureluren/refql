@@ -56,4 +56,22 @@ describe ("Nodes", () => {
     expect (manyToMany.addMember (id).members).toEqual ([id]);
     expect (nameId.addMember (id).members).toEqual ([name, id]);
   });
+
+  test ("natural transformations", () => {
+    expect (
+      Root.isRoot (HasMany (player, [], {}).toRoot ())
+    ).toBe (true);
+
+    expect (
+      HasMany.isHasMany (Root (player, [], {}).toHasMany ())
+    ).toBe (true);
+
+    expect (
+      BelongsTo.isBelongsTo (Root (player, [], {}).toBelongsTo ())
+    ).toBe (true);
+
+    expect (
+      ManyToMany.isManyToMany (Root (player, [], {}).toManyToMany ())
+    ).toBe (true);
+  });
 });

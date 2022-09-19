@@ -8,5 +8,7 @@ describe ("Table type", () => {
     expect (player.as).toBe ("p");
     expect (player.schema).toBe ("public");
     expect (`${player}`).toBe ("Table (player, p, public)");
+    expect (Table.isTable (player)).toBe (true);
+    expect (Table.isTable ({})).toBe (false);
   });
 });

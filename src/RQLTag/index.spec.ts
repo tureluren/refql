@@ -39,6 +39,8 @@ describe ("RQLTag type", () => {
     const tag = RQLTag (node);
 
     expect (tag.node).toEqual (node);
+    expect (RQLTag.isRQLTag (tag)).toBe (true);
+    expect (RQLTag.isRQLTag ({})).toBe (false);
   });
 
   test ("Functor", () => {

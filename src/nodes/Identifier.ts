@@ -1,6 +1,5 @@
-import { StringMap } from "../common/types";
+import { CastAs, StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
-import CastAs from "./CastAs";
 
 interface Identifier extends ASTNode<unknown>, CastAs {
   name: string;
