@@ -21,7 +21,7 @@ function In<T>(arr: T[]) {
   return inn;
 }
 
-function write<T>(this: In<T>, paramIdx: number) {
+function write(this: In<unknown>, paramIdx: number) {
   let paramStr = "";
 
   for (let idx = 0; idx < this.arr.length; idx++) {
@@ -32,7 +32,7 @@ function write<T>(this: In<T>, paramIdx: number) {
   return `in (${paramStr})`;
 }
 
-function toString<T>(this: In<T>) {
+function toString(this: In<unknown>) {
   return `In ([${this.arr}])`;
 }
 
