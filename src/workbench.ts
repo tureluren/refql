@@ -320,6 +320,8 @@ const rootToHasMany = <Params>(node: TableNode<Params>) => {
   return HasMany (node.table, node.members, node.keywords);
 };
 
+// no concat because laws don't apply (which laws) buh possible through map on rqltag and addMember on Root
+// NT
 const belongsTo = <Params>(tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
   return tag2.map (node => node.addMember (tag.node.toBelongsTo ()));
 };

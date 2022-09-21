@@ -4,8 +4,8 @@ import Rec from "./Rec";
 interface Env {
   rec: Rec;
   extend: (f: (env: Env) => Rec) => Env;
-  [flExtend]: Env["extend"];
   map(f: (rec: Rec) => Rec): Env;
+  [flExtend]: Env["extend"];
   [flMap]: Env["map"];
 }
 

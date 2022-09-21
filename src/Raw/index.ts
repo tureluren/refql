@@ -3,8 +3,8 @@ import { flMap, refqlType } from "../common/consts";
 interface Raw {
   value: string;
   map(f: (value: string) => string): Raw;
-  [flMap]: Raw["map"];
   toString: () => string;
+  [flMap]: Raw["map"];
 }
 
 const rawType = "refql/Raw";

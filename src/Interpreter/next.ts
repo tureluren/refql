@@ -1,6 +1,6 @@
 import concat from "../common/concat";
+import emptyRefs from "../common/emptyRefs";
 import { evolve } from "../Env/access";
-import emptyRefs from "../Env/emptyRefs";
 import Rec from "../Env/Rec";
 import { ASTNode } from "../nodes";
 import Table from "../Table";

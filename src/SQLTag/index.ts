@@ -7,14 +7,13 @@ interface SQLTag<Params> {
   strings: string[];
   values: RefQLValue<Params>[];
   concat<Params2>(other: SQLTag<Params2>): SQLTag<Params & Params2>;
-  [flConcat]: SQLTag<Params>["concat"];
   map<Params2>(f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
-  [flMap]: SQLTag<Params>["map"];
   mapLeft(f: (strings: string[]) => string[]): SQLTag<Params>;
   bimap<Params2>(g: (strings: string[]) => string[], f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
-  [flBimap]: SQLTag<Params>["bimap"];
-  map<Params2>(f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
   run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]>;
+  [flConcat]: SQLTag<Params>["concat"];
+  [flMap]: SQLTag<Params>["map"];
+  [flBimap]: SQLTag<Params>["bimap"];
 }
 
 const sqlTagType = "refql/SQLTag";

@@ -6,9 +6,9 @@ import aggregate from "./aggregate";
 
 interface RQLTag<Params> {
   node: Root<Params>;
-  map<Params2>(f: (node: Root<Params>) => Root<Params2>): RQLTag<Params & Params2>;
-  [flMap]: RQLTag<Params>["map"];
+  map<Params2>(f: (node: Root<Params>) => Root<Params2>): RQLTag<Params2>;
   run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]>;
+  [flMap]: RQLTag<Params>["map"];
 }
 
 const rqlTagType = "refql/RQLTag";

@@ -1,10 +1,10 @@
 import Env from ".";
 import { flExtend, flMap } from "../common/consts";
+import emptyRefs from "../common/emptyRefs";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import { set } from "./access";
 import createEnv from "./createEnv";
-import emptyRefs from "./emptyRefs";
 
 describe ("Env type", () => {
   test ("create Env", () => {
