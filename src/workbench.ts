@@ -234,6 +234,8 @@ const byId = sql<{id: number}>`
 const getPlayerById =
   player.concat (byId);
 
+getPlayerById.run (querier, { id: 4 });
+
 // getPlayerById.run (querier, { id: 1 }).then (console.log);
 
 // semigroup bewijs
@@ -391,3 +393,5 @@ const rqlTag = rql`
 rqlTag.run (querier, { id: 4 });
 
 console.log (rqlTag);
+
+// select (Table ("player"), ["id", "last_name"]);

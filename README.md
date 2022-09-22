@@ -22,12 +22,8 @@ const byId = sql<{id: number}>`
   where id = ${p => p.id}
 `;
 
-// getPlayerId :: SQLTag ()
 const getPlayerById =
   player.concat (byId);
-
-// query: 
-// values: [1]
 
 const pool = new Pool ({
   user: "test",
@@ -37,23 +33,29 @@ const pool = new Pool ({
   port: 5432
 });
 
+// query: select id, first_name, last_name from player where id = $1
+// values: [1]
 const querier = <T>(query: string, values: any[]) => {
   return pool.query (query, values).then (({ rows }) => rows as T[]);
 };
 
 getPlayerById.run (querier, { id: 1 }).then (console.log);
-// [{ id: 1, first_name: "Estelle", last_name: "Vangelisti" }]
+// [{ id: 1, first_name: 'Estelle', last_name: 'Vangelisti' }]
 
+// alternative (including team)
 const alternative = rql<{id: number}>`
   player (id: ${p => p.id}) {
     id
     first_name
     last_name
+    - team {
+      name
+    }
   }
 `;
 
 alternative.run (querier, { id: 1 }).then (console.log);
-// [{ id: 1, first_name: "Estelle", last_name: "Vangelisti" }]
+// [{ id: 1, first_name: 'Estelle', last_name: 'Vangelisti', team: { name: 'FC Mezujfo' }}]
 
 ```
 ## Table of contents

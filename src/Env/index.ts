@@ -20,7 +20,7 @@ const prototype = {
 
 function Env(rec: Rec) {
   let env: Env = Object.create (prototype);
-  env.rec = Object.assign ({}, rec);
+  env.rec = rec;
 
   return env;
 }
