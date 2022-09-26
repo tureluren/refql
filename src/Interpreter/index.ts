@@ -98,7 +98,6 @@ const Interpreter = <Params> (params: Params) => {
       },
 
       Variable: (value, as, cast) => {
-        console.log (value);
         if (Raw.isRaw (value)) return select (value.value, rec);
 
         if (SQLTag.isSQLTag<Params> (value)) {

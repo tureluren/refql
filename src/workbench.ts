@@ -422,8 +422,10 @@ const player2 = sql`
   limit ${2}
 `;
 
-const offsetL = (strings: string[]) =>
-  [...strings, "offset"];
+const offsetL = (strings: string[]) => {
+  console.log (strings);
+  return [...strings, "offset"];
+};
 
 const offsetR = (values: any[]) =>
   [...values, 5];
@@ -432,5 +434,5 @@ const threeInsteadOfTwo =
   // or player.bimap (increment)
   player2["fantasy-land/bimap"] (offsetL, offsetR);
 
-// threeInsteadOfTwo.run (querier).then (console.log);
+threeInsteadOfTwo.run (querier).then (console.log);
 

@@ -29,6 +29,7 @@ const prototype = {
 
 function SQLTag<Params>(strings: string[], values: RefQLValue<Params>[]) {
   let tag: SQLTag<Params> = Object.create (prototype);
+  // tag.strings = strings.map (formatTLString);
   tag.strings = strings.map (formatTLString).filter (s => s !== "");
   tag.values = values;
 
@@ -36,16 +37,17 @@ function SQLTag<Params>(strings: string[], values: RefQLValue<Params>[]) {
 }
 
 function concat(this: SQLTag<unknown>, other: SQLTag<unknown>) {
-  const tag1Strings = Array.from (this.strings);
-  const lastEl = tag1Strings.pop ();
+  // const tag1Strings = Array.from (this.strings);
+  // const lastEl = tag1Strings.pop ();
 
-  const tag2Strings = Array.from (other.strings);
-  const firstEl = tag2Strings.shift ();
+  // const tag2Strings = Array.from (other.strings);
+  // const firstEl = tag2Strings.shift ();
 
-  const strings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
-  const values = this.values.concat (other.values);
+  // const strings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
+  // const values = this.values.concat (other.values);
+  // return SQLTag (strings, values);
 
-  return SQLTag (strings, values);
+  return SQLTag (this.strings.concat (other.strings), this.values.concat (other.values));
 }
 
 function map(this: SQLTag<unknown>, f: (values: RefQLValue<unknown>[]) => RefQLValue<unknown>[]) {
