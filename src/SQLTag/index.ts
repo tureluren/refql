@@ -10,7 +10,7 @@ interface SQLTag<Params> {
   map<Params2>(f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
   mapLeft(f: (strings: string[]) => string[]): SQLTag<Params>;
   bimap<Params2>(g: (strings: string[]) => string[], f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
-  run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]>;
+  run<Return>(querier: Querier<Return>, params?: Params): Promise<Return[]>;
   [flConcat]: SQLTag<Params>["concat"];
   [flMap]: SQLTag<Params>["map"];
   [flBimap]: SQLTag<Params>["bimap"];
@@ -29,7 +29,7 @@ const prototype = {
 
 function SQLTag<Params>(strings: string[], values: RefQLValue<Params>[]) {
   let tag: SQLTag<Params> = Object.create (prototype);
-  tag.strings = strings.map (formatTLString);
+  tag.strings = strings.map (formatTLString).filter (s => s !== "");
   tag.values = values;
 
   return tag;
@@ -60,7 +60,7 @@ function bimap(this: SQLTag<unknown>, g: (strings: string[]) => string[], f: (va
   return SQLTag (g (this.strings), f (this.values));
 }
 
-function run(this: SQLTag<unknown>, querier: Querier<StringMap>, params: unknown) {
+function run(this: SQLTag<unknown>, querier: Querier<StringMap>, params: unknown = {}) {
   return new Promise ((res, rej) => {
     let query, values;
 

@@ -234,7 +234,7 @@ const byId = sql<{id: number}>`
 const getPlayerById =
   player.concat (byId);
 
-getPlayerById.run (querier, { id: 4 });
+// getPlayerById.run (querier, { id: 4 });
 
 // getPlayerById.run (querier, { id: 1 }).then (console.log);
 
@@ -392,6 +392,45 @@ const rqlTag = rql`
 
 rqlTag.run (querier, { id: 4 });
 
-console.log (rqlTag);
+// console.log (rqlTag.node.members);
 
 // select (Table ("player"), ["id", "last_name"]);
+
+// dynamic properties
+const getFirstThree = sql`
+  select id, last_name from player
+  where id ${In ([1, 2, 3])}
+`;
+
+
+const getPlayerById3 = rql<{ id: number }>`
+  player (id: ${p => p.id}) {
+    id
+    first_name
+    last_name
+    x game: games {
+      id
+      result
+    }
+  }
+`;
+
+
+const player2 = sql`
+  select id, first_name, last_name
+  from player
+  limit ${2}
+`;
+
+const offsetL = (strings: string[]) =>
+  [...strings, "offset"];
+
+const offsetR = (values: any[]) =>
+  [...values, 5];
+
+const threeInsteadOfTwo =
+  // or player.bimap (increment)
+  player2["fantasy-land/bimap"] (offsetL, offsetR);
+
+// threeInsteadOfTwo.run (querier).then (console.log);
+
