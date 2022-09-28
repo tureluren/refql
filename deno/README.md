@@ -11,8 +11,8 @@ npm install refql
 
 ## Getting started
 ```ts
-import { Pool } from "pg";
-import { rql, sql } from "refql";
+import postgres from "https://deno.land/x/postgresjs/mod.js";
+import { rql, sql } from "https://deno.land/x/refql/mod.ts";
 
 const playerQuery = sql`
   select id, first_name, last_name
@@ -26,7 +26,7 @@ const byId = sql<{id: number}>`
 const getPlayerById =
   playerQuery.concat (byId);
 
-const pool = new Pool ({
+const pool = postgres ({
   // ...pool options
 });
 
@@ -70,7 +70,7 @@ alternative.run<Player> (querier, { id: 1 }).then (console.log);
 The querier should be passed as the first argument to the `run` function. It should have the type signature `<T>(query: string, values: any[]) => Promise<T[]>`. This function is a necessary in-between piece to make RefQL independent from database clients. This allows you to choose your own client.
 
 ```ts
-import mySQL from "mysql2";
+import * as mySQL from "https://deno.land/x/mysql2/mod.ts";
 
 const mySqlPool = mySQL.createPool ({
   // ...pool options
@@ -172,7 +172,7 @@ orderByLastName.run<Player> (querier, { limit: 2, offset: 5 }).then (console.log
 With the Raw data type it's possible to inject values as raw text into the query.
 
 ```ts
-import { Raw, sql } from "refql";
+import { Raw, sql } from "https://deno.land/x/refql/mod.ts";
 
 // dynamic properties
 const idField = "id";
@@ -194,7 +194,7 @@ getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
 ## In
 
 ```ts
-import { In, sql } from "refql";
+import { In, sql } from "https://deno.land/x/refql/mod.ts";
 
 const getFirstThree = sql`
   select id, last_name from player
@@ -554,7 +554,7 @@ RQLTag implements only 1 algebraic structure specified by Fantasy Land: Functor.
 Compliant implementation of `fantasy-land/map`.
 
 ```ts
-import { Root, rql, RQLTag, sql } from "refql";
+import { Root, rql, RQLTag, sql } from "https://deno.land/x/refql/mod.ts";
 
 const playerQuery = rql`
   player (id: 9) { * }

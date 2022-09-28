@@ -89,6 +89,14 @@ else
   sed -i "s/$search_pg/$replace_pg/g" "$deno_dir/README.md"
 fi
 
+search_mysql="import mySQL from \"mysql2\";"
+replace_mysql="import * as mySQL from \"https:\/\/deno.land\/x\/mysql2\/mod.ts\";"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  sed -i '' "s/$search_mysql/$replace_mysql/g" "$deno_dir/README.md"
+else 
+  sed -i "s/$search_mysql/$replace_mysql/g" "$deno_dir/README.md"
+fi
+
 search_refql="from \"refql\";"
 replace_refql="from \"https:\/\/deno.land\/x\/refql\/mod.ts\";"
 if [[ "$OSTYPE" == "darwin"* ]]; then

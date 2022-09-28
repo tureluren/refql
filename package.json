@@ -1,11 +1,11 @@
 {
   "name": "refql",
   "author": "Rafael Tureluren <rafaelbeltu@gmail.com>",
-  "description": "A Node.js library for retrieving data from a PostgreSQL database with an interesting query language included.",
+  "description": "A Node.js and Deno library for composing and running SQL queries.",
   "license": "MIT",
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "version": "1.0.8",
+  "version": "2.0.0",
   "scripts": {
     "start": "NODE_ENV=development nodemon src/workbench.ts",
     "test": "NODE_ENV=test jest --setupFiles dotenv/config --watch --detectOpenHandles",
@@ -61,7 +61,10 @@
     "nodejs",
     "postgresql",
     "query-language",
-    "sql"
+    "sql",
+    "functional programming",
+    "fp",
+    "fantasy land"
   ],
   "jest": {
     "roots": [
