@@ -64,6 +64,11 @@ class Parser {
       let value = this.spliceValue ();
 
       if (RQLTag.isRQLTag (value)) {
+
+        if (this.isNext (":")) {
+          this.eat (":");
+          return value.node.setAs (this.eat ("IDENTIFIER").value);
+        }
         return value.node;
       } else if (Table.isTable (value)) {
         table = value;

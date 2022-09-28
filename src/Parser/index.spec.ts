@@ -27,6 +27,7 @@ describe ("Parser type", () => {
 
   test ("references", () => {
     const position = Table ("position");
+    const positionQuery = rql`position { * }`;
     const spaceRaw = Raw ("' '");
 
     const tag = rql`
@@ -49,6 +50,7 @@ describe ("Parser type", () => {
           `}
         }
         x game:games ${[All ("*")]}
+        - ${positionQuery}: pos
       }
     `;
 
@@ -76,12 +78,11 @@ describe ("Parser type", () => {
     const teamAst = BelongsTo (team, [name, playersAst], {});
 
     const games = Table ("game", "games");
-    const result = Identifier ("result");
     const gamesAst = ManyToMany (games, [All ("*")], {});
 
     const expected = Root (
       player,
-      [identifier, birthday, fullName, goalsAst, teamAst, gamesAst],
+      [identifier, birthday, fullName, goalsAst, teamAst, gamesAst, positionAst.setAs ("pos")],
       { id: 1 }
     );
 

@@ -2,7 +2,7 @@ import { RefQLValue } from "../common/types";
 import Table from "../Table";
 import { Keywords } from "./TableNode";
 
-type Pattern<Params, Return> = Partial<{
+type StructureMap<Params, Return> = Partial<{
   Root: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, true>) => Return;
   HasMany: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, true>) => Return;
   BelongsTo: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, true>) => Return;
@@ -18,7 +18,7 @@ type Pattern<Params, Return> = Partial<{
 }>;
 
 interface ASTNode<Params> {
-  cata<Return>(pattern: Pattern<Params, Return>, params: Params, table: Table): Return;
+  caseOf<Return>(structureMap: StructureMap<Params, Return>, params: Params, table: Table): Return;
   isASTNode: boolean;
 }
 

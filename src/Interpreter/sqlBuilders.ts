@@ -22,7 +22,7 @@ export const castAs = (sql: boolean | null | number | string, as?: string, cast?
 
 export const fromTable = (table: Table) => chain (
   get ("comps"),
-  comps => set ("query", `select ${comps.join (", ")} from ${table.schema ? `${table.schema}.` : ""}${table.name} ${table.as}`)
+  comps => set ("query", `select ${comps.join (", ")} from ${table.write ()}`)
 );
 
 export const joinOn = (lrefs: Ref[], rrefs: Ref[], table: Table, xTable: Table) =>

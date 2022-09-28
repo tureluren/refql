@@ -1,5 +1,6 @@
 # RefQL
 A Node.js library for composing and running SQL queries.
+> Inspired by [Cuery](https://github.com/Schniz/cuery) and [FxSQL](https://github.com/marpple/FxSQL)
 
 ## Installation
 ```bash
@@ -13,7 +14,7 @@ npm install refql
 import { Pool } from "pg";
 import { rql, sql } from "refql";
 
-const player = sql`
+const playerQuery = sql`
   select id, first_name, last_name
   from player
 `;
@@ -23,7 +24,7 @@ const byId = sql<{id: number}>`
 `;
 
 const getPlayerById =
-  player.concat (byId);
+  playerQuery.concat (byId);
 
 const pool = new Pool ({
   // ...pool options
@@ -31,12 +32,12 @@ const pool = new Pool ({
 
 // query: select id, first_name, last_name from player where id = $1
 // values: [1]
-const querier = <T>(query: string, values: any[]) => {
-  return pool.query (query, values).then (({ rows }) => rows as T[]);
-};
+const querier = <T>(query: string, values: any[]) =>
+  pool.query (query, values).then (({ rows }) => rows as T[]);
 
-getPlayerById.run (querier, { id: 1 }).then (console.log);
-// [{ id: 1, first_name: 'Estelle', last_name: 'Vangelisti' }]
+getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+
+// [ { id: 1, first_name: 'Estelle', last_name: 'Vangelisti' } ]
 
 // alternative (including team)
 const alternative = rql<{id: number}>`
@@ -50,28 +51,20 @@ const alternative = rql<{id: number}>`
   }
 `;
 
-alternative.run (querier, { id: 1 }).then (console.log);
-// [{ id: 1, first_name: 'Estelle', last_name: 'Vangelisti', team: { name: 'FC Mezujfo' }}]
+alternative.run<Player> (querier, { id: 1 }).then (console.log);
+
+// [ { id: 1, first_name: 'Estelle', last_name: 'Vangelisti', team: { name: 'FC Mezujfo' } } ]
 ```
--- composition by placeholders, table, rql tags, Raw
--- composition by pipe
--- all
--- interopability
+
 ## Table of contents
 * [Querier](#querier)
-* [Fantasy Land](#fantasy-land)
+* [Composition by Fantasy Land](#composition-by-fantasy-land)
+* [Composition by placeholders](#composition-by-placeholders)
 * [Raw](#raw)
 * [In](#in)
-* [RQLTag](#rqltag)
-* [Keywords](#keywords)
-* [Subselects](#subselects)
-* [SQLTag](#sqltag)
-* [Aliases](#aliases)
-* [Casts](#casts)
-* [Functions](#functions)
 * [Table](#table)
-* [Literals](#literals)
-* [Combining query components](#combining-query-components)
+* [RQLTag](#rqltag)
+* [Function placeholder](#function-placeholder)
 
 ## Querier
 The querier should be passed as the first argument to the `run` function. It should have the type signature `<T>(query: string, values: any[]) => Promise<T[]>`. This function is a necessary in-between piece to make RefQL independent from database clients. This allows you to choose your own client.
@@ -94,17 +87,19 @@ const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
     });
   });
 
-sql`select * from player`.run (mySQLQuerier);
+sql`select * from player`.run<Player> (mySQLQuerier, {});
 ```
 
-## Fantasy Land
-SQLTag implements 3 algebraic structures specified by Fantasy Land: Semigroup, Functor and Bifunctor.
+## Composition by Fantasy Land
+<a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
+
+SQLTag implements 2 algebraic structures specified by Fantasy Land: Semigroup, Functor.
 
 ### Semigroup
 Compliant implementation of `fantasy-land/concat`.
 
 ```ts
-const player = sql`
+const playerQuery = sql`
   select id, first_name, last_name
   from player
 `;
@@ -116,9 +111,10 @@ const paginate = sql<{limit: number; offset: number}>`
 
 const getPlayerPage =
   // or player.concat (paginate)
-  player["fantasy-land/concat"] (paginate);
+  playerQuery["fantasy-land/concat"] (paginate);
 
-getPlayerPage.run (querier, { limit: 3, offset: 5 }).then (console.log);
+getPlayerPage.run<Player> (querier, { limit: 3, offset: 5 }).then (console.log);
+
 // [
 //   { id: 6, first_name: 'Nicholas', last_name: 'Ortiz' },
 //   { id: 7, first_name: 'Leila', last_name: 'Leclerc' },
@@ -130,33 +126,50 @@ getPlayerPage.run (querier, { limit: 3, offset: 5 }).then (console.log);
 Compliant implementation of `fantasy-land/map`.
 
 ```ts
-const player = sql`
+const playerQuery = sql`
   select id, first_name, last_name
   from player
-  limit ${2}
 `;
 
-const increment = (values: any[]) =>
-  values.map (x => x + 1);
+const orderByLastName = (values: any[]) =>
+  values.concat ("order by last_name limit 2");
 
-const threeInsteadOfTwo =
-  // or player.map (increment)
-  player["fantasy-land/map"] (increment);
+const orderedPlayers =
+  // or player.map (orderByLastName)
+  playerQuery["fantasy-land/map"] (orderByLastName);
 
-threeInsteadOfTwo.run (querier).then (console.log);
+orderedPlayers.run<Player> (querier, {}).then (console.log);
 
 // [
-//   { id: 1, first_name: 'Tom', last_name: 'Cecchini' },
-//   { id: 2, first_name: 'Birdie', last_name: 'Schultz' },
-//   { id: 3, first_name: 'Aaron', last_name: 'Scheffer' }
+//   { id: 326, first_name: 'Lucy', last_name: 'Acciai' },
+//   { id: 6, first_name: 'Katie', last_name: 'Adam' }
+// ]
+```
+## Composition by placeholders
+
+```ts
+const paginate = sql<{limit: number; offset: number}>`
+  limit ${p => p.limit}
+  offset ${p => p.offset}
+`;
+
+const orderByLastName = sql`
+  select id, first_name, last_name
+  from player
+  ${sql`order by last_name`}
+  ${paginate}
+`;
+
+orderByLastName.run<Player> (querier, { limit: 2, offset: 5 }).then (console.log);
+
+// [
+//   { id: 368, first_name: 'Fanny', last_name: 'Aguilar' },
+//   { id: 508, first_name: 'Ruth', last_name: 'Albers' }
 // ]
 ```
 
-### Bifunctor
-Compliant implementation of `fantasy-land/bimap`.
-
 ## Raw
-With the Raw data type it is possible to inject values as raw text into the query.
+With the Raw data type it's possible to inject values as raw text into the query.
 
 ```ts
 import { Raw, sql } from "refql";
@@ -173,7 +186,8 @@ const getPlayerById = sql<{ id: number }>`
 // query: select id, last_name, age (birthday)::text from player where id = $1
 // values: [1]
 
-getPlayerById.run (querier, { id: 1 }).then (console.log);
+getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+
 // [ { id: 1, last_name: 'Cecchini', age: '30 years 4 mons 14 days' } ]
 ```
 
@@ -188,9 +202,10 @@ const getFirstThree = sql`
 `;
 
 // query: select id, last_name from player where id in ($1,$2,$3)
-// Values: [1, 2, 3]
+// values: [1, 2, 3]
 
-getFirstThree.run (querier).then (console.log);
+getFirstThree.run<Player> (querier, {}).then (console.log);
+
 // [
 //   { id: 1, last_name: 'Cecchini' },
 //   { id: 2, last_name: 'Schultz' },
@@ -198,10 +213,28 @@ getFirstThree.run (querier).then (console.log);
 // ]
 ```
 
+## Table
+Table (name, as, schema) can be used dynamically inside a SQLTag.
+
+```ts
+const select = (tableName: string, columns: string[] = []) => sql`
+  select ${Raw (columns.map (c => `t.${c}`).join (", "))} from ${Table (tableName, "t", "public")}
+`;
+
+const selectPlayers = select ("player", ["id", "last_name"]).concat (paginate);
+
+// query: select t.id, t.last_name from public.player t limit $1 offset $2
+// values: [2. 3]
+
+selectPlayers.run<Player> (querier, { limit: 2, offset: 3 }).then (console.log);
+
+// [ { id: 4, last_name: 'Tapinassi' }, { id: 5, last_name: 'Freeman' } ]
+```
+
 ## RQLTag
 To include referenced data and end up with an aggregated result without having to write joins.
 
-### belongs to
+### Belongs to
 Useful when you're dealing with a `n:1` relationship. The symbol for this type is a dash sign `-`.
 
 ```ts
@@ -216,10 +249,12 @@ const getPlayerById = rql<{ id: number }>`
   }
 `;
 
-getPlayerById.run (querier, { id: 1 }).then (console.log);
-// [{ id: 1, last_name: 'Cecchini', team: { id: 1, name: 'FC Ocvila' } }]
+getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+
+// [ { id: 1, last_name: 'Cecchini', team: { id: 1, name: 'FC Ocvila' } } ]
 ```
-### has many
+
+### Has many
 Useful when you're dealing with a `1:n` relationship. The symbol for this type is a less-than sign `<`.
 
 ```ts
@@ -235,7 +270,7 @@ const getTeamById = rql<{ id: number }>`
   }
 `;
 
-getTeamById.run (querier, { id: 1 }).then (console.log);
+getTeamById.run<Player> (querier, { id: 1 }).then (console.log);
 
 // {
 //   id: 1,
@@ -250,7 +285,7 @@ getTeamById.run (querier, { id: 1 }).then (console.log);
 
 ```
 
-### many to many
+### Many to many
 Useful when you're dealing with a `n:m` relationship and a junction table like *player_game*. The symbol for this type is the letter x sign `x`.
 
 ```ts
@@ -266,7 +301,8 @@ const getPlayerById = rql<{ id: number }>`
   }
 `;
 
-getPlayerById.run (querier, { id: 1 }).then (console.log);
+getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+
 // {
 //   id: 1,
 //   first_name: 'Anne',
@@ -279,348 +315,214 @@ getPlayerById.run (querier, { id: 1 }).then (console.log);
 // };
 ```
 
-## RQLTag Keywords
-Keywords can be passed as arguments after a table declaration or by interpolating an object.
+### RQLTag keywords
+Keywords can be passed as arguments after a table declaration.
 
-```ts
-interface Keywords {
-  xtable?: string;
-  lref?: string;
-  rref?: string;
-  lxref?: string;
-  rxref?: string;
-  id?: number | string;
-  limit?: number;
-  offset?: number;
-}
-
-const players = await query<Player> (rql`
-  player (offset: 0, limit: 3) {
-    id
-    firstName
-    lastName
-    - team (${{ as: "squad" }}) {
-      id
-      name
-    }
-  }
-`);
-
-// [
-//   {
-//     id: 1,
-//     firstName: "Mark",
-//     lastName: "Rosi",
-//     squad: { id: 1, name: "FC Ropgomut" }
-//   },
-//   {
-//     id: 2,
-//     firstName: "Alejandro",
-//     lastName: "Ye",
-//     squad: { id: 1, name: "FC Ropgomut" }
-//   },
-//   {
-//     id: 3,
-//     firstName: "Chad",
-//     lastName: "Bertrand",
-//     squad: { id: 1, name: "FC Ropgomut" }
-//   }
-// ]
-```
-
-### as (String)
-To rename a referenced table name. Note that `as` takes precedence over automatically generated plurals.
-
-```ts
-const players = await query<Player> (rql`
-  player (id: 1) {
-    id
-    firstName
-    lastName
-    - team (${{ as: "squad" }}) {
-      id
-      name
-    }
-  }
-`);
-
-const alternative1 = await query<Player> (rql`
-  player (id: 1) {
-    id
-    firstName
-    lastName
-    - team (as: "squad") {
-      id
-      name
-    }
-  }
-`);
-
-const alternative2 = await query<Player> (rql`
-  player (id: 1) {
-    id
-    firstName
-    lastName
-    - team: squad {
-      id
-      name
-    }
-  }
-`);
-
-// { id: 1, lastName: "Buckley", squad: { id: 1, name: "FC Wuharazi" } }
-```
-
-### limit and offset (Number)
+#### limit and offset (Number)
 To limit the number of rows returned and skip rows, ideal for paging. 
 
 ```ts
-const players = await query<Player> (rql`
+const playerQuery = rql`
   player (limit: 3, offset: 0) {
     id
-    firstName
-    lastName
+    first_name
+    last_name
   }
-`);
+`;
+
+playerQuery.run<Player> (querier, {}).then (console.log);
+
+// [
+//   { id: 1, first_name: 'Logan', last_name: 'Groen' },
+//   { id: 2, first_name: 'Hannah', last_name: 'Boretti' },
+//   { id: 3, first_name: 'Robert', last_name: 'Da SilvaSilva' }
+// ]
+```
+
+#### id (Number|String)
+To easily retrieve a row by its id.
+
+```ts
+const getPlayerById = rql<{ id: number }>`
+  player (id: ${p => p.id}) {
+    id
+    first_name
+    last_name
+  }
+`;
+
+getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+
+// [ { id: 1, first_name: 'Logan', last_name: 'Groen' } ]
+```
+
+#### lref and rref (comma-separated String)
+To provide refs between two tables. When these aren't provided, RefQL tries to guess them.
+
+```ts
+const getPlayers = rql`
+  player (id: 1) {
+    id
+    first_name
+    last_name
+    - team (lref: "team_id", rref: "id") {
+      id
+      name
+    }
+  }
+`;
+
+getPlayers.run<Player> (querier, {}).then (console.log);
+
 // [
 //   {
 //     id: 1,
-//     firstName: "Mark",
-//     lastName: "Rosi"
-//   },
+//     first_name: 'Logan',
+//     last_name: 'Groen',
+//     team: { id: 1, name: 'FC Dezrano' }
+//   }
+// ]
+
+```
+#### lxref, rxref (comma-separated String) and xtable (String)
+To provide refs between the junction table (xtable) and the two involved tables.
+
+```ts
+const getPlayers = rql`
+  player (id: 1) {
+    id
+    first_name
+    last_name
+    x game: games (
+        lref: "id", lxref: "player_id",
+        rref: "id", rxref: "game_id",
+        xtable: "player_game"
+      ) {
+      id
+      result
+    }
+  }
+`;
+
+getPlayers.run<Player> (querier, {}).then (console.log);
+
+// {
+//     id: 1,
+//     first_name: 'Logan',
+//     last_name: 'Groen',
+//     games: [
+//       { id: 1, result: '5 - 5' },
+//       { id: 2, result: '1 - 4' },
+//       { id: 3, result: '3 - 1' },
+//       ...
+//     ]
+//   }
+```
+### All
+To select all columns.
+
+```ts
+const getPlayer = rql`
+  player (id: 1) {
+    *
+  }
+`;
+
+getPlayer.run<Player> (querier, {}).then (console.log);
+
+// [
 //   {
-//     id: 2,
-//     firstName: "Alejandro",
-//     lastName: "Ye"
-//   },
-//   {
-//     id: 3,
-//     firstName: "Chad",
-//     lastName: "Bertrand"
+//     id: 1,
+//     first_name: 'Logan',
+//     last_name: 'Groen',
+//     birthday: 1989-06-26T22:00:00.000Z,
+//     team_id: 1,
+//     position_id: 1
 //   }
 // ]
 ```
 
-### id (Number|String) (root only!)
-To easily retrieve a row by its id.
-
-```ts
-const player = await query1<Player> (rql`
-  player (id: 1) {
-    id
-    firstName
-    lastName
-  }
-`);
-
-const byId = id => (t: Table) => sql`
-  where ${t}.id = ${id}
-`;
-
-const alternative = await query1<Player> (rql`
-  player {
-    id
-    firstName
-    lastName
-    ${byId (1)}
-  }
-`);
-
-// { id: 1, firstName: "Mike", lastName: "Buckley" }
-
-```
-
-### xTable (String) 
-To provide your own junction table name (*my_games*) when the name is not a combination of the two tables involved (*player_game*).
-
-```ts
-player (id: 1) {
-  id
-  firstName
-  lastName
-  x game (xTable: "my_games") {
-    id
-    result
-  }
-}
-
-// {
-//   id: 1,
-//   firstName: "Mark",
-//   lastName: "Rosi",
-//   games: [
-//     { id: 1, result: "2 - 4" },
-//     { id: 2, result: "5 - 1" },
-//     { id: 3, result: "2 - 2" },
-//     ...
-//   ]
-// }
-```
-
-### links ([["tableFromCol", "tableToCol"]])
-To provide your own links between two tables. Links are a list of column pairs that are referenced with each other. These are usually detected if the database model is logically constructed and when `detectRefs = true`, or even guessed when `detectRefs = false`.
-
-```ts
-player (id: 1) {
-  id
-  lastName
-  - team (${{ links: [["teamId", "id"]] }}) {
-    id
-    name
-  }
-}
-
-// { id: 1, lastName: "Buckley", team: { id: 1, name: "FC Wuharazi" } }
-```
-
-### refs ({ table1: [["xTableFromCol", "table1ToCol"]], table2: [["xTableFromCol", "table2ToCol"]] })
-To provide your own refs beteen the junction table and the two involved tables.
-
-```ts
-player (id: 1) {
-  id
-  firstName
-  lastName
-  x game (refs: ${{ player: [["playerId", "id"]], game: [["gameId", "id"]] }}) {
-    id
-    result
-  }
-}
-
-// {
-//   id: 1,
-//   firstName: "Mark",
-//   lastName: "Rosi",
-//   games: [
-//     { id: 1, result: "2 - 4" },
-//     { id: 2, result: "5 - 1" },
-//     { id: 3, result: "2 - 2" },
-//     ...
-//   ]
-// }
-```
-
-### orderBy (SQLTag | ((t: Table) => SQLTag))
-To sort [has many](#has-many) and [many to many](#many-to-many) relationships. RefQL uses the [json_agg](https://www.postgresql.org/docs/9.5/functions-aggregate.html) function where the *order_by_clause* is one of the arguments. It is separate from the rest of the query, which is why the desicision was made that it should be passed as a keyword.
-
-```ts
-team (id: 1) {
-  id
-  name
-  < player (${{ orderBy: t => sql`order by ${t}.last_name` }}) {
-    id
-    lastName
-  }
-}
-
-// players are sorted by lastName:
-
-// {
-//   id: 4,
-//   name: "FC Foacebe",
-//   players: [
-//     { id: 11, lastName: "Andrei" },
-//     { id: 6, lastName: "Bernardi" },
-//     { id: 8, lastName: "Cook" },
-//     ...
-//   ]
-// }
-```
-
-## Subselects
-To include a nested select expression. A subselect must be a SQLTag since RQLTags can't be nested. The symbol for a subselect is a an ampersand sign `&`.
-
-```ts
-const subselect = t => sql`
-  select count (*) 
-  from goal
-  where player_id = ${t}.id
-`;
-
-const player = await query1<Player> (rql`
-  player (id: 9) {
-    id
-    firstName
-    lastName
-    & goalCount ${subselect}
-  }
-`);
-
-// { id: 9, firstName: "Brent", lastName: "Richardson", goalCount: 8 }
-```
-
-## Aliases
+### Aliases
 Column names and function names can be aliased by placing 1 colon `:` after the name followed by the alias.
 
 ```ts
-const player = await query1<Player> (rql`
+const getPlayer = rql`
   player (id: 1) {
     id: identifier
-    concat: fullName (lastName, ' ', firstName)
+    concat: fullName (last_name, ' ', first_name)
   }
-`);
+`;
 
-// { identifier: 1, fullName: "Nieuwenhuis Noah" }
+getPlayer.run<Player> (querier, {}).then (console.log);
+
+// [ { identifier: 1, fullname: 'Groen Logan' } ]
 ```
 
-## Casts
+### Casts
 Column names, function names and variables can be cast to another type by placing 2 colons `::` after the name, or if you are already using an alias then you must place them after the alias.
 
 ```ts
-const player = await query1<Player> (rql`
+const getPlayer = rql`
   player (id: 1) {
     id::text
     substring: birthYear::int (birthday::text, 0, ${"5"}::int)
   }
-`);
+`;
 
-// { id: "1", birthYear: 1991 }
+getPlayer.run<Player> (querier, {}).then (console.log);
+
+// [ { id: '1', birthyear: 1989 } ]
 ```
 
-## SQLTag
-When you encounter something more complex that you can't solve with the RQLTag or if you like writing sql, you can always fall back on the SQLTag using the tag function ` sql`` `.
+### Subselects
+To include a nested select expression. A subselect must be a SQLTag.
 
-## Functions
+```ts
+const goalCount = sql`
+  select count (*) 
+  from goal
+  where player_id = ${(_p, t) => t}.id
+`;
+
+const getPlayer = rql`
+  player (id: 9) {
+    id
+    first_name
+    last_name
+    ${goalCount}:goal_count::int
+  }
+`;
+
+getPlayer.run<Player> (querier, {}).then (console.log);
+
+// [ { id: 9, first_name: 'Lydia', last_name: 'Graham', goal_count: 4 } ]
+```
+
+### Functions
 Running functions is not difficult at all and the example below is quite self-explanatory.
 
 ```ts
-const positionSnippet = t =>
-  sql`(select name from position where id = ${t}.position_id)`;
+const position =
+  sql`select name from position where id = ${(_p, t) => t}.position_id`;
 
-const player = await query1<Player> (rql`
+const getPlayer = rql`
   player (id: 1) {
     id
-    datePart: age ("year", age (birthday))
-    concat: fullNameAndPosition (upper (firstName), " ", upper (lower (lastName)), ", ", ${positionSnippet})
+    date_part: age ("year", age (birthday))
+    concat: fullNameAndPosition (upper (first_name), " ", upper (lower (last_name)), ", ", ${position})
   }
-`);
+`;
 
-// { id: 1, age: 30, fullNameAndPosition: "NOAH NIEUWENHUIS, Goalkeeper" }
+getPlayer.run<Player> (querier, {}).then (console.log);
+
+// [ { id: 1, age: 33, fullnameandposition: 'LOGAN GROEN, Goalkeeper' } ]
 ```
 
-
-## Table
-The type Table represents the current table you are working on. It is passed to a function that returns an SQLTag. This gives you the table in closure and allows you to use it as an alias in the SQLTag. 
-
-```ts
-const player = await query1<Player> (rql`
-  player {
-    id
-    lastName
-    ${(t: Table) => sql`
-      where ${t}.id = 1 
-    `}
-  }
-`);
-
-// { id: 1, lastName: "Nieuwenhuis" }
-```
-
-## Literals
+### Literals
 The following literals are supported: Boolean, String, Number, and Null.
 
 ```ts
-const player = await query1<Player> (rql`
+const getPlayer = rql`
   player (id: 1) {
     "age": numberOfYears
     concat: literals(true, "_", false, "_", 5)
@@ -628,124 +530,153 @@ const player = await query1<Player> (rql`
     true: correct
     false
   }
-`);
-
-// {
-//   numberOfYears: "age",
-//   literals: "t_f_5",
-//   nothing: null,
-//   correct: true,
-//   false: false
-// }
-```
-
-## Combining query components
-RefQL provides a number of helper functions to combine independent query components with each other. Note that the first component always needs to be a RQLTag or a SQLTag.
-
-```ts
-import { 
-  belongsTo, hasMany, manyToMany,
-  raw, rql, sql, tag, subselect
-} from "refql";
-
-const paginate = (offset, limit) => sql`
-  offset ${offset}
-  limit ${limit}
 `;
 
-const getPlayers = rql`
-  player { id last_name }
-`;
-
-const getTeams = rql`
-  team { id name }
-`;
-
-const getGames = rql`
-  game { id result }
-`;
-
-const getGoalCount = t => sql`
-  select count (*) from "goal"
-  where "goal".player_id = ${t}.id
-`;
-
-const getTeamWithPlayers = tag (
-  getTeams,
-  hasMany (getPlayers)
-);
-
-const getPlayersWithTeam = tag (
-  getPlayers,
-  raw (`'birthday', "player".birthday`),
-  subselect ("goals", getGoalCount),
-  belongsTo (getTeamWithPlayers)
-);
-
-const byTeamId = teamId => t => sql`
-  where ${t}.team_id = ${teamId}
-`;
-
-// `query` and `query1` use `tag` in the background
-const players = await query<Player> (
-  getPlayersWithTeam,
-  byTeamId (1),
-  paginate (0, 30),
-  manyToMany (getGames)
-);
+getPlayer.run<Player> (querier, {}).then (console.log);
 
 // [
 //   {
-//     id: 1,
-//     lastName: "Shibata",
-//     birthday: "2002-09-18",
-//     goals: 0,
-//     team: {
-//       id: 1,
-//       name: "FC Nuvborajo",
-//       players: [{ id:1, lastName: "Shibata" }, ...]
-//     },
-//     games: [
-//       { id: 1, result: "3 - 4" },
-//       { id: 2, result: "2 - 0" },
-//       { id: 3, result: "0 - 1" },
-//       ...
-//     ]
-//   },
+//     numberofyears: 'age',
+//     literals: 't_f_5',
+//     nothing: null,
+//     correct: true,
+//     bool: false
+//   }
+// ]
+```
+
+### Composition by Fantasy Land
+<a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
+
+RQLTag implements only 1 algebraic structure specified by Fantasy Land: Functor. RQLTag doesn't implement `fantasy-land/concat` because the associativity law wouldn't hold.
+
+### Functor
+Compliant implementation of `fantasy-land/map`.
+
+```ts
+import { Root, rql, RQLTag, sql } from "refql";
+
+const playerQuery = rql`
+  player (id: 9) { * }
+`;
+
+const teamQuery = rql`
+  team { * }
+`;
+
+const goalQuery = rql`
+  goal { * }
+`;
+
+const belongsTo = <Params>(tag: RQLTag<Params>) => <Params2>(node: Root<Params2>) => {
+  return node.addMember (tag.node.toBelongsTo ());
+};
+
+const hasMany = <Params>(tag: RQLTag<Params>, as: string) => <Params2>(node: Root<Params2>) => {
+  return node.addMember (tag.node.toHasMany ().setAs (as));
+};
+
+const getPlayer = playerQuery
+  .map (belongsTo (teamQuery))
+  .map (hasMany (goalQuery, "goals"));
+
+getPlayer.run<Player> (querier, {}).then (console.log);
+
+// [
 //   {
-//     id: 2,
-//     lastName: "Waters",
-//     birthday: "1999-07-16",
-//     goals: 0,
-//     team: {
-//       id: 1,
-//       name: "FC Nuvborajo",
-//       players: [{ id:1, lastName: "Shibata" }, ...]
-//     },
-//     games: [
-//       { id: 1, result: "3 - 4" },
-//       { id: 2, result: "2 - 0" },
-//       { id: 3, result: "0 - 1" },
-//       ...
+//     id: 9,
+//     first_name: 'Lydia',
+//     last_name: 'Graham',
+//     birthday: 2004-12-04T23:00:00.000Z,
+//     team_id: 1,
+//     position_id: 9,
+//     team: { id: 1, name: 'FC Dezrano', league_id: 1 },
+//     goals: [
+//      { id: 23, game_id: 4, player_id: 9, own_goal: false, minute: 45 },
+//      { id: 30, game_id: 5, player_id: 9, own_goal: false, minute: 43 },
+//      { id: 38, game_id: 7, player_id: 9, own_goal: false, minute: 4 },
+//      { id: 39, game_id: 7, player_id: 9, own_goal: false, minute: 20 }
 //     ]
-//   },
+//   }
+// ]
+```
+
+### Composition by placeholders
+```ts
+const teamQuery = rql`
+  team { * }
+`;
+
+const goalQuery = rql`
+  goal { * }
+`;
+
+const getPlayerById = rql<{ id: number }>`
+  ${Table ("player")} {
+    *
+    - ${teamQuery}
+    < ${goalQuery}:goals
+    ${(p, t) => sql`
+      where ${t}.id = ${p.id} 
+    `}
+  }
+`;
+
+
+getPlayerById.run<Player> (querier, { id: 9 }).then (console.log);
+
+// [
 //   {
-//     id: 3,
-//     lastName: "Fleming",
-//     birthday: "1999-06-12",
-//     goals: 3,
-//     team: {
-//       id: 1,
-//       name: "FC Nuvborajo",
-//       players: [{ id:1, lastName: "Shibata" }, ...]
-//     },
-//     games: [
-//       { id: 1, result: "3 - 4" },
-//       { id: 2, result: "2 - 0" },
-//       { id: 3, result: "0 - 1" },
-//       ...
+//     id: 9,
+//     first_name: 'Lydia',
+//     last_name: 'Graham',
+//     birthday: 2004-12-04T23:00:00.000Z,
+//     team_id: 1,
+//     position_id: 9,
+//     team: { id: 1, name: 'FC Dezrano', league_id: 1 },
+//     goals: [
+//      { id: 23, game_id: 4, player_id: 9, own_goal: false, minute: 45 },
+//      { id: 30, game_id: 5, player_id: 9, own_goal: false, minute: 43 },
+//      { id: 38, game_id: 7, player_id: 9, own_goal: false, minute: 4 },
+//      { id: 39, game_id: 7, player_id: 9, own_goal: false, minute: 20 }
 //     ]
-//   },
-//   ...
-// ];
+//   }
+// ]
+```
+
+## Function placeholder
+If you use a function placeholder inside `sql` or `rql`, the first parameter of that function will be the object that you pass as the second argument to `run`. Inside `rql`, u can also access the table that you're working on through the second parameter of the function placeholder.
+
+```ts
+const getPlayer = rql<{ limit: number }>`
+  player (limit: ${p => p.limit}){
+    *
+    ${sql`
+      order by ${(_p, t) => t}.last_name desc
+    `}
+  }
+`;
+
+const equivalent = rql<{ limit: number }>`
+  player (limit: ${p => p.limit}){
+    *
+    ${(_p, t) => sql`
+      order by ${t}.last_name desc
+    `}
+  }
+`;
+
+
+getPlayer.run<Player> (querier, { limit: 1 }).then (console.log);
+
+// [
+//   {
+//     id: 217,
+//     first_name: 'Hallie',
+//     last_name: 'Zoppi',
+//     birthday: 1996-09-05T22:00:00.000Z,
+//     team_id: 20,
+//     position_id: 8
+//   }
+// ]
 ```

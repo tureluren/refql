@@ -2,9 +2,10 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import SQLTag from ".";
-import { flBimap, flConcat, flMap } from "../common/consts";
+import { flConcat, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import In from "../In";
+import { Variable } from "../nodes";
 import Raw from "../Raw";
 import rql from "../RQLTag/rql";
 import { Player } from "../soccer";
@@ -31,22 +32,15 @@ describe ("SQLTag type", () => {
 
   const rawLastName = Raw ("last_name");
 
-  const inc = (values: any[]) => values.map (x => x + 1);
-  const mult = (values: any[]) => values.map (x => x * x);
-  const limit = (strings: string[]) => strings.concat ("limit 10");
-  const offset = (strings: string[]) => strings.concat ("offset 0");
-
   afterAll (() => {
     pool.end ();
   });
 
   test ("create SQLTag", () => {
-    const strings = ["where id =", "order by last_name"];
-    const keys = [1];
-    const tag = SQLTag (strings as any, keys);
+    const values = ["where id =", Variable (1), "order by last_name"];
+    const tag = SQLTag (values);
 
-    expect (tag.strings).toEqual (strings);
-    expect (tag.values).toEqual (keys);
+    expect (tag.values).toEqual (values);
     expect (SQLTag.isSQLTag (tag)).toBe (true);
     expect (SQLTag.isSQLTag ({})).toBe (false);
   });
@@ -60,36 +54,21 @@ describe ("SQLTag type", () => {
     const res2 = tag[flConcat] (tag2[flConcat] (tag3));
 
     expect (res).toEqual (res2);
-    expect (res.values).toEqual ([rawLastName, 1]);
-    expect (res.strings).toEqual (["select id,", "from player where id =", ""]);
+    expect (res.values).toEqual (
+      ["select id,", Variable (rawLastName), "from player", "where id =", Variable (1)]
+    );
   });
 
   test ("Functor", () => {
     const tag = sql`select * from player where id = ${1}`;
 
+    const limit = (values: any[]) => values.concat ("limit 10");
+    const offset = (values: any[]) => values.concat ("offset 0");
+
     expect (tag[flMap] (v => v)).toEqual (tag);
 
-    expect (tag[flMap] (v => mult (inc (v))))
-      .toEqual (tag[flMap] (inc)[flMap] (mult));
-  });
-
-  test ("Functor left", () => {
-    const tag = sql`select * from player`;
-
-    expect (tag.mapLeft (s => s)).toEqual (tag);
-
-
-    expect (tag.mapLeft (s => offset (limit (s))))
-      .toEqual (tag.mapLeft (limit).mapLeft (offset));
-  });
-
-  test ("Bifunctor", () => {
-    const tag = sql`select * from player where id > ${1}`;
-
-    expect (tag[flBimap] (s => s, v => v)).toEqual (tag);
-
-    expect (tag[flBimap] (s => offset (limit (s)), v => mult (inc (v))))
-      .toEqual (tag[flBimap] (limit, inc)[flBimap] (offset, mult));
+    expect (tag[flMap] (v => offset (limit (v))))
+      .toEqual (tag[flMap] (limit)[flMap] (offset));
   });
 
   test ("run", async () => {
@@ -122,7 +101,7 @@ describe ("SQLTag type", () => {
       const tag = sql`
         select ${rql`player { * }`}      
       `;
-      await tag.run (() => Promise.resolve ([]), {});
+      await tag.run (() => Promise.resolve ([]), undefined);
     } catch (err: any) {
       expect (err.message).toBe ("You can't use RQL Tags inside SQL Tags");
     }

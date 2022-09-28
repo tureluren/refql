@@ -30,7 +30,7 @@ const Interpreter = <Params> (params: Params) => {
     const { rec } = env;
     const { values, table: parent, refs, inCall } = rec;
 
-    return node.cata<Rec> ({
+    return node.caseOf<Rec> ({
       Root: (table, members, { id, limit, offset }) =>
         interpretMembers (members, table)
           .map (fromTable (table))
@@ -105,7 +105,7 @@ const Interpreter = <Params> (params: Params) => {
             const [query, vals] = compileSQLTag (value, values.length, params, parent);
 
             return evolve ({
-              comps: concat (castAs (!inCall ? `(${query})` : query, as, cast)),
+              comps: concat (castAs (`(${query})`, as, cast)),
               values: concat (vals)
             }, rec);
           }

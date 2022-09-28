@@ -3,7 +3,7 @@ import { refqlType } from "../common/consts";
 interface In<T> {
   arr: T[];
   write(paramIdx: number): string;
-  toString: () => string;
+  toString(): string;
 }
 
 const inType = "refql/In";

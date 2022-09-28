@@ -17,7 +17,7 @@ const next = <Params>(params: Params) => (node: ASTNode<Params>, rec: Rec) => {
 
   let refs = emptyRefs ();
 
-  node.cata<void> ({
+  node.caseOf<void> ({
     BelongsTo: (child, _members, { lref, rref }) => {
       const refOf = createRef (child);
       refs.lrefs = refOf ("lref", lref || child.name + "_id");

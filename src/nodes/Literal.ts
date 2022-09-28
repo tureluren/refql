@@ -6,11 +6,11 @@ interface Literal extends ASTNode<unknown>, CastAs {
 }
 
 export const literalPrototype = Object.assign ({}, astNodePrototype, {
-  cata
+  caseOf
 });
 
-function cata(this: Literal, pattern: StringMap) {
-  return pattern[this.constructor.name] (this.value, this.as, this.cast);
+function caseOf(this: Literal, structureMap: StringMap) {
+  return structureMap[this.constructor.name] (this.value, this.as, this.cast);
 }
 
 export default Literal;

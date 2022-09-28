@@ -8,7 +8,7 @@ interface Variable<Params> extends ASTNode<Params>, CastAs {
 
 const variablePrototype = Object.assign ({}, astNodePrototype, {
   constructor: Variable,
-  cata
+  caseOf
 });
 
 function Variable<Params>(value: RefQLValue<Params>, as?: string, cast?: string) {
@@ -21,12 +21,12 @@ function Variable<Params>(value: RefQLValue<Params>, as?: string, cast?: string)
   return variable;
 }
 
-function cata(this: Variable<unknown>, pattern: StringMap, params: unknown, table: Table) {
+function caseOf(this: Variable<unknown>, structureMap: StringMap, params: unknown, table: Table) {
   const ran = typeof this.value === "function"
     ? this.value (params, table)
     : this.value;
 
-  return pattern.Variable (ran, this.as, this.cast);
+  return structureMap.Variable (ran, this.as, this.cast);
 }
 
 export default Variable;

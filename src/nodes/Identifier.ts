@@ -6,7 +6,7 @@ interface Identifier extends ASTNode<unknown>, CastAs {
 }
 
 const identifierPrototype = Object.assign ({}, astNodePrototype, {
-  constructor: Identifier, cata
+  constructor: Identifier, caseOf
 });
 
 function Identifier(name: string, as?: string, cast?: string) {
@@ -19,8 +19,8 @@ function Identifier(name: string, as?: string, cast?: string) {
   return identifier;
 }
 
-function cata(this: Identifier, pattern: StringMap) {
-  return pattern.Identifier (this.name, this.as, this.cast);
+function caseOf(this: Identifier, structureMap: StringMap) {
+  return structureMap.Identifier (this.name, this.as, this.cast);
 }
 
 export default Identifier;

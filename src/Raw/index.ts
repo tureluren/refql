@@ -3,7 +3,7 @@ import { flMap, refqlType } from "../common/consts";
 interface Raw {
   value: string;
   map(f: (value: string) => string): Raw;
-  toString: () => string;
+  toString(): string;
   [flMap]: Raw["map"];
 }
 
@@ -26,7 +26,6 @@ function Raw(value: boolean | number | string) {
 function toString(this: Raw) {
   return `Raw (${this.value})`;
 }
-
 
 function map(this: Raw, f: (value: string) => string) {
   return Raw (f (this.value));

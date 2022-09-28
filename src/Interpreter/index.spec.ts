@@ -87,7 +87,7 @@ describe ("Interpreter", () => {
     expect (query).toBe (format (`
       select player.id::text as identifier, player.birthday,
         player.id as goalslref0, player.team_id as teamlref0, player.id as gameslref0,
-        concat (upper (player.last_name), ' ', ' ', player.first_name, player.id::text) as full_name_and_id
+        concat (upper (player.last_name), ' ', ' ', player.first_name, (player.id::text)) as full_name_and_id
       from player player
       where player.id = $1
     `));

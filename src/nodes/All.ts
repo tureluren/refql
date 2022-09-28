@@ -6,7 +6,7 @@ interface All extends ASTNode<unknown> {
 }
 
 const allPrototype = Object.assign ({}, astNodePrototype, {
-  constructor: All, cata
+  constructor: All, caseOf
 });
 
 function All(sign: string) {
@@ -17,8 +17,8 @@ function All(sign: string) {
   return all;
 }
 
-function cata(this: All, pattern: StringMap) {
-  return pattern.All (this.sign);
+function caseOf(this: All, structureMap: StringMap) {
+  return structureMap.All (this.sign);
 }
 
 export default All;

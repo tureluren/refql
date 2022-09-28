@@ -10,7 +10,7 @@ describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and v
     const tag = sql<{limit: number}>`
       select ${Raw ("id")}::text, last_name,
         concat(${Raw ("first_name")}, ${Raw ("' '")}, last_name) as fullname
-      from player
+      from ${Table ("player", "player", "public")}
       where ${Table ("player")}.id ${In ([1, 2, 3])}
       ${sql`
         order by ${Raw ("player")}.last_name
@@ -23,7 +23,7 @@ describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and v
     expect (query).toBe (format (`
       select id::text, last_name,
         concat(first_name, ' ', last_name) as fullname
-      from player
+      from public.player player
       where player.id in ($1,$2,$3)
       order by player.last_name
       limit $4

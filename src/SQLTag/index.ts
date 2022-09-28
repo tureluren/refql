@@ -1,19 +1,15 @@
-import { flBimap, flConcat, flMap, refqlType } from "../common/consts";
-import { Querier, RefQLValue, StringMap } from "../common/types";
+import { flConcat, flMap, refqlType } from "../common/consts";
+import { Querier, StringMap } from "../common/types";
+import { Variable } from "../nodes";
 import compileSQLTag from "./compileSQLTag";
-import formatTLString from "./formatTLString";
 
 interface SQLTag<Params> {
-  strings: string[];
-  values: RefQLValue<Params>[];
+  values: (string | Variable<Params>)[];
   concat<Params2>(other: SQLTag<Params2>): SQLTag<Params & Params2>;
-  map<Params2>(f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
-  mapLeft(f: (strings: string[]) => string[]): SQLTag<Params>;
-  bimap<Params2>(g: (strings: string[]) => string[], f: (values: RefQLValue<Params>[]) => RefQLValue<Params2>[]): SQLTag<Params2>;
-  run<Return>(querier: Querier<Return>, params?: Params): Promise<Return[]>;
+  map<Params2>(f: (values: (string | Variable<Params>)[]) => (string | Variable<Params2>)[]): SQLTag<Params2>;
+  run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]>;
   [flConcat]: SQLTag<Params>["concat"];
   [flMap]: SQLTag<Params>["map"];
-  [flBimap]: SQLTag<Params>["bimap"];
 }
 
 const sqlTagType = "refql/SQLTag";
@@ -22,44 +18,22 @@ const prototype = {
   constructor: SQLTag,
   [refqlType]: sqlTagType,
   concat, [flConcat]: concat,
-  map, [flMap]: map,
-  bimap, [flBimap]: bimap,
-  mapLeft, run
+  map, [flMap]: map, run
 };
 
-function SQLTag<Params>(strings: string[], values: RefQLValue<Params>[]) {
+function SQLTag<Params>(values: (string | Variable<Params>)[]) {
   let tag: SQLTag<Params> = Object.create (prototype);
-  // tag.strings = strings.map (formatTLString);
-  tag.strings = strings.map (formatTLString).filter (s => s !== "");
   tag.values = values;
 
   return tag;
 }
 
 function concat(this: SQLTag<unknown>, other: SQLTag<unknown>) {
-  // const tag1Strings = Array.from (this.strings);
-  // const lastEl = tag1Strings.pop ();
-
-  // const tag2Strings = Array.from (other.strings);
-  // const firstEl = tag2Strings.shift ();
-
-  // const strings = tag1Strings.concat (lastEl + " " + firstEl).concat (tag2Strings);
-  // const values = this.values.concat (other.values);
-  // return SQLTag (strings, values);
-
-  return SQLTag (this.strings.concat (other.strings), this.values.concat (other.values));
+  return SQLTag (this.values.concat (other.values));
 }
 
-function map(this: SQLTag<unknown>, f: (values: RefQLValue<unknown>[]) => RefQLValue<unknown>[]) {
-  return SQLTag<unknown> (this.strings, f (this.values));
-}
-
-function mapLeft(this: SQLTag<unknown>, f: (strings: string[]) => string[]) {
-  return SQLTag (f (this.strings), this.values);
-}
-
-function bimap(this: SQLTag<unknown>, g: (strings: string[]) => string[], f: (values: RefQLValue<unknown>[]) => RefQLValue<unknown>[]) {
-  return SQLTag (g (this.strings), f (this.values));
+function map(this: SQLTag<unknown>, f: (values: (string | Variable<unknown>)[]) => (string | Variable<unknown>)[]) {
+  return SQLTag<unknown> (f (this.values));
 }
 
 function run(this: SQLTag<unknown>, querier: Querier<StringMap>, params: unknown = {}) {

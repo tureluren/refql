@@ -68,7 +68,7 @@ describe ("RQLTag type", () => {
       const tag = RQLTag (Root (player, [], {}));
       (tag as any).node = id;
 
-      await tag.run (() => Promise.resolve ([]), {});
+      await tag.run (() => Promise.resolve ([]), undefined);
     } catch (err: any) {
       expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
     }

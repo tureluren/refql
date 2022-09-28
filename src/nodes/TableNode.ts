@@ -29,6 +29,7 @@ interface TableNode<Params> extends ASTNode<Params> {
   members: ASTNode<Params>[];
   keywords: Keywords<Params>;
   addMember<Params2>(node: ASTNode<Params>): TableNode<Params & Params2>;
+  setAs(as: string): TableNode<Params>;
   toRoot(): Root<Params>;
   toHasMany(): HasMany<Params>;
   toBelongsTo(): BelongsTo<Params>;
@@ -36,7 +37,7 @@ interface TableNode<Params> extends ASTNode<Params> {
 }
 
 export const tableNodePrototype = Object.assign ({}, astNodePrototype, {
-  addMember, cata,
+  addMember, caseOf, setAs,
   toRoot, toHasMany,
   toBelongsTo, toManyToMany
 });
@@ -49,11 +50,19 @@ function addMember(this: TableNode<unknown>, node: ASTNode<unknown>) {
   );
 }
 
-function cata(this: TableNode<unknown>, pattern: StringMap, params: unknown) {
-  return pattern[this.constructor.name] (
+function caseOf(this: TableNode<unknown>, structureMap: StringMap, params: unknown) {
+  return structureMap[this.constructor.name] (
     this.table,
     this.members,
     runKeywords (params, this.table, this.keywords)
+  );
+}
+
+function setAs(this: TableNode<unknown>, as: string) {
+  return this.constructor (
+    Table (this.table.name, as, this.table.schema),
+    this.members,
+    this.keywords
   );
 }
 

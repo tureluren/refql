@@ -1,9 +1,8 @@
 import { Pool } from "pg";
 import mySql from "mysql2";
-import { pipe } from "fp-ts/function";
 import In from "./In";
 import { rql } from "./index";
-import { All, BelongsTo, Call, HasMany, Identifier, Keywords, ManyToMany, StringLiteral, Variable } from "./nodes";
+import { All, BelongsTo, Call, HasMany, Identifier, Keywords, ManyToMany, Root, StringLiteral, Variable } from "./nodes";
 import Raw from "./Raw";
 import RQLTag from "./RQLTag";
 import { Goal, Player } from "./soccer";
@@ -166,14 +165,14 @@ const buh = selectPlayer;
 //     this.sign = sign;
 //   }
 
-//   cata<Return>(pattern: Pattern<Return>) {
-//     return pattern.BelongsTo (this.sign);
+//   caseOf<Return>(structureMap: StructureMap<Return>) {
+//     return structureMap.BelongsTo (this.sign);
 //   }
 // }
 
 // const exp = HasMany ("-");
 
-// const res = exp.cata<string> ({
+// const res = exp.caseOf<string> ({
 //   BelongsTo: x => x,
 //   HasMany: x => x
 // });
@@ -322,11 +321,6 @@ const rootToHasMany = <Params>(node: TableNode<Params>) => {
   return HasMany (node.table, node.members, node.keywords);
 };
 
-// no concat because laws don't apply (which laws) buh possible through map on rqltag and addMember on Root
-// NT
-const belongsTo = <Params>(tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
-  return tag2.map (node => node.addMember (tag.node.toBelongsTo ()));
-};
 
 const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2>) => {
   return tag2.map (node => node.addMember (rootToHasMany (tag.node)));
@@ -344,10 +338,10 @@ const byIdTag = sql<{id: number}>`
 
 
 // where (byId) (select ("player", [])).run<Player> (querier, { id: 5 }).then (console.log);
-const getTeams = pipe (
-  teams,
-  belongsTo (leagues)
-);
+// const getTeams = pipe (
+//   teams,
+//   belongsTo (leagues)
+// );
 
 const updateKeywords = <Params>(keywords: Keywords<Params>) => (tag: RQLTag<Params>) => {
   return tag.map (node => {
@@ -358,16 +352,16 @@ const updateKeywords = <Params>(keywords: Keywords<Params>) => (tag: RQLTag<Para
 
 const playerGoalsRefs = { lref: "id" };
 
-const getGoals = pipe (
-  goals,
-  updateKeywords (playerGoalsRefs)
-);
+// const getGoals = pipe (
+//   goals,
+//   updateKeywords (playerGoalsRefs)
+// );
 
-const getPlayer = pipe (
-  players,
-  belongsTo (getTeams),
-  hasMany (getGoals)
-);
+// const getPlayer = pipe (
+//   players,
+//   belongsTo (getTeams),
+//   hasMany (getGoals)
+// );
 
 
 // run (getPlayer, { id: 9, goalLimit: 4 }).then (console.log);
@@ -392,47 +386,38 @@ const rqlTag = rql`
 
 rqlTag.run (querier, { id: 4 });
 
-// console.log (rqlTag.node.members);
 
-// select (Table ("player"), ["id", "last_name"]);
-
-// dynamic properties
-const getFirstThree = sql`
-  select id, last_name from player
-  where id ${In ([1, 2, 3])}
+const teamQuery = rql`
+  team {
+    *
+  }
 `;
 
+const goalQuery = rql`
+  goal {
+    *
+  }
+`;
 
-const getPlayerById3 = rql<{ id: number }>`
-  player (id: ${p => p.id}) {
-    id
-    first_name
-    last_name
-    x game: games {
-      id
-      result
-    }
+const getPlayer = rql<{ id: number }>`
+  ${Table ("player")} {
+    *
+    - ${teamQuery}
+    < ${goalQuery}:goals
+    ${(p, t) => sql`
+      where ${t}.id = ${p.id} 
+    `}
   }
 `;
 
 
-const player2 = sql`
-  select id, first_name, last_name
-  from player
-  limit ${2}
-`;
+getPlayer.run<Player> (querier, { id: 9 }).then (console.log);
 
-const offsetL = (strings: string[]) => {
-  console.log (strings);
-  return [...strings, "offset"];
-};
 
-const offsetR = (values: any[]) =>
-  [...values, 5];
+// const belongsTo = <Params>(tag: RQLTag<Params>) => <Params2>(node: Root<Params2>) => {
+//   return node.addMember (tag.node.toBelongsTo ());
+// };
 
-const threeInsteadOfTwo =
-  // or player.bimap (increment)
-  player2["fantasy-land/bimap"] (offsetL, offsetR);
-
-threeInsteadOfTwo.run (querier).then (console.log);
-
+// const hasMany2 = <Params>(tag: RQLTag<Params>, as: string) => <Params2>(node: Root<Params2>) => {
+//   return node.addMember (tag.node.toHasMany (as));
+// };
