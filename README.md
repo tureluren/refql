@@ -32,8 +32,8 @@ const pool = new Pool ({
 
 // query: select id, first_name, last_name from player where id = $1
 // values: [1]
-const querier = <T>(query: string, values: any[]) =>
-  pool.query (query, values).then (({ rows }) => rows as T[]);
+const querier = (query: string, values: any[]) =>
+  pool.query (query, values).then (({ rows }) => rows);
 
 getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
 
@@ -76,14 +76,14 @@ const mySqlPool = mySQL.createPool ({
   // ...pool options
 });
 
-const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
+const mySQLQuerier = (query: string, values: any[]) =>
   new Promise ((res, rej) => {
     pool.query (query.replace (/\$\d/g, "?"), values, (error, rows) => {
       if (error) {
         rej (error);
         return;
       }
-      res (rows as T[]);
+      res (rows);
     });
   });
 
