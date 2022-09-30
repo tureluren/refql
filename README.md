@@ -23,7 +23,7 @@ const byId = sql<{id: number}>`
   where id = ${p => p.id}
 `;
 
-const getPlayerById =
+const playerById =
   playerQuery.concat (byId);
 
 const pool = new Pool ({
@@ -35,7 +35,7 @@ const pool = new Pool ({
 const querier = (query: string, values: any[]) =>
   pool.query (query, values).then (({ rows }) => rows);
 
-getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+playerById.run<Player> (querier, { id: 1 }).then (console.log);
 
 // [ { id: 1, first_name: 'Estelle', last_name: 'Vangelisti' } ]
 
