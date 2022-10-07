@@ -203,7 +203,7 @@ describe ("Interpreter", () => {
     const { query, next, values } = interpret (gamesNode, createEnv (player, playerGamesRefs), playerRows);
 
     expect (query).toBe (format (`
-      select games.*, PLAYERGAME.player_id as gameslxref0
+      select distinct games.*, PLAYERGAME.player_id as gameslxref0
       from game games 
       join PLAYERGAME as PLAYERGAME on PLAYERGAME.game_id = games.id 
       where PLAYERGAME.player_id in ($1,$2,$3)
@@ -221,7 +221,7 @@ describe ("Interpreter", () => {
     const { query, next, values } = interpret (gamesNode, createEnv (player, playerGamesRefs2), playerRows);
 
     expect (query).toBe (format (`
-      select games.*, 
+      select distinct games.*, 
         player_game.player_id as gameslxref0, player_game.player_team_id as gameslxref1
       from game games
       join player_game as player_game
