@@ -23,7 +23,7 @@ const byId = sql<{id: number}>`
   where id = ${p => p.id}
 `;
 
-const getPlayerById =
+const playerById =
   playerQuery.concat (byId);
 
 const pool = postgres ({
@@ -32,10 +32,10 @@ const pool = postgres ({
 
 // query: select id, first_name, last_name from player where id = $1
 // values: [1]
-const querier = <T>(query: string, values: any[]) =>
-  pool.query (query, values).then (({ rows }) => rows as T[]);
+const querier = (query: string, values: any[]) =>
+  pool.unsafe (query, values);
 
-getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+playerById.run<Player> (querier, { id: 1 }).then (console.log);
 
 // [ { id: 1, first_name: 'Estelle', last_name: 'Vangelisti' } ]
 
@@ -76,14 +76,14 @@ const mySqlPool = mySQL.createPool ({
   // ...pool options
 });
 
-const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
+const mySQLQuerier = (query: string, values: any[]) =>
   new Promise ((res, rej) => {
     pool.query (query.replace (/\$\d/g, "?"), values, (error, rows) => {
       if (error) {
         rej (error);
         return;
       }
-      res (rows as T[]);
+      res (rows);
     });
   });
 
@@ -109,11 +109,11 @@ const paginate = sql<{limit: number; offset: number}>`
   offset ${p => p.offset}
 `;
 
-const getPlayerPage =
+const playerPage =
   // or player.concat (paginate)
   playerQuery["fantasy-land/concat"] (paginate);
 
-getPlayerPage.run<Player> (querier, { limit: 3, offset: 5 }).then (console.log);
+playerPage.run<Player> (querier, { limit: 3, offset: 5 }).then (console.log);
 
 // [
 //   { id: 6, first_name: 'Nicholas', last_name: 'Ortiz' },
@@ -178,7 +178,7 @@ import { Raw, sql } from "https://deno.land/x/refql/mod.ts";
 const idField = "id";
 const bdField = "birthday";
 
-const getPlayerById = sql<{ id: number }>`
+const playerById = sql<{ id: number }>`
   select id, last_name, age (${Raw (bdField)})::text
   from player where ${Raw (idField)} = ${p => p.id}
 `;
@@ -186,7 +186,7 @@ const getPlayerById = sql<{ id: number }>`
 // query: select id, last_name, age (birthday)::text from player where id = $1
 // values: [1]
 
-getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+playerById.run<Player> (querier, { id: 1 }).then (console.log);
 
 // [ { id: 1, last_name: 'Cecchini', age: '30 years 4 mons 14 days' } ]
 ```
@@ -196,7 +196,7 @@ getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
 ```ts
 import { In, sql } from "https://deno.land/x/refql/mod.ts";
 
-const getFirstThree = sql`
+const first3 = sql`
   select id, last_name from player
   where id ${In ([1, 2, 3])}
 `;
@@ -204,7 +204,7 @@ const getFirstThree = sql`
 // query: select id, last_name from player where id in ($1,$2,$3)
 // values: [1, 2, 3]
 
-getFirstThree.run<Player> (querier, {}).then (console.log);
+first3.run<Player> (querier, {}).then (console.log);
 
 // [
 //   { id: 1, last_name: 'Cecchini' },
@@ -221,12 +221,12 @@ const select = (tableName: string, columns: string[] = []) => sql`
   select ${Raw (columns.map (c => `t.${c}`).join (", "))} from ${Table (tableName, "t", "public")}
 `;
 
-const selectPlayers = select ("player", ["id", "last_name"]).concat (paginate);
+const playerQuery = select ("player", ["id", "last_name"]).concat (paginate);
 
 // query: select t.id, t.last_name from public.player t limit $1 offset $2
 // values: [2. 3]
 
-selectPlayers.run<Player> (querier, { limit: 2, offset: 3 }).then (console.log);
+playerQuery.run<Player> (querier, { limit: 2, offset: 3 }).then (console.log);
 
 // [ { id: 4, last_name: 'Tapinassi' }, { id: 5, last_name: 'Freeman' } ]
 ```
@@ -238,7 +238,7 @@ To include referenced data and end up with an aggregated result without having t
 Useful when you're dealing with a `n:1` relationship. The symbol for this type is a dash sign `-`.
 
 ```ts
-const getPlayerById = rql<{ id: number }>`
+const playerById = rql<{ id: number }>`
   player (id: ${p => p.id}) {
     id
     last_name
@@ -249,7 +249,7 @@ const getPlayerById = rql<{ id: number }>`
   }
 `;
 
-getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+playerById.run<Player> (querier, { id: 1 }).then (console.log);
 
 // [ { id: 1, last_name: 'Cecchini', team: { id: 1, name: 'FC Ocvila' } } ]
 ```
@@ -258,7 +258,7 @@ getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
 Useful when you're dealing with a `1:n` relationship. The symbol for this type is a less-than sign `<`.
 
 ```ts
-const getTeamById = rql<{ id: number }>`
+const teamById = rql<{ id: number }>`
   team (id: ${p => p.id}) {
     id
     name
@@ -270,7 +270,7 @@ const getTeamById = rql<{ id: number }>`
   }
 `;
 
-getTeamById.run<Player> (querier, { id: 1 }).then (console.log);
+teamById.run<Player> (querier, { id: 1 }).then (console.log);
 
 // {
 //   id: 1,
@@ -289,7 +289,7 @@ getTeamById.run<Player> (querier, { id: 1 }).then (console.log);
 Useful when you're dealing with a `n:m` relationship and a junction table like *player_game*. The symbol for this type is the letter x sign `x`.
 
 ```ts
-const getPlayerById = rql<{ id: number }>`
+const playerById = rql<{ id: number }>`
   player (id: ${p => p.id}) {
     id
     first_name
@@ -301,7 +301,7 @@ const getPlayerById = rql<{ id: number }>`
   }
 `;
 
-getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+playerById.run<Player> (querier, { id: 1 }).then (console.log);
 
 // {
 //   id: 1,
@@ -343,7 +343,7 @@ playerQuery.run<Player> (querier, {}).then (console.log);
 To easily retrieve a row by its id.
 
 ```ts
-const getPlayerById = rql<{ id: number }>`
+const playerById = rql<{ id: number }>`
   player (id: ${p => p.id}) {
     id
     first_name
@@ -351,7 +351,7 @@ const getPlayerById = rql<{ id: number }>`
   }
 `;
 
-getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
+playerById.run<Player> (querier, { id: 1 }).then (console.log);
 
 // [ { id: 1, first_name: 'Logan', last_name: 'Groen' } ]
 ```
@@ -360,7 +360,7 @@ getPlayerById.run<Player> (querier, { id: 1 }).then (console.log);
 To provide refs between two tables. When these aren't provided, RefQL tries to guess them.
 
 ```ts
-const getPlayers = rql`
+const playerQuery = rql`
   player (id: 1) {
     id
     first_name
@@ -372,7 +372,7 @@ const getPlayers = rql`
   }
 `;
 
-getPlayers.run<Player> (querier, {}).then (console.log);
+playerQuery.run<Player> (querier, {}).then (console.log);
 
 // [
 //   {
@@ -388,7 +388,7 @@ getPlayers.run<Player> (querier, {}).then (console.log);
 To provide refs between the junction table (xtable) and the two involved tables.
 
 ```ts
-const getPlayers = rql`
+const playerQuery = rql`
   player (id: 1) {
     id
     first_name
@@ -404,7 +404,7 @@ const getPlayers = rql`
   }
 `;
 
-getPlayers.run<Player> (querier, {}).then (console.log);
+playerQuery.run<Player> (querier, {}).then (console.log);
 
 // {
 //     id: 1,
@@ -422,13 +422,13 @@ getPlayers.run<Player> (querier, {}).then (console.log);
 To select all columns.
 
 ```ts
-const getPlayer = rql`
+const player1 = rql`
   player (id: 1) {
     *
   }
 `;
 
-getPlayer.run<Player> (querier, {}).then (console.log);
+player1.run<Player> (querier, {}).then (console.log);
 
 // [
 //   {
@@ -446,14 +446,14 @@ getPlayer.run<Player> (querier, {}).then (console.log);
 Column names and function names can be aliased by placing 1 colon `:` after the name followed by the alias.
 
 ```ts
-const getPlayer = rql`
+const player1 = rql`
   player (id: 1) {
     id: identifier
     concat: fullName (last_name, ' ', first_name)
   }
 `;
 
-getPlayer.run<Player> (querier, {}).then (console.log);
+player1.run<Player> (querier, {}).then (console.log);
 
 // [ { identifier: 1, fullname: 'Groen Logan' } ]
 ```
@@ -462,14 +462,14 @@ getPlayer.run<Player> (querier, {}).then (console.log);
 Column names, function names and variables can be cast to another type by placing 2 colons `::` after the name, or if you are already using an alias then you must place them after the alias.
 
 ```ts
-const getPlayer = rql`
+const player1 = rql`
   player (id: 1) {
     id::text
     substring: birthYear::int (birthday::text, 0, ${"5"}::int)
   }
 `;
 
-getPlayer.run<Player> (querier, {}).then (console.log);
+player1.run<Player> (querier, {}).then (console.log);
 
 // [ { id: '1', birthyear: 1989 } ]
 ```
@@ -484,7 +484,7 @@ const goalCount = sql`
   where player_id = ${(_p, t) => t}.id
 `;
 
-const getPlayer = rql`
+const player9 = rql`
   player (id: 9) {
     id
     first_name
@@ -493,7 +493,7 @@ const getPlayer = rql`
   }
 `;
 
-getPlayer.run<Player> (querier, {}).then (console.log);
+player9.run<Player> (querier, {}).then (console.log);
 
 // [ { id: 9, first_name: 'Lydia', last_name: 'Graham', goal_count: 4 } ]
 ```
@@ -505,7 +505,7 @@ Running functions is not difficult at all and the example below is quite self-ex
 const position =
   sql`select name from position where id = ${(_p, t) => t}.position_id`;
 
-const getPlayer = rql`
+const player1 = rql`
   player (id: 1) {
     id
     date_part: age ("year", age (birthday))
@@ -513,7 +513,7 @@ const getPlayer = rql`
   }
 `;
 
-getPlayer.run<Player> (querier, {}).then (console.log);
+player1.run<Player> (querier, {}).then (console.log);
 
 // [ { id: 1, age: 33, fullnameandposition: 'LOGAN GROEN, Goalkeeper' } ]
 ```
@@ -522,7 +522,7 @@ getPlayer.run<Player> (querier, {}).then (console.log);
 The following literals are supported: Boolean, String, Number, and Null.
 
 ```ts
-const getPlayer = rql`
+const player1 = rql`
   player (id: 1) {
     "age": numberOfYears
     concat: literals(true, "_", false, "_", 5)
@@ -532,7 +532,7 @@ const getPlayer = rql`
   }
 `;
 
-getPlayer.run<Player> (querier, {}).then (console.log);
+player1.run<Player> (querier, {}).then (console.log);
 
 // [
 //   {
@@ -556,7 +556,7 @@ Compliant implementation of `fantasy-land/map`.
 ```ts
 import { Root, rql, RQLTag, sql } from "https://deno.land/x/refql/mod.ts";
 
-const playerQuery = rql`
+const player9 = rql`
   player (id: 9) { * }
 `;
 
@@ -576,11 +576,11 @@ const hasMany = <Params>(tag: RQLTag<Params>, as: string) => <Params2>(node: Roo
   return node.addMember (tag.node.toHasMany ().setAs (as));
 };
 
-const getPlayer = playerQuery
+const fullPlayer = player9
   .map (belongsTo (teamQuery))
   .map (hasMany (goalQuery, "goals"));
 
-getPlayer.run<Player> (querier, {}).then (console.log);
+fullPlayer.run<Player> (querier, {}).then (console.log);
 
 // [
 //   {
@@ -611,7 +611,7 @@ const goalQuery = rql`
   goal { * }
 `;
 
-const getPlayerById = rql<{ id: number }>`
+const fullPlayer = rql<{ id: number }>`
   ${Table ("player")} {
     *
     - ${teamQuery}
@@ -623,7 +623,7 @@ const getPlayerById = rql<{ id: number }>`
 `;
 
 
-getPlayerById.run<Player> (querier, { id: 9 }).then (console.log);
+fullPlayer.run<Player> (querier, { id: 9 }).then (console.log);
 
 // [
 //   {
@@ -648,7 +648,7 @@ getPlayerById.run<Player> (querier, { id: 9 }).then (console.log);
 If you use a function placeholder inside `sql` or `rql`, the first parameter of that function will be the object that you pass as the second argument to `run`. Inside `rql`, u can also access the table that you're working on through the second parameter of the function placeholder.
 
 ```ts
-const getPlayer = rql<{ limit: number }>`
+const playerQuery = rql<{ limit: number }>`
   player (limit: ${p => p.limit}){
     *
     ${sql`
@@ -667,7 +667,7 @@ const equivalent = rql<{ limit: number }>`
 `;
 
 
-getPlayer.run<Player> (querier, { limit: 1 }).then (console.log);
+playerQuery.run<Player> (querier, { limit: 1 }).then (console.log);
 
 // [
 //   {

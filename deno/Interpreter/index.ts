@@ -74,7 +74,7 @@ const Interpreter = <Params> (params: Params) => {
 
         return interpretMembers (members, table)
           .map (selectRefs (x, refs.lxrefs))
-          .map (fromTable (table))
+          .map (fromTable (table, true))
           .map (joinOn (refs.rxrefs, refs.rrefs, table, x))
           .map (whereIn (refs.lrefs, refs.lxrefs, rows, x))
           .map (byId (table, id))

@@ -20,9 +20,9 @@ export const byId = (table: Table, id?: string | number, op: "where" | "and" = "
 export const castAs = (sql: boolean | null | number | string, as?: string, cast?: string) =>
   `${sql}${cast ? `::${cast}` : ""}${as ? ` as ${as}` : ""}`;
 
-export const fromTable = (table: Table) => chain (
+export const fromTable = (table: Table, distinct: boolean = false) => chain (
   get ("comps"),
-  comps => set ("query", `select ${comps.join (", ")} from ${table.write ()}`)
+  comps => set ("query", `select${distinct ? " distinct" : ""} ${comps.join (", ")} from ${table.write ()}`)
 );
 
 export const joinOn = (lrefs: Ref[], rrefs: Ref[], table: Table, xTable: Table) =>
