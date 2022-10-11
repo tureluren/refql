@@ -114,4 +114,18 @@ describe ("RQLTag type", () => {
     expect (Object.keys (game)).toEqual (["result"]);
     expect (players.length).toBe (30);
   });
+
+  test ("No record found", async () => {
+    const tag = rql`
+      player (id: "dummy") { 
+        < goal {
+          *
+        }
+      }
+    `;
+
+    const players = await tag.run<Player> (querier, {});
+
+    expect (players.length).toBe (0);
+  });
 });

@@ -21,6 +21,9 @@ const match = (row: any, nextRows: any[], lrefs: string[], rrefs: string[]) =>
 const aggregate = (querier: Querier<StringMap>, interpret: InterpretF<unknown>, node: Root<unknown>) => {
   const go = (compiled: Rec): Promise<any[]> => {
     return querier (compiled.query, compiled.values).then (rows => {
+      if (!rows.length) {
+        return Promise.resolve ([]);
+      }
       const next = compiled.next.map (nxt =>
         go (interpret (nxt.node, createEnv (compiled.table, nxt.refs), rows))
       );
