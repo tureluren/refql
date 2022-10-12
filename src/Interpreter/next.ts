@@ -9,7 +9,7 @@ import { refsToComp } from "./sqlBuilders";
 const createRef = (table: Table) => (kw: string, refs: string) =>
   refs.split (",").map ((ref, idx) => ({
     name: ref.trim (),
-    as: `${table.as}${kw}${idx}`
+    as: `${(table.as).replace (/_/g, "")}${kw}${idx}`
   }));
 
 const next = <Params>(params: Params) => (node: ASTNode<Params>, rec: Rec) => {
