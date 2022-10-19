@@ -421,3 +421,37 @@ getPlayer.run<Player> (querier, { id: 9 }).then (console.log);
 // const hasMany2 = <Params>(tag: RQLTag<Params>, as: string) => <Params2>(node: Root<Params2>) => {
 //   return node.addMember (tag.node.toHasMany (as));
 // };
+
+// const insert = sql`
+//   insert into user ${Insert (["a", "b"], [])}
+// `;
+
+// const insert2 = sql`
+//   ${Insert ("user", ["a", "b"], [])}
+// `;
+
+// const update = sql`
+//   update user set ${Update (["a", "b"], {})}
+//   where id = 1
+// `;
+
+// const update2 = sql`
+//   ${Update ("user", ["a", "b"], {})}
+//   where id = 1
+// `;
+
+/**
+ * Insert type (table of string, col arr array of 1 obj)
+ * lower insert function die compile doet
+ * update type
+ * Select type
+ * delete
+ *  case of ??
+ *
+ * ditch in en maak array type ? of ditch enkel keyword
+ *
+ * from table, is da wel een goe idee ?
+ * export
+ * Select
+ * table compile ipv write
+ */

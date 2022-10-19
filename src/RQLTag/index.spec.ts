@@ -117,7 +117,7 @@ describe ("RQLTag type", () => {
 
   test ("No record found", async () => {
     const tag = rql`
-      player (id: "dummy") { 
+      player (id: 999999999) { 
         < goal {
           *
         }

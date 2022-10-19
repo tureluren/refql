@@ -1,5 +1,6 @@
 import In from "../In";
 import Raw from "../Raw";
+import Select from "../Select";
 import Table from "../Table";
 import format from "../test/format";
 import compileSQLTag from "./compileSQLTag";
@@ -31,5 +32,20 @@ describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and v
     `));
 
     expect (values).toEqual ([1, 2, 3, 30]);
+  });
+
+  test ("select", () => {
+    const tag = sql`
+      ${Select ("player", ["first_name", "last_name"])}
+    `;
+
+    const [query, values] = compileSQLTag (tag, 0, { limit: 30 });
+
+    expect (query).toBe (format (`
+      select player.first_name, player.last_name
+      from player player 
+    `));
+
+    expect (values).toEqual ([]);
   });
 });

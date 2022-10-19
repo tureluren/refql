@@ -8,6 +8,7 @@ import In from "../In";
 import { Variable } from "../nodes";
 import Raw from "../Raw";
 import rql from "../RQLTag/rql";
+import Select from "../Select";
 import { Player } from "../soccer";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
@@ -105,5 +106,15 @@ describe ("SQLTag type", () => {
     } catch (err: any) {
       expect (err.message).toBe ("You can't use RQL Tags inside SQL Tags");
     }
+  });
+
+  test ("select", async () => {
+    const tag = sql`
+      ${Select ("player", ["first_name", "last_name"])}
+    `;
+
+    const players = await tag.run<Player> (querier, { limit: 5, offset: 1 });
+
+    expect (Object.keys (players[0])).toEqual (["first_name", "last_name"]);
   });
 });

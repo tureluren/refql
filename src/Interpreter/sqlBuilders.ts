@@ -4,6 +4,7 @@ import { Ref } from "../common/types";
 import { evolve, get, over, set } from "../Env/access";
 import Rec from "../Env/Rec";
 import In from "../In";
+import Select from "../Select";
 import Table from "../Table";
 
 export const byId = (table: Table, id?: string | number, op: "where" | "and" = "and") => chain (
@@ -22,7 +23,7 @@ export const castAs = (sql: boolean | null | number | string, as?: string, cast?
 
 export const fromTable = (table: Table, distinct: boolean = false) => chain (
   get ("comps"),
-  comps => set ("query", `select${distinct ? " distinct" : ""} ${comps.join (", ")} from ${table.write ()}`)
+  comps => set ("query", Select (table, comps).compile (false, distinct)[0])
 );
 
 export const joinOn = (lrefs: Ref[], rrefs: Ref[], table: Table, xTable: Table) =>
@@ -76,9 +77,10 @@ export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) =
       const uniqRows = [...new Set (rows.map (r => r[lr.as]))];
       const rr = rrefs[idx];
       const op = idx === 0 ? "" : "and ";
+      const [inStr] = In (uniqRows).compile (vals.length);
 
       return [
-        `${sql} ${op}${table.as}.${rr.name} ${In (uniqRows).write (vals.length)}`,
+        `${sql} ${op}${table.as}.${rr.name} ${inStr}`,
         vals.concat (uniqRows)
       ];
     }, ["where", values]);

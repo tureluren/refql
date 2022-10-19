@@ -4,7 +4,7 @@ interface Table {
   name: string;
   as: string;
   schema?: string;
-  write(): string;
+  compile(): [string, any[]];
   toString(): string;
 }
 
@@ -13,7 +13,7 @@ const tableType = "refql/Table";
 const prototype = {
   constructor: Table,
   [refqlType]: tableType,
-  write, toString
+  compile, toString
 };
 
 function Table(name: string, as?: string, schema?: string) {
@@ -25,8 +25,8 @@ function Table(name: string, as?: string, schema?: string) {
   return table;
 }
 
-function write(this: Table) {
-  return `${this.schema ? `${this.schema}.` : ""}${this.name} ${this.as}`;
+function compile(this: Table) {
+  return [`${this.schema ? `${this.schema}.` : ""}${this.name} ${this.as}`];
 }
 
 function toString(this: Table) {

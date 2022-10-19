@@ -9,4 +9,13 @@ describe ("In type", () => {
     expect (In.isIn (inn)).toBe (true);
     expect (In.isIn ({})).toBe (false);
   });
+
+  test ("compile In", () => {
+    const arr = [1, 2, 3];
+    const inn = In (arr);
+    const [inStr, inValues] = inn.compile ();
+
+    expect (inStr).toBe ("in ($1,$2,$3)");
+    expect (inValues).toEqual (arr);
+  });
 });

@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 
 interface In<T> {
   arr: T[];
-  write(paramIdx: number): string;
+  compile(paramIdx?: number): [string, any[]];
   toString(): string;
 }
 
@@ -11,7 +11,7 @@ const inType = "refql/In";
 const prototype = {
   constructor: In,
   [refqlType]: inType,
-  write, toString
+  compile, toString
 };
 
 function In<T>(arr: T[]) {
@@ -21,7 +21,7 @@ function In<T>(arr: T[]) {
   return inn;
 }
 
-function write(this: In<unknown>, paramIdx: number) {
+function compile(this: In<unknown>, paramIdx: number = 0) {
   let paramStr = "";
 
   for (let idx = 0; idx < this.arr.length; idx++) {
@@ -29,7 +29,7 @@ function write(this: In<unknown>, paramIdx: number) {
     paramStr += pre + "$" + (paramIdx + idx + 1);
   }
 
-  return `in (${paramStr})`;
+  return [`in (${paramStr})`, this.arr];
 }
 
 function toString(this: In<unknown>) {
