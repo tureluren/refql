@@ -454,4 +454,9 @@ getPlayer.run<Player> (querier, { id: 9 }).then (console.log);
  * export
  * Select
  * table compile ipv write
+ * rekening houden met table schema
+ *
+ * sig compile (options, idx)
+ *
+ * handle * en columns to insert af in helpers en table alsook kijken of object of array bij insert
  */

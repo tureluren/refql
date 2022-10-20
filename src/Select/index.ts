@@ -15,10 +15,10 @@ const prototype = {
   compile, toString
 };
 
-function Select(table: Table | string, columns: string[] = []) {
+function Select(table: Table, columns: string[]) {
   let select: Select = Object.create (prototype);
-  select.table = typeof table === "string" ? Table (table) : table;
-  select.columns = columns.length ? columns : ["*"];
+  select.table = table;
+  select.columns = columns || [];
 
   return select;
 }
@@ -30,7 +30,7 @@ function compile(this: Select, prefix = true, distinct = false) {
       : this.columns
     ).join (", ");
 
-  return [`select${distinct ? " distinct" : ""} ${str} from ${this.table.compile ()[0]}`, []];
+  return [`select${distinct ? " distinct" : ""} ${str} from ${this.table.compile (true)[0]}`, []];
 }
 
 Select.isSelect = function (value: any): value is Select {

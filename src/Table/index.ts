@@ -4,7 +4,7 @@ interface Table {
   name: string;
   as: string;
   schema?: string;
-  compile(): [string, any[]];
+  compile(alias?: boolean): [string, any[]];
   toString(): string;
 }
 
@@ -25,8 +25,8 @@ function Table(name: string, as?: string, schema?: string) {
   return table;
 }
 
-function compile(this: Table) {
-  return [`${this.schema ? `${this.schema}.` : ""}${this.name} ${this.as}`];
+function compile(this: Table, alias: boolean = false) {
+  return [`${this.schema ? `${this.schema}.` : ""}${this.name}${alias ? ` ${this.as}` : ""}`];
 }
 
 function toString(this: Table) {

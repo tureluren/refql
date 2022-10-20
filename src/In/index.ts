@@ -22,18 +22,13 @@ function In<T>(arr: T[]) {
 }
 
 function compile(this: In<unknown>, paramIdx: number = 0) {
-  let paramStr = "";
-
-  for (let idx = 0; idx < this.arr.length; idx++) {
-    const pre = idx === 0 ? "" : ",";
-    paramStr += pre + "$" + (paramIdx + idx + 1);
-  }
+  let paramStr = this.arr.map ((_, idx) => `$${idx + paramIdx + 1}`).join (", ");
 
   return [`in (${paramStr})`, this.arr];
 }
 
 function toString(this: In<unknown>) {
-  return `In ([${this.arr}])`;
+  return `In ([${this.arr.join (", ")}])`;
 }
 
 In.isIn = function <T> (value: any): value is In<T> {

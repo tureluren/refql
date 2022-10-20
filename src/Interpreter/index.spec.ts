@@ -155,7 +155,7 @@ describe ("Interpreter", () => {
     expect (query).toBe (format (`
       select goals.*, goals.player_id as goalsrref0
       from public.goal goals
-      where goals.player_id in ($1,$2,$3)
+      where goals.player_id in ($1, $2, $3)
       limit $4
       offset $5
     `));
@@ -178,7 +178,7 @@ describe ("Interpreter", () => {
     expect (query).toBe (format (`
       select team.*, team.competition_id as leaguelref0, team.id as teamrref0
       from team team
-      where team.id in ($1,$2)
+      where team.id in ($1, $2)
       and team.name like 'FC%'
     `));
 
@@ -206,7 +206,7 @@ describe ("Interpreter", () => {
       select distinct games.*, PLAYERGAME.player_id as gameslxref0
       from game games 
       join PLAYERGAME as PLAYERGAME on PLAYERGAME.game_id = games.id 
-      where PLAYERGAME.player_id in ($1,$2,$3)
+      where PLAYERGAME.player_id in ($1, $2, $3)
     `));
 
     expect (values).toEqual ([1, 2, 3]);
@@ -227,8 +227,8 @@ describe ("Interpreter", () => {
       join player_game as player_game
         on player_game.game_id = games.id
         and player_game.game_league_id = games.league_id
-      where player_game.player_id in ($1,$2,$3)
-        and player_game.player_team_id in ($4,$5)
+      where player_game.player_id in ($1, $2, $3)
+        and player_game.player_team_id in ($4, $5)
     `));
 
     expect (values).toEqual ([1, 2, 3, 1, 2]);

@@ -5,11 +5,13 @@ import SQLTag from ".";
 import { flConcat, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import In from "../In";
+import Insert from "../Insert";
 import { Variable } from "../nodes";
 import Raw from "../Raw";
 import rql from "../RQLTag/rql";
 import Select from "../Select";
 import { Player } from "../soccer";
+import Table from "../Table";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
@@ -110,11 +112,42 @@ describe ("SQLTag type", () => {
 
   test ("select", async () => {
     const tag = sql`
-      ${Select ("player", ["first_name", "last_name"])}
+      ${Select (Table ("player"), ["first_name", "last_name"])}
     `;
 
     const players = await tag.run<Player> (querier, { limit: 5, offset: 1 });
 
     expect (Object.keys (players[0])).toEqual (["first_name", "last_name"]);
+  });
+
+  test ("insert", async () => {
+    const tag = sql`
+      ${Insert (Table ("goal"), ["game_id", "player_id", "minute"], [{ game_id: 1, player_id: 2, minute: 75 }])}
+      returning *
+    `;
+
+    const goals: any[] = await tag.run<Player> (querier, {});
+
+    expect (goals.length).toBe (1);
+    expect (goals[0].game_id).toBe (1);
+    expect (goals[0].player_id).toBe (2);
+    expect (goals[0].minute).toBe (75);
+  });
+
+  test ("insert multiple", async () => {
+    const tag = sql`
+      ${Insert (Table ("goal"), ["game_id", "player_id", "minute"], [{ game_id: 1, player_id: 2, minute: 75 }, { game_id: 1, player_id: 9, minute: 85 }])}
+      returning *
+    `;
+
+    const goals: any[] = await tag.run<Player> (querier, {});
+
+    expect (goals.length).toBe (2);
+    expect (goals[0].game_id).toBe (1);
+    expect (goals[0].player_id).toBe (2);
+    expect (goals[0].minute).toBe (75);
+    expect (goals[1].game_id).toBe (1);
+    expect (goals[1].player_id).toBe (9);
+    expect (goals[1].minute).toBe (85);
   });
 });

@@ -1,5 +1,6 @@
 import SQLTag from ".";
 import In from "../In";
+import Insert from "../Insert";
 import Raw from "../Raw";
 import RQLTag from "../RQLTag";
 import Select from "../Select";
@@ -31,7 +32,7 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
 
       if (Table.isTable (value)) {
         const [tableStr] = acc.toLowerCase ().endsWith ("from")
-          ? value.compile ()
+          ? value.compile (true)
           : [value.as];
         return `${acc} ${tableStr}`;
       }
@@ -50,6 +51,12 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
         const [selectStr] = value.compile (true, false);
 
         return `${acc} ${selectStr}`;
+      }
+
+      if (Insert.isInsert (value)) {
+        const [insertStr, insertValues] = value.compile (paramIdx + values.length);
+        values.push (...insertValues);
+        return `${acc} ${insertStr}`;
       }
 
       values.push (value);
