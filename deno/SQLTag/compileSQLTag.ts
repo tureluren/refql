@@ -1,7 +1,9 @@
 import SQLTag from "./index.ts";
 import In from "../In/index.ts";
+import Insert from "../Insert/index.ts";
 import Raw from "../Raw/index.ts";
 import RQLTag from "../RQLTag/index.ts";
+import Select from "../Select/index.ts";
 import Table from "../Table/index.ts";
 import formatSQLString from "./formatSQLString.ts";
 
@@ -29,9 +31,10 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
       }
 
       if (Table.isTable (value)) {
-        return acc.toLowerCase ().endsWith ("from")
-          ? `${acc} ${value.write ()}`
-          : `${acc} ${value.as}`;
+        const [tableStr] = acc.toLowerCase ().endsWith ("from")
+          ? value.compile (true)
+          : [value.as];
+        return `${acc} ${tableStr}`;
       }
 
       if (Raw.isRaw (value)) {
@@ -39,15 +42,26 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
       }
 
       if (In.isIn (value)) {
-        const inStr = value.write (paramIdx + values.length);
-        values.push (...value.arr);
+        const [inStr, inValues] = value.compile (paramIdx + values.length);
+        values.push (...inValues);
         return `${acc} ${inStr}`;
+      }
+
+      if (Select.isSelect (value)) {
+        const [selectStr] = value.compile (true, false);
+
+        return `${acc} ${selectStr}`;
+      }
+
+      if (Insert.isInsert (value)) {
+        const [insertStr, insertValues] = value.compile (paramIdx + values.length);
+        values.push (...insertValues);
+        return `${acc} ${insertStr}`;
       }
 
       values.push (value);
 
       return `${acc} $${paramIdx + values.length}`;
-
     }, "");
   };
 
