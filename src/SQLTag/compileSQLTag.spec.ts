@@ -4,6 +4,7 @@ import Raw from "../Raw";
 import Select from "../Select";
 import Table from "../Table";
 import format from "../test/format";
+import Update from "../Update";
 import compileSQLTag from "./compileSQLTag";
 import sql from "./sql";
 
@@ -60,6 +61,23 @@ describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and v
     expect (query).toBe (format (`
       insert into player (first_name, last_name)
       values ($1, $2)
+    `));
+
+    expect (values).toEqual (["John", "Doe"]);
+  });
+
+  test ("update", () => {
+    const tag = sql`
+      ${Update (Table ("player"), ["first_name", "last_name"], { first_name: "John", last_name: "Doe" })}
+      where id = 1
+    `;
+
+    const [query, values] = compileSQLTag (tag, 0, {});
+
+    expect (query).toBe (format (`
+      update player 
+      set first_name = $1, last_name = $2
+      where id = 1
     `));
 
     expect (values).toEqual (["John", "Doe"]);

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Pool } from "pg";
 import mySql from "mysql2";
 import In from "./In";
@@ -459,4 +460,162 @@ getPlayer.run<Player> (querier, { id: 9 }).then (console.log);
  * sig compile (options, idx)
  *
  * handle * en columns to insert af in helpers en table alsook kijken of object of array bij insert
+ *
+ * TABLE("public.user as 'user'"")
  */
+
+// filters
+
+const filters = rql<{q: string}>`
+  player {
+    id
+    first_name
+    last_name
+
+    ? id = '%${p => p.q}'
+    & (last_name = '%${p => p.q}'
+      || first_name like)
+  }
+ `;
+
+const team = ``;
+
+// const query = rql (
+//   select`p.id, p.last_name, p.first_name`,
+//   from`player p`,
+//   where`id = ${p => p.id}`
+//  ).run ();
+
+
+const teamById = team<{id: number}> (
+  select`
+    id, last_name, first_name, age
+    birthday, position_id
+  `,
+  filter`id = ${p => p.id}`,
+  include (team)
+);
+
+const playerById = player<{id: number}> `
+  select {
+    id first_name last_name
+  }
+  where id = ${p => p.id}
+`;
+
+const playerById = player<{id: number}> (
+  select (p => (["id", "first_name"])),
+  where (p => ({ id: p.id }))
+);
+
+const playerByIdOld = rql`
+  player (id: ${p => p.id}) {
+    id
+    first_name
+    < goal: goals (limit: 5) {
+      id
+      minute
+    }
+  }
+`;
+
+const Player = Table ({
+  goal: ["id", "player_id"]
+});
+
+const goal = Table`
+  id
+  minute
+`;
+
+const player = Player`
+  id
+  first_Ma,e
+  last_name
+  ${Goal`
+
+  `}
+
+  ${paginate}
+  ${orderBy}
+`;
+
+
+const player2 = Player`
+  id
+  first_name
+  last_name
+
+  ${p => p.id}
+`;
+
+const teamQuery = Team`
+  id
+  name
+`;
+
+const withTeam = include (team);
+
+// laat idfield specifieren bij Table({idField: 'id'})
+const playerById = Player ({ id: p => p.id })`
+  id
+  first_name
+  last_name
+  ${Goal (p => ({ limit: p.limit }))`
+    id
+    minute
+  `}
+  ${sql ({ as: "goalCount" })`
+    where id = ${p => p.id}
+  `}
+`;
+
+const readPlayerById = pipe (
+  player,
+  byId,
+  withTeam
+);
+
+const readPlayerById = Player`
+  id first_name last_name
+  age position_id
+  ${orderByLastName}
+  ${paginate}
+`;
+
+const readPlayerById = Player`
+  id
+  first_name
+  last_name
+  age
+  position_id
+  ${orderByLastName}
+  ${paginate}
+`;
+
+const readPlayerById = Player (
+  selectField,
+  byId
+);
+
+// velden zijn pieces
+// als 1 ding verandert kunt ge gemeenschapelijke
+// fields al niemeer gebruike
+const playersPage = Player`
+  id
+  first_name
+  last_name
+  position_id 
+  team_id birtday
+
+  ${orderByLastName}
+  ${paginate}
+`;
+
+const playersPage = Player`
+  ${orderByLastName}
+  ${paginate}
+`;
+
+const readPlayersPage = (limit, offset) =>
+  playersPage.run ({ limit, offset });

@@ -8,6 +8,7 @@ import SQLTag from "./SQLTag";
 import compileSQLTag from "./SQLTag/compileSQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
+import Update from "./Update";
 
 export * from "./nodes";
 export * from "./common/types";
@@ -22,5 +23,6 @@ export {
   Select,
   sql,
   SQLTag,
-  Table
+  Table,
+  Update
 };

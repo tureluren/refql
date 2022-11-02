@@ -5,6 +5,7 @@ import Raw from "../Raw";
 import RQLTag from "../RQLTag";
 import Select from "../Select";
 import Table from "../Table";
+import Update from "../Update";
 import formatSQLString from "./formatSQLString";
 
 const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Params, table?: Table): [string, any[]] => {
@@ -57,6 +58,12 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
         const [insertStr, insertValues] = value.compile (paramIdx + values.length);
         values.push (...insertValues);
         return `${acc} ${insertStr}`;
+      }
+
+      if (Update.isUpdate (value)) {
+        const [updateStr, updateValues] = value.compile (paramIdx + values.length);
+        values.push (...updateValues);
+        return `${acc} ${updateStr}`;
       }
 
       values.push (value);

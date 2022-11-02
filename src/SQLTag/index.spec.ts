@@ -16,6 +16,7 @@ import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import userConfig from "../test/userConfig";
+import Update from "../Update";
 import sql from "./sql";
 
 describe ("SQLTag type", () => {
@@ -149,5 +150,22 @@ describe ("SQLTag type", () => {
     expect (goals[1].game_id).toBe (1);
     expect (goals[1].player_id).toBe (9);
     expect (goals[1].minute).toBe (85);
+  });
+
+  test ("update", async () => {
+    const tag = sql`
+      ${Update (Table ("player"), ["first_name", "last_name"], { first_name: "John", last_name: "Doe" })}
+      where id = 1
+    `;
+
+    await tag.run<Player> (querier, {});
+
+    const [updated] = await sql`
+      select first_name, last_name from player
+      where id = 1
+    `.run<any> (querier, {});
+
+    expect (updated.first_name).toBe ("John");
+    expect (updated.last_name).toBe ("Doe");
   });
 });

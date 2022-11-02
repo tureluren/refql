@@ -8,6 +8,7 @@ import SQLTag from "./SQLTag/index.ts";
 import compileSQLTag from "./SQLTag/compileSQLTag.ts";
 import sql from "./SQLTag/sql.ts";
 import Table from "./Table/index.ts";
+import Update from "./Update/index.ts";
 
 export * from "./nodes";
 export * from "./common/types.ts";
@@ -22,5 +23,6 @@ export {
   Select,
   sql,
   SQLTag,
-  Table
+  Table,
+  Update
 };
