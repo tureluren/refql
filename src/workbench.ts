@@ -619,3 +619,27 @@ const playersPage = Player`
 
 const readPlayersPage = (limit, offset) =>
   playersPage.run ({ limit, offset });
+
+// concat wel mogelijk
+Player`id`.concat (Player`first_name last_name`);
+
+Player`
+  id
+  name
+  ${Goal},
+  ${Team}
+`;
+
+// implie *
+Player`
+  ${Goal},
+  ${Team}
+`;
+
+Player`
+  id
+  firstName
+  ${Player`last_name`} ->> merge
+  ${Goal},
+  ${Team}
+`;
