@@ -643,3 +643,19 @@ Player`
   ${Goal},
   ${Team}
 `;
+
+Player`
+  id
+  first_name
+  goals -> resolve in Table ({ goals: { }})
+  team
+`;
+
+// laat dan in resolver team ophalen advh sql tag defined by user zelf
+// aggregate by user
+Table ({
+  goals: sql`
+    selecte from goal
+    where player_id = ${p => p.user.id} 
+  `
+});
