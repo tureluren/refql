@@ -659,3 +659,34 @@ Table ({
     where player_id = ${p => p.user.id} 
   `
 });
+
+const BasePlayer = Player`
+  id
+  first_name
+  last_name
+`;
+
+const PlayerById = BasePlayer.concat (Player`
+  where id = ${p => p.id}
+`);
+
+const PlayerById = Player`
+  ${BasePlayer}
+  where id = ${p => p.id}
+`;
+
+const Player = Table ("public.player", () => ({
+  goals: HasMany ({
+    table: Goal,
+    lrefs: ["player_id"],
+    rrefs: ["id"]
+  })
+}));
+
+Player`
+  ${Goal} // include elke ref naar Goal
+`;
+
+Player`
+  ${Goal}:goals // enkel goals
+`;
