@@ -36,7 +36,7 @@ create table `game` (
   primary key (`id`)
 );
 
-create table `player_game` (
+create table `` (
   `player_id` integer references `player` (`id`),
   `game_id` integer references `game` (`id`),
   primary key (`player_id`, `game_id`)

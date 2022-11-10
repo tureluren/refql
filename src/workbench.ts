@@ -717,6 +717,11 @@ const Player = Table ("public.player", [
   })
 ]);
 
+const Player = Table ("public.player", [
+  () => HasMany (Goal, { as: "goals" }),
+  () => BelongsTo (Team)
+]);
+
 
 const Player = Table ("public.player", [
   hasManyGoals,
