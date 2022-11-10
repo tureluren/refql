@@ -14,40 +14,21 @@ class Parser {
   idx: number;
   tokenizer: Tokenizer;
   lookahead: Token;
+  table: Table;
 
-  constructor(str: string, values: any[]) {
+  constructor(str: string, values: any[], table: Table) {
     this.str = str;
     this.values = values;
     this.idx = 0;
     this.tokenizer = new Tokenizer (str);
     this.lookahead = this.tokenizer.getNextToken ();
+    this.table = table;
   }
 
   Root() {
-    const { table, members, keywords } = this.Table ();
+    const members = this.members ();
 
-    return Root (table, members, keywords);
-  }
-
-  HasMany() {
-    this.eat ("<");
-    const { table, members, keywords } = this.Table ();
-
-    return HasMany (table, members, keywords);
-  }
-
-  BelongsTo() {
-    this.eat ("-");
-    const { table, members, keywords } = this.Table ();
-
-    return BelongsTo (table, members, keywords);
-  }
-
-  ManyToMany() {
-    this.eat ("x");
-    const { table, members, keywords } = this.Table ();
-
-    return ManyToMany (table, members, keywords);
+    return Root (this.table, members, {});
   }
 
   Identifier() {
@@ -125,10 +106,32 @@ class Parser {
   }
 
   Variable() {
+    /**
+     * if RQLTag
+     * geef parser current table
+     * filter current table refs where hasMany of belongsTo.table == this.table, maak equals method`
+     * laat variable ook array retourneren indien meerdere matches ?
+     * if empty throw error
+     * voeg rqlTag zijn members toe aan de gevonden hasMany tag en return deze
+     * set as
+     * splice variable
+     */
+
     this.eat ("VARIABLE");
-    const key = this.values[this.idx];
+    const value = this.values[this.idx];
+    if (RQLTag.isRQLTag (value)) {
+      const { members, table } = value.node;
+
+      // vervang find door filter
+      const buh = this.table.refs.find (ref => {
+        const t = ref.table;
+        return t.equals (table);
+      })?.setMembers (members);
+
+      return buh;
+    }
     const [as, cast] = this.castAs ();
-    const variable = Variable (key, as, cast);
+    const variable = Variable (value, as, cast);
     this.idx += 1;
 
     return variable;
@@ -152,11 +155,11 @@ class Parser {
       return members;
     }
 
-    this.eat ("{");
+    // this.eat ("{");
 
-    if (this.isNext ("}")) {
-      throw new SyntaxError ("A table block should have at least one member");
-    }
+    // if (this.isNext ("}")) {
+    //   throw new SyntaxError ("A table block should have at least one member");
+    // }
 
     const members: ASTNode<unknown>[] = [];
 
@@ -169,9 +172,9 @@ class Parser {
         members.push (member);
       }
 
-    } while (!this.isNext ("}"));
+    } while (!this.isNext ("EOF"));
 
-    this.eat ("}");
+    this.eat ("EOF");
 
     return members;
   }
@@ -234,12 +237,6 @@ class Parser {
         return this.All ();
       case "IDENTIFIER":
         return this.Identifier ();
-      case "<":
-        return this.HasMany ();
-      case "-":
-        return this.BelongsTo ();
-      case "x":
-        return this.ManyToMany ();
       case "VARIABLE":
         return this.Variable ();
     }
@@ -310,7 +307,7 @@ class Parser {
   eat(tokenType: TokenType) {
     const token = this.lookahead;
 
-    if (token.type === "EOF") {
+    if (token.type === "EOF" && tokenType !== "EOF") {
       throw new SyntaxError (
         `Unexpected end of input, expected: "${tokenType}"`
       );

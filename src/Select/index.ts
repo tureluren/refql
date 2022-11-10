@@ -26,7 +26,7 @@ function Select(table: Table, columns: string[]) {
 function compile(this: Select, prefix = true, distinct = false) {
   const str = (
     prefix
-      ? this.columns.map (c => `${this.table.as}.${c}`)
+      ? this.columns.map (c => `${this.table.name}.${c}`)
       : this.columns
     ).join (", ");
 

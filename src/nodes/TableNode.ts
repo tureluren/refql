@@ -54,7 +54,7 @@ function caseOf(this: TableNode<unknown>, structureMap: StringMap, params: unkno
   return structureMap[this.constructor.name] (
     this.table,
     this.members,
-    runKeywords (params, this.table, this.keywords)
+    this.info
   );
 }
 
@@ -79,7 +79,7 @@ function toBelongsTo(this: TableNode<unknown>) {
 }
 
 function toManyToMany(this: TableNode<unknown>) {
-  return ManyToMany (this.table, this.members, this.keywords);
+  return ManyToMany (this.table, this.members, this.info);
 }
 
 export default TableNode;

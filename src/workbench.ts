@@ -675,13 +675,63 @@ const PlayerById = Player`
   where id = ${p => p.id}
 `;
 
-const Player = Table ("public.player", () => ({
-  goals: HasMany ({
-    table: Goal,
+// player and game both have goals
+const hasManyGoals = name => HasMany (Goal, {
+  as: "goals",
+  lRef: "id",
+  rRef: `${name}_id`
+});
+
+const belongsToToManyGames = (name, _schema) => ManyToMany (Game, {
+  as: "games", xTable: `${name}_game`,
+  lRef: "id", lxRef: `${name}_id`,
+  rRef: "id", rxRef: "game_id"
+});
+
+const Player = Table ("public.player", [
+  name => HasMany (Goal, {
+    as: "goals",
+    lrefs: ["id"],
+    rrefs: [`${name}_id`]
+  }),
+  () => BelongsTo (Team, {
+    as: "team",
+    lrefs: ["team_id"],
+    rrefs: [`id`]
+  })
+]);
+
+const Player = Table ("public.player", () => [
+  HasMany (Goal, {
+    as: "goals",
     lrefs: ["player_id"],
     rrefs: ["id"]
   })
-}));
+]);
+
+const Player = Table ("public.player", [
+  name => HasMany (Goal, {
+    as: "goals",
+    lRef: "id",
+    rRef: `${name}_id`
+  })
+]);
+
+
+const Player = Table ("public.player", [
+  hasManyGoals,
+  belongsToTeam
+]);
+
+
+const Player = Table ("public.player", () => [
+  HasMany ({
+    table: Goal,
+    as: "goals",
+    lrefs: ["player_id"],
+    rrefs: ["id"]
+  })
+]);
 
 Player`
   ${Goal} // include elke ref naar Goal
@@ -690,3 +740,10 @@ Player`
 Player`
   ${Goal}:goals // enkel goals
 `;
+
+// belongsToMany ipv manyToMany
+// hasOne
+
+const Player = Table ("public.player", () => [
+  () => HasMany (Goal, "goals", "player_id", "id")
+]);

@@ -31,45 +31,48 @@ const Interpreter = <Params> (params: Params) => {
     const { values, table: parent, refs, inCall } = rec;
 
     return node.caseOf<Rec> ({
-      Root: (table, members, { id, limit, offset }) =>
+      Root: (table, members) =>
         interpretMembers (members, table)
           .map (fromTable (table))
-          .map (byId (table, id, "where"))
-          .map (includeSQL (table, id != null))
-          .map (paginate (limit, offset))
+          // .map (byId (table, id, "where"))
+          // .map (includeSQL (table, id != null))
+          // .map (paginate (limit, offset))
           .rec,
 
-      HasMany: (table, members, { id, limit, offset }) => {
+      HasMany: (table, members) => {
         if (!rows) return toNext (node, rec);
 
         return interpretMembers (members, table)
           .map (selectRefs (table, refs.rrefs))
           .map (fromTable (table))
           .map (whereIn (refs.lrefs, refs.rrefs, rows, table))
-          .map (byId (table, id))
+          // .map (byId (table, id))
           .map (includeSQL (table))
-          .map (paginate (limit, offset))
+          // .map (paginate (limit, offset))
           .rec;
       },
 
-      BelongsTo: (table, members, { id, limit, offset }) => {
+      BelongsTo: (table, members) => {
         if (!rows) return toNext (node, rec);
 
         return interpretMembers (members, table)
           .map (selectRefs (table, refs.rrefs))
           .map (fromTable (table))
           .map (whereIn (refs.lrefs, refs.rrefs, rows, table))
-          .map (byId (table, id))
+          // .map (byId (table, id))
           .map (includeSQL (table))
-          .map (paginate (limit, offset))
+          // .map (paginate (limit, offset))
           .rec;
       },
 
-      ManyToMany: (table, members, { id, limit, offset, xtable }) => {
+      ManyToMany: (table, members) => {
         if (!rows) return toNext (node, rec);
 
+        // const x = Table (
+        //   xtable || `${parent.name}_${table.name}`
+        // );
         const x = Table (
-          xtable || `${parent.name}_${table.name}`
+          `${parent.name}_${table.name}`
         );
 
         return interpretMembers (members, table)
@@ -77,9 +80,9 @@ const Interpreter = <Params> (params: Params) => {
           .map (fromTable (table, true))
           .map (joinOn (refs.rxrefs, refs.rrefs, table, x))
           .map (whereIn (refs.lrefs, refs.lxrefs, rows, x))
-          .map (byId (table, id))
+          // .map (byId (table, id))
           .map (includeSQL (table))
-          .map (paginate (limit, offset))
+          // .map (paginate (limit, offset))
           .rec;
       },
 
@@ -123,7 +126,7 @@ const Interpreter = <Params> (params: Params) => {
         select (`${parent.as}.${sign}`, rec),
 
       Identifier: (name, as, cast) =>
-        select (castAs (`${parent.as}.${name}`, as, cast), rec),
+        select (castAs (`${parent.name}.${name}`, as, cast), rec),
 
       StringLiteral: (value, as, cast) =>
         select (castAs (`'${value}'`, as, cast), rec),

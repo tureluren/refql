@@ -38,11 +38,6 @@ const tokens: [RegExp, TokenType | null][] = [
   // Numbers
   [/^\d+/, "NUMBER"],
 
-  // Reference symbols
-  [/^</, "<"],
-  [/^-/, "-"],
-  [/^x\b/, "x"],
-
   // Identifiers
   [/^\*/, "*"],
   [/^\w+\./, "SCHEMA"],

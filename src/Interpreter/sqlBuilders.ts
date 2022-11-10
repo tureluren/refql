@@ -38,7 +38,7 @@ export const joinOn = (lrefs: Ref[], rrefs: Ref[], table: Table, xTable: Table) 
   );
 
 export const refsToComp = (table: Table, refs: Ref[]) =>
-  refs.map (r => `${table.as}.${r.name} as ${r.as}`);
+  refs.map (r => `${r.name} as ${r.as}`);
 
 export const paginate = (limit?: number, offset?: number) => chain (
   get ("values"),

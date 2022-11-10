@@ -1,16 +1,29 @@
 import Table from ".";
+import { HasMany } from "../nodes";
 
 describe ("Table type", () => {
-  const refsF = () => ({});
+  const Goal = Table ("public.goal");
+
+  const refsF = [
+    () => HasMany (Goal, {
+      as: "goals",
+      lRef: "id",
+      rRef: "player_id"
+    })
+  ];
+
   test ("create Table", () => {
-    const player = Table ("public.player", refsF);
-    console.log (player);
-    console.log (player.bind);
-    console.log (player.compile);
-    console.log (player.name);
-    player`
-      player { * } 
+    const Player = Table ("public.player", refsF);
+
+    const qry = Player`
+      id last_name ${Goal`id name`}
     `;
+
+    qry.run ((query, values) => {
+      console.log (query);
+      return Promise.resolve ([]);
+    }, {});
+
     // player;
 
     // const player2 = Table ("public.player", refsF);
