@@ -65,14 +65,17 @@ const Interpreter = <Params> (params: Params) => {
           .rec;
       },
 
-      ManyToMany: (table, members) => {
+      BelongsToMany: (table, members, { xTable }) => {
         if (!rows) return toNext (node, rec);
 
         // const x = Table (
         //   xtable || `${parent.name}_${table.name}`
         // );
+
+        // MAAK AL TABLE DOOR USER
         const x = Table (
-          `${parent.name}_${table.name}`
+          // `${parent.name}_${table.name}`
+          xTable
         );
 
         return interpretMembers (members, table)

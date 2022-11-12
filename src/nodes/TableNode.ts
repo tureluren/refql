@@ -3,7 +3,7 @@ import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 import BelongsTo from "./BelongsTo";
 import HasMany from "./HasMany";
-import ManyToMany from "./ManyToMany";
+import BelongsToMany from "./BelongsToMany";
 import Root from "./Root";
 
 export interface Keywords<Params, Ran extends boolean = false> extends StringMap {
@@ -33,13 +33,13 @@ interface TableNode<Params> extends ASTNode<Params> {
   toRoot(): Root<Params>;
   toHasMany(): HasMany<Params>;
   toBelongsTo(): BelongsTo<Params>;
-  toManyToMany(): ManyToMany<Params>;
+  toBelongsToMany(): BelongsToMany<Params>;
 }
 
 export const tableNodePrototype = Object.assign ({}, astNodePrototype, {
   addMember, caseOf, setAs,
   toRoot, toHasMany,
-  toBelongsTo, toManyToMany
+  toBelongsTo, toBelongsToMany
 });
 
 function addMember(this: TableNode<unknown>, node: ASTNode<unknown>) {
@@ -78,8 +78,8 @@ function toBelongsTo(this: TableNode<unknown>) {
   return BelongsTo (this.table, this.members, this.keywords);
 }
 
-function toManyToMany(this: TableNode<unknown>) {
-  return ManyToMany (this.table, this.members, this.info);
+function toBelongsToMany(this: TableNode<unknown>) {
+  return BelongsToMany (this.table, this.members, this.info);
 }
 
 export default TableNode;

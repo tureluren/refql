@@ -120,6 +120,7 @@ class Parser {
     this.eat ("VARIABLE");
     const value = this.values[this.idx];
     if (RQLTag.isRQLTag (value)) {
+      this.values.splice (this.idx, 1);
       const { members, table } = value.node;
 
       // vervang find door filter

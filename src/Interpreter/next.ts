@@ -29,12 +29,12 @@ const next = <Params>(params: Params) => (node: ASTNode<Params>, rec: Rec) => {
       refs.lrefs = refOf ("lref", lRef);
       refs.rrefs = refOf ("rref", rRef || table.name + "_id");
     },
-    ManyToMany: (child, _members, { lref, rref, lxref, rxref, as }) => {
-      // const refOf = createRef (as);
-      // refs.lrefs = refOf ("lref", lref || "id");
-      // refs.rrefs = refOf ("rref", rref || "id");
-      // refs.lxrefs = refOf ("lxref", lxref || table.name + "_id");
-      // refs.rxrefs = refOf ("rxref", rxref || child.name + "_id");
+    BelongsToMany: (child, _members, { lRef, rRef, lxRef, rxRef, as }) => {
+      const refOf = createRef (as);
+      refs.lrefs = refOf ("lref", lRef);
+      refs.rrefs = refOf ("rref", rRef);
+      refs.lxrefs = refOf ("lxref", lxRef);
+      refs.rxrefs = refOf ("rxref", rxRef);
     }
   }, params, table);
 

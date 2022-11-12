@@ -51,7 +51,7 @@ function Table(name: string, refsF?: ((name: string) => HasMany<any>)[]) {
 
 // ?
 function compile(this: Table, alias: boolean = false) {
-  return [`${this.schema ? `${this.schema}.` : ""}${this.name}${alias ? ` ${this.name}` : ""}`];
+  return [`${this.schema ? `${this.schema}.` : ""}${this.name}`];
 }
 
 function toString(this: Table) {

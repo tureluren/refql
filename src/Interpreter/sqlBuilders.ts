@@ -32,13 +32,13 @@ export const joinOn = (lrefs: Ref[], rrefs: Ref[], table: Table, xTable: Table) 
       const rk = rrefs[idx];
       const op = idx === 0 ? "" : "and ";
 
-      return `${q} ${op}${xTable.as}.${lr.name} = ${table.as}.${rk.name}`;
+      return `${q} ${op}${xTable.name}.${lr.name} = ${table.name}.${rk.name}`;
 
-    }, `${query} join ${xTable.name} as ${xTable.as} on`)
+    }, `${query} join ${xTable.name} as ${xTable.name} on`)
   );
 
 export const refsToComp = (table: Table, refs: Ref[]) =>
-  refs.map (r => `${r.name} as ${r.as}`);
+  refs.map (r => `${table.name}.${r.name} as ${r.as}`);
 
 export const paginate = (limit?: number, offset?: number) => chain (
   get ("values"),
@@ -80,7 +80,7 @@ export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) =
       const [inStr] = In (uniqRows).compile (vals.length);
 
       return [
-        `${sql} ${op}${table.as}.${rr.name} ${inStr}`,
+        `${sql} ${op}${table.name}.${rr.name} ${inStr}`,
         vals.concat (uniqRows)
       ];
     }, ["where", values]);

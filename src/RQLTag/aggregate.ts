@@ -2,7 +2,7 @@ import { Querier, StringMap } from "../common/types";
 import createEnv from "../Env/createEnv";
 import Rec from "../Env/Rec";
 import { InterpretF } from "../Interpreter";
-import { BelongsTo, HasMany, ManyToMany, Root } from "../nodes";
+import { BelongsTo, HasMany, BelongsToMany, Root } from "../nodes";
 
 const match = (row: any, nextRows: any[], lrefs: string[], rrefs: string[]) =>
   nextRows.filter ((r: any) =>
@@ -38,13 +38,13 @@ const aggregate = (querier: Querier<StringMap>, interpret: InterpretF<unknown>, 
             const lxrefs = refs.lxrefs.map (lxr => lxr.as);
 
             if (BelongsTo.isBelongsTo (node)) {
-              agg[node.table.as] = match (row, nextRows, lrefs, rrefs)[0];
+              agg[node.info.as] = match (row, nextRows, lrefs, rrefs)[0];
 
             } else if (HasMany.isHasMany (node)) {
-              agg[node.table.as] = match (row, nextRows, lrefs, rrefs);
+              agg[node.info.as] = match (row, nextRows, lrefs, rrefs);
 
-            } else if (ManyToMany.isManyToMany (node)) {
-              agg[node.table.as] = match (row, nextRows, lrefs, lxrefs);
+            } else if (BelongsToMany.isBelongsToMany (node)) {
+              agg[node.info.as] = match (row, nextRows, lrefs, lxrefs);
             }
 
             lrefs.forEach (lr => {

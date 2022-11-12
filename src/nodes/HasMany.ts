@@ -45,7 +45,7 @@ function HasMany<Params>(table: Table, info: HasManyInfo) {
 
   hasMany.table = table;
   hasMany.members = [];
-  hasMany.info = Object.assign ({}, { as: table.name }, info);
+  hasMany.info = Object.assign ({}, { as: table.name }, hasManyInfo);
 
   return hasMany;
 }
