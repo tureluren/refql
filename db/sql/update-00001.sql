@@ -36,7 +36,7 @@ create table `game` (
   primary key (`id`)
 );
 
-create table `` (
+create table `game_player` (
   `player_id` integer references `player` (`id`),
   `game_id` integer references `game` (`id`),
   primary key (`player_id`, `game_id`)
@@ -49,7 +49,7 @@ create table `goal` (
   `own_goal` boolean default false,
   `minute` integer,
   primary key (`id`),
-  constraint `goal_player_game_fkey` foreign key (`player_id`, `game_id`) references `player_game` (`player_id`, `game_id`)
+  constraint `goal_game_player_fkey` foreign key (`player_id`, `game_id`) references `game_player` (`player_id`, `game_id`)
 );
 
 create table `assist` (
@@ -58,7 +58,7 @@ create table `assist` (
   `goal_id` integer references `goal` (`id`),
   `player_id` integer references `player` (`id`),
   primary key (`id`),
-  constraint `assist_player_game_fkey` foreign key (`player_id`, `game_id`) references `player_game` (`player_id`, `game_id`)
+  constraint `assist_game_player_fkey` foreign key (`player_id`, `game_id`) references `game_player` (`player_id`, `game_id`)
 );
 
 update `setting` set `key_value` = '1' where `key_name` = 'db_schema_version';

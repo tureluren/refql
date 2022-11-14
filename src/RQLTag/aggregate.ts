@@ -3,6 +3,7 @@ import createEnv from "../Env/createEnv";
 import Rec from "../Env/Rec";
 import { InterpretF } from "../Interpreter";
 import { BelongsTo, HasMany, BelongsToMany, Root } from "../nodes";
+import HasOne from "../nodes/HasOne";
 
 const match = (row: any, nextRows: any[], lrefs: string[], rrefs: string[]) =>
   nextRows.filter ((r: any) =>
@@ -42,6 +43,9 @@ const aggregate = (querier: Querier<StringMap>, interpret: InterpretF<unknown>, 
 
             } else if (HasMany.isHasMany (node)) {
               agg[node.info.as] = match (row, nextRows, lrefs, rrefs);
+
+            } else if (HasOne.isHasOne (node)) {
+              agg[node.info.as] = match (row, nextRows, lrefs, rrefs)[0];
 
             } else if (BelongsToMany.isBelongsToMany (node)) {
               agg[node.info.as] = match (row, nextRows, lrefs, lxrefs);

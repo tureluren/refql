@@ -1,7 +1,8 @@
 import mariaDB from "mariadb";
 import Table from ".";
 import { Querier } from "../common/types";
-import { BelongsToMany, HasMany } from "../nodes";
+import { BelongsTo, BelongsToMany, HasMany } from "../nodes";
+import HasOne from "../nodes/HasOne";
 import { Player } from "../soccer";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import userConfig from "../test/userConfig";
@@ -16,8 +17,20 @@ describe ("Table type", () => {
 
   const Goal = Table ("goal");
   const Game = Table ("game");
+  const Team = Table ("team");
+  const Rating = Table ("rating");
 
   const refsF = [
+    () => BelongsTo (Team, {
+      as: "team",
+      lRef: "team_id",
+      rRef: "id"
+    }),
+    () => HasOne (Rating, {
+      as: "rating",
+      lRef: "id",
+      rRef: "player_id"
+    }),
     () => HasMany (Goal, {
       as: "goals",
       lRef: "id",
@@ -29,7 +42,7 @@ describe ("Table type", () => {
       rxRef: "player_id",
       lxRef: "game_id",
       rRef: "id",
-      xTable: "player_game"
+      xTable: Table ("player_game")
     })
   ];
 
@@ -38,8 +51,8 @@ describe ("Table type", () => {
 
     const qry = Player`
       id last_name 
-      ${Goal`id minute`}
-      ${Game`id result`}
+      ${Team`id name`}
+      ${Rating`player_id dribbling`}
     `;
 
     const playerke = await qry.run (querier, {});

@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { RefQLValue } from "../common/types";
+import { Querier, RefQLValue, StringMap } from "../common/types";
 import { HasMany } from "../nodes";
 import Parser from "../Parser";
 import RQLTag from "../RQLTag";
@@ -47,6 +47,10 @@ function Table(name: string, refsF?: ((name: string) => HasMany<any>)[]) {
   table.refs = (refsF || []).map (f => f (tableName));
 
   return table;
+}
+
+function run(this: Table, querier: Querier<StringMap>, params: unknown = {}) {
+  // implement
 }
 
 // ?

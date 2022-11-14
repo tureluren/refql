@@ -10,9 +10,8 @@ interface BelongsToManyInfo {
   rRef: string;
   lxRef: string;
   rxRef: string;
-  xTable: string;
+  xTable: Table;
 }
-
 
 interface BelongsToMany<Params> extends TableNode<Params> {
   addMember<Params2>(node: ASTNode<Params2>): BelongsToMany<Params & Params2>;

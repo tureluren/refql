@@ -5,6 +5,7 @@ import { Keywords } from "./TableNode";
 type StructureMap<Params, Return> = Partial<{
   Root: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, true>) => Return;
   HasMany: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, true>) => Return;
+  HasOne: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, true>) => Return;
   BelongsTo: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, true>) => Return;
   BelongsToMany: (table: Table, members: ASTNode<Params>[], keywords: Keywords<Params, true>) => Return;
   All: (sign: string) => Return;

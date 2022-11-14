@@ -52,6 +52,19 @@ const Interpreter = <Params> (params: Params) => {
           .rec;
       },
 
+      HasOne: (table, members) => {
+        if (!rows) return toNext (node, rec);
+
+        return interpretMembers (members, table)
+          .map (selectRefs (table, refs.rrefs))
+          .map (fromTable (table))
+          .map (whereIn (refs.lrefs, refs.rrefs, rows, table))
+          // .map (byId (table, id))
+          .map (includeSQL (table))
+          // .map (paginate (limit, offset))
+          .rec;
+      },
+
       BelongsTo: (table, members) => {
         if (!rows) return toNext (node, rec);
 
@@ -73,16 +86,16 @@ const Interpreter = <Params> (params: Params) => {
         // );
 
         // MAAK AL TABLE DOOR USER
-        const x = Table (
-          // `${parent.name}_${table.name}`
-          xTable
-        );
+        // const x = Table (
+        //   // `${parent.name}_${table.name}`
+        //   xTable
+        // );
 
         return interpretMembers (members, table)
-          .map (selectRefs (x, refs.lxrefs))
+          .map (selectRefs (xTable, refs.lxrefs))
           .map (fromTable (table, true))
-          .map (joinOn (refs.rxrefs, refs.rrefs, table, x))
-          .map (whereIn (refs.lrefs, refs.lxrefs, rows, x))
+          .map (joinOn (refs.rxrefs, refs.rrefs, table, xTable))
+          .map (whereIn (refs.lrefs, refs.lxrefs, rows, xTable))
           // .map (byId (table, id))
           .map (includeSQL (table))
           // .map (paginate (limit, offset))
