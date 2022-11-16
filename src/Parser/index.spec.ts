@@ -182,4 +182,7 @@ describe ("Parser type", () => {
     expect (() => parser.Literal ())
       .toThrowError (new SyntaxError ('Unknown Literal: "DOUBLE"'));
   });
+
+  // Test variabele die meerdere hasmanies, .. retourneert
+  // test of nested limit goe werkt
 });

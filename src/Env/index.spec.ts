@@ -1,7 +1,7 @@
 import Env from ".";
 import { flExtend, flMap } from "../common/consts";
 import emptyRefs from "../common/emptyRefs";
-import sql from "../SQLTag/sql";
+import SQLTag from "../SQLTag";
 import Table from "../Table";
 import { set } from "./access";
 import createEnv from "./createEnv";
@@ -10,7 +10,7 @@ describe ("Env type", () => {
   test ("create Env", () => {
     const rec = {
       table: Table ("player"),
-      sqlTag: sql``,
+      sqlTag: SQLTag.empty (),
       query: "",
       values: [],
       next: [],

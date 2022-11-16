@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { StringMap } from "../common/types";
 import Table from "../Table";
 import ASTNode from "./ASTNode";
-import TableNode, { Keywords, tableNodePrototype } from "./TableNode";
+import TableNode, { tableNodePrototype } from "./TableNode";
 
 interface BelongsToInfo {
   as?: string;

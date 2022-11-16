@@ -1,7 +1,6 @@
-import { StringMap } from "../common/types";
 import {
-  All, ASTNode, BelongsTo, BooleanLiteral, Call,
-  HasMany, Identifier, Literal, ManyToMany, NullLiteral,
+  All, ASTNode, BooleanLiteral, Call,
+  Identifier, Literal, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "../nodes";
 import RQLTag from "../RQLTag";
@@ -26,9 +25,7 @@ class Parser {
   }
 
   Root() {
-    const members = this.members ();
-
-    return Root (this.table, members, {});
+    return Root (this.table, this.members (), {});
   }
 
   Identifier() {
@@ -36,61 +33,6 @@ class Parser {
     const [as, cast] = this.castAs ();
 
     return Identifier (name, as, cast);
-  }
-
-  Table() {
-    let table;
-
-    if (this.isNext ("VARIABLE")) {
-      let value = this.spliceValue ();
-
-      if (RQLTag.isRQLTag (value)) {
-
-        if (this.isNext (":")) {
-          this.eat (":");
-          return value.node.setAs (this.eat ("IDENTIFIER").value);
-        }
-        return value.node;
-      } else if (Table.isTable (value)) {
-        table = value;
-      } else {
-        throw new SyntaxError ("Invalid dynamic RQLTag/Table, expected instance of RQLTag/Table");
-      }
-
-    } else {
-      const schema = this.Schema ();
-      const tableId = this.Identifier ();
-      table = Table (tableId.name, tableId.as, schema);
-    }
-
-    let keywords: StringMap = {};
-
-    if (this.isNext ("(")) {
-      this.eat ("(");
-
-      do {
-        let value;
-        const keyword = this.eat ("IDENTIFIER").value;
-        this.eat (":");
-
-        if (this.isNextLiteral ()) {
-          value = this.Literal ().value;
-        } else if (this.isNext ("VARIABLE")) {
-          value = this.spliceValue ();
-        } else {
-          throw new SyntaxError (
-            `Only Literals or Variables are allowed as keywords, not: "${this.lookahead.type}"`
-          );
-        }
-
-        keywords[keyword] = value;
-
-      } while (this.hasArg ());
-
-      this.eat (")");
-    }
-
-    return { table, members: this.members (), keywords };
   }
 
   All() {
@@ -119,17 +61,18 @@ class Parser {
 
     this.eat ("VARIABLE");
     const value = this.values[this.idx];
+
     if (RQLTag.isRQLTag (value)) {
       this.values.splice (this.idx, 1);
       const { members, table } = value.node;
 
+      // throw error if geen ref filtered
+
       // vervang find door filter
-      const buh = this.table.refs.find (ref => {
+      return this.table.refs.filter (ref => {
         const t = ref.table;
         return t.equals (table);
-      })?.setMembers (members);
-
-      return buh;
+      }).map (r => r.setMembers (members));
     }
     const [as, cast] = this.castAs ();
     const variable = Variable (value, as, cast);
@@ -142,7 +85,7 @@ class Parser {
     return Call (identifier.name, this.arguments (), identifier.as, identifier.cast);
   }
 
-  members() {
+  members(): ASTNode<unknown>[] {
     if (this.isNext ("VARIABLE")) {
       const members = this.spliceValue ();
       if (
@@ -162,7 +105,7 @@ class Parser {
     //   throw new SyntaxError ("A table block should have at least one member");
     // }
 
-    const members: ASTNode<unknown>[] = [];
+    const members = [];
 
     do {
       const member = this.Member ();
@@ -177,7 +120,7 @@ class Parser {
 
     this.eat ("EOF");
 
-    return members;
+    return members.flat ();
   }
 
   arguments() {
@@ -229,7 +172,7 @@ class Parser {
     return value;
   }
 
-  Member(): ASTNode<unknown> {
+  Member() {
     if (this.isNextLiteral ()) {
       return this.Literal ();
     }
@@ -245,7 +188,7 @@ class Parser {
     throw new SyntaxError (`Unknown Member Type: "${this.lookahead.type}"`);
   }
 
-  Argument(): ASTNode<unknown> {
+  Argument() {
     if (this.isNextLiteral ()) {
       return this.Literal ();
     }
@@ -253,7 +196,7 @@ class Parser {
       case "IDENTIFIER":
         return this.Identifier ();
       case "VARIABLE":
-        return this.Variable ();
+        return this.Variable () as Variable<unknown>;
     }
 
     throw new SyntaxError (`Unknown Argument Type: "${this.lookahead.type}"`);

@@ -49,13 +49,20 @@ describe ("Table type", () => {
   test ("create Table", async () => {
     const Player = Table ("player", refsF);
 
-    const qry = Player`
-      id last_name 
-      ${Team`id name`}
-      ${Rating`player_id dribbling`}
+    const qry = Player<{id: number}>`
+      id 
+      last_name 
+      ${Team<{limit: number}>`
+        id
+        name
+      `}
+      ${Rating`
+        player_id
+        dribbling
+      `}
     `;
 
-    const playerke = await qry.run (querier, {});
+    const playerke = await qry.run (querier, { id: 1 });
     console.log (playerke[0]);
 
     // player;

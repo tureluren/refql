@@ -1,12 +1,12 @@
 import Env from ".";
 import emptyRefs from "../common/emptyRefs";
 import { Refs } from "../common/types";
-import sql from "../SQLTag/sql";
+import SQLTag from "../SQLTag";
 import Table from "../Table";
 
 const createEnv = (table: Table, refs?: Refs, inCall = false) => Env ({
   table,
-  sqlTag: sql``,
+  sqlTag: SQLTag.empty (),
   query: "",
   values: [],
   next: [],

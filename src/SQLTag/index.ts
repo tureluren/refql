@@ -2,7 +2,9 @@ import { flConcat, flMap, refqlType } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
 import { Variable } from "../nodes";
 import compileSQLTag from "./compileSQLTag";
+import sql from "./sql";
 
+// maak empty en dus monoid
 interface SQLTag<Params> {
   values: (string | Variable<Params>)[];
   concat<Params2>(other: SQLTag<Params2>): SQLTag<Params & Params2>;
@@ -50,6 +52,10 @@ function run(this: SQLTag<unknown>, querier: Querier<StringMap>, params: unknown
     querier (query, values).then (res).catch (rej);
   });
 }
+
+SQLTag.empty = function () {
+  return sql``;
+};
 
 SQLTag.isSQLTag = function <Params> (value: any): value is SQLTag<Params> {
   return value != null && value[refqlType] === sqlTagType;

@@ -78,6 +78,7 @@ const Interpreter = <Params> (params: Params) => {
           .rec;
       },
 
+      // als includeSQL niet empty is, empty monoid sqlTag, gebruik dan LITERAL
       BelongsToMany: (table, members, { xTable }) => {
         if (!rows) return toNext (node, rec);
 

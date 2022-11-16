@@ -63,6 +63,13 @@ describe ("SQLTag type", () => {
     );
   });
 
+  test ("Monoid", () => {
+    const tag = sql`select id from player`;
+
+    expect (tag.concat (SQLTag.empty ())).toEqual (tag);
+    expect (SQLTag.empty ().concat (tag)).toEqual (tag);
+  });
+
   test ("Functor", () => {
     const tag = sql`select * from player where id = ${1}`;
 
@@ -75,97 +82,97 @@ describe ("SQLTag type", () => {
       .toEqual (tag[flMap] (limit)[flMap] (offset));
   });
 
-  test ("run", async () => {
-    type Params = {
-      limit: number;
-      offset: number;
-    };
+  // test ("run", async () => {
+  //   type Params = {
+  //     limit: number;
+  //     offset: number;
+  //   };
 
-    const paginate = sql<Params>`
-      limit ${p => p.limit}    
-      offset ${p => p.offset}    
-    `;
+  //   const paginate = sql<Params>`
+  //     limit ${p => p.limit}
+  //     offset ${p => p.offset}
+  //   `;
 
-    const tag = sql<Params>`
-      select id, first_name, ${rawLastName}
-      from player
-      where id not ${In ([1, 2, 3])}
-      ${paginate}
-    `;
+  //   const tag = sql<Params>`
+  //     select id, first_name, ${rawLastName}
+  //     from player
+  //     where id not ${In ([1, 2, 3])}
+  //     ${paginate}
+  //   `;
 
-    const players = await tag.run<Player> (querier, { limit: 5, offset: 1 });
+  //   const players = await tag.run<Player> (querier, { limit: 5, offset: 1 });
 
-    expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
-    expect (players.length).toBe (5);
+  //   expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
+  //   expect (players.length).toBe (5);
 
-  });
+  // });
 
-  test ("errors", async () => {
-    try {
-      const tag = sql`
-        select ${rql`player { * }`}      
-      `;
-      await tag.run (() => Promise.resolve ([]), undefined);
-    } catch (err: any) {
-      expect (err.message).toBe ("You can't use RQL Tags inside SQL Tags");
-    }
-  });
+  // test ("errors", async () => {
+  //   try {
+  //     const tag = sql`
+  //       select ${rql`player { * }`}
+  //     `;
+  //     await tag.run (() => Promise.resolve ([]), undefined);
+  //   } catch (err: any) {
+  //     expect (err.message).toBe ("You can't use RQL Tags inside SQL Tags");
+  //   }
+  // });
 
-  test ("select", async () => {
-    const tag = sql`
-      ${Select (Table ("player"), ["first_name", "last_name"])}
-    `;
+  // test ("select", async () => {
+  //   const tag = sql`
+  //     ${Select (Table ("player"), ["first_name", "last_name"])}
+  //   `;
 
-    const players = await tag.run<Player> (querier, { limit: 5, offset: 1 });
+  //   const players = await tag.run<Player> (querier, { limit: 5, offset: 1 });
 
-    expect (Object.keys (players[0])).toEqual (["first_name", "last_name"]);
-  });
+  //   expect (Object.keys (players[0])).toEqual (["first_name", "last_name"]);
+  // });
 
-  test ("insert", async () => {
-    const tag = sql`
-      ${Insert (Table ("goal"), ["game_id", "player_id", "minute"], [{ game_id: 1, player_id: 2, minute: 75 }])}
-      returning *
-    `;
+  // test ("insert", async () => {
+  //   const tag = sql`
+  //     ${Insert (Table ("goal"), ["game_id", "player_id", "minute"], [{ game_id: 1, player_id: 2, minute: 75 }])}
+  //     returning *
+  //   `;
 
-    const goals: any[] = await tag.run<Player> (querier, {});
+  //   const goals: any[] = await tag.run<Player> (querier, {});
 
-    expect (goals.length).toBe (1);
-    expect (goals[0].game_id).toBe (1);
-    expect (goals[0].player_id).toBe (2);
-    expect (goals[0].minute).toBe (75);
-  });
+  //   expect (goals.length).toBe (1);
+  //   expect (goals[0].game_id).toBe (1);
+  //   expect (goals[0].player_id).toBe (2);
+  //   expect (goals[0].minute).toBe (75);
+  // });
 
-  test ("insert multiple", async () => {
-    const tag = sql`
-      ${Insert (Table ("goal"), ["game_id", "player_id", "minute"], [{ game_id: 1, player_id: 2, minute: 75 }, { game_id: 1, player_id: 9, minute: 85 }])}
-      returning *
-    `;
+  // test ("insert multiple", async () => {
+  //   const tag = sql`
+  //     ${Insert (Table ("goal"), ["game_id", "player_id", "minute"], [{ game_id: 1, player_id: 2, minute: 75 }, { game_id: 1, player_id: 9, minute: 85 }])}
+  //     returning *
+  //   `;
 
-    const goals: any[] = await tag.run<Player> (querier, {});
+  //   const goals: any[] = await tag.run<Player> (querier, {});
 
-    expect (goals.length).toBe (2);
-    expect (goals[0].game_id).toBe (1);
-    expect (goals[0].player_id).toBe (2);
-    expect (goals[0].minute).toBe (75);
-    expect (goals[1].game_id).toBe (1);
-    expect (goals[1].player_id).toBe (9);
-    expect (goals[1].minute).toBe (85);
-  });
+  //   expect (goals.length).toBe (2);
+  //   expect (goals[0].game_id).toBe (1);
+  //   expect (goals[0].player_id).toBe (2);
+  //   expect (goals[0].minute).toBe (75);
+  //   expect (goals[1].game_id).toBe (1);
+  //   expect (goals[1].player_id).toBe (9);
+  //   expect (goals[1].minute).toBe (85);
+  // });
 
-  test ("update", async () => {
-    const tag = sql`
-      ${Update (Table ("player"), ["first_name", "last_name"], { first_name: "John", last_name: "Doe" })}
-      where id = 1
-    `;
+  // test ("update", async () => {
+  //   const tag = sql`
+  //     ${Update (Table ("player"), ["first_name", "last_name"], { first_name: "John", last_name: "Doe" })}
+  //     where id = 1
+  //   `;
 
-    await tag.run<Player> (querier, {});
+  //   await tag.run<Player> (querier, {});
 
-    const [updated] = await sql`
-      select first_name, last_name from player
-      where id = 1
-    `.run<any> (querier, {});
+  //   const [updated] = await sql`
+  //     select first_name, last_name from player
+  //     where id = 1
+  //   `.run<any> (querier, {});
 
-    expect (updated.first_name).toBe ("John");
-    expect (updated.last_name).toBe ("Doe");
-  });
+  //   expect (updated.first_name).toBe ("John");
+  //   expect (updated.last_name).toBe ("Doe");
+  // });
 });

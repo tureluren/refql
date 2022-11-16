@@ -9,7 +9,7 @@ interface Root<Params> extends TableNode<Params> {
 
 const rootType = "refql/Root";
 
-function Root<Params>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params>) {
+function Root<Params>(table: Table, members: ASTNode<Params>[]) {
   let root: Root<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, {
       constructor: Root,
@@ -19,7 +19,6 @@ function Root<Params>(table: Table, members: ASTNode<Params>[], keywords: Keywor
 
   root.table = table;
   root.members = members;
-  root.keywords = keywords;
 
   return root;
 }
