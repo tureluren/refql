@@ -25,7 +25,7 @@ class Parser {
   }
 
   Root() {
-    return Root (this.table, this.members (), {});
+    return Root (this.table, this.members ());
   }
 
   Identifier() {
@@ -61,20 +61,30 @@ class Parser {
 
     this.eat ("VARIABLE");
     const value = this.values[this.idx];
+    const [as, cast] = this.castAs ();
 
     if (RQLTag.isRQLTag (value)) {
       this.values.splice (this.idx, 1);
       const { members, table } = value.node;
 
-      // throw error if geen ref filtered
 
-      // vervang find door filter
-      return this.table.refs.filter (ref => {
+      const ref = this.table.refs.map (f => f (this.table.name)).find (ref => {
         const t = ref.table;
         return t.equals (table);
-      }).map (r => r.setMembers (members));
+      });
+
+      if (!ref) {
+        throw new Error ("new Ref");
+      }
+
+      const refWithMembers = ref.setMembers (members);
+
+      if (as != null) {
+        refWithMembers.info.as = as;
+      }
+
+      return refWithMembers;
     }
-    const [as, cast] = this.castAs ();
     const variable = Variable (value, as, cast);
     this.idx += 1;
 
@@ -120,7 +130,7 @@ class Parser {
 
     this.eat ("EOF");
 
-    return members.flat ();
+    return members;
   }
 
   arguments() {

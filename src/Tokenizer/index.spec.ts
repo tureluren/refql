@@ -38,13 +38,6 @@ describe ("Tokenizer type", () => {
     expect (tokenizer.getNextToken ()).toEqual ({ type: "false", value: "false" });
   });
 
-  test ("references", () => {
-    const tokenizer = new Tokenizer ("< - x");
-    expect (tokenizer.getNextToken ()).toEqual ({ type: "<", value: "<" });
-    expect (tokenizer.getNextToken ()).toEqual ({ type: "-", value: "-" });
-    expect (tokenizer.getNextToken ()).toEqual ({ type: "x", value: "x" });
-  });
-
   test ("identifiers", () => {
     const tokenizer = new Tokenizer ("* public.player");
     expect (tokenizer.getNextToken ()).toEqual ({ type: "*", value: "*" });

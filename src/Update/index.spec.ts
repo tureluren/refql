@@ -6,15 +6,16 @@ describe ("Update type", () => {
   const playerData = { first_name: "John", last_name: "Doe" };
 
   test ("create Update", () => {
-    const update = Update (Table ("player"), columns, playerData);
+    const player = Table ("player");
+    const update = Update (player, columns, playerData);
 
-    expect (update.table).toEqual (Table ("player"));
+    expect (update.table).toEqual (player);
     expect (update.columns).toEqual (columns);
     expect (update.data).toEqual (playerData);
   });
 
   test ("compile Update", () => {
-    const player = Table ("player", "p", "public");
+    const player = Table ("public.player");
     const update = Update (player, columns, playerData);
 
     const [query, values] = update.compile (2);

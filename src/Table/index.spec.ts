@@ -42,7 +42,7 @@ describe ("Table type", () => {
       rxRef: "player_id",
       lxRef: "game_id",
       rRef: "id",
-      xTable: Table ("player_game")
+      xTable: Table ("game_player")
     })
   ];
 
@@ -79,4 +79,7 @@ describe ("Table type", () => {
     // expect (Table.isTable (player)).toBe (true);
     // expect (Table.isTable ({})).toBe (false);
   });
+
+  // setoid
+  // semigroup
 });

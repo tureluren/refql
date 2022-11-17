@@ -19,6 +19,11 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
 
       let value = strOrVar.value;
 
+      if (Table.isTable (value)) {
+        const [tableStr] = value.compile ();
+        return `${acc} ${tableStr}`;
+      }
+
       if (typeof value === "function") {
         value = value (params, table);
       }
@@ -29,13 +34,6 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
 
       if (SQLTag.isSQLTag<Params> (value)) {
         return `${acc} ${go (value)}`;
-      }
-
-      if (Table.isTable (value)) {
-        const [tableStr] = acc.toLowerCase ().endsWith ("from")
-          ? value.compile (true)
-          : [value.as];
-        return `${acc} ${tableStr}`;
       }
 
       if (Raw.isRaw (value)) {

@@ -140,7 +140,7 @@ const Interpreter = <Params> (params: Params) => {
       },
 
       All: sign =>
-        select (`${parent.as}.${sign}`, rec),
+        select (`${parent.name}.${sign}`, rec),
 
       Identifier: (name, as, cast) =>
         select (castAs (`${parent.name}.${name}`, as, cast), rec),

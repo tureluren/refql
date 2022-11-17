@@ -752,3 +752,6 @@ Player`
 const Player = Table ("public.player", () => [
   () => HasMany (Goal, "goals", "player_id", "id")
 ]);
+
+
+const select = Table => Table`*`;

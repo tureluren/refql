@@ -4,6 +4,7 @@ import Interpreter from "../Interpreter";
 import Root from "../nodes/Root";
 import aggregate from "./aggregate";
 
+//concat mogelijk dan indien other table dezelfde is
 interface RQLTag<Params> {
   node: Root<Params>;
   map<Params2>(f: (node: Root<Params>) => Root<Params2>): RQLTag<Params2>;

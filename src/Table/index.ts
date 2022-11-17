@@ -8,8 +8,8 @@ interface Table {
   <Params>(strings: TemplateStringsArray, ...values: RefQLValue<any>[]): RQLTag<Params>;
   name: string;
   schema?: string;
-  refs: HasMany<any>[];
-  compile(alias?: boolean): [string, any[]];
+  refs: ((name: string) => HasMany<any>)[];
+  compile(): [string, any[]];
   equals(other: Table): boolean;
   toString(): string;
 }
@@ -19,10 +19,12 @@ const tableType = "refql/Table";
 const prototype = {
   constructor: Table,
   [refqlType]: tableType,
-  compile, toString, equals
+  equals,
+  compile,
+  toString
 };
 
-function Table(name: string, refsF?: ((name: string) => HasMany<any>)[]) {
+function Table(name: string, refs?: ((name: string) => HasMany<any>)[]) {
 
   const table = (<Params>(strings: TemplateStringsArray, ...values: RefQLValue<Params>[]) => {
     const parser = new Parser (strings.join ("$"), values, table);
@@ -44,7 +46,7 @@ function Table(name: string, refsF?: ((name: string) => HasMany<any>)[]) {
   });
 
   table.schema = schema;
-  table.refs = (refsF || []).map (f => f (tableName));
+  table.refs = refs || [];
 
   return table;
 }
@@ -53,8 +55,7 @@ function run(this: Table, querier: Querier<StringMap>, params: unknown = {}) {
   // implement
 }
 
-// ?
-function compile(this: Table, alias: boolean = false) {
+function compile(this: Table) {
   return [`${this.schema ? `${this.schema}.` : ""}${this.name}`];
 }
 

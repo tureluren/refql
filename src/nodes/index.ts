@@ -4,6 +4,7 @@ import BelongsTo from "./BelongsTo";
 import BooleanLiteral from "./BooleanLiteral";
 import Call from "./Call";
 import HasMany from "./HasMany";
+import HasOne from "./HasOne";
 import Identifier from "./Identifier";
 import Literal from "./Literal";
 import BelongsToMany from "./BelongsToMany";
@@ -21,6 +22,7 @@ export {
   BooleanLiteral,
   Call,
   HasMany,
+  HasOne,
   Identifier,
   Keywords,
   Literal,
