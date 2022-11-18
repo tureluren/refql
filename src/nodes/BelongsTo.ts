@@ -1,14 +1,8 @@
 import { refqlType } from "../common/consts";
-import { StringMap } from "../common/types";
+import { BelongsToInfo, StringMap } from "../common/types";
 import Table from "../Table";
 import ASTNode from "./ASTNode";
 import TableNode, { tableNodePrototype } from "./TableNode";
-
-interface BelongsToInfo {
-  as?: string;
-  lRef: string;
-  rRef: string;
-}
 
 interface BelongsTo<Params> extends TableNode<Params> {
   addMember<Params2>(node: ASTNode<Params2>): BelongsTo<Params & Params2>;
@@ -18,16 +12,14 @@ interface BelongsTo<Params> extends TableNode<Params> {
 
 const belongsToType = "refql/BelongsTo";
 
-function BelongsTo<Params>(table: Table, info: BelongsToInfo) {
-  const belongsToInfo = info || {};
-
+function BelongsTo<Params>(info: BelongsToInfo, members: ASTNode<Params>[]) {
   let belongsTo: BelongsTo<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: BelongsTo, [refqlType]: belongsToType, setMembers })
   );
 
-  belongsTo.table = table;
-  belongsTo.members = [];
-  belongsTo.info = Object.assign ({}, { as: table.name }, belongsToInfo);
+  belongsTo.table = info.table;
+  belongsTo.info = info;
+  belongsTo.members = members;
 
   return belongsTo;
 }

@@ -1,52 +1,83 @@
-import { BelongsTo, BelongsToMany, HasMany, HasOne } from "../nodes";
 import Table from "../Table";
+import belongsTo from "../Table/belongsTo";
+import hasMany from "../Table/hasMany";
+import hasOne from "../Table/hasOne";
+import belongsToMany from "../Table/belongsToMany";
 
 const Game = Table ("game");
 const GamePlayer = Table ("game_player");
 const Goal = Table ("goal");
 
+// als tabel niet gevonden wordt, error: tabel niet gerelateerd of niet in registry
+// const Table = makeTable ()
+//   // array
+//   tables
+// );
+
+// const Player = Table ("player", [
+//   belongsTo ("team")
+// ]);
+
+
 const Player: Table = Table ("player", [
-  () => BelongsTo (Team, {
+  belongsTo (() => ({
+    table: Team,
     as: "team",
     lRef: "team_id",
     rRef: "id"
-  }),
-  () => BelongsTo (Position, {
+  })),
+  belongsTo (() => ({
+    table: Position,
     as: "position",
     lRef: "position_id",
     rRef: "id"
-  }),
-  () => HasOne (Rating, {
+  })),
+  hasOne (() => ({
+    table: Rating,
     as: "rating",
     lRef: "id",
     rRef: "player_id"
-  }),
-  () => HasMany (Goal, {
+  })),
+  hasMany (() => ({
+    table: Goal,
     as: "goals",
     lRef: "id",
     rRef: "player_id"
-  }),
-  () => BelongsToMany (Game, {
+  })),
+  belongsToMany (() => ({
+    table: Game,
+    xTable: GamePlayer,
     as: "games",
     lRef: "id",
-    rxRef: "player_id",
-    lxRef: "game_id",
     rRef: "id",
-    xTable: GamePlayer
-  })
+    rxRef: "player_id",
+    lxRef: "game_id"
+  }))
 ]);
 
 const Position = Table ("position");
 
-const Rating = Table ("rating");
 
-const Team: Table = Table ("public.team", [
-  team => HasMany (Player, {
+
+const Team = Table ("public.team", [
+  hasMany (team => ({
+    table: Player,
     as: "players",
     lRef: "id",
     rRef: `${team}_id`
-  })
+  }))
 ]);
+
+
+
+const Rating = Table ("rating");
+
+const qry = Player`
+  id
+  ${Position`
+    id
+  `}
+`;
 
 export {
   Game,

@@ -1,14 +1,8 @@
 import { refqlType } from "../common/consts";
-import { StringMap } from "../common/types";
+import { HasOneInfo, StringMap } from "../common/types";
 import Table from "../Table";
 import ASTNode from "./ASTNode";
 import TableNode, { Keywords, tableNodePrototype } from "./TableNode";
-
-interface HasOneInfo {
-  as?: string;
-  lRef: string;
-  rRef: string;
-}
 
 interface HasOne<Params> extends TableNode<Params> {
   addMember<Params2>(node: ASTNode<Params2>): HasOne<Params & Params2>;
@@ -18,8 +12,7 @@ interface HasOne<Params> extends TableNode<Params> {
 
 const hasOneType = "refql/HasOne";
 
-function HasOne<Params>(table: Table, info: HasOneInfo) {
-  const hasOneInfo = info || {};
+function HasOne<Params>(info: HasOneInfo, members: ASTNode<Params>[]) {
 
   let hasOne: HasOne<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, {
@@ -29,9 +22,9 @@ function HasOne<Params>(table: Table, info: HasOneInfo) {
     })
   );
 
-  hasOne.table = table;
-  hasOne.members = [];
-  hasOne.info = Object.assign ({}, { as: table.name }, hasOneInfo);
+  hasOne.table = info.table;
+  hasOne.info = info;
+  hasOne.members = members;
 
   return hasOne;
 }

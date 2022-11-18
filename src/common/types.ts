@@ -35,3 +35,34 @@ export interface CastAs {
   as?: string;
   cast?: string;
 }
+
+export interface BelongsToInfo {
+  table: Table;
+  as?: string;
+  lRef: string;
+  rRef: string;
+}
+
+export interface BelongsToManyInfo {
+  table: Table;
+  as?: string;
+  lRef: string;
+  rRef: string;
+  lxRef: string;
+  rxRef: string;
+  xTable: Table;
+}
+
+export interface HasManyInfo {
+  table: Table;
+  as?: string;
+  lRef: string;
+  rRef: string;
+}
+
+export interface HasOneInfo {
+  table: Table;
+  as?: string;
+  lRef: string;
+  rRef: string;
+}

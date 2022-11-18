@@ -60,25 +60,26 @@ describe ("Parser type", () => {
     const fullName = Call ("concat", [upperLastName, space, spaceVariable, firstName], "full_name");
 
     const minute = Identifier ("minute");
-    const goalsAst = HasMany (Goal, { as: "goals", lRef: "id", rRef: "player_id" }).setMembers ([minute]);
+    const goalsAst = HasMany ({ table: Goal, as: "goals", lRef: "id", rRef: "player_id" }, [minute]);
 
     const name = Identifier ("name", "team_name");
     const allPositionFields = All ("*");
-    const positionAst = BelongsTo (Position, { as: "position", lRef: "position_id", rRef: "id" }).setMembers ([allPositionFields]);
+    const positionAst = BelongsTo ({ table: Position, as: "position", lRef: "position_id", rRef: "id" }, [allPositionFields]);
 
-    const playersAst = HasMany (Player, { as: "players", lRef: "id", rRef: "team_id" }).setMembers ([lastName, positionAst]);
-    const teamAst = BelongsTo (Team, { as: "squad", lRef: "team_id", rRef: "id" }).setMembers ([name, playersAst]);
+    const playersAst = HasMany ({ table: Player, as: "players", lRef: "id", rRef: "team_id" }, [lastName, positionAst]);
+    const teamAst = BelongsTo ({ table: Team, as: "squad", lRef: "team_id", rRef: "id" }, [name, playersAst]);
 
-    const gamesAst = BelongsToMany (Game, {
+    const gamesAst = BelongsToMany ({
+      table: Game,
       as: "games",
       lRef: "id",
       rxRef: "player_id",
       lxRef: "game_id",
       rRef: "id",
       xTable: GamePlayer
-    }).setMembers ([All ("*")]);
+    }, [All ("*")]);
 
-    const positionAst2 = BelongsTo (Position, { as: "pos", lRef: "position_id", rRef: "id" }).setMembers ([allPositionFields]);
+    const positionAst2 = BelongsTo ({ table: Position, as: "pos", lRef: "position_id", rRef: "id" }, [allPositionFields]);
 
     const expected = Root (
       Player,

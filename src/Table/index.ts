@@ -24,7 +24,7 @@ const prototype = {
   toString
 };
 
-function Table(name: string, refs?: ((name: string) => HasMany<any>)[]) {
+function Table(name: string, refs?: ((name: string) => any[])[]) {
 
   const table = (<Params>(strings: TemplateStringsArray, ...values: RefQLValue<Params>[]) => {
     const parser = new Parser (strings.join ("$"), values, table);

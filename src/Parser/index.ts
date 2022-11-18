@@ -68,8 +68,9 @@ class Parser {
       const { members, table } = value.node;
 
 
-      const ref = this.table.refs.map (f => f (this.table.name)).find (ref => {
-        const t = ref.table;
+      // ref = [HasMany, { table, lref, ... }]
+      const ref = this.table.refs.map (f => f (this.table.name)).find (([rel, info]) => {
+        const t = info.table;
         return t.equals (table);
       });
 
@@ -77,13 +78,7 @@ class Parser {
         throw new Error ("new Ref");
       }
 
-      const refWithMembers = ref.setMembers (members);
-
-      if (as != null) {
-        refWithMembers.info.as = as;
-      }
-
-      return refWithMembers;
+      return ref[0] ({ ...ref[1], as: as || ref[1].as || this.table.name }, members);
     }
     const variable = Variable (value, as, cast);
     this.idx += 1;

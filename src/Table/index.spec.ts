@@ -3,52 +3,19 @@ import Table from ".";
 import { Querier } from "../common/types";
 import { BelongsTo, BelongsToMany, HasMany } from "../nodes";
 import HasOne from "../nodes/HasOne";
-import { Player } from "../soccer";
 import mariaDBQuerier from "../test/mariaDBQuerier";
+import { Player, Rating, Team } from "../test/tables";
 import userConfig from "../test/userConfig";
 
 describe ("Table type", () => {
 
   let pool: any;
-  let querier: Querier<Player>;
+  let querier: Querier<any>;
 
   pool = mariaDB.createPool (userConfig ("mariadb"));
   querier = mariaDBQuerier (pool);
 
-  const Goal = Table ("goal");
-  const Game = Table ("game");
-  const Team = Table ("team");
-  const Rating = Table ("rating");
-
-  const refsF = [
-    () => BelongsTo (Team, {
-      as: "team",
-      lRef: "team_id",
-      rRef: "id"
-    }),
-    () => HasOne (Rating, {
-      as: "rating",
-      lRef: "id",
-      rRef: "player_id"
-    }),
-    () => HasMany (Goal, {
-      as: "goals",
-      lRef: "id",
-      rRef: "player_id"
-    }),
-    () => BelongsToMany (Game, {
-      as: "games",
-      lRef: "id",
-      rxRef: "player_id",
-      lxRef: "game_id",
-      rRef: "id",
-      xTable: Table ("game_player")
-    })
-  ];
-
   test ("create Table", async () => {
-    const Player = Table ("player", refsF);
-
     const qry = Player<{id: number}>`
       id 
       last_name 
