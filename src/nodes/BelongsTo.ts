@@ -12,12 +12,12 @@ interface BelongsTo<Params> extends TableNode<Params> {
 
 const belongsToType = "refql/BelongsTo";
 
-function BelongsTo<Params>(info: BelongsToInfo, members: ASTNode<Params>[]) {
+function BelongsTo<Params>(table: Table, info: BelongsToInfo, members: ASTNode<Params>[]) {
   let belongsTo: BelongsTo<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: BelongsTo, [refqlType]: belongsToType, setMembers })
   );
 
-  belongsTo.table = info.table;
+  belongsTo.table = table;
   belongsTo.info = info;
   belongsTo.members = members;
 

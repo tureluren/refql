@@ -1,7 +1,8 @@
+import Table from ".";
 import { HasOneInfo } from "../common/types";
 import { HasOne } from "../nodes";
 
-const hasOne = (f: (name: string) => HasOneInfo) => (name: string) =>
-  [HasOne, f (name)];
+const hasOne = (table: string, info: HasOneInfo) =>
+  [HasOne, Table (table), info];
 
 export default hasOne;

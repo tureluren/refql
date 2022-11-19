@@ -13,14 +13,13 @@ interface BelongsToMany<Params> extends TableNode<Params> {
 
 const belongsToManyType = "refql/BelongsToMany";
 
-function BelongsToMany<Params>(info: BelongsToManyInfo, members: ASTNode<Params>[]) {
-  const belongsToManyInfo = info || {};
+function BelongsToMany<Params>(table: Table, info: BelongsToManyInfo, members: ASTNode<Params>[]) {
 
   let belongsToMany: BelongsToMany<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, { constructor: BelongsToMany, [refqlType]: belongsToManyType, setMembers })
   );
 
-  belongsToMany.table = info.table;
+  belongsToMany.table = table;
   belongsToMany.info = info;
   belongsToMany.members = members;
 

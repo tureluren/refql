@@ -691,21 +691,21 @@ const belongsToToManyGames = (name, _schema) => ManyToMany (Game, {
 const Player = Table ("public.player", [
   name => HasMany (Goal, {
     as: "goals",
-    lrefs: ["id"],
-    rrefs: [`${name}_id`]
+    lRefs: ["id"],
+    rRefs: [`${name}_id`]
   }),
   () => BelongsTo (Team, {
     as: "team",
-    lrefs: ["team_id"],
-    rrefs: [`id`]
+    lRefs: ["team_id"],
+    rRefs: [`id`]
   })
 ]);
 
 const Player = Table ("public.player", () => [
   HasMany (Goal, {
     as: "goals",
-    lrefs: ["player_id"],
-    rrefs: ["id"]
+    lRefs: ["player_id"],
+    rRefs: ["id"]
   })
 ]);
 
@@ -733,8 +733,8 @@ const Player = Table ("public.player", () => [
   HasMany ({
     table: Goal,
     as: "goals",
-    lrefs: ["player_id"],
-    rrefs: ["id"]
+    lRefs: ["player_id"],
+    rRefs: ["id"]
   })
 ]);
 

@@ -1,8 +1,8 @@
 import Interpreter from ".";
 import createEnv from "../Env/createEnv";
 import {
-  All, BelongsTo, BooleanLiteral,
-  Call, HasMany, Identifier, ManyToMany,
+  All, BelongsTo, BelongsToMany, BooleanLiteral,
+  Call, HasMany, Identifier,
   NullLiteral, NumericLiteral, Root,
   StringLiteral, Variable
 } from "../nodes";
@@ -12,11 +12,6 @@ import Table from "../Table";
 import format from "../test/format";
 
 describe ("Interpreter", () => {
-  const player = Table ("player");
-  const goals = Table ("goal", "goals", "public");
-  const team = Table ("team");
-  const games = Table ("game", "games");
-  const league = Table ("league");
 
   const allFields = All ("*");
 
@@ -27,31 +22,31 @@ describe ("Interpreter", () => {
   ];
 
   const playerTeamRefs = {
-    lrefs: [{ name: "team_id", as: "teamlref0" }],
-    rrefs: [{ name: "id", as: "teamrref0" }],
-    lxrefs: [],
-    rxrefs: []
+    lRefs: [{ name: "team_id", as: "teamlref0" }],
+    rRefs: [{ name: "id", as: "teamrref0" }],
+    lxRefs: [],
+    rxRefs: []
   };
 
   const playerGoalsRefs = {
-    lrefs: [{ name: "id", as: "goalslref0" }],
-    rrefs: [{ name: "player_id", as: "goalsrref0" }],
-    lxrefs: [],
-    rxrefs: []
+    lRefs: [{ name: "id", as: "goalslref0" }],
+    rRefs: [{ name: "player_id", as: "goalsrref0" }],
+    lxRefs: [],
+    rxRefs: []
   };
 
   const playerGamesRefs = {
-    lrefs: [{ name: "id", as: "gameslref0" }],
-    rrefs: [{ name: "id", as: "gamesrref0" }],
-    lxrefs: [{ name: "player_id", as: "gameslxref0" }],
-    rxrefs: [{ name: "game_id", as: "gamesrxref0" }]
+    lRefs: [{ name: "id", as: "gameslref0" }],
+    rRefs: [{ name: "id", as: "gamesrref0" }],
+    lxRefs: [{ name: "player_id", as: "gameslxref0" }],
+    rxRefs: [{ name: "game_id", as: "gamesrxref0" }]
   };
 
   const playerGamesRefs2 = {
-    lrefs: [{ name: "id", as: "gameslref0" }, { name: "team_id", as: "gameslref1" }],
-    rrefs: [{ name: "id", as: "gamesrref0" }, { name: "league_id", as: "gamesrref1" }],
-    lxrefs: [{ name: "player_id", as: "gameslxref0" }, { name: "player_team_id", as: "gameslxref1" }],
-    rxrefs: [{ name: "game_id", as: "gamesrxref0" }, { name: "game_league_id", as: "gamesrxref1" }]
+    lRefs: [{ name: "id", as: "gameslref0" }, { name: "team_id", as: "gameslref1" }],
+    rRefs: [{ name: "id", as: "gamesrref0" }, { name: "league_id", as: "gamesrref1" }],
+    lxRefs: [{ name: "player_id", as: "gameslxref0" }, { name: "player_team_id", as: "gameslxref1" }],
+    rxRefs: [{ name: "game_id", as: "gamesrxref0" }, { name: "game_league_id", as: "gamesrxref1" }]
   };
 
   test ("Root", () => {
@@ -73,23 +68,21 @@ describe ("Interpreter", () => {
       "full_name_and_id"
     );
 
-    const goalsNode = HasMany (goals, [allFields], {});
-    const teamNode = BelongsTo (team, [allFields], {});
-    const gamesNode = ManyToMany (games, [allFields], {});
+    const goalsNode = HasMany (Table ("goal"), { as: "goals", lRef: "id", rRef: "player_id" }, [allFields]);
+    const teamNode = BelongsTo (Table ("team"), { as: "team", lRef: "team_id", rRef: "id" }, [allFields]);
+    const gamesNode = BelongsToMany (Table ("game"), { as: "games", lRef: "id", lxRef: "player_id", rxRef: "game_id", rRef: "id", xTable: Table ("game_player") }, [allFields]);
     const rootNode = Root (
-      player,
-      [identifier, birthday, goalsNode, teamNode, gamesNode, fullNameAndId],
-      kws
+      Table ("player"),
+      [identifier, birthday, goalsNode, teamNode, gamesNode, fullNameAndId]
     );
 
-    const { query, next } = interpret (rootNode, createEnv (player));
+    const { query, next } = interpret (rootNode, createEnv (Table ("player")));
 
     expect (query).toBe (format (`
       select player.id::text as identifier, player.birthday,
         player.id as goalslref0, player.team_id as teamlref0, player.id as gameslref0,
         concat (upper (player.last_name), ' ', ' ', player.first_name, (player.id::text)) as full_name_and_id
-      from player player
-      where player.id = $1
+      from player
     `));
 
     expect (next).toEqual ([
@@ -99,85 +92,83 @@ describe ("Interpreter", () => {
     ]);
   });
 
-  test ("Root - provided refs", () => {
-    const interpret = Interpreter ({});
+  // test ("Root - guessed refs", () => {
+  //   const interpret = Interpreter ({});
 
-    const goalsNode = HasMany (goals, [allFields], { lref: "ID", rref: "PLAYERID" });
-    const teamNode = BelongsTo (team, [allFields], { lref: "TEAMID", rref: "ID" });
-    const gamesNode = ManyToMany (games, [allFields], {
-      lref: "ID", lxref: "PLAYERID", rxref: "GAMEID", rref: "ID"
-    });
+  //   const goalsNode = HasMany (goals, [allFields], { lref: "ID", rref: "PLAYERID" });
+  //   const teamNode = BelongsTo (team, [allFields], { lref: "TEAMID", rref: "ID" });
+  //   const gamesNode = ManyToMany (games, [allFields], {
+  //     lref: "ID", lxref: "PLAYERID", rxref: "GAMEID", rref: "ID"
+  //   });
 
-    const rootNode = Root (player, [goalsNode, teamNode, gamesNode], {});
+  //   const rootNode = Root (player, [goalsNode, teamNode, gamesNode], {});
 
-    const { query, next } = interpret (rootNode, createEnv (player));
+  //   const { query, next } = interpret (rootNode, createEnv (player));
 
-    expect (query).toBe (format (`
-      select player.ID as goalslref0, player.TEAMID as teamlref0, player.ID as gameslref0
-      from player player
-    `));
+  //   expect (query).toBe (format (`
+  //     select player.ID as goalslref0, player.TEAMID as teamlref0, player.ID as gameslref0
+  //     from player player
+  //   `));
 
-    const goalsRefs = {
-      lrefs: [{ name: "ID", as: "goalslref0" }],
-      rrefs: [{ name: "PLAYERID", as: "goalsrref0" }],
-      lxrefs: [],
-      rxrefs: []
-    };
+  //   const goalsRefs = {
+  //     lRefs: [{ name: "ID", as: "goalslref0" }],
+  //     rRefs: [{ name: "PLAYERID", as: "goalsrref0" }],
+  //     lxRefs: [],
+  //     rxRefs: []
+  //   };
 
-    const teamRefs = {
-      lrefs: [{ name: "TEAMID", as: "teamlref0" }],
-      rrefs: [{ name: "ID", as: "teamrref0" }],
-      lxrefs: [],
-      rxrefs: []
-    };
+  //   const teamRefs = {
+  //     lRefs: [{ name: "TEAMID", as: "teamlref0" }],
+  //     rRefs: [{ name: "ID", as: "teamrref0" }],
+  //     lxRefs: [],
+  //     rxRefs: []
+  //   };
 
-    const gamesRefs = {
-      lrefs: [{ name: "ID", as: "gameslref0" }],
-      rrefs: [{ name: "ID", as: "gamesrref0" }],
-      lxrefs: [{ name: "PLAYERID", as: "gameslxref0" }],
-      rxrefs: [{ name: "GAMEID", as: "gamesrxref0" }]
-    };
+  //   const gamesRefs = {
+  //     lRefs: [{ name: "ID", as: "gameslref0" }],
+  //     rRefs: [{ name: "ID", as: "gamesrref0" }],
+  //     lxRefs: [{ name: "PLAYERID", as: "gameslxref0" }],
+  //     rxRefs: [{ name: "GAMEID", as: "gamesrxref0" }]
+  //   };
 
-    expect (next).toEqual ([
-      { node: goalsNode, refs: goalsRefs },
-      { node: teamNode, refs: teamRefs },
-      { node: gamesNode, refs: gamesRefs }
-    ]);
-  });
+  //   expect (next).toEqual ([
+  //     { node: goalsNode, refs: goalsRefs },
+  //     { node: teamNode, refs: teamRefs },
+  //     { node: gamesNode, refs: gamesRefs }
+  //   ]);
+  // });
 
   test ("HasMany", () => {
     const interpret = Interpreter ({});
 
-    const goalsNode = HasMany (goals, [allFields], { limit: 5, offset: 10 });
+    const goalsNode = HasMany (Table ("public.goal"), { as: "goals", lRef: "id", rRef: "player_id" }, [allFields]);
 
-    const { query, next, values } = interpret (goalsNode, createEnv (goals, playerGoalsRefs), playerRows);
+    const { query, next, values } = interpret (goalsNode, createEnv (Table ("public.goal"), playerGoalsRefs), playerRows);
 
     expect (query).toBe (format (`
-      select goals.*, goals.player_id as goalsrref0
-      from public.goal goals
-      where goals.player_id in ($1, $2, $3)
-      limit $4
-      offset $5
+      select goal.*, goal.player_id as goalsrref0
+      from public.goal
+      where goal.player_id in ($1, $2, $3)
     `));
 
-    expect (values).toEqual ([1, 2, 3, 5, 10]);
+    expect (values).toEqual ([1, 2, 3]);
     expect (next).toEqual ([]);
   });
 
   test ("BelongsTo", () => {
     const interpret = Interpreter ({});
 
-    const leagueNode = BelongsTo (league, [allFields], { lref: "competition_id", rref: "identifier" });
+    const leagueNode = BelongsTo (Table ("league"), { as: "league", lRef: "competition_id", rRef: "identifier" }, [allFields]);
 
     const byName = Variable (sql`where team.name like 'FC%'`);
 
-    const teamNode = BelongsTo (team, [allFields, leagueNode, byName], {});
+    const teamNode = BelongsTo (Table ("team"), { as: "team", lRef: "team_id", rRef: "id" }, [allFields, leagueNode, byName]);
 
-    const { query, next, values } = interpret (teamNode, createEnv (team, playerTeamRefs), playerRows);
+    const { query, next, values } = interpret (teamNode, createEnv (Table ("team"), playerTeamRefs), playerRows);
 
     expect (query).toBe (format (`
       select team.*, team.competition_id as leaguelref0, team.id as teamrref0
-      from team team
+      from team
       where team.id in ($1, $2)
       and team.name like 'FC%'
     `));
@@ -187,26 +178,26 @@ describe ("Interpreter", () => {
     expect (next).toEqual ([{
       node: leagueNode,
       refs: {
-        lrefs: [{ name: "competition_id", as: "leaguelref0" }],
-        rrefs: [{ name: "identifier", as: "leaguerref0" }],
-        lxrefs: [],
-        rxrefs: []
+        lRefs: [{ name: "competition_id", as: "leaguelref0" }],
+        rRefs: [{ name: "identifier", as: "leaguerref0" }],
+        lxRefs: [],
+        rxRefs: []
       }
     }]);
   });
 
-  test ("ManyToMany", () => {
+  test ("BelongsToMany", () => {
     const interpret = Interpreter ({});
 
-    const gamesNode = ManyToMany (games, [allFields], { xtable: "PLAYERGAME" });
+    const gamesNode = BelongsToMany (Table ("game"), { as: "games", lRef: "id", lxRef: "player_id", rxRef: "game_id", rRef: "id", xTable: Table ("GAMEPLAYER") }, [allFields]);
 
-    const { query, next, values } = interpret (gamesNode, createEnv (player, playerGamesRefs), playerRows);
+    const { query, next, values } = interpret (gamesNode, createEnv (Table ("game"), playerGamesRefs), playerRows);
 
     expect (query).toBe (format (`
-      select distinct games.*, PLAYERGAME.player_id as gameslxref0
-      from game games 
-      join PLAYERGAME as PLAYERGAME on PLAYERGAME.game_id = games.id 
-      where PLAYERGAME.player_id in ($1, $2, $3)
+      select distinct game.*, GAMEPLAYER.player_id as gameslxref0
+      from game
+      join GAMEPLAYER as GAMEPLAYER on GAMEPLAYER.game_id = game.id
+      where GAMEPLAYER.player_id in ($1, $2, $3)
     `));
 
     expect (values).toEqual ([1, 2, 3]);
@@ -216,19 +207,20 @@ describe ("Interpreter", () => {
   test ("ManyToMany - multi column ref", () => {
     const interpret = Interpreter ({});
 
-    const gamesNode = ManyToMany (games, [allFields], {});
+    // refs worden hier niet van gebruikt maar van playrGamesRefs2, dus doe weg eenmaaal guesssed er is
+    const gamesNode = BelongsToMany (Table ("game"), { as: "games", lRef: "id", lxRef: "player_id", rxRef: "game_id", rRef: "id", xTable: Table ("game_player") }, [allFields]);
 
-    const { query, next, values } = interpret (gamesNode, createEnv (player, playerGamesRefs2), playerRows);
+    const { query, next, values } = interpret (gamesNode, createEnv (Table ("player"), playerGamesRefs2), playerRows);
 
     expect (query).toBe (format (`
-      select distinct games.*, 
-        player_game.player_id as gameslxref0, player_game.player_team_id as gameslxref1
-      from game games
-      join player_game as player_game
-        on player_game.game_id = games.id
-        and player_game.game_league_id = games.league_id
-      where player_game.player_id in ($1, $2, $3)
-        and player_game.player_team_id in ($4, $5)
+      select distinct game.*,
+        game_player.player_id as gameslxref0, game_player.player_team_id as gameslxref1
+      from game
+      join game_player as game_player
+        on game_player.game_id = game.id
+        and game_player.game_league_id = game.league_id
+      where game_player.player_id in ($1, $2, $3)
+        and game_player.player_team_id in ($4, $5)
     `));
 
     expect (values).toEqual ([1, 2, 3, 1, 2]);
@@ -236,8 +228,8 @@ describe ("Interpreter", () => {
   });
 
   test ("literals and variables", () => {
-    type Params = {id: number; three: number; limit: number};
-    const interpret = Interpreter<Params> ({ id: 1, three: 3, limit: 5 });
+    type Params = {id: number; three: number};
+    const interpret = Interpreter<Params> ({ id: 1, three: 3 });
     const one = StringLiteral ("1", "one", "int");
     const two = NumericLiteral (2, "two", "text");
     const three = Variable<Params> (p => p.three, "three", "text");
@@ -250,26 +242,24 @@ describe ("Interpreter", () => {
       where player_id = player.id
     `, "goal_count");
 
-    const byId = Variable (sql<Params>`where ${(_p, t) => t}.id = ${p => p.id}`);
+    const byId = Variable (sql<Params>`where player.id = ${p => p.id}`);
 
     const rootNode = Root<Params> (
-      player,
-      [one, two, three, t, f, n, goalCount, byId],
-      { limit: p => p.limit }
+      Table ("player"),
+      [one, two, three, t, f, n, goalCount, byId]
     );
 
-    const { query, values } = interpret (rootNode, createEnv (player));
+    const { query, values } = interpret (rootNode, createEnv (Table ("player")));
 
     expect (query).toBe (format (`
-      select 
+      select
         '1'::int as one, 2::text as two, $1::text as three,
         true::text as t, false::text as f, null::text as n,
         (select count (*) from goal where player_id = player.id) as goal_count
-      from player player
+      from player
       where player.id = $2
-      limit $3
     `));
 
-    expect (values).toEqual ([3, 1, 5]);
+    expect (values).toEqual ([3, 1]);
   });
 });

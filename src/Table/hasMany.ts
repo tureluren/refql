@@ -1,7 +1,8 @@
+import Table from ".";
 import { HasManyInfo } from "../common/types";
 import { HasMany } from "../nodes";
 
-const hasMany = (f: (name: string) => HasManyInfo) => (name: string) =>
-  [HasMany, f (name)];
+const hasMany = (table: string, info: HasManyInfo) =>
+  [HasMany, Table (table), info];
 
 export default hasMany;

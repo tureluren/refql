@@ -6,6 +6,7 @@ import {
 } from "../nodes";
 import Raw from "../Raw";
 import sql from "../SQLTag/sql";
+import Table from "../Table";
 import { Game, GamePlayer, Goal, Player, Position, Team } from "../test/tables";
 import Tokenizer, { TokenType } from "../Tokenizer";
 
@@ -60,33 +61,32 @@ describe ("Parser type", () => {
     const fullName = Call ("concat", [upperLastName, space, spaceVariable, firstName], "full_name");
 
     const minute = Identifier ("minute");
-    const goalsAst = HasMany ({ table: Goal, as: "goals", lRef: "id", rRef: "player_id" }, [minute]);
+    const goalsAst = HasMany (Table ("goal"), { as: "goals", lRef: "id", rRef: "player_id" }, [minute]);
 
     const name = Identifier ("name", "team_name");
     const allPositionFields = All ("*");
-    const positionAst = BelongsTo ({ table: Position, as: "position", lRef: "position_id", rRef: "id" }, [allPositionFields]);
+    const positionAst = BelongsTo (Table ("position"), { as: "position", lRef: "position_id", rRef: "id" }, [allPositionFields]);
 
-    const playersAst = HasMany ({ table: Player, as: "players", lRef: "id", rRef: "team_id" }, [lastName, positionAst]);
-    const teamAst = BelongsTo ({ table: Team, as: "squad", lRef: "team_id", rRef: "id" }, [name, playersAst]);
+    const playersAst = HasMany (Table ("player"), { as: "players", lRef: "id", rRef: "team_id" }, [lastName, positionAst]);
+    const teamAst = BelongsTo (Table ("public.team"), { as: "squad", lRef: "team_id", rRef: "id" }, [name, playersAst]);
 
-    const gamesAst = BelongsToMany ({
-      table: Game,
+    const gamesAst = BelongsToMany (Table ("game"), {
+      xTable: Table ("game_player"),
       as: "games",
       lRef: "id",
-      rxRef: "player_id",
-      lxRef: "game_id",
       rRef: "id",
-      xTable: GamePlayer
+      rxRef: "player_id",
+      lxRef: "game_id"
     }, [All ("*")]);
 
-    const positionAst2 = BelongsTo ({ table: Position, as: "pos", lRef: "position_id", rRef: "id" }, [allPositionFields]);
+    const positionAst2 = BelongsTo (Table ("position"), { as: "pos", lRef: "position_id", rRef: "id" }, [allPositionFields]);
 
     const expected = Root (
       Player,
       [identifier, birthday, fullName, goalsAst, teamAst, gamesAst, positionAst2]
     );
 
-    expect (tag.node).toEqual (expected);
+    expect (tag.node).toMatchObject (expected);
   });
 
   test ("variables", () => {

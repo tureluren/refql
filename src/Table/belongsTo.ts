@@ -1,8 +1,8 @@
+import Table from ".";
 import { BelongsToInfo } from "../common/types";
 import { BelongsTo } from "../nodes";
 
-
-const belongsTo = (f: (name: string) => BelongsToInfo) => (name: string) =>
-  [BelongsTo, f (name)];
+const belongsTo = (table: string, info: BelongsToInfo) =>
+  [BelongsTo, Table (table), info];
 
 export default belongsTo;

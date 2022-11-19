@@ -12,7 +12,7 @@ interface HasMany<Params> extends TableNode<Params> {
 
 const hasManyType = "refql/HasMany";
 
-function HasMany<Params>(info: HasManyInfo, members: ASTNode<Params>[]) {
+function HasMany<Params>(table: Table, info: HasManyInfo, members: ASTNode<Params>[]) {
 
   let hasMany: HasMany<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, {
@@ -21,7 +21,7 @@ function HasMany<Params>(info: HasManyInfo, members: ASTNode<Params>[]) {
       setMembers
     })
   );
-  hasMany.table = info.table;
+  hasMany.table = table;
   hasMany.info = info;
   hasMany.members = members;
 

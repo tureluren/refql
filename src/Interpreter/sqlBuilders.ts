@@ -26,10 +26,10 @@ export const fromTable = (table: Table, distinct: boolean = false) => chain (
   comps => set ("query", Select (table, comps).compile (false, distinct)[0])
 );
 
-export const joinOn = (lrefs: Ref[], rrefs: Ref[], table: Table, xTable: Table) =>
+export const joinOn = (lRefs: Ref[], rRefs: Ref[], table: Table, xTable: Table) =>
   over ("query", query =>
-    lrefs.reduce ((q, lr, idx) => {
-      const rk = rrefs[idx];
+    lRefs.reduce ((q, lr, idx) => {
+      const rk = rRefs[idx];
       const op = idx === 0 ? "" : "and ";
 
       return `${q} ${op}${xTable.name}.${lr.name} = ${table.name}.${rk.name}`;
@@ -70,12 +70,12 @@ export const select = (comps: string | string[], rec: Rec) =>
 export const selectRefs = (table: Table, refs: Ref[]) => (rec: Rec) =>
   select (refsToComp (table, refs), rec);
 
-export const whereIn = (lrefs: Ref[], rrefs: Ref[], rows: any[], table: Table) => chain (
+export const whereIn = (lRefs: Ref[], rRefs: Ref[], rows: any[], table: Table) => chain (
   get ("values"),
   values => {
-    const [query, vals] = lrefs.reduce (([sql, vals], lr, idx) => {
+    const [query, vals] = lRefs.reduce (([sql, vals], lr, idx) => {
       const uniqRows = [...new Set (rows.map (r => r[lr.as]))];
-      const rr = rrefs[idx];
+      const rr = rRefs[idx];
       const op = idx === 0 ? "" : "and ";
       const [inStr] = In (uniqRows).compile (vals.length);
 

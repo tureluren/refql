@@ -35,7 +35,7 @@ const Interpreter = <Params> (params: Params) => {
         interpretMembers (members, table)
           .map (fromTable (table))
           // .map (byId (table, id, "where"))
-          // .map (includeSQL (table, id != null))
+          .map (includeSQL (table, false))
           // .map (paginate (limit, offset))
           .rec,
 
@@ -43,9 +43,9 @@ const Interpreter = <Params> (params: Params) => {
         if (!rows) return toNext (node, rec);
 
         return interpretMembers (members, table)
-          .map (selectRefs (table, refs.rrefs))
+          .map (selectRefs (table, refs.rRefs))
           .map (fromTable (table))
-          .map (whereIn (refs.lrefs, refs.rrefs, rows, table))
+          .map (whereIn (refs.lRefs, refs.rRefs, rows, table))
           // .map (byId (table, id))
           .map (includeSQL (table))
           // .map (paginate (limit, offset))
@@ -56,9 +56,9 @@ const Interpreter = <Params> (params: Params) => {
         if (!rows) return toNext (node, rec);
 
         return interpretMembers (members, table)
-          .map (selectRefs (table, refs.rrefs))
+          .map (selectRefs (table, refs.rRefs))
           .map (fromTable (table))
-          .map (whereIn (refs.lrefs, refs.rrefs, rows, table))
+          .map (whereIn (refs.lRefs, refs.rRefs, rows, table))
           // .map (byId (table, id))
           .map (includeSQL (table))
           // .map (paginate (limit, offset))
@@ -69,9 +69,9 @@ const Interpreter = <Params> (params: Params) => {
         if (!rows) return toNext (node, rec);
 
         return interpretMembers (members, table)
-          .map (selectRefs (table, refs.rrefs))
+          .map (selectRefs (table, refs.rRefs))
           .map (fromTable (table))
-          .map (whereIn (refs.lrefs, refs.rrefs, rows, table))
+          .map (whereIn (refs.lRefs, refs.rRefs, rows, table))
           // .map (byId (table, id))
           .map (includeSQL (table))
           // .map (paginate (limit, offset))
@@ -93,10 +93,10 @@ const Interpreter = <Params> (params: Params) => {
         // );
 
         return interpretMembers (members, table)
-          .map (selectRefs (xTable, refs.lxrefs))
+          .map (selectRefs (xTable, refs.lxRefs))
           .map (fromTable (table, true))
-          .map (joinOn (refs.rxrefs, refs.rrefs, table, xTable))
-          .map (whereIn (refs.lrefs, refs.lxrefs, rows, xTable))
+          .map (joinOn (refs.rxRefs, refs.rRefs, table, xTable))
+          .map (whereIn (refs.lRefs, refs.lxRefs, rows, xTable))
           // .map (byId (table, id))
           .map (includeSQL (table))
           // .map (paginate (limit, offset))

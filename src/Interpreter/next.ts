@@ -21,30 +21,30 @@ const next = <Params>(params: Params) => (node: ASTNode<Params>, rec: Rec) => {
     BelongsTo: (child, _members, { lRef, rRef, as }) => {
       const refOf = createRef (as);
       // what if empty, create default refs al bij has many creatie
-      refs.lrefs = refOf ("lref", lRef);
-      refs.rrefs = refOf ("rref", rRef);
+      refs.lRefs = refOf ("lref", lRef);
+      refs.rRefs = refOf ("rref", rRef);
     },
     HasMany: (child, _members, { lRef, rRef, as }) => {
       const refOf = createRef (as);
-      refs.lrefs = refOf ("lref", lRef);
-      refs.rrefs = refOf ("rref", rRef || table.name + "_id");
+      refs.lRefs = refOf ("lref", lRef);
+      refs.rRefs = refOf ("rref", rRef || table.name + "_id");
     },
     HasOne: (child, _members, { lRef, rRef, as }) => {
       const refOf = createRef (as);
-      refs.lrefs = refOf ("lref", lRef);
-      refs.rrefs = refOf ("rref", rRef || table.name + "_id");
+      refs.lRefs = refOf ("lref", lRef);
+      refs.rRefs = refOf ("rref", rRef || table.name + "_id");
     },
     BelongsToMany: (child, _members, { lRef, rRef, lxRef, rxRef, as }) => {
       const refOf = createRef (as);
-      refs.lrefs = refOf ("lref", lRef);
-      refs.rrefs = refOf ("rref", rRef);
-      refs.lxrefs = refOf ("lxref", lxRef);
-      refs.rxrefs = refOf ("rxref", rxRef);
+      refs.lRefs = refOf ("lref", lRef);
+      refs.rRefs = refOf ("rref", rRef);
+      refs.lxRefs = refOf ("lxref", lxRef);
+      refs.rxRefs = refOf ("rxref", rxRef);
     }
   }, params, table);
 
   return evolve ({
-    comps: concat (refsToComp (table, refs.lrefs)),
+    comps: concat (refsToComp (table, refs.lRefs)),
     next: concat ({ node, refs })
   }, rec);
 };

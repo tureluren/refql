@@ -12,7 +12,7 @@ interface HasOne<Params> extends TableNode<Params> {
 
 const hasOneType = "refql/HasOne";
 
-function HasOne<Params>(info: HasOneInfo, members: ASTNode<Params>[]) {
+function HasOne<Params>(table: Table, info: HasOneInfo, members: ASTNode<Params>[]) {
 
   let hasOne: HasOne<Params> = Object.create (
     Object.assign ({}, tableNodePrototype, {
@@ -22,7 +22,7 @@ function HasOne<Params>(info: HasOneInfo, members: ASTNode<Params>[]) {
     })
   );
 
-  hasOne.table = info.table;
+  hasOne.table = table;
   hasOne.info = info;
   hasOne.members = members;
 

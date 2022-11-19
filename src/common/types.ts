@@ -27,8 +27,8 @@ export interface Ref {
 }
 
 export interface Refs {
-  lrefs: Ref[]; rrefs: Ref[];
-  lxrefs: Ref[]; rxrefs: Ref[];
+  lRefs: Ref[]; rRefs: Ref[];
+  lxRefs: Ref[]; rxRefs: Ref[];
 }
 
 export interface CastAs {
@@ -37,15 +37,13 @@ export interface CastAs {
 }
 
 export interface BelongsToInfo {
-  table: Table;
-  as?: string;
+  as: string;
   lRef: string;
   rRef: string;
 }
 
 export interface BelongsToManyInfo {
-  table: Table;
-  as?: string;
+  as: string;
   lRef: string;
   rRef: string;
   lxRef: string;
@@ -54,15 +52,13 @@ export interface BelongsToManyInfo {
 }
 
 export interface HasManyInfo {
-  table: Table;
-  as?: string;
+  as: string;
   lRef: string;
   rRef: string;
 }
 
 export interface HasOneInfo {
-  table: Table;
-  as?: string;
+  as: string;
   lRef: string;
   rRef: string;
 }

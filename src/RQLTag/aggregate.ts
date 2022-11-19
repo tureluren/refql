@@ -5,15 +5,15 @@ import { InterpretF } from "../Interpreter";
 import { BelongsTo, HasMany, BelongsToMany, Root } from "../nodes";
 import HasOne from "../nodes/HasOne";
 
-const match = (row: any, nextRows: any[], lrefs: string[], rrefs: string[]) =>
+const match = (row: any, nextRows: any[], lRefs: string[], rRefs: string[]) =>
   nextRows.filter ((r: any) =>
-    rrefs.reduce ((acc, rr, idx) =>
-      acc && (r[rr] === row[lrefs[idx]]),
+    rRefs.reduce ((acc, rr, idx) =>
+      acc && (r[rr] === row[lRefs[idx]]),
       true as boolean
     )
   ).map (r => {
     const matched = { ...r };
-    rrefs.forEach (rr => {
+    rRefs.forEach (rr => {
       delete matched[rr];
     });
     return matched;
@@ -34,24 +34,24 @@ const aggregate = (querier: Querier<StringMap>, interpret: InterpretF<unknown>, 
           nextData.reduce ((agg, nextRows, idx) => {
             const { node, refs } = compiled.next[idx];
 
-            const lrefs = refs.lrefs.map (lr => lr.as);
-            const rrefs = refs.rrefs.map (rr => rr.as);
-            const lxrefs = refs.lxrefs.map (lxr => lxr.as);
+            const lRefs = refs.lRefs.map (lr => lr.as);
+            const rRefs = refs.rRefs.map (rr => rr.as);
+            const lxRefs = refs.lxRefs.map (lxr => lxr.as);
 
             if (BelongsTo.isBelongsTo (node)) {
-              agg[node.info.as] = match (row, nextRows, lrefs, rrefs)[0];
+              agg[node.info.as] = match (row, nextRows, lRefs, rRefs)[0];
 
             } else if (HasMany.isHasMany (node)) {
-              agg[node.info.as] = match (row, nextRows, lrefs, rrefs);
+              agg[node.info.as] = match (row, nextRows, lRefs, rRefs);
 
             } else if (HasOne.isHasOne (node)) {
-              agg[node.info.as] = match (row, nextRows, lrefs, rrefs)[0];
+              agg[node.info.as] = match (row, nextRows, lRefs, rRefs)[0];
 
             } else if (BelongsToMany.isBelongsToMany (node)) {
-              agg[node.info.as] = match (row, nextRows, lrefs, lxrefs);
+              agg[node.info.as] = match (row, nextRows, lRefs, lxRefs);
             }
 
-            lrefs.forEach (lr => {
+            lRefs.forEach (lr => {
               delete agg[lr];
             });
 
