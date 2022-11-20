@@ -1,7 +1,6 @@
 import { Pool } from "mariadb";
 
 const mariaDBQuerier = (pool: Pool) => async <T>(query: string, values: any[]) => {
-  console.log (query);
   let conn;
   try {
     conn = await pool.getConnection ();

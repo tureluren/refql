@@ -42,13 +42,16 @@ const Player = Table ("player", [
 
 const Position = Table ("position");
 
-
-
 const Team = Table ("public.team", [
   hasMany ("player", {
     as: "players",
     lRef: "id",
     rRef: `team_id`
+  }),
+  belongsTo ("league", {
+    as: "league",
+    lRef: "league_id",
+    rRef: "id"
   })
 ]);
 

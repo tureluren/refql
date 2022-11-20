@@ -45,7 +45,7 @@ describe ("Parser type", () => {
         `}
       `}:squad
       ${Game`
-        ${[All ("*")]}
+        *
       `}
       ${positionQuery}: pos
     `;
@@ -86,7 +86,7 @@ describe ("Parser type", () => {
       [identifier, birthday, fullName, goalsAst, teamAst, gamesAst, positionAst2]
     );
 
-    expect (tag.node).toMatchObject (expected);
+    expect (JSON.stringify (tag.node)).toBe (JSON.stringify (expected));
   });
 
   test ("variables", () => {
@@ -154,14 +154,14 @@ describe ("Parser type", () => {
     // expect (() => Player``)
     //   .toThrowError (new SyntaxError ('Unexpected end of input, expected: "IDENTIFIER"'));
 
-    expect (() => Player`${{}}`)
-      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
+    // expect (() => Player`${{}}`)
+    //   .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
 
-    expect (() => Player`${[]}`)
-      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
+    // expect (() => Player`${[]}`)
+    //   .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
 
-    expect (() => Player`${["name"]}`)
-      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
+    // expect (() => Player`${["name"]}`)
+    //   .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
 
     const parser = new Parser ("*", [], Player);
     parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };
