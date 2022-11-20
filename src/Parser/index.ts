@@ -90,24 +90,19 @@ class Parser {
   }
 
   members(): ASTNode<unknown>[] {
-    // if (this.isNext ("VARIABLE")) {
-    //   const members = this.spliceValue ();
-    //   if (
-    //     !Array.isArray (members) ||
-    //     !members.length ||
-    //     !members.reduce ((acc, m) => acc && m.isASTNode, true)
-    //   ) {
-    //     throw new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode");
-    //   }
+    if (this.isNext ("VARIABLE") && Array.isArray (this.values[this.idx])) {
+      const members = this.spliceValue ();
+      if (
+        !members.length ||
+        !members.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && m.isASTNode, true)
+      ) {
+        throw new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode");
+      }
 
-    //   return members;
-    // }
+      this.eat ("EOF");
 
-    // this.eat ("{");
-
-    // if (this.isNext ("}")) {
-    //   throw new SyntaxError ("A table block should have at least one member");
-    // }
+      return members;
+    }
 
     const members = [];
 
