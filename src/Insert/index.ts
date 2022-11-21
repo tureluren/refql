@@ -17,7 +17,7 @@ const prototype = {
   compile, toString
 };
 
-function Insert(table: Table, columns: string[], data: StringMap[]) {
+function Insert(table: Table, columns?: string[], data?: StringMap[]) {
   let insert: Insert = Object.create (prototype);
   insert.table = table;
   insert.columns = columns || [];

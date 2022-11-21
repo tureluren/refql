@@ -9,7 +9,6 @@ interface Call<Params> extends ASTNode<Params>, CastAs {
 
 const callPrototype = {
   constructor: Call,
-  addMember,
   caseOf
 };
 
@@ -24,12 +23,6 @@ function Call<Params>(name: string, members: ASTNode<Params>[], as?: string, cas
   call.cast = cast;
 
   return call;
-}
-
-function addMember(this: Call<unknown>, node: ASTNode<unknown>) {
-  return Call (
-    this.name, this.members.concat (node), this.as, this.cast
-  );
 }
 
 function caseOf(this: Call<unknown>, structureMap: StringMap) {

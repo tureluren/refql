@@ -4,14 +4,13 @@ import pg from "pg";
 import RQLTag from ".";
 import { flMap } from "../common/consts";
 import { Querier } from "../common/types";
-import { All, HasMany, Identifier, Root } from "../nodes";
+import { All, Identifier, Root } from "../nodes";
 import { Player } from "../soccer";
 import sql from "../SQLTag/sql";
-import Table from "../Table";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { game, goal, league, player, team } from "../test/tables";
+import { game, goal, league, player, rating, team } from "../test/tables";
 import userConfig from "../test/userConfig";
 
 describe ("RQLTag type", () => {
@@ -71,30 +70,30 @@ describe ("RQLTag type", () => {
       .toEqual (tag[flMap] (prefix)[flMap] (toUpper));
   });
 
-  // test ("errors", async () => {
-  //   const id = Identifier ("id");
+  test ("errors", async () => {
+    const id = Identifier ("id");
 
-  //   expect (() => (RQLTag as any) (id))
-  //     .toThrowError (new Error ("RQLTag should hold a Root node"));
+    expect (() => (RQLTag as any) (id))
+      .toThrowError (new Error ("RQLTag should hold a Root node"));
 
-  //   try {
-  //     const tag = RQLTag (Root (player, [], {}));
-  //     (tag as any).node = id;
+    try {
+      const tag = RQLTag (Root (player, []));
+      (tag as any).node = id;
 
-  //     await tag.run (() => Promise.resolve ([]), undefined);
-  //   } catch (err: any) {
-  //     expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
-  //   }
+      await tag.run (() => Promise.resolve ([]), undefined);
+    } catch (err: any) {
+      expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
+    }
 
-  //   try {
-  //     const tag = RQLTag (Root (player, [], {}));
-  //     delete (tag as any).node.table;
+    try {
+      const tag = RQLTag (Root (player, []));
+      delete (tag as any).node.table;
 
-  //     await tag.run (() => Promise.resolve ([]), {});
-  //   } catch (err: any) {
-  //     expect (err.message).toBe ("The Root node has no table");
-  //   }
-  // });
+      await tag.run (() => Promise.resolve ([]), {});
+    } catch (err: any) {
+      expect (err.message).toBe ("The Root node has no table");
+    }
+  });
 
   test ("aggregate", async () => {
     const tag = player`
@@ -111,6 +110,10 @@ describe ("RQLTag type", () => {
       ${game`
         result 
       `}: games
+      ${rating`
+        acceleration
+        stamina
+      `}
       ${sql`
         limit 30 
       `}
@@ -122,12 +125,14 @@ describe ("RQLTag type", () => {
     const teammate = playerTeam.players[0];
     const teamLeague = player1.team.league;
     const playerGame = player1.games[0];
+    const playerRating = player1.rating;
 
-    expect (Object.keys (player1)).toEqual (["last_name", "team", "games"]);
+    expect (Object.keys (player1)).toEqual (["last_name", "team", "games", "rating"]);
     expect (Object.keys (playerTeam)).toEqual (["name", "league", "players"]);
     expect (Object.keys (teamLeague)).toEqual (["name"]);
     expect (Object.keys (teammate)).toEqual (["last_name"]);
     expect (Object.keys (playerGame)).toEqual (["result"]);
+    expect (Object.keys (playerRating)).toEqual (["acceleration", "stamina"]);
     expect (players.length).toBe (30);
   });
 

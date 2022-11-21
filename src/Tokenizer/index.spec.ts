@@ -9,7 +9,7 @@ describe ("Tokenizer type", () => {
 
   test ("whitespace", () => {
     const tokenizer = new Tokenizer ("  ");
-    expect (tokenizer.getNextToken ()).toEqual ({ type: "EOF", value: "EOF" });
+    expect (tokenizer.getNextToken ()).toEqual ({ type: "EOT", value: "EOT" });
   });
 
   test ("cast", () => {

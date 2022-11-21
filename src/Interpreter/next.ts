@@ -25,12 +25,12 @@ const next = <Params>(params: Params) => (node: ASTNode<Params>, rec: Rec) => {
     HasMany: (_c, _m, { lRef, rRef, as }) => {
       const refOf = createRef (as);
       refs.lRefs = refOf ("lref", lRef);
-      refs.rRefs = refOf ("rref", rRef || table.name + "_id");
+      refs.rRefs = refOf ("rref", rRef);
     },
     HasOne: (_c, _m, { lRef, rRef, as }) => {
       const refOf = createRef (as);
       refs.lRefs = refOf ("lref", lRef);
-      refs.rRefs = refOf ("rref", rRef || table.name + "_id");
+      refs.rRefs = refOf ("rref", rRef);
     },
     BelongsToMany: (_c, _m, { lRef, rRef, lxRef, rxRef, as }) => {
       const refOf = createRef (as);

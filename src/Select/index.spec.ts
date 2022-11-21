@@ -12,6 +12,14 @@ describe ("Select type", () => {
     expect (select.columns).toEqual (columns);
   });
 
+  test ("create Select - defaults", () => {
+    const player = Table ("player");
+    const select = Select (player);
+
+    expect (select.table).toEqual (player);
+    expect (select.columns).toEqual ([]);
+  });
+
   test ("compile Select", () => {
     const player = Table ("public.player");
     const select = Select (player, columns);

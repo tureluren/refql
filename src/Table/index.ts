@@ -1,6 +1,5 @@
 import { refqlType } from "../common/consts";
-import { Querier, RefQLValue, StringMap } from "../common/types";
-import { HasMany } from "../nodes";
+import { Querier, RefQLValue, StringMap, TableRefMakerPair } from "../common/types";
 import Parser from "../Parser";
 import RQLTag from "../RQLTag";
 
@@ -8,10 +7,12 @@ interface Table {
   <Params>(strings: TemplateStringsArray, ...values: RefQLValue<any>[]): RQLTag<Params>;
   name: string;
   schema?: string;
-  refs: ((name: string) => HasMany<any>)[];
+  refs: TableRefMakerPair[];
   compile(): [string, any[]];
   equals(other: Table): boolean;
+  empty(): RQLTag<unknown>;
   toString(): string;
+  run<Return>(querier: Querier<Return>): Promise<Return[]>;
 }
 
 const tableType = "refql/Table";
@@ -20,8 +21,11 @@ const prototype = {
   constructor: Table,
   [refqlType]: tableType,
   equals,
+  empty,
+  // ??
   compile,
-  toString
+  toString,
+  run
 };
 
 function Table(name: string, refs?: any[]) {
@@ -51,16 +55,22 @@ function Table(name: string, refs?: any[]) {
   return table;
 }
 
-function run(this: Table, querier: Querier<StringMap>, params: unknown = {}) {
-  // implement
+function empty(this: Table) {
+  return this``;
 }
 
+function run(this: Table, querier: Querier<StringMap>) {
+  return this.empty ().run (querier);
+}
+//?
 function compile(this: Table) {
   return [`${this.schema ? `${this.schema}.` : ""}${this.name}`];
 }
 
 function toString(this: Table) {
-  return `Table (${this.name}, ${this.schema})`;
+  return this.schema
+    ? `Table (${this.name}, ${this.schema})`
+    : `Table (${this.name})`;
 }
 
 function equals(this: Table, other: Table) {

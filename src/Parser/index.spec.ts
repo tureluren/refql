@@ -7,7 +7,7 @@ import {
 import Raw from "../Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
-import { game, goal, player, position, team } from "../test/tables";
+import { game, goal, league, player, position, team } from "../test/tables";
 import Tokenizer, { TokenType } from "../Tokenizer";
 
 describe ("Parser type", () => {
@@ -153,27 +153,32 @@ describe ("Parser type", () => {
     expect (tag.node).toEqual (expected);
   });
 
-  test ("syntax errors", () => {
-    // expect (() => player``)
-    //   .toThrowError (new SyntaxError ("A table block should have at least one member"));
+  test ("empty tag", () => {
+    const tag = player``;
 
+    const expected = Root (
+      player,
+      [All ("*")]
+    );
+
+    expect (tag.node).toEqual (expected);
+  });
+
+  test ("syntax errors", () => {
     expect (() => player`id, last_name`)
       .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
 
     expect (() => player`concat(*)`)
       .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
 
-    // expect (() => player``)
-    //   .toThrowError (new SyntaxError ('Unexpected end of input, expected: "IDENTIFIER"'));
-
-    expect (() => player`${[]}`)
-      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
+    expect (() => player`${league`*`}`)
+      .toThrowError (new SyntaxError ("player has no ref defined for: league"));
 
     expect (() => player`${["name"]}`)
-      .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
+      .toThrowError (new SyntaxError ("Invalid dynamic members, expected Array of ASTNode"));
 
     expect (() => player`${[All ("*")]} last_name`)
-      .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: "EOF"'));
+      .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: "EOT"'));
 
     const parser = new Parser ("*", [], player);
     parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };

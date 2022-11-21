@@ -8,7 +8,7 @@ import aggregate from "./aggregate";
 interface RQLTag<Params> {
   node: Root<Params>;
   map<Params2>(f: (node: Root<Params>) => Root<Params2>): RQLTag<Params2>;
-  run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]>;
+  run<Return>(querier: Querier<Return>, params?: Params): Promise<Return[]>;
   [flMap]: RQLTag<Params>["map"];
 }
 
@@ -35,7 +35,7 @@ function map(this: RQLTag<unknown>, f: (node: Root<unknown>) => Root<unknown>) {
   return RQLTag (f (this.node));
 }
 
-function run(this: RQLTag<unknown>, querier: Querier<StringMap>, params: unknown = {}) {
+function run(this: RQLTag<unknown>, querier: Querier<StringMap>, params?: unknown) {
   return new Promise ((res, rej) => {
     if (!(Root.isRoot (this.node))) {
       rej (new Error ("You can only run a RQLTag that holds a Root node"));
@@ -47,7 +47,7 @@ function run(this: RQLTag<unknown>, querier: Querier<StringMap>, params: unknown
       return;
     }
 
-    const interpret = Interpreter (params);
+    const interpret = Interpreter (params || {});
 
     aggregate (querier, interpret, this.node)
       .then (res)

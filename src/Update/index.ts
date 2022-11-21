@@ -17,7 +17,7 @@ const prototype = {
   compile, toString
 };
 
-function Update(table: Table, columns: string[], data: StringMap) {
+function Update(table: Table, columns?: string[], data?: StringMap) {
   let update: Update = Object.create (prototype);
   update.table = table;
   update.columns = columns || [];

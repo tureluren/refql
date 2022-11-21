@@ -1,10 +1,15 @@
 import mariaDB from "mariadb";
+import mySQL from "mysql2";
+import pg from "pg";
 import Table from ".";
 import { Querier } from "../common/types";
 import { All, BelongsTo, BelongsToMany, HasMany } from "../nodes";
 import HasOne from "../nodes/HasOne";
+import { Player } from "../soccer";
 import mariaDBQuerier from "../test/mariaDBQuerier";
-import { player, rating, team } from "../test/tables";
+import mySQLQuerier from "../test/mySQLQuerier";
+import pgQuerier from "../test/pgQuerier";
+import { position } from "../test/tables";
 import userConfig from "../test/userConfig";
 import belongsTo from "./belongsTo";
 import belongsToMany from "./belongsToMany";
@@ -12,43 +17,43 @@ import hasMany from "./hasMany";
 import hasOne from "./hasOne";
 
 describe ("Table type", () => {
+  let pool: any;
+  let querier: Querier<Player>;
 
-  // let pool: any;
-  // let querier: Querier<any>;
+  if (process.env.DB_TYPE === "mysql") {
+    pool = mySQL.createPool (userConfig ("mysql"));
+    querier = mySQLQuerier (pool);
+  } else if (process.env.DB_TYPE === "mariadb") {
+    pool = mariaDB.createPool (userConfig ("mariadb"));
+    querier = mariaDBQuerier (pool);
+  } else {
+    pool = new pg.Pool (userConfig ("pg"));
+    querier = pgQuerier (pool);
+  }
 
-  // pool = mariaDB.createPool (userConfig ("mariadb"));
-  // querier = mariaDBQuerier (pool);
+  afterAll (() => {
+    pool.end ();
+  });
 
-  test ("create Table", async () => {
-    // const qry = player<{id: number}>`
-    //   id
-    //   last_name
-    //   ${team<{limit: number}>`
-    //     id
-    //     name
-    //   `}
-    //   ${rating`
-    //     player_id
-    //     dribbling
-    //   `}
-    // `;
+  test ("create Table", () => {
+    const player = Table ("player");
+    const player2 = Table ("public.player");
 
-    // const playerke = await qry.run (querier, { id: 1 });
-    // console.log (playerke[0]);
+    expect (player.name).toBe ("player");
+    expect (player.schema).toBe (undefined);
+    expect (player2.schema).toBe ("public");
+    expect (`${player}`).toBe ("Table (player)");
+    expect (`${player2}`).toBe ("Table (player, public)");
+    expect (Table.isTable (player)).toBe (true);
+    expect (Table.isTable ({})).toBe (false);
+  });
 
-    // player;
+  test ("run", async () => {
+    const positions = await position.run (querier);
+    const position1 = positions[0];
 
-    // const player2 = Table ("public.player", refsF);
-
-    // expect (player.name).toBe ("player");
-    // expect (player.as).toBe ("player");
-    // expect (player.schema).toBe (undefined);
-    // expect (player2.name).toBe ("player");
-    // expect (player2.as).toBe ("player");
-    // expect (player2.schema).toBe ("public");
-    // // expect (`${player}`).toBe ("Table (player, p, public)");
-    // expect (Table.isTable (player)).toBe (true);
-    // expect (Table.isTable ({})).toBe (false);
+    expect (Object.keys (position1)).toEqual (["id", "name"]);
+    expect (positions.length).toBe (11);
   });
 
   test ("BelongsTo ref - default ref info", () => {
@@ -130,6 +135,33 @@ describe ("Table type", () => {
 
     expect (JSON.stringify (belongsToManyNode)).toBe (JSON.stringify (expected));
   });
+
+  test ("BelongsToMany ref - default ref - child > parent", () => {
+    const [gamesTable, refMaker] = belongsToMany ("game");
+
+    expect (gamesTable.equals (Table ("game"))).toBe (true);
+
+    const belongsToManyNode = refMaker (
+      Table ("athlete"),
+      [All ("*")]
+    );
+
+    const expected = BelongsToMany (
+      gamesTable,
+      {
+        as: "games",
+        lRef: "id",
+        rRef: "id",
+        lxRef: "athlete_id",
+        rxRef: "game_id",
+        xTable: Table ("athlete_game")
+      },
+      [All ("*")]
+    );
+
+    expect (JSON.stringify (belongsToManyNode)).toBe (JSON.stringify (expected));
+  });
+
 
   test ("BelongsToMany ref - alias through RQLTag", () => {
     const [gamesTable, refMaker] = belongsToMany ("game", { as: "fixtures" });

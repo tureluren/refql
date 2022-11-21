@@ -9,7 +9,7 @@ interface SQLTag<Params> {
   values: (string | Variable<Params>)[];
   concat<Params2>(other: SQLTag<Params2>): SQLTag<Params & Params2>;
   map<Params2>(f: (values: (string | Variable<Params>)[]) => (string | Variable<Params2>)[]): SQLTag<Params2>;
-  run<Return>(querier: Querier<Return>, params: Params): Promise<Return[]>;
+  run<Return>(querier: Querier<Return>, params?: Params): Promise<Return[]>;
   [flConcat]: SQLTag<Params>["concat"];
   [flMap]: SQLTag<Params>["map"];
 }
@@ -38,12 +38,12 @@ function map(this: SQLTag<unknown>, f: (values: (string | Variable<unknown>)[]) 
   return SQLTag<unknown> (f (this.values));
 }
 
-function run(this: SQLTag<unknown>, querier: Querier<StringMap>, params: unknown = {}) {
+function run(this: SQLTag<unknown>, querier: Querier<StringMap>, params?: unknown) {
   return new Promise ((res, rej) => {
     let query, values;
 
     try {
-      [query, values] = compileSQLTag (this, 0, params);
+      [query, values] = compileSQLTag (this, 0, params || {});
     } catch (err: any) {
       rej (err);
       return;

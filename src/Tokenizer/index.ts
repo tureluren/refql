@@ -3,7 +3,7 @@ export type TokenType =
   | "(" | ")" | "," | "VARIABLE"
   | "true" | "false" | "null" | "NUMBER"
   | "<" | "-" | "x" | "*" | "SCHEMA"
-  | "IDENTIFIER" | "STRING" | "EOF";
+  | "IDENTIFIER" | "STRING" | "EOT";
 
 export type Token = {
   type: TokenType | null;
@@ -63,7 +63,7 @@ class Tokenizer {
 
   getNextToken(): Token {
     if (!this.hasMoreTokens ()) {
-      return { type: "EOF", value: "EOF" };
+      return { type: "EOT", value: "EOT" };
     }
 
     const str = this.str.slice (this.idx);

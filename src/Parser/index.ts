@@ -25,7 +25,8 @@ class Parser {
   }
 
   Root() {
-    return Root (this.table, this.members ());
+    const members = this.members ();
+    return Root (this.table, members.length ? members : [All ("*")]);
   }
 
   Identifier() {
@@ -39,12 +40,6 @@ class Parser {
     const sign = this.eat ("*").value;
 
     return All (sign);
-  }
-
-  Schema() {
-    if (this.isNext ("SCHEMA")) {
-      return this.eat ("SCHEMA").value.slice (0, -1);
-    }
   }
 
   Variable() {
@@ -72,7 +67,9 @@ class Parser {
       });
 
       if (!ref) {
-        throw new Error ("new Ref");
+        throw new Error (
+          `${this.table.name} has no ref defined for: ${table.name}`
+        );
       }
 
       return ref[1] (this.table, members, as);
@@ -91,20 +88,19 @@ class Parser {
     if (this.isNext ("VARIABLE") && Array.isArray (this.values[this.idx])) {
       const members = this.spliceValue ();
       if (
-        !members.length ||
         !members.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && m.isASTNode, true)
       ) {
-        throw new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode");
+        throw new SyntaxError ("Invalid dynamic members, expected Array of ASTNode");
       }
 
-      this.eat ("EOF");
+      this.eat ("EOT");
 
       return members;
     }
 
     const members = [];
 
-    do {
+    while (!this.isNext ("EOT")) {
       const member = this.Member ();
 
       if (this.isNext ("(")) {
@@ -112,10 +108,9 @@ class Parser {
       } else {
         members.push (member);
       }
+    }
 
-    } while (!this.isNext ("EOF"));
-
-    this.eat ("EOF");
+    this.eat ("EOT");
 
     return members;
   }
@@ -247,12 +242,6 @@ class Parser {
 
   eat(tokenType: TokenType) {
     const token = this.lookahead;
-
-    if (token.type === "EOF" && tokenType !== "EOF") {
-      throw new SyntaxError (
-        `Unexpected end of input, expected: "${tokenType}"`
-      );
-    }
 
     if (token.type !== tokenType) {
       throw new SyntaxError (

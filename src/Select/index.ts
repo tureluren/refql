@@ -15,7 +15,7 @@ const prototype = {
   compile, toString
 };
 
-function Select(table: Table, columns: string[]) {
+function Select(table: Table, columns?: string[]) {
   let select: Select = Object.create (prototype);
   select.table = table;
   select.columns = columns || [];

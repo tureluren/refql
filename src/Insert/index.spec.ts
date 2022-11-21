@@ -18,7 +18,29 @@ describe ("Insert type", () => {
     expect (insert.data).toEqual (players);
   });
 
+  test ("create Insert - defaults", () => {
+    const player = Table ("player");
+    const insert = Insert (player);
+
+    expect (insert.table).toEqual (player);
+    expect (insert.columns).toEqual ([]);
+    expect (insert.data).toEqual ([]);
+  });
+
   test ("compile Insert", () => {
+    const player = Table ("public.player");
+    const insert = Insert (player, columns, players);
+
+    const [query, values] = insert.compile ();
+
+    expect (query).toBe (
+      "insert into public.player (first_name, last_name) values ($1, $2), ($3, $4)"
+    );
+
+    expect (values).toEqual (["John", "Doe", "Jane", "Doe"]);
+  });
+
+  test ("compile Insert - paramIdx 2", () => {
     const player = Table ("public.player");
     const insert = Insert (player, columns, players);
 
