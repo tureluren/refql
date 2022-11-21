@@ -7,17 +7,6 @@ import In from "../In";
 import Select from "../Select";
 import Table from "../Table";
 
-export const byId = (table: Table, id?: string | number, op: "where" | "and" = "and") => chain (
-  get ("values"),
-  values => {
-    if (id == null) return r => r;
-
-    return evolve ({
-      query: q => `${q} ${op} ${table.as}.id = $${values.length + 1}`,
-      values: concat (id)
-    });
-  });
-
 export const castAs = (sql: boolean | null | number | string, as?: string, cast?: string) =>
   `${sql}${cast ? `::${cast}` : ""}${as ? ` as ${as}` : ""}`;
 
@@ -39,30 +28,6 @@ export const joinOn = (lRefs: Ref[], rRefs: Ref[], table: Table, xTable: Table) 
 
 export const refsToComp = (table: Table, refs: Ref[]) =>
   refs.map (r => `${table.name}.${r.name} as ${r.as}`);
-
-export const paginate = (limit?: number, offset?: number) => chain (
-  get ("values"),
-  values => {
-    if (limit == null && offset == null) return r => r;
-
-    let query = ``, vals = [];
-
-    if (limit != null) {
-      query += ` limit $${values.length + 1}`;
-      vals.push (limit);
-    }
-
-    if (offset != null) {
-      query += ` offset $${values.length + vals.length + 1}`;
-      vals.push (offset);
-    }
-
-    return evolve ({
-      query: q => `${q}${query}`,
-      values: concat (vals)
-    });
-  }
-);
 
 export const select = (comps: string | string[], rec: Rec) =>
   over ("comps", concat (comps), rec);

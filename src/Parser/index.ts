@@ -67,8 +67,7 @@ class Parser {
       this.values.splice (this.idx, 1);
       const { members, table } = value.node;
 
-      // ref = [HasMany, { table, lref, ... }]
-      const ref = this.table.refs.find (([_rel, t]) => {
+      const ref = this.table.refs.find (([t]) => {
         return t.equals (table);
       });
 
@@ -76,8 +75,7 @@ class Parser {
         throw new Error ("new Ref");
       }
 
-
-      return ref[0] (ref[1], { ...ref[2], as: as || ref[2].as || this.table.name }, members);
+      return ref[1] (this.table, members, as);
     }
     const variable = Variable (value, as, cast);
     this.idx += 1;

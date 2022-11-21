@@ -1,3 +1,4 @@
+import { ASTNode, BelongsTo, BelongsToMany, HasMany, HasOne } from "../nodes";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
 
@@ -36,29 +37,27 @@ export interface CastAs {
   cast?: string;
 }
 
-export interface BelongsToInfo {
+export interface RefInfo {
   as: string;
   lRef: string;
   rRef: string;
 }
 
-export interface BelongsToManyInfo {
-  as: string;
-  lRef: string;
-  rRef: string;
+export interface BelongsToInfo extends RefInfo {}
+
+export interface BelongsToManyInfo extends RefInfo {
+  xTable: Table;
   lxRef: string;
   rxRef: string;
-  xTable: Table;
 }
 
-export interface HasManyInfo {
-  as: string;
-  lRef: string;
-  rRef: string;
-}
+export interface HasManyInfo extends RefInfo {}
 
-export interface HasOneInfo {
-  as: string;
-  lRef: string;
-  rRef: string;
-}
+export interface HasOneInfo extends RefInfo {}
+
+export type TableRefMakerPair =
+  [
+    Table,
+    (parent: Table, members: ASTNode<unknown>[], as?: string) =>
+      BelongsTo<unknown> | BelongsToMany<unknown> | HasMany<unknown> | HasOne<unknown>
+  ];

@@ -12,7 +12,6 @@ import NullLiteral from "./NullLiteral";
 import NumericLiteral from "./NumericLiteral";
 import Root from "./Root";
 import StringLiteral from "./StringLiteral";
-import TableNode, { Keywords } from "./TableNode";
 import Variable from "./Variable";
 
 export {
@@ -24,13 +23,11 @@ export {
   HasMany,
   HasOne,
   Identifier,
-  Keywords,
   Literal,
   BelongsToMany,
   NullLiteral,
   NumericLiteral,
   Root,
   StringLiteral,
-  TableNode,
   Variable
 };

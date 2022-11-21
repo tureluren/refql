@@ -1,26 +1,24 @@
 import { refqlType } from "../common/consts";
 import { HasOneInfo, StringMap } from "../common/types";
 import Table from "../Table";
-import ASTNode from "./ASTNode";
-import TableNode, { Keywords, tableNodePrototype } from "./TableNode";
+import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface HasOne<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode<Params2>): HasOne<Params & Params2>;
-  setMembers<Params2>(members: ASTNode<Params2>[]): HasOne<Params & Params2>;
+interface HasOne<Params> extends ASTNode<Params> {
+  table: Table;
+  members: ASTNode<Params>[];
   info: HasOneInfo;
 }
 
 const hasOneType = "refql/HasOne";
 
-function HasOne<Params>(table: Table, info: HasOneInfo, members: ASTNode<Params>[]) {
+const hasOnePrototype = Object.assign ({}, astNodePrototype, {
+  constructor: HasOne,
+  [refqlType]: hasOneType,
+  caseOf
+});
 
-  let hasOne: HasOne<Params> = Object.create (
-    Object.assign ({}, tableNodePrototype, {
-      constructor: HasOne,
-      [refqlType]: hasOneType,
-      setMembers
-    })
-  );
+function HasOne<Params>(table: Table, info: HasOneInfo, members: ASTNode<Params>[]) {
+  let hasOne: HasOne<Params> = Object.create (hasOnePrototype);
 
   hasOne.table = table;
   hasOne.info = info;
@@ -29,11 +27,12 @@ function HasOne<Params>(table: Table, info: HasOneInfo, members: ASTNode<Params>
   return hasOne;
 }
 
-function setMembers(this: HasOne<StringMap>, members: ASTNode<StringMap>[]) {
-  let hasOne = HasOne (this.table, this.info);
-  hasOne.members = members;
-
-  return hasOne;
+function caseOf(this: HasOne<unknown>, structureMap: StringMap) {
+  return structureMap.HasOne (
+    this.table,
+    this.members,
+    this.info
+  );
 }
 
 HasOne.isHasOne = function <Params> (value: any): value is HasOne<Params> {

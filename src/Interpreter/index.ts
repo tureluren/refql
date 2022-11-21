@@ -11,8 +11,8 @@ import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
 import interpretSQLTag from "./interpretSQLTag";
 import {
-  byId, castAs, fromTable, joinOn,
-  paginate, select, selectRefs, whereIn
+  castAs, fromTable, joinOn,
+  select, selectRefs, whereIn
 } from "./sqlBuilders";
 import next from "./next";
 
@@ -34,9 +34,7 @@ const Interpreter = <Params> (params: Params) => {
       Root: (table, members) =>
         interpretMembers (members, table)
           .map (fromTable (table))
-          // .map (byId (table, id, "where"))
           .map (includeSQL (table, false))
-          // .map (paginate (limit, offset))
           .rec,
 
       HasMany: (table, members) => {
@@ -46,9 +44,7 @@ const Interpreter = <Params> (params: Params) => {
           .map (selectRefs (table, refs.rRefs))
           .map (fromTable (table))
           .map (whereIn (refs.lRefs, refs.rRefs, rows, table))
-          // .map (byId (table, id))
           .map (includeSQL (table))
-          // .map (paginate (limit, offset))
           .rec;
       },
 
@@ -59,9 +55,7 @@ const Interpreter = <Params> (params: Params) => {
           .map (selectRefs (table, refs.rRefs))
           .map (fromTable (table))
           .map (whereIn (refs.lRefs, refs.rRefs, rows, table))
-          // .map (byId (table, id))
           .map (includeSQL (table))
-          // .map (paginate (limit, offset))
           .rec;
       },
 
@@ -72,9 +66,7 @@ const Interpreter = <Params> (params: Params) => {
           .map (selectRefs (table, refs.rRefs))
           .map (fromTable (table))
           .map (whereIn (refs.lRefs, refs.rRefs, rows, table))
-          // .map (byId (table, id))
           .map (includeSQL (table))
-          // .map (paginate (limit, offset))
           .rec;
       },
 
@@ -82,24 +74,12 @@ const Interpreter = <Params> (params: Params) => {
       BelongsToMany: (table, members, { xTable }) => {
         if (!rows) return toNext (node, rec);
 
-        // const x = Table (
-        //   xtable || `${parent.name}_${table.name}`
-        // );
-
-        // MAAK AL TABLE DOOR USER
-        // const x = Table (
-        //   // `${parent.name}_${table.name}`
-        //   xTable
-        // );
-
         return interpretMembers (members, table)
           .map (selectRefs (xTable, refs.lxRefs))
           .map (fromTable (table, true))
           .map (joinOn (refs.rxRefs, refs.rRefs, table, xTable))
           .map (whereIn (refs.lRefs, refs.lxRefs, rows, xTable))
-          // .map (byId (table, id))
           .map (includeSQL (table))
-          // .map (paginate (limit, offset))
           .rec;
       },
 

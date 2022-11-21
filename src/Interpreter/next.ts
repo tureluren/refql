@@ -3,7 +3,6 @@ import emptyRefs from "../common/emptyRefs";
 import { evolve } from "../Env/access";
 import Rec from "../Env/Rec";
 import { ASTNode } from "../nodes";
-import Table from "../Table";
 import { refsToComp } from "./sqlBuilders";
 
 const createRef = (as: string) => (kw: string, refs: string) =>
@@ -18,23 +17,22 @@ const next = <Params>(params: Params) => (node: ASTNode<Params>, rec: Rec) => {
   let refs = emptyRefs ();
 
   node.caseOf<void> ({
-    BelongsTo: (child, _members, { lRef, rRef, as }) => {
+    BelongsTo: (_c, _m, { lRef, rRef, as }) => {
       const refOf = createRef (as);
-      // what if empty, create default refs al bij has many creatie
       refs.lRefs = refOf ("lref", lRef);
       refs.rRefs = refOf ("rref", rRef);
     },
-    HasMany: (child, _members, { lRef, rRef, as }) => {
+    HasMany: (_c, _m, { lRef, rRef, as }) => {
       const refOf = createRef (as);
       refs.lRefs = refOf ("lref", lRef);
       refs.rRefs = refOf ("rref", rRef || table.name + "_id");
     },
-    HasOne: (child, _members, { lRef, rRef, as }) => {
+    HasOne: (_c, _m, { lRef, rRef, as }) => {
       const refOf = createRef (as);
       refs.lRefs = refOf ("lref", lRef);
       refs.rRefs = refOf ("rref", rRef || table.name + "_id");
     },
-    BelongsToMany: (child, _members, { lRef, rRef, lxRef, rxRef, as }) => {
+    BelongsToMany: (_c, _m, { lRef, rRef, lxRef, rxRef, as }) => {
       const refOf = createRef (as);
       refs.lRefs = refOf ("lref", lRef);
       refs.rRefs = refOf ("rref", rRef);

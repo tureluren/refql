@@ -8,7 +8,6 @@ import In from "../In";
 import Insert from "../Insert";
 import { Variable } from "../nodes";
 import Raw from "../Raw";
-import rql from "../RQLTag/rql";
 import Select from "../Select";
 import { Player } from "../soccer";
 import Table from "../Table";

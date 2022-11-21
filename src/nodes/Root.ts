@@ -1,26 +1,35 @@
 import { refqlType } from "../common/consts";
+import { StringMap } from "../common/types";
 import Table from "../Table";
-import ASTNode from "./ASTNode";
-import TableNode, { Keywords, tableNodePrototype } from "./TableNode";
+import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Root<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode<Params2>): Root<Params & Params2>;
+interface Root<Params> extends ASTNode<Params> {
+  table: Table;
+  members: ASTNode<Params>[];
 }
 
 const rootType = "refql/Root";
 
+const rootPrototype = Object.assign ({}, astNodePrototype, {
+  constructor: Root,
+  [refqlType]: rootType,
+  caseOf
+});
+
 function Root<Params>(table: Table, members: ASTNode<Params>[]) {
-  let root: Root<Params> = Object.create (
-    Object.assign ({}, tableNodePrototype, {
-      constructor: Root,
-      [refqlType]: rootType
-    })
-  );
+  let root: Root<Params> = Object.create (rootPrototype);
 
   root.table = table;
   root.members = members;
 
   return root;
+}
+
+function caseOf(this: Root<unknown>, structureMap: StringMap) {
+  return structureMap.Root (
+    this.table,
+    this.members
+  );
 }
 
 Root.isRoot = function<Params> (value: any): value is Root<Params> {

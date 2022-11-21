@@ -7,44 +7,44 @@ import {
 import Raw from "../Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
-import { Game, GamePlayer, Goal, Player, Position, Team } from "../test/tables";
+import { game, goal, player, position, team } from "../test/tables";
 import Tokenizer, { TokenType } from "../Tokenizer";
 
 describe ("Parser type", () => {
   test ("create Parser", () => {
     const str = "* $";
-    const parser = new Parser (str, [Team], Player);
+    const parser = new Parser (str, [team], player);
     const tokenizer = new Tokenizer (str);
     const lookahead = tokenizer.getNextToken ();
 
     expect (parser.str).toBe (str);
     expect (parser.idx).toBe (0);
-    expect (parser.values).toEqual ([Team]);
+    expect (parser.values).toEqual ([team]);
     expect (parser.tokenizer).toEqual (tokenizer);
     expect (parser.lookahead).toEqual (lookahead);
   });
 
   test ("references", () => {
-    const positionQuery = Position`*`;
+    const positionQuery = position`*`;
     const spaceRaw = Raw ("' '");
 
-    const tag = Player`
+    const tag = player`
       id:identifier::text
       birthday
       concat:full_name (upper (last_name), " ", ${spaceRaw}, first_name)
-      ${Goal`
+      ${goal`
         minute
       `}
-      ${Team`
+      ${team`
         name:team_name
-        ${Player`
+        ${player`
           last_name
-          ${Position`
+          ${position`
             *
           `}
         `}
       `}:squad
-      ${Game`
+      ${game`
         ${[All ("*")]}
       `}
       ${positionQuery}: pos
@@ -58,31 +58,43 @@ describe ("Parser type", () => {
     const firstName = Identifier ("first_name");
     const space = StringLiteral (" ");
     const spaceVariable = Variable (spaceRaw);
-    const fullName = Call ("concat", [upperLastName, space, spaceVariable, firstName], "full_name");
+    const fullName = Call (
+      "concat", [upperLastName, space, spaceVariable, firstName], "full_name"
+    );
 
     const minute = Identifier ("minute");
-    const goalsAst = HasMany (Table ("goal"), { as: "goals", lRef: "id", rRef: "player_id" }, [minute]);
+    const goalsAst = HasMany (
+      Table ("goal"), { as: "goals", lRef: "id", rRef: "player_id" }, [minute]
+    );
 
     const name = Identifier ("name", "team_name");
     const allPositionFields = All ("*");
-    const positionAst = BelongsTo (Table ("position"), { as: "position", lRef: "position_id", rRef: "id" }, [allPositionFields]);
+    const positionAst = BelongsTo (
+      Table ("position"), { as: "position", lRef: "position_id", rRef: "id" }, [allPositionFields]
+    );
 
-    const playersAst = HasMany (Table ("player"), { as: "players", lRef: "id", rRef: "team_id" }, [lastName, positionAst]);
-    const teamAst = BelongsTo (Table ("public.team"), { as: "squad", lRef: "team_id", rRef: "id" }, [name, playersAst]);
+    const playersAst = HasMany (
+      Table ("player"), { as: "players", lRef: "id", rRef: "team_id" }, [lastName, positionAst]
+    );
+    const teamAst = BelongsTo (
+      Table ("public.team"), { as: "squad", lRef: "team_id", rRef: "id" }, [name, playersAst]
+    );
 
     const gamesAst = BelongsToMany (Table ("game"), {
       xTable: Table ("game_player"),
       as: "games",
       lRef: "id",
       rRef: "id",
-      rxRef: "player_id",
-      lxRef: "game_id"
+      lxRef: "player_id",
+      rxRef: "game_id"
     }, [All ("*")]);
 
-    const positionAst2 = BelongsTo (Table ("position"), { as: "pos", lRef: "position_id", rRef: "id" }, [allPositionFields]);
+    const positionAst2 = BelongsTo (
+      Table ("position"), { as: "pos", lRef: "position_id", rRef: "id" }, [allPositionFields]
+    );
 
     const expected = Root (
-      Player,
+      player,
       [identifier, birthday, fullName, goalsAst, teamAst, gamesAst, positionAst2]
     );
 
@@ -98,7 +110,7 @@ describe ("Parser type", () => {
 
     type Params = { limit: number; offset: number };
 
-    const tag = Player<Params>`
+    const tag = player<Params>`
       id
       last_name
       ${orderBySQL}
@@ -111,7 +123,7 @@ describe ("Parser type", () => {
     const paginate = Variable (paginateSQL);
 
     const expected = Root<Params> (
-      Player,
+      player,
       [id, lastName, orderBy, paginate]
     );
 
@@ -119,7 +131,7 @@ describe ("Parser type", () => {
   });
 
   test ("literals", () => {
-    const tag = Player`
+    const tag = player`
       "1":one::int
       2:two::text
       true:t::text
@@ -134,7 +146,7 @@ describe ("Parser type", () => {
     const n = NullLiteral (null, "n", "text");
 
     const expected = Root (
-      Player,
+      player,
       [one, two, t, f, n]
     );
 
@@ -142,25 +154,28 @@ describe ("Parser type", () => {
   });
 
   test ("syntax errors", () => {
-    // expect (() => Player``)
+    // expect (() => player``)
     //   .toThrowError (new SyntaxError ("A table block should have at least one member"));
 
-    expect (() => Player`id, last_name`)
+    expect (() => player`id, last_name`)
       .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
 
-    expect (() => Player`concat(*)`)
+    expect (() => player`concat(*)`)
       .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
 
-    // expect (() => Player``)
+    // expect (() => player``)
     //   .toThrowError (new SyntaxError ('Unexpected end of input, expected: "IDENTIFIER"'));
 
-    expect (() => Player`${[]}`)
+    expect (() => player`${[]}`)
       .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
 
-    expect (() => Player`${["name"]}`)
+    expect (() => player`${["name"]}`)
       .toThrowError (new SyntaxError ("Invalid dynamic members, expected non-empty Array of ASTNode"));
 
-    const parser = new Parser ("*", [], Player);
+    expect (() => player`${[All ("*")]} last_name`)
+      .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: "EOF"'));
+
+    const parser = new Parser ("*", [], player);
     parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };
 
     expect (() => parser.Literal ())

@@ -1,26 +1,25 @@
 import { refqlType } from "../common/consts";
 import { HasManyInfo, StringMap } from "../common/types";
 import Table from "../Table";
-import ASTNode from "./ASTNode";
-import TableNode, { Keywords, tableNodePrototype } from "./TableNode";
+import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface HasMany<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode<Params2>): HasMany<Params & Params2>;
-  setMembers<Params2>(members: ASTNode<Params2>[]): HasMany<Params & Params2>;
+interface HasMany<Params> extends ASTNode<Params> {
+  table: Table;
+  members: ASTNode<Params>[];
   info: HasManyInfo;
 }
 
 const hasManyType = "refql/HasMany";
 
-function HasMany<Params>(table: Table, info: HasManyInfo, members: ASTNode<Params>[]) {
+const hasManyPrototype = Object.assign ({}, astNodePrototype, {
+  constructor: HasMany,
+  [refqlType]: hasManyType,
+  caseOf
+});
 
-  let hasMany: HasMany<Params> = Object.create (
-    Object.assign ({}, tableNodePrototype, {
-      constructor: HasMany,
-      [refqlType]: hasManyType,
-      setMembers
-    })
-  );
+function HasMany<Params>(table: Table, info: HasManyInfo, members: ASTNode<Params>[]) {
+  let hasMany: HasMany<Params> = Object.create (hasManyPrototype);
+
   hasMany.table = table;
   hasMany.info = info;
   hasMany.members = members;
@@ -28,11 +27,12 @@ function HasMany<Params>(table: Table, info: HasManyInfo, members: ASTNode<Param
   return hasMany;
 }
 
-function setMembers(this: HasMany<StringMap>, members: ASTNode<StringMap>[]) {
-  let hasMany = HasMany (this.table, this.info);
-  hasMany.members = members;
-
-  return hasMany;
+function caseOf(this: HasMany<unknown>, structureMap: StringMap) {
+  return structureMap.HasMany (
+    this.table,
+    this.members,
+    this.info
+  );
 }
 
 HasMany.isHasMany = function <Params> (value: any): value is HasMany<Params> {

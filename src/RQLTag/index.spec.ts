@@ -11,9 +11,8 @@ import Table from "../Table";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { Game, Goal, League, Player as player, Team } from "../test/tables";
+import { game, goal, league, player, team } from "../test/tables";
 import userConfig from "../test/userConfig";
-import rql from "./rql";
 
 describe ("RQLTag type", () => {
   let pool: any;
@@ -100,16 +99,16 @@ describe ("RQLTag type", () => {
   test ("aggregate", async () => {
     const tag = player`
       last_name
-      ${Team`
+      ${team`
         name
-        ${League`
+        ${league`
           name 
         `}
         ${player`
           last_name 
         `}: players
       `}
-      ${Game`
+      ${game`
         result 
       `}: games
       ${sql`
@@ -119,22 +118,22 @@ describe ("RQLTag type", () => {
 
     const players = await tag.run<Player> (querier, {});
     const player1 = players[0];
-    const team = player1.team;
-    const teammate = team.players[0];
-    const league = player1.team.league;
-    const game = player1.games[0];
+    const playerTeam = player1.team;
+    const teammate = playerTeam.players[0];
+    const teamLeague = player1.team.league;
+    const playerGame = player1.games[0];
 
     expect (Object.keys (player1)).toEqual (["last_name", "team", "games"]);
-    expect (Object.keys (team)).toEqual (["name", "league", "players"]);
-    expect (Object.keys (league)).toEqual (["name"]);
+    expect (Object.keys (playerTeam)).toEqual (["name", "league", "players"]);
+    expect (Object.keys (teamLeague)).toEqual (["name"]);
     expect (Object.keys (teammate)).toEqual (["last_name"]);
-    expect (Object.keys (game)).toEqual (["result"]);
+    expect (Object.keys (playerGame)).toEqual (["result"]);
     expect (players.length).toBe (30);
   });
 
   test ("No record found", async () => {
     const tag = player`
-      ${Goal`
+      ${goal`
         * 
       `}
       ${sql`

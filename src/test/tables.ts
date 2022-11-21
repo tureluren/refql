@@ -4,22 +4,18 @@ import hasMany from "../Table/hasMany";
 import hasOne from "../Table/hasOne";
 import belongsToMany from "../Table/belongsToMany";
 
-const Game = Table ("game");
-const GamePlayer = Table ("game_player");
-const Goal = Table ("goal");
-const League = Table ("league");
+const game = Table ("game");
+const gamePlayer = Table ("game_player");
+const goal = Table ("goal");
+const league = Table ("league");
 
-const Player = Table ("player", [
+const player = Table ("player", [
   belongsTo ("public.team", {
     as: "team",
     lRef: "team_id",
     rRef: "id"
   }),
-  belongsTo ("position", {
-    as: "position",
-    lRef: "position_id",
-    rRef: "id"
-  }),
+  belongsTo ("position"),
   hasOne ("rating", {
     as: "rating",
     lRef: "id",
@@ -30,24 +26,13 @@ const Player = Table ("player", [
     lRef: "id",
     rRef: "player_id"
   }),
-  belongsToMany ("game", {
-    xTable: "game_player",
-    as: "games",
-    lRef: "id",
-    rRef: "id",
-    rxRef: "player_id",
-    lxRef: "game_id"
-  })
+  belongsToMany ("game", { as: "games" })
 ]);
 
-const Position = Table ("position");
+const position = Table ("position");
 
-const Team = Table ("public.team", [
-  hasMany ("player", {
-    as: "players",
-    lRef: "id",
-    rRef: `team_id`
-  }),
+const team = Table ("public.team", [
+  hasMany ("player", { as: "players" }),
   belongsTo ("league", {
     as: "league",
     lRef: "league_id",
@@ -55,24 +40,15 @@ const Team = Table ("public.team", [
   })
 ]);
 
-
-
-const Rating = Table ("rating");
-
-// const qry = Player`
-//   id
-//   ${Position`
-//     id
-//   `}
-// `;
+const rating = Table ("rating");
 
 export {
-  Game,
-  GamePlayer,
-  Goal,
-  League,
-  Position,
-  Player,
-  Rating,
-  Team
+  game,
+  gamePlayer,
+  goal,
+  league,
+  position,
+  player,
+  rating,
+  team
 };

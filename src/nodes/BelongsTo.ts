@@ -1,21 +1,24 @@
 import { refqlType } from "../common/consts";
 import { BelongsToInfo, StringMap } from "../common/types";
 import Table from "../Table";
-import ASTNode from "./ASTNode";
-import TableNode, { tableNodePrototype } from "./TableNode";
+import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface BelongsTo<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode<Params2>): BelongsTo<Params & Params2>;
-  setMembers<Params2>(members: ASTNode<Params2>[]): BelongsTo<Params & Params2>;
+interface BelongsTo<Params> extends ASTNode<Params> {
+  table: Table;
+  members: ASTNode<Params>[];
   info: BelongsToInfo;
 }
 
 const belongsToType = "refql/BelongsTo";
 
+const belongsToPrototype = Object.assign ({}, astNodePrototype, {
+  constructor: BelongsTo,
+  [refqlType]: belongsToType,
+  caseOf
+});
+
 function BelongsTo<Params>(table: Table, info: BelongsToInfo, members: ASTNode<Params>[]) {
-  let belongsTo: BelongsTo<Params> = Object.create (
-    Object.assign ({}, tableNodePrototype, { constructor: BelongsTo, [refqlType]: belongsToType, setMembers })
-  );
+  let belongsTo: BelongsTo<Params> = Object.create (belongsToPrototype);
 
   belongsTo.table = table;
   belongsTo.info = info;
@@ -24,11 +27,12 @@ function BelongsTo<Params>(table: Table, info: BelongsToInfo, members: ASTNode<P
   return belongsTo;
 }
 
-function setMembers(this: BelongsTo<StringMap>, members: ASTNode<StringMap>[]) {
-  let belongsTo = BelongsTo (this.table, this.info);
-  belongsTo.members = members;
-
-  return belongsTo;
+function caseOf(this: BelongsTo<unknown>, structureMap: StringMap) {
+  return structureMap.BelongsTo (
+    this.table,
+    this.members,
+    this.info
+  );
 }
 
 BelongsTo.isBelongsTo = function<Params> (value: any): value is BelongsTo<Params> {
