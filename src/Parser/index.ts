@@ -1,5 +1,5 @@
 import {
-  All, ASTNode, BooleanLiteral, Call,
+  all, ASTNode, BooleanLiteral, Call,
   Identifier, Literal, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "../nodes";
@@ -26,7 +26,7 @@ class Parser {
 
   Root() {
     const members = this.members ();
-    return Root (this.table, members.length ? members : [All ("*")]);
+    return Root (this.table, members.length ? members : [all]);
   }
 
   Identifier() {
@@ -37,9 +37,9 @@ class Parser {
   }
 
   All() {
-    const sign = this.eat ("*").value;
+    this.eat ("*").value;
 
-    return All (sign);
+    return all;
   }
 
   Variable() {

@@ -1,6 +1,6 @@
 import Parser from ".";
 import {
-  All, BelongsTo, BelongsToMany, BooleanLiteral, Call,
+  all, BelongsTo, BelongsToMany, BooleanLiteral, Call,
   HasMany, Identifier, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "../nodes";
@@ -45,7 +45,7 @@ describe ("Parser type", () => {
         `}
       `}:squad
       ${game`
-        ${[All ("*")]}
+        ${[all]}
       `}
       ${positionQuery}: pos
     `;
@@ -68,9 +68,8 @@ describe ("Parser type", () => {
     );
 
     const name = Identifier ("name", "team_name");
-    const allPositionFields = All ("*");
     const positionAst = BelongsTo (
-      Table ("position"), { as: "position", lRef: "position_id", rRef: "id" }, [allPositionFields]
+      Table ("position"), { as: "position", lRef: "position_id", rRef: "id" }, [all]
     );
 
     const playersAst = HasMany (
@@ -87,10 +86,10 @@ describe ("Parser type", () => {
       rRef: "id",
       lxRef: "player_id",
       rxRef: "game_id"
-    }, [All ("*")]);
+    }, [all]);
 
     const positionAst2 = BelongsTo (
-      Table ("position"), { as: "pos", lRef: "position_id", rRef: "id" }, [allPositionFields]
+      Table ("position"), { as: "pos", lRef: "position_id", rRef: "id" }, [all]
     );
 
     const expected = Root (
@@ -158,7 +157,7 @@ describe ("Parser type", () => {
 
     const expected = Root (
       player,
-      [All ("*")]
+      [all]
     );
 
     expect (tag.node).toEqual (expected);
@@ -177,7 +176,7 @@ describe ("Parser type", () => {
     expect (() => player`${["name"]}`)
       .toThrowError (new SyntaxError ("Invalid dynamic members, expected Array of ASTNode"));
 
-    expect (() => player`${[All ("*")]} last_name`)
+    expect (() => player`${[all]} last_name`)
       .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: "EOT"'));
 
     const parser = new Parser ("*", [], player);

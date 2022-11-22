@@ -1,7 +1,8 @@
 import Interpreter from ".";
 import createEnv from "../Env/createEnv";
 import {
-  All, BelongsTo, BelongsToMany, BooleanLiteral,
+  all,
+  BelongsTo, BelongsToMany, BooleanLiteral,
   Call, HasMany, HasOne, Identifier,
   NullLiteral, NumericLiteral, Root,
   StringLiteral, Variable
@@ -12,9 +13,6 @@ import Table from "../Table";
 import format from "../test/format";
 
 describe ("Interpreter", () => {
-
-  const allFields = All ("*");
-
   const playerRows = [
     { first_name: "John", last_name: "Doe", goalslref0: 1, teamlref0: 1, gameslref0: 1, gameslref1: 1 },
     { first_name: "Jane", last_name: "Doe", goalslref0: 2, teamlref0: 1, gameslref0: 2, gameslref1: 1 },
@@ -69,13 +67,13 @@ describe ("Interpreter", () => {
     );
 
     const goalsNode = HasMany (
-      Table ("goal"), { as: "goals", lRef: "id", rRef: "player_id" }, [allFields]
+      Table ("goal"), { as: "goals", lRef: "id", rRef: "player_id" }, [all]
     );
     const teamNode = BelongsTo (
-      Table ("team"), { as: "team", lRef: "team_id", rRef: "id" }, [allFields]
+      Table ("team"), { as: "team", lRef: "team_id", rRef: "id" }, [all]
     );
     const gamesNode = BelongsToMany (
-      Table ("game"), { as: "games", lRef: "id", lxRef: "player_id", rxRef: "game_id", rRef: "id", xTable: Table ("game_player") }, [allFields]
+      Table ("game"), { as: "games", lRef: "id", lxRef: "player_id", rxRef: "game_id", rRef: "id", xTable: Table ("game_player") }, [all]
     );
     const rootNode = Root (
       Table ("player"),
@@ -102,7 +100,7 @@ describe ("Interpreter", () => {
     const interpret = Interpreter ({});
 
     const goalsNode = HasMany (
-      Table ("public.goal"), { as: "goals", lRef: "id", rRef: "player_id" }, [allFields]
+      Table ("public.goal"), { as: "goals", lRef: "id", rRef: "player_id" }, [all]
     );
 
     const { query, next, values } = interpret (goalsNode, createEnv (Table ("public.goal"), playerGoalsRefs), playerRows);
@@ -121,7 +119,7 @@ describe ("Interpreter", () => {
     const interpret = Interpreter ({});
 
     const goalsNode = HasOne (
-      Table ("rating"), { as: "rating", lRef: "id", rRef: "player_id" }, [allFields]
+      Table ("rating"), { as: "rating", lRef: "id", rRef: "player_id" }, [all]
     );
 
     const { query, next, values } = interpret (goalsNode, createEnv (Table ("rating"), playerGoalsRefs), playerRows);
@@ -140,13 +138,13 @@ describe ("Interpreter", () => {
     const interpret = Interpreter ({});
 
     const leagueNode = BelongsTo (
-      Table ("league"), { as: "league", lRef: "competition_id", rRef: "identifier" }, [allFields]
+      Table ("league"), { as: "league", lRef: "competition_id", rRef: "identifier" }, [all]
     );
 
     const byName = Variable (sql`where team.name like 'FC%'`);
 
     const teamNode = BelongsTo (
-      Table ("team"), { as: "team", lRef: "team_id", rRef: "id" }, [allFields, leagueNode, byName]
+      Table ("team"), { as: "team", lRef: "team_id", rRef: "id" }, [all, leagueNode, byName]
     );
 
     const { query, next, values } = interpret (teamNode, createEnv (Table ("team"), playerTeamRefs), playerRows);
@@ -177,7 +175,7 @@ describe ("Interpreter", () => {
     const gamesNode = BelongsToMany (
       Table ("game"),
       { as: "games", lRef: "id", lxRef: "player_id", rxRef: "game_id", rRef: "id", xTable: Table ("GAMEPLAYER") },
-      [allFields]
+      [all]
     );
 
     const { query, next, values } = interpret (gamesNode, createEnv (Table ("game"), playerGamesRefs), playerRows);
@@ -199,7 +197,7 @@ describe ("Interpreter", () => {
     const gamesNode = BelongsToMany (
       Table ("game"),
       { as: "games", lRef: "id", lxRef: "player_id", rxRef: "game_id", rRef: "id", xTable: Table ("game_player") },
-      [allFields]
+      [all]
     );
 
     const { query, next, values } = interpret (gamesNode, createEnv (Table ("player"), playerGamesRefs2), playerRows);

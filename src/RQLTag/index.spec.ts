@@ -4,7 +4,7 @@ import pg from "pg";
 import RQLTag from ".";
 import { flMap } from "../common/consts";
 import { Querier } from "../common/types";
-import { All, Identifier, Root } from "../nodes";
+import { all, Identifier, Root } from "../nodes";
 import { Player } from "../soccer";
 import sql from "../SQLTag/sql";
 import mariaDBQuerier from "../test/mariaDBQuerier";
@@ -33,7 +33,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("create RQLTag", () => {
-    const node = Root (player, [All ("*")]);
+    const node = Root (player, [all]);
     const tag = RQLTag (node);
 
     expect (tag.node).toEqual (node);

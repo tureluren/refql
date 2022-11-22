@@ -329,7 +329,7 @@ const hasMany = <Params> (tag: RQLTag<Params>) => <Params2>(tag2: RQLTag<Params2
 
 
 const select = (table: Table, columns: string[] = []) => {
-  const members = columns.length ? columns.map (col => Identifier (col)) : [All ("*")];
+  const members = columns.length ? columns.map (col => Identifier (col)) : [all];
   return rql<{}>`${table} ${members}`;
 };
 

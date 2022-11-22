@@ -3,7 +3,7 @@ import mySQL from "mysql2";
 import pg from "pg";
 import Table from ".";
 import { Querier } from "../common/types";
-import { All, BelongsTo, BelongsToMany, HasMany } from "../nodes";
+import { all, BelongsTo, BelongsToMany, HasMany } from "../nodes";
 import HasOne from "../nodes/HasOne";
 import { Player } from "../soccer";
 import mariaDBQuerier from "../test/mariaDBQuerier";
@@ -63,13 +63,13 @@ describe ("Table type", () => {
 
     const belongsToNode = refMaker (
       Table ("player"),
-      [All ("*")]
+      [all]
     );
 
     const expected = BelongsTo (
       teamTable,
       { as: "team", lRef: "team_id", rRef: "id" },
-      [All ("*")]
+      [all]
     );
 
     expect (belongsToNode).toEqual (expected);
@@ -80,14 +80,14 @@ describe ("Table type", () => {
 
     const belongsToNode = refMaker (
       Table ("player"),
-      [All ("*")],
+      [all],
       "crew"
     );
 
     const expected = BelongsTo (
       teamTable,
       { as: "crew", lRef: "team_id", rRef: "id" },
-      [All ("*")]
+      [all]
     );
 
     expect (belongsToNode).toEqual (expected);
@@ -98,13 +98,13 @@ describe ("Table type", () => {
 
     const belongsToNode = refMaker (
       Table ("player"),
-      [All ("*")]
+      [all]
     );
 
     const expected = BelongsTo (
       teamTable,
       { as: "team", lRef: "TEAM_ID", rRef: "ID" },
-      [All ("*")]
+      [all]
     );
 
     expect (belongsToNode).toEqual (expected);
@@ -117,7 +117,7 @@ describe ("Table type", () => {
 
     const belongsToManyNode = refMaker (
       Table ("player"),
-      [All ("*")]
+      [all]
     );
 
     const expected = BelongsToMany (
@@ -130,7 +130,7 @@ describe ("Table type", () => {
         rxRef: "game_id",
         xTable: Table ("game_player")
       },
-      [All ("*")]
+      [all]
     );
 
     expect (JSON.stringify (belongsToManyNode)).toBe (JSON.stringify (expected));
@@ -143,7 +143,7 @@ describe ("Table type", () => {
 
     const belongsToManyNode = refMaker (
       Table ("athlete"),
-      [All ("*")]
+      [all]
     );
 
     const expected = BelongsToMany (
@@ -156,7 +156,7 @@ describe ("Table type", () => {
         rxRef: "game_id",
         xTable: Table ("athlete_game")
       },
-      [All ("*")]
+      [all]
     );
 
     expect (JSON.stringify (belongsToManyNode)).toBe (JSON.stringify (expected));
@@ -168,7 +168,7 @@ describe ("Table type", () => {
 
     const belongsToManyNode = refMaker (
       Table ("player"),
-      [All ("*")],
+      [all],
       "matches"
     );
 
@@ -182,7 +182,7 @@ describe ("Table type", () => {
         rxRef: "game_id",
         xTable: Table ("game_player")
       },
-      [All ("*")]
+      [all]
     );
 
     expect (JSON.stringify (belongsToManyNode)).toBe (JSON.stringify (expected));
@@ -200,7 +200,7 @@ describe ("Table type", () => {
 
     const belongsToManyNode = refMaker (
       Table ("player"),
-      [All ("*")]
+      [all]
     );
 
     const expected = BelongsToMany (
@@ -213,7 +213,7 @@ describe ("Table type", () => {
         rxRef: "GAME_ID",
         xTable: Table ("GAME_PLAYER")
       },
-      [All ("*")]
+      [all]
     );
 
     expect (JSON.stringify (belongsToManyNode)).toBe (JSON.stringify (expected));
@@ -226,13 +226,13 @@ describe ("Table type", () => {
 
     const hasManyNode = refMaker (
       Table ("player"),
-      [All ("*")]
+      [all]
     );
 
     const expected = HasMany (
       goalTable,
       { as: "goals", lRef: "id", rRef: "player_id" },
-      [All ("*")]
+      [all]
     );
 
     expect (hasManyNode).toEqual (expected);
@@ -243,14 +243,14 @@ describe ("Table type", () => {
 
     const hasManyNode = refMaker (
       Table ("player"),
-      [All ("*")],
+      [all],
       "finishes"
     );
 
     const expected = HasMany (
       goalTable,
       { as: "finishes", lRef: "id", rRef: "player_id" },
-      [All ("*")]
+      [all]
     );
 
     expect (hasManyNode).toEqual (expected);
@@ -265,13 +265,13 @@ describe ("Table type", () => {
 
     const hasManyNode = refMaker (
       Table ("player"),
-      [All ("*")]
+      [all]
     );
 
     const expected = HasMany (
       goalTable,
       { as: "points", lRef: "ID", rRef: "PLAYER_ID" },
-      [All ("*")]
+      [all]
     );
 
     expect (hasManyNode).toEqual (expected);
@@ -284,13 +284,13 @@ describe ("Table type", () => {
 
     const hasOneNode = refMaker (
       Table ("player"),
-      [All ("*")]
+      [all]
     );
 
     const expected = HasOne (
       ratingTable,
       { as: "rating", lRef: "id", rRef: "player_id" },
-      [All ("*")]
+      [all]
     );
 
     expect (hasOneNode).toEqual (expected);
@@ -303,14 +303,14 @@ describe ("Table type", () => {
 
     const hasOneNode = refMaker (
       Table ("player"),
-      [All ("*")],
+      [all],
       "score"
     );
 
     const expected = HasOne (
       ratingTable,
       { as: "score", lRef: "id", rRef: "player_id" },
-      [All ("*")]
+      [all]
     );
 
     expect (hasOneNode).toEqual (expected);
@@ -327,13 +327,13 @@ describe ("Table type", () => {
 
     const hasOneNode = refMaker (
       Table ("player"),
-      [All ("*")]
+      [all]
     );
 
     const expected = HasOne (
       ratingTable,
       { as: "grade", lRef: "ID", rRef: "PLAYER_ID" },
-      [All ("*")]
+      [all]
     );
 
     expect (hasOneNode).toEqual (expected);

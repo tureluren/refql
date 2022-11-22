@@ -21,4 +21,6 @@ function caseOf(this: All, structureMap: StringMap) {
   return structureMap.All (this.sign);
 }
 
+export const all = All ("*");
+
 export default All;

@@ -1,4 +1,4 @@
-import All from "./All";
+import All, { all } from "./All";
 import ASTNode from "./ASTNode";
 import BelongsTo from "./BelongsTo";
 import BooleanLiteral from "./BooleanLiteral";
@@ -15,6 +15,7 @@ import StringLiteral from "./StringLiteral";
 import Variable from "./Variable";
 
 export {
+  all,
   All,
   ASTNode,
   BelongsTo,
