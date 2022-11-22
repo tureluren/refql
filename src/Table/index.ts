@@ -1,4 +1,4 @@
-import { refqlType } from "../common/consts";
+import { flEmpty, refqlType } from "../common/consts";
 import { Querier, RefQLValue, StringMap, TableRefMakerPair } from "../common/types";
 import Parser from "../Parser";
 import RQLTag from "../RQLTag";
@@ -13,6 +13,7 @@ interface Table {
   empty(): RQLTag<unknown>;
   toString(): string;
   run<Return>(querier: Querier<Return>): Promise<Return[]>;
+  [flEmpty]: Table["empty"];
 }
 
 const tableType = "refql/Table";
@@ -21,7 +22,7 @@ const prototype = {
   constructor: Table,
   [refqlType]: tableType,
   equals,
-  empty,
+  empty, [flEmpty]: empty,
   // ??
   compile,
   toString,

@@ -2,7 +2,7 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import SQLTag from ".";
-import { flConcat, flMap } from "../common/consts";
+import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import In from "../In";
 import Insert from "../Insert";
@@ -65,8 +65,8 @@ describe ("SQLTag type", () => {
   test ("Monoid", () => {
     const tag = sql`select id from player`;
 
-    expect (tag.concat (SQLTag.empty ())).toEqual (tag);
-    expect (SQLTag.empty ().concat (tag)).toEqual (tag);
+    expect (tag[flConcat] (SQLTag[flEmpty] ())).toEqual (tag);
+    expect (SQLTag[flEmpty] ()[flConcat] (tag)).toEqual (tag);
   });
 
   test ("Functor", () => {

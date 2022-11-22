@@ -1,6 +1,6 @@
 import {
-  all, ASTNode, BooleanLiteral, Call,
-  Identifier, Literal, NullLiteral,
+  All, all, ASTNode, BooleanLiteral, Call,
+  Identifier, isLiteral, Literal, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "../nodes";
 import RQLTag from "../RQLTag";
@@ -25,8 +25,7 @@ class Parser {
   }
 
   Root() {
-    const members = this.members ();
-    return Root (this.table, members.length ? members : [all]);
+    return Root (this.table, this.members ());
   }
 
   Identifier() {
@@ -42,38 +41,46 @@ class Parser {
     return all;
   }
 
-  Variable() {
-    /**
-     * if RQLTag
-     * geef parser current table
-     * filter current table refs where hasMany of belongsTo.table == this.table, maak equals method`
-     * laat variable ook array retourneren indien meerdere matches ?
-     * if empty throw error
-     * voeg rqlTag zijn members toe aan de gevonden hasMany tag en return deze
-     * set as
-     * splice variable
-     */
+  refer(table: Table, members: ASTNode<unknown>[], as?: string) {
+    this.values.splice (this.idx, 1);
 
+    if (table.equals (this.table)) {
+      return members;
+    }
+
+    const ref = this.table.refs.find (([t]) => {
+      return t.equals (table);
+    });
+
+    if (!ref) {
+      throw new Error (
+        `${this.table.name} has no ref defined for: ${table.name}`
+      );
+    }
+
+    return ref[1] (this.table, members, as);
+  }
+
+  Variable(inCall = false) {
     this.eat ("VARIABLE");
     const value = this.values[this.idx];
     const [as, cast] = this.castAs ();
 
-    if (RQLTag.isRQLTag (value)) {
-      this.values.splice (this.idx, 1);
-      const { members, table } = value.node;
-
-      const ref = this.table.refs.find (([t]) => {
-        return t.equals (table);
-      });
-
-      if (!ref) {
-        throw new Error (
-          `${this.table.name} has no ref defined for: ${table.name}`
-        );
+    if (Table.isTable (value)) {
+      if (!inCall) {
+        return this.refer (value, [all], as);
       }
-
-      return ref[1] (this.table, members, as);
+      throw new Error ("U can't use a Table as a function argument");
     }
+
+    if (RQLTag.isRQLTag (value)) {
+      if (!inCall) {
+        const { table, members } = value.node;
+        return this.refer (table, members, as);
+      }
+      throw new Error ("U can't use a RQLTag as a function argument");
+    }
+
     const variable = Variable (value, as, cast);
     this.idx += 1;
 
@@ -112,7 +119,7 @@ class Parser {
 
     this.eat ("EOT");
 
-    return members;
+    return members.flat ();
   }
 
   arguments() {
@@ -188,7 +195,7 @@ class Parser {
       case "IDENTIFIER":
         return this.Identifier ();
       case "VARIABLE":
-        return this.Variable () as Variable<unknown>;
+        return this.Variable (true) as Variable<unknown>;
     }
 
     throw new SyntaxError (`Unknown Argument Type: "${this.lookahead.type}"`);

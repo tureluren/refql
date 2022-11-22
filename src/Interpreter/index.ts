@@ -4,7 +4,7 @@ import createEnv from "../Env/createEnv";
 import Rec from "../Env/Rec";
 import chain from "../common/chain";
 import concat from "../common/concat";
-import { ASTNode } from "../nodes";
+import { all, All, ASTNode, Call, Identifier, isLiteral } from "../nodes";
 import Raw from "../Raw";
 import SQLTag from "../SQLTag";
 import compileSQLTag from "../SQLTag/compileSQLTag";
@@ -22,9 +22,13 @@ const Interpreter = <Params> (params: Params) => {
   const includeSQL = interpretSQLTag (params);
   const toNext = next (params);
 
-  const interpretMembers = (members: ASTNode<Params>[], table: Table, inCall = false) =>
-    members.reduce ((acc, mem) =>
+  const interpretMembers = (members: ASTNode<Params>[], table: Table, inCall = false) => {
+    const nodes = members.filter (m =>
+      Identifier.isIdentifier (m) || isLiteral (m) || All.isAll (m) || Call.isCall (m)
+    ).length ? members : members.concat (all);
+    return nodes.reduce ((acc, mem) =>
       acc.extend (env => interpret (mem, env)), createEnv (table, undefined, inCall));
+  };
 
   const interpret: InterpretF<Params> = (node, env, rows) => {
     const { rec } = env;

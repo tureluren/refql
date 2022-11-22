@@ -1,3 +1,4 @@
+import { refqlType } from "../common/consts";
 import { CastAs, StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
@@ -7,9 +8,12 @@ interface Call<Params> extends ASTNode<Params>, CastAs {
   addMember<Params2>(node: ASTNode<Params2>): Call<Params & Params2>;
 }
 
+const callType = "refql/Call";
+
 const callPrototype = {
   constructor: Call,
-  caseOf
+  caseOf,
+  [refqlType]: callType
 };
 
 function Call<Params>(name: string, members: ASTNode<Params>[], as?: string, cast?: string) {
@@ -28,5 +32,9 @@ function Call<Params>(name: string, members: ASTNode<Params>[], as?: string, cas
 function caseOf(this: Call<unknown>, structureMap: StringMap) {
   return structureMap.Call (this.name, this.members, this.as, this.cast);
 }
+
+Call.isCall = function <Params> (value: any): value is Call<Params> {
+  return value != null && value[refqlType] === callType;
+};
 
 export default Call;

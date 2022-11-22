@@ -6,7 +6,7 @@ import Call from "./Call";
 import HasMany from "./HasMany";
 import HasOne from "./HasOne";
 import Identifier from "./Identifier";
-import Literal from "./Literal";
+import Literal, { isLiteral } from "./Literal";
 import BelongsToMany from "./BelongsToMany";
 import NullLiteral from "./NullLiteral";
 import NumericLiteral from "./NumericLiteral";
@@ -24,6 +24,7 @@ export {
   HasMany,
   HasOne,
   Identifier,
+  isLiteral,
   Literal,
   BelongsToMany,
   NullLiteral,

@@ -1,14 +1,15 @@
-import { flMap, refqlType } from "../common/consts";
+import { flConcat, flMap, refqlType } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
 import Interpreter from "../Interpreter";
 import Root from "../nodes/Root";
 import aggregate from "./aggregate";
 
-//concat mogelijk dan indien other table dezelfde is
 interface RQLTag<Params> {
   node: Root<Params>;
+  concat<Params2>(other: RQLTag<Params2>): RQLTag<Params & Params2>;
   map<Params2>(f: (node: Root<Params>) => Root<Params2>): RQLTag<Params2>;
   run<Return>(querier: Querier<Return>, params?: Params): Promise<Return[]>;
+  [flConcat]: RQLTag<Params>["concat"];
   [flMap]: RQLTag<Params>["map"];
 }
 
@@ -17,6 +18,7 @@ const rqlTagType = "refql/RQLTag";
 const prototype = {
   constructor: RQLTag,
   [refqlType]: rqlTagType,
+  concat, [flConcat]: concat,
   map, [flMap]: map, run
 };
 
@@ -29,6 +31,20 @@ function RQLTag<Params>(node: Root<Params>) {
   tag.node = node;
 
   return tag;
+}
+
+function concat(this: RQLTag<unknown>, other: RQLTag<unknown>) {
+  const { table, members } = this.node;
+  const { table: table2, members: members2 } = other.node;
+
+  if (!table.equals (table2)) {
+    throw new Error ("U can't concat RQLTags with a different root table");
+  }
+
+  return RQLTag (Root (
+    table,
+    members.concat (members2)
+  ));
 }
 
 function map(this: RQLTag<unknown>, f: (node: Root<unknown>) => Root<unknown>) {

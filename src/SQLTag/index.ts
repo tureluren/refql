@@ -1,4 +1,4 @@
-import { flConcat, flMap, refqlType } from "../common/consts";
+import { flConcat, flEmpty, flMap, refqlType } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
 import { Variable } from "../nodes";
 import compileSQLTag from "./compileSQLTag";
@@ -53,9 +53,9 @@ function run(this: SQLTag<unknown>, querier: Querier<StringMap>, params?: unknow
   });
 }
 
-SQLTag.empty = function () {
+SQLTag.empty = SQLTag[flEmpty] = function () {
   return sql``;
-};
+} as () => SQLTag<unknown>;
 
 SQLTag.isSQLTag = function <Params> (value: any): value is SQLTag<Params> {
   return value != null && value[refqlType] === sqlTagType;

@@ -129,6 +129,24 @@ describe ("Parser type", () => {
     expect (tag.node).toEqual (expected);
   });
 
+  test ("call", () => {
+    const tag = player`
+      concat:full_name (upper (last_name), " ", first_name)
+    `;
+
+    const lastName = Identifier ("last_name");
+    const upperLastName = Call ("upper", [lastName]);
+    const firstName = Identifier ("first_name");
+    const space = StringLiteral (" ");
+    const fullName = Call (
+      "concat", [upperLastName, space, firstName], "full_name"
+    );
+
+    const expected = Root (Table ("player"), [fullName]);
+
+    expect (JSON.stringify (tag.node)).toBe (JSON.stringify (expected));
+  });
+
   test ("literals", () => {
     const tag = player`
       "1":one::int
@@ -157,10 +175,57 @@ describe ("Parser type", () => {
 
     const expected = Root (
       player,
-      [all]
+      []
     );
 
     expect (tag.node).toEqual (expected);
+  });
+
+  test ("merge variable of same table", () => {
+    const byIdBySQL = sql`where player.id = 1`;
+    const orderBySQL = sql`order by player.last_name`;
+
+    const tag = player`
+      id
+      first_name
+      ${player`
+        last_name 
+      `} 
+      ${byIdBySQL}
+      ${player`
+        team_id
+        ${orderBySQL} 
+      `}
+    `;
+
+    const expected = Root (
+      player,
+      [
+        Identifier ("id"), Identifier ("first_name"), Identifier ("last_name"),
+        Variable (byIdBySQL), Identifier ("team_id"), Variable (orderBySQL)
+      ]
+    );
+
+    expect (tag.node).toEqual (expected);
+  });
+
+  test ("table variable", () => {
+    const tag = player`
+      id
+      first_name
+      ${player} 
+      ${team}
+    `;
+
+    const expected = Root (
+      player,
+      [
+        Identifier ("id"), Identifier ("first_name"), all,
+        BelongsTo (Table ("team"), { as: "team", lRef: "team_id", rRef: "id" }, [all])
+      ]
+    );
+
+    expect (JSON.stringify (tag.node)).toBe (JSON.stringify (expected));
   });
 
   test ("syntax errors", () => {
@@ -169,6 +234,12 @@ describe ("Parser type", () => {
 
     expect (() => player`concat(*)`)
       .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
+
+    expect (() => player`concat(${player})`)
+      .toThrowError (new SyntaxError ("U can't use a Table as a function argument"));
+
+    expect (() => player`concat(${player``})`)
+      .toThrowError (new SyntaxError ("U can't use a RQLTag as a function argument"));
 
     expect (() => player`${league`*`}`)
       .toThrowError (new SyntaxError ("player has no ref defined for: league"));

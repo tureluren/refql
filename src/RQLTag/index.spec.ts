@@ -2,11 +2,12 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import RQLTag from ".";
-import { flMap } from "../common/consts";
+import { flConcat, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import { all, Identifier, Root } from "../nodes";
 import { Player } from "../soccer";
 import sql from "../SQLTag/sql";
+import Table from "../Table";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
@@ -39,6 +40,30 @@ describe ("RQLTag type", () => {
     expect (tag.node).toEqual (node);
     expect (RQLTag.isRQLTag (tag)).toBe (true);
     expect (RQLTag.isRQLTag ({})).toBe (false);
+  });
+
+  test ("Semigroup", () => {
+    const tag = player`id`;
+    const tag2 = player`first_name last_name`;
+    const tag3 = player`team_id position_id`;
+
+    const res = tag[flConcat] (tag2)[flConcat] (tag3);
+    const res2 = tag[flConcat] (tag2[flConcat] (tag3));
+
+    const expected = Root (
+      Table ("player"),
+      [Identifier ("id"), Identifier ("first_name"), Identifier ("last_name"), Identifier ("team_id"), Identifier ("position_id")]
+    );
+
+    expect (res).toEqual (res2);
+    expect (JSON.stringify (res.node)).toEqual (JSON.stringify (expected));
+  });
+
+  test ("Monoid", () => {
+    const tag = player`id last_name`;
+
+    expect (tag.concat (player.empty ())).toEqual (tag);
+    expect (player.empty ().concat (tag)).toEqual (tag);
   });
 
   test ("Functor", () => {
@@ -76,6 +101,9 @@ describe ("RQLTag type", () => {
     expect (() => (RQLTag as any) (id))
       .toThrowError (new Error ("RQLTag should hold a Root node"));
 
+    expect (() => player`id`.concat (team`id`))
+      .toThrowError (new Error ("U can't concat RQLTags with a different root table"));
+
     try {
       const tag = RQLTag (Root (player, []));
       (tag as any).node = id;
@@ -97,7 +125,11 @@ describe ("RQLTag type", () => {
 
   test ("aggregate", async () => {
     const tag = player`
-      last_name
+      id
+      first_name
+      ${player`
+        last_name 
+      `}
       ${team`
         name
         ${league`
@@ -127,7 +159,7 @@ describe ("RQLTag type", () => {
     const playerGame = player1.games[0];
     const playerRating = player1.rating;
 
-    expect (Object.keys (player1)).toEqual (["last_name", "team", "games", "rating"]);
+    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team", "games", "rating"]);
     expect (Object.keys (playerTeam)).toEqual (["name", "league", "players"]);
     expect (Object.keys (teamLeague)).toEqual (["name"]);
     expect (Object.keys (teammate)).toEqual (["last_name"]);
@@ -135,6 +167,51 @@ describe ("RQLTag type", () => {
     expect (Object.keys (playerRating)).toEqual (["acceleration", "stamina"]);
     expect (players.length).toBe (30);
   });
+
+  test ("simplistic", async () => {
+    const tag = player`
+      ${team} 
+      ${game}
+      ${sql`
+        limit 30 
+      `}
+    `;
+
+    const players = await tag.run<Player> (querier, {});
+    const player1 = players[0];
+    const playerTeam = player1.team;
+    const playerGame = player1.games[0];
+
+    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "birthday", "team_id", "position_id", "team", "games"]);
+    expect (Object.keys (playerTeam)).toEqual (["id", "name", "league_id"]);
+    expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
+  });
+
+  test ("concat", async () => {
+    const tag = player`
+      id
+      first_name
+      ${team`
+        name
+      `}
+    `;
+
+    const tag2 = player`
+      last_name
+      ${sql`
+        limit 30 
+      `} 
+    `;
+
+    const players = await tag.concat (tag2).run<Player> (querier, {});
+    const player1 = players[0];
+    const playerTeam = player1.team;
+
+    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team"]);
+    expect (Object.keys (playerTeam)).toEqual (["name"]);
+    expect (players.length).toBe (30);
+  });
+
 
   test ("No record found", async () => {
     const tag = player`
