@@ -30,7 +30,7 @@ function compile(this: Select, prefix = true, distinct = false) {
       : this.columns
     ).join (", ");
 
-  return [`select${distinct ? " distinct" : ""} ${str} from ${this.table.compile ()[0]}`, []];
+  return [`select${distinct ? " distinct" : ""} ${str} from ${this.table}`, []];
 }
 
 Select.isSelect = function (value: any): value is Select {

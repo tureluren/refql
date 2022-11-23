@@ -36,7 +36,7 @@ function compile(this: Update, paramIdx = 0) {
     })
     .join (", ");
 
-  const updateStr = `update ${this.table.compile ()[0]} set ${KeyValues}`;
+  const updateStr = `update ${this.table} set ${KeyValues}`;
 
   return [updateStr, values];
 }

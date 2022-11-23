@@ -4,6 +4,7 @@ import Raw from "../Raw";
 import Select from "../Select";
 import Table from "../Table";
 import format from "../test/format";
+import { player, team } from "../test/tables";
 import Update from "../Update";
 import compileSQLTag from "./compileSQLTag";
 import sql from "./sql";
@@ -13,8 +14,8 @@ describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and v
     const tag = sql<{limit: number}>`
       select ${Raw ("id")}::text, last_name,
         concat(${Raw ("first_name")}, ${Raw ("' '")}, last_name) as fullname
-      from ${Table ("public.player")}
-      where ${Table ("player")}.id ${In ([1, 2, 3])}
+      from ${Raw (`${Table ("public.player")}`)}
+      where ${player}.id ${In ([1, 2, 3])}
       ${sql`
         order by ${Raw ("player")}.last_name
       `}
@@ -36,9 +37,23 @@ describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and v
     expect (values).toEqual ([1, 2, 3, 30]);
   });
 
+  test ("select from schema table", async () => {
+    const tag = sql`
+      select * from ${Raw (`${team}`)} 
+    `;
+
+    const [query] = compileSQLTag (tag, 0, {});
+
+    expect (query).toBe (format (`
+      select *
+      from public.team
+    `));
+  });
+
+
   test ("select", () => {
     const tag = sql`
-      ${Select (Table ("player"), ["first_name", "last_name"])}
+      ${Select (player, ["first_name", "last_name"])}
     `;
 
     const [query, values] = compileSQLTag (tag, 0, {});
@@ -53,7 +68,7 @@ describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and v
 
   test ("insert", () => {
     const tag = sql`
-      ${Insert (Table ("player"), ["first_name", "last_name"], [{ first_name: "John", last_name: "Doe" }])}
+      ${Insert (player, ["first_name", "last_name"], [{ first_name: "John", last_name: "Doe" }])}
     `;
 
     const [query, values] = compileSQLTag (tag, 0, {});
@@ -68,7 +83,7 @@ describe ("SQLTag `compileSQLTag` - compile a SQLTag into a tuple of query and v
 
   test ("update", () => {
     const tag = sql`
-      ${Update (Table ("player"), ["first_name", "last_name"], { first_name: "John", last_name: "Doe" })}
+      ${Update (player, ["first_name", "last_name"], { first_name: "John", last_name: "Doe" })}
       where id = 1
     `;
 

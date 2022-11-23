@@ -2,6 +2,7 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import Table from ".";
+import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
 import { all, BelongsTo, BelongsToMany, HasMany } from "../nodes";
 import HasOne from "../nodes/HasOne";
@@ -9,7 +10,7 @@ import { Player } from "../soccer";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { position } from "../test/tables";
+import { game, gamePlayer, goal, player, position, rating, team } from "../test/tables";
 import userConfig from "../test/userConfig";
 import belongsTo from "./belongsTo";
 import belongsToMany from "./belongsToMany";
@@ -36,14 +37,13 @@ describe ("Table type", () => {
   });
 
   test ("create Table", () => {
-    const player = Table ("player");
     const player2 = Table ("public.player");
 
     expect (player.name).toBe ("player");
     expect (player.schema).toBe (undefined);
     expect (player2.schema).toBe ("public");
-    expect (`${player}`).toBe ("Table (player)");
-    expect (`${player2}`).toBe ("Table (player, public)");
+    expect (`${player}`).toBe ("player");
+    expect (`${player2}`).toBe ("public.player");
     expect (Table.isTable (player)).toBe (true);
     expect (Table.isTable ({})).toBe (false);
   });
@@ -57,12 +57,12 @@ describe ("Table type", () => {
   });
 
   test ("BelongsTo ref - default ref info", () => {
-    const [teamTable, refMaker] = belongsTo ("team");
+    const [teamTable, refMaker] = belongsTo ("public.team");
 
-    expect (teamTable.equals (Table ("team"))).toBe (true);
+    expect (teamTable.equals (team)).toBe (true);
 
     const belongsToNode = refMaker (
-      Table ("player"),
+      player,
       [all]
     );
 
@@ -79,7 +79,7 @@ describe ("Table type", () => {
     const [teamTable, refMaker] = belongsTo ("team", { as: "squad" });
 
     const belongsToNode = refMaker (
-      Table ("player"),
+      player,
       [all],
       "crew"
     );
@@ -97,7 +97,7 @@ describe ("Table type", () => {
     const [teamTable, refMaker] = belongsTo ("team", { lRef: "TEAM_ID", rRef: "ID" });
 
     const belongsToNode = refMaker (
-      Table ("player"),
+      player,
       [all]
     );
 
@@ -113,10 +113,10 @@ describe ("Table type", () => {
   test ("BelongsToMany ref - default ref info", () => {
     const [gamesTable, refMaker] = belongsToMany ("game");
 
-    expect (gamesTable.equals (Table ("game"))).toBe (true);
+    expect (gamesTable.equals (game)).toBe (true);
 
     const belongsToManyNode = refMaker (
-      Table ("player"),
+      player,
       [all]
     );
 
@@ -128,7 +128,7 @@ describe ("Table type", () => {
         rRef: "id",
         lxRef: "player_id",
         rxRef: "game_id",
-        xTable: Table ("game_player")
+        xTable: gamePlayer
       },
       [all]
     );
@@ -139,7 +139,7 @@ describe ("Table type", () => {
   test ("BelongsToMany ref - default ref - child > parent", () => {
     const [gamesTable, refMaker] = belongsToMany ("game");
 
-    expect (gamesTable.equals (Table ("game"))).toBe (true);
+    expect (gamesTable.equals (game)).toBe (true);
 
     const belongsToManyNode = refMaker (
       Table ("athlete"),
@@ -167,7 +167,7 @@ describe ("Table type", () => {
     const [gamesTable, refMaker] = belongsToMany ("game", { as: "fixtures" });
 
     const belongsToManyNode = refMaker (
-      Table ("player"),
+      player,
       [all],
       "matches"
     );
@@ -180,7 +180,7 @@ describe ("Table type", () => {
         rRef: "id",
         lxRef: "player_id",
         rxRef: "game_id",
-        xTable: Table ("game_player")
+        xTable: gamePlayer
       },
       [all]
     );
@@ -199,7 +199,7 @@ describe ("Table type", () => {
     });
 
     const belongsToManyNode = refMaker (
-      Table ("player"),
+      player,
       [all]
     );
 
@@ -222,10 +222,10 @@ describe ("Table type", () => {
   test ("HasMany ref - default ref info", () => {
     const [goalTable, refMaker] = hasMany ("goal");
 
-    expect (goalTable.equals (Table ("goal"))).toBe (true);
+    expect (goalTable.equals (goal)).toBe (true);
 
     const hasManyNode = refMaker (
-      Table ("player"),
+      player,
       [all]
     );
 
@@ -242,7 +242,7 @@ describe ("Table type", () => {
     const [goalTable, refMaker] = hasMany ("goal", { as: "points" });
 
     const hasManyNode = refMaker (
-      Table ("player"),
+      player,
       [all],
       "finishes"
     );
@@ -264,7 +264,7 @@ describe ("Table type", () => {
     });
 
     const hasManyNode = refMaker (
-      Table ("player"),
+      player,
       [all]
     );
 
@@ -280,10 +280,10 @@ describe ("Table type", () => {
   test ("HasOne ref - default ref info", () => {
     const [ratingTable, refMaker] = hasOne ("rating");
 
-    expect (ratingTable.equals (Table ("rating"))).toBe (true);
+    expect (ratingTable.equals (rating)).toBe (true);
 
     const hasOneNode = refMaker (
-      Table ("player"),
+      player,
       [all]
     );
 
@@ -299,10 +299,10 @@ describe ("Table type", () => {
   test ("HasOne ref - alias through RQLTag", () => {
     const [ratingTable, refMaker] = hasOne ("rating", { as: "grade" });
 
-    expect (ratingTable.equals (Table ("rating"))).toBe (true);
+    expect (ratingTable.equals (rating)).toBe (true);
 
     const hasOneNode = refMaker (
-      Table ("player"),
+      player,
       [all],
       "score"
     );
@@ -323,10 +323,10 @@ describe ("Table type", () => {
       rRef: "PLAYER_ID"
     });
 
-    expect (ratingTable.equals (Table ("rating"))).toBe (true);
+    expect (ratingTable.equals (rating)).toBe (true);
 
     const hasOneNode = refMaker (
-      Table ("player"),
+      player,
       [all]
     );
 
@@ -339,7 +339,9 @@ describe ("Table type", () => {
     expect (hasOneNode).toEqual (expected);
   });
 
-
-  // setoid
-  // semigroup
+  test ("Setoid", () => {
+    expect (player[flEquals] (player)).toBe (true);
+    expect (player[flEquals] (team)).toBe (team[flEquals] (player));
+    expect (player[flEquals] (player) && player[flEquals] (player)).toBe (player[flEquals] (player));
+  });
 });

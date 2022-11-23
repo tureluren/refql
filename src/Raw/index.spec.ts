@@ -6,7 +6,6 @@ describe ("Raw type", () => {
     const raw = Raw ("select id");
 
     expect (raw.value).toBe ("select id");
-    expect (`${raw}`).toBe ("Raw (select id)");
     expect (Raw.isRaw (raw)).toBe (true);
     expect (Raw.isRaw ({})).toBe (false);
   });

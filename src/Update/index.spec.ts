@@ -23,7 +23,6 @@ describe ("Update type", () => {
     expect (update.data).toEqual ({});
   });
 
-
   test ("compile Update", () => {
     const player = Table ("public.player");
     const update = Update (player, columns, playerData);

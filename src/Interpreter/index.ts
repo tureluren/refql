@@ -26,6 +26,7 @@ const Interpreter = <Params> (params: Params) => {
     const nodes = members.filter (m =>
       Identifier.isIdentifier (m) || isLiteral (m) || All.isAll (m) || Call.isCall (m)
     ).length ? members : members.concat (all);
+
     return nodes.reduce ((acc, mem) =>
       acc.extend (env => interpret (mem, env)), createEnv (table, undefined, inCall));
   };

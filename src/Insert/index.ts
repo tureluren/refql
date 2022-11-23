@@ -34,7 +34,7 @@ function compile(this: Insert, paramIdx = 0) {
       `(${this.columns.map (c => { values.push (item[c]); return `$${values.length + paramIdx}`; }).join (", ")})`)
     .join (", ");
 
-  const insertStr = `insert into ${this.table.compile ()[0]} (${this.columns.join (", ")}) values ${valuesStr}`;
+  const insertStr = `insert into ${this.table} (${this.columns.join (", ")}) values ${valuesStr}`;
 
   return [insertStr, values];
 }

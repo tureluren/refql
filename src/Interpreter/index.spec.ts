@@ -83,9 +83,9 @@ describe ("Interpreter", () => {
     const { query, next } = interpret (rootNode, createEnv (Table ("player")));
 
     expect (query).toBe (format (`
-      select player.id::text as identifier, player.birthday,
-        player.id as goalslref0, player.team_id as teamlref0, player.id as gameslref0,
-        concat (upper (player.last_name), ' ', ' ', player.first_name, (player.id::text)) as full_name_and_id
+      select player.id::text identifier, player.birthday,
+        player.id goalslref0, player.team_id teamlref0, player.id gameslref0,
+        concat (upper (player.last_name), ' ', ' ', player.first_name, (player.id::text)) full_name_and_id
       from player
     `));
 
@@ -106,7 +106,7 @@ describe ("Interpreter", () => {
     const { query, next, values } = interpret (goalsNode, createEnv (Table ("public.goal"), playerGoalsRefs), playerRows);
 
     expect (query).toBe (format (`
-      select goal.*, goal.player_id as goalsrref0
+      select goal.*, goal.player_id goalsrref0
       from public.goal
       where goal.player_id in ($1, $2, $3)
     `));
@@ -125,7 +125,7 @@ describe ("Interpreter", () => {
     const { query, next, values } = interpret (goalsNode, createEnv (Table ("rating"), playerGoalsRefs), playerRows);
 
     expect (query).toBe (format (`
-      select rating.*, rating.player_id as goalsrref0
+      select rating.*, rating.player_id goalsrref0
       from rating
       where rating.player_id in ($1, $2, $3)
     `));
@@ -150,7 +150,7 @@ describe ("Interpreter", () => {
     const { query, next, values } = interpret (teamNode, createEnv (Table ("team"), playerTeamRefs), playerRows);
 
     expect (query).toBe (format (`
-      select team.*, team.competition_id as leaguelref0, team.id as teamrref0
+      select team.*, team.competition_id leaguelref0, team.id teamrref0
       from team
       where team.id in ($1, $2)
       and team.name like 'FC%'
@@ -181,9 +181,9 @@ describe ("Interpreter", () => {
     const { query, next, values } = interpret (gamesNode, createEnv (Table ("game"), playerGamesRefs), playerRows);
 
     expect (query).toBe (format (`
-      select distinct game.*, GAMEPLAYER.player_id as gameslxref0
+      select distinct game.*, GAMEPLAYER.player_id gameslxref0
       from game
-      join GAMEPLAYER as GAMEPLAYER on GAMEPLAYER.game_id = game.id
+      join GAMEPLAYER on GAMEPLAYER.game_id = game.id
       where GAMEPLAYER.player_id in ($1, $2, $3)
     `));
 
@@ -204,9 +204,9 @@ describe ("Interpreter", () => {
 
     expect (query).toBe (format (`
       select distinct game.*,
-        game_player.player_id as gameslxref0, game_player.player_team_id as gameslxref1
+        game_player.player_id gameslxref0, game_player.player_team_id gameslxref1
       from game
-      join game_player as game_player
+      join game_player
         on game_player.game_id = game.id
         and game_player.game_league_id = game.league_id
       where game_player.player_id in ($1, $2, $3)
@@ -243,9 +243,9 @@ describe ("Interpreter", () => {
 
     expect (query).toBe (format (`
       select
-        '1'::int as one, 2::text as two, $1::text as three,
-        true::text as t, false::text as f, null::text as n,
-        (select count (*) from goal where player_id = player.id) as goal_count
+        '1'::int one, 2::text two, $1::text three,
+        true::text t, false::text f, null::text n,
+        (select count (*) from goal where player_id = player.id) goal_count
       from player
       where player.id = $2
     `));

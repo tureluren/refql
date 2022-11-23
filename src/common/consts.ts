@@ -1,3 +1,4 @@
+export const flEquals = "fantasy-land/equals";
 export const flExtend = "fantasy-land/extend";
 export const flEmpty = "fantasy-land/empty";
 export const flConcat = "fantasy-land/concat";

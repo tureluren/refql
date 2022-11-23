@@ -4,7 +4,6 @@ import { Variable } from "../nodes";
 import compileSQLTag from "./compileSQLTag";
 import sql from "./sql";
 
-// maak empty en dus monoid
 interface SQLTag<Params> {
   values: (string | Variable<Params>)[];
   concat<Params2>(other: SQLTag<Params2>): SQLTag<Params & Params2>;

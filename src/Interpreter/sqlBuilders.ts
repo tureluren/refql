@@ -8,7 +8,7 @@ import Select from "../Select";
 import Table from "../Table";
 
 export const castAs = (sql: boolean | null | number | string, as?: string, cast?: string) =>
-  `${sql}${cast ? `::${cast}` : ""}${as ? ` as ${as}` : ""}`;
+  `${sql}${cast ? `::${cast}` : ""}${as ? ` ${as}` : ""}`;
 
 export const fromTable = (table: Table, distinct: boolean = false) => chain (
   get ("comps"),
@@ -23,11 +23,11 @@ export const joinOn = (lRefs: Ref[], rRefs: Ref[], table: Table, xTable: Table) 
 
       return `${q} ${op}${xTable.name}.${lr.name} = ${table.name}.${rk.name}`;
 
-    }, `${query} join ${xTable.name} as ${xTable.name} on`)
+    }, `${query} join ${xTable.name} on`)
   );
 
 export const refsToComp = (table: Table, refs: Ref[]) =>
-  refs.map (r => `${table.name}.${r.name} as ${r.as}`);
+  refs.map (r => `${table.name}.${r.name} ${r.as}`);
 
 export const select = (comps: string | string[], rec: Rec) =>
   over ("comps", concat (comps), rec);

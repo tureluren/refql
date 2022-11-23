@@ -23,10 +23,6 @@ function Raw(value: boolean | number | string) {
   return raw;
 }
 
-function toString(this: Raw) {
-  return `Raw (${this.value})`;
-}
-
 function map(this: Raw, f: (value: string) => string) {
   return Raw (f (this.value));
 }

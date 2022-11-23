@@ -27,10 +27,6 @@ function compile(this: In<unknown>, paramIdx: number = 0) {
   return [`in (${paramStr})`, this.arr];
 }
 
-function toString(this: In<unknown>) {
-  return `In ([${this.arr.join (", ")}])`;
-}
-
 In.isIn = function <T> (value: any): value is In<T> {
   return value != null && value[refqlType] === inType;
 };

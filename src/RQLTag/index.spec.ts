@@ -128,26 +128,26 @@ describe ("RQLTag type", () => {
       id
       first_name
       ${player`
-        last_name 
+        last_name
       `}
       ${team`
         name
         ${league`
-          name 
+          name
         `}
         ${player`
-          last_name 
+          last_name
         `}: players
       `}
       ${game`
-        result 
+        result
       `}: games
       ${rating`
         acceleration
         stamina
       `}
       ${sql`
-        limit 30 
+        limit 30
       `}
     `;
 
@@ -170,10 +170,10 @@ describe ("RQLTag type", () => {
 
   test ("simplistic", async () => {
     const tag = player`
-      ${team} 
+      ${team}
       ${game}
       ${sql`
-        limit 30 
+        limit 30
       `}
     `;
 
@@ -199,8 +199,8 @@ describe ("RQLTag type", () => {
     const tag2 = player`
       last_name
       ${sql`
-        limit 30 
-      `} 
+        limit 30
+      `}
     `;
 
     const players = await tag.concat (tag2).run<Player> (querier, {});
@@ -212,11 +212,25 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (30);
   });
 
+  test ("By id", async () => {
+    const tag = player`
+      *
+      ${sql`
+        where ${(_p, t) => t}.id = 1
+      `}
+    `;
+
+    const players = await tag.run<Player> (querier, {});
+    const player1 = players[0];
+
+    expect (player1.id).toBe (1);
+    expect (players.length).toBe (1);
+  });
 
   test ("No record found", async () => {
     const tag = player`
       ${goal`
-        * 
+        *
       `}
       ${sql`
         where player.id = 999999999

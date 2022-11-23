@@ -20,12 +20,15 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
       let value = strOrVar.value;
 
       if (Table.isTable (value)) {
-        const [tableStr] = value.compile ();
-        return `${acc} ${tableStr}`;
+        return `${acc} ${value.name}`;
       }
 
       if (typeof value === "function") {
         value = value (params, table);
+      }
+
+      if (Table.isTable (value)) {
+        return `${acc} ${value.name}`;
       }
 
       if (RQLTag.isRQLTag<Params> (value)) {
