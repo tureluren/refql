@@ -1,7 +1,7 @@
 import { flMap, refqlType } from "../common/consts";
 
 interface Raw {
-  value: string;
+  value: boolean | number | string;
   map(f: (value: string) => string): Raw;
   toString(): string;
   [flMap]: Raw["map"];
@@ -18,13 +18,17 @@ const prototype = {
 
 function Raw(value: boolean | number | string) {
   let raw: Raw = Object.create (prototype);
-  raw.value = String (value);
+  raw.value = value;
 
   return raw;
 }
 
-function map(this: Raw, f: (value: string) => string) {
+function map(this: Raw, f: (value: boolean | number | string) => string) {
   return Raw (f (this.value));
+}
+
+function toString(this: Raw) {
+  return String (this.value);
 }
 
 Raw.isRaw = function (value: any): value is Raw {

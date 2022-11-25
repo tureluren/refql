@@ -1,27 +1,32 @@
+import In from "../In";
+import Insert from "../Insert";
 import { ASTNode, BelongsTo, BelongsToMany, HasMany, HasOne } from "../nodes";
+import Raw from "../Raw";
+import RQLTag from "../RQLTag";
+import Select from "../Select";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
+import Update from "../Update";
 
 export interface StringMap {
   [key: string]: any;
 }
 
-export type Querier<T> = (query: string, values: any[]) =>
+export type Querier = <T>(query: string, values: any[]) =>
   Promise<T[]>;
 
 export type BuiltIn =
   | boolean | null
   | undefined | number
-  | bigint | string
-  | object;
+  | bigint | string;
 
 export type ParamF<Params, Return> = (p: Params, T?: Table) =>
   Return;
 
-export type RefQLValue<Params, Ran extends boolean = false> =
+export type RefQLValue<Input, Output, Ran extends boolean = false> =
   Ran extends false
-  ? BuiltIn | SQLTag<Params> | ParamF<Params, BuiltIn | SQLTag<Params>>
-  : BuiltIn | SQLTag<Params>;
+  ? BuiltIn | SQLTag<Input, Output> | ParamF<Input, BuiltIn | SQLTag<Input, Output>>
+  : BuiltIn | SQLTag<Input, Output>;
 
 export interface Ref {
   name: string; as: string;
@@ -61,3 +66,18 @@ export type TableRefMakerPair =
     (parent: Table, members: ASTNode<unknown>[], as?: string) =>
       BelongsTo<unknown> | BelongsToMany<unknown> | HasMany<unknown> | HasOne<unknown>
   ];
+
+export type ParamF2<Input> = (params: Input, table?: Table) => any;
+
+export type SqlTagParam<Input, Output> =
+  | SQLTag<Input, Output>
+  | Raw
+  // unknown ?
+  | ParamF2<Input>
+  | In<unknown>
+  | Select
+  | Insert
+  | Update
+  | Table
+  | Raw
+  | BuiltIn;

@@ -40,7 +40,7 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
       }
 
       if (Raw.isRaw (value)) {
-        return `${acc} ${value.value}`;
+        return `${acc} ${value}`;
       }
 
       if (In.isIn (value)) {

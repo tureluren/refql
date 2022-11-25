@@ -17,6 +17,8 @@ const hasManyPrototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
+
+// MEMBERS MOET RQLTAG worden
 function HasMany<Params>(table: Table, info: HasManyInfo, members: ASTNode<Params>[]) {
   let hasMany: HasMany<Params> = Object.create (hasManyPrototype);
 
