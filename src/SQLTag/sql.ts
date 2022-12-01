@@ -17,6 +17,7 @@ import formatSQLString from "./formatSQLString";
 //   | Table
 //   | Raw
 //   | BuiltIn;
+// of astnode
 
 // const parse = <Input, Output>(strings: TemplateStringsArray, ...params: SqlTagParam<Input, Output>[]) => AstNode<Input>[] {
 const parse = <Input, Output>(strings: TemplateStringsArray, ...params: SqlTagParam<Input, Output>[]): any[] => {

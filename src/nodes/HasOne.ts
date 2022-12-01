@@ -9,16 +9,16 @@ interface HasOne<Params> extends ASTNode<Params> {
   info: HasOneInfo;
 }
 
-const hasOneType = "refql/HasOne";
+const type = "refql/HasOne";
 
-const hasOnePrototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, astNodePrototype, {
   constructor: HasOne,
-  [refqlType]: hasOneType,
+  [refqlType]: type,
   caseOf
 });
 
 function HasOne<Params>(table: Table, info: HasOneInfo, members: ASTNode<Params>[]) {
-  let hasOne: HasOne<Params> = Object.create (hasOnePrototype);
+  let hasOne: HasOne<Params> = Object.create (prototype);
 
   hasOne.table = table;
   hasOne.info = info;
@@ -36,7 +36,7 @@ function caseOf(this: HasOne<unknown>, structureMap: StringMap) {
 }
 
 HasOne.isHasOne = function <Params> (value: any): value is HasOne<Params> {
-  return value != null && value[refqlType] === hasOneType;
+  return value != null && value[refqlType] === type;
 };
 
 export default HasOne;

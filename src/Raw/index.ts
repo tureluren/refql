@@ -1,23 +1,25 @@
 import { flMap, refqlType } from "../common/consts";
+import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
 
-interface Raw {
+interface Raw extends ASTNode<unknown> {
   value: boolean | number | string;
   map(f: (value: string) => string): Raw;
   toString(): string;
   [flMap]: Raw["map"];
 }
 
-const rawType = "refql/Raw";
+const type = "refql/Raw";
 
-const prototype = {
+const prototype = Object.assign ({}, astNodePrototype, {
   constructor: Raw,
-  [refqlType]: rawType,
+  [refqlType]: type,
   map, [flMap]: map,
   toString
-};
+});
 
 function Raw(value: boolean | number | string) {
   let raw: Raw = Object.create (prototype);
+
   raw.value = value;
 
   return raw;
@@ -32,7 +34,7 @@ function toString(this: Raw) {
 }
 
 Raw.isRaw = function (value: any): value is Raw {
-  return value != null && value[refqlType] === rawType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Raw;

@@ -9,16 +9,16 @@ interface BelongsToMany<Params> extends ASTNode<Params> {
   info: BelongsToManyInfo;
 }
 
-const belongsToManyType = "refql/BelongsToMany";
+const type = "refql/BelongsToMany";
 
-const belongsToManyPrototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, astNodePrototype, {
   constructor: BelongsToMany,
-  [refqlType]: belongsToManyType,
+  [refqlType]: type,
   caseOf
 });
 
 function BelongsToMany<Params>(table: Table, info: BelongsToManyInfo, members: ASTNode<Params>[]) {
-  let belongsToMany: BelongsToMany<Params> = Object.create (belongsToManyPrototype);
+  let belongsToMany: BelongsToMany<Params> = Object.create (prototype);
 
   belongsToMany.table = table;
   belongsToMany.info = info;
@@ -36,7 +36,7 @@ function caseOf(this: BelongsToMany<unknown>, structureMap: StringMap) {
 }
 
 BelongsToMany.isBelongsToMany = function <Params> (value: any): value is BelongsToMany<Params> {
-  return value != null && value[refqlType] === belongsToManyType;
+  return value != null && value[refqlType] === type;
 };
 
 export default BelongsToMany;

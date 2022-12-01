@@ -7,11 +7,11 @@ interface Select {
   compile(prefix?: boolean, distinct?: boolean): [string, any[]];
 }
 
-const selectType = "refql/Select";
+const type = "refql/Select";
 
 const prototype = {
   constructor: Select,
-  [refqlType]: selectType,
+  [refqlType]: type,
   compile, toString
 };
 
@@ -34,7 +34,7 @@ function compile(this: Select, prefix = true, distinct = false) {
 }
 
 Select.isSelect = function (value: any): value is Select {
-  return value != null && value[refqlType] === selectType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Select;

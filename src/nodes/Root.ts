@@ -8,16 +8,16 @@ interface Root<Params> extends ASTNode<Params> {
   members: ASTNode<Params>[];
 }
 
-const rootType = "refql/Root";
+const type = "refql/Root";
 
-const rootPrototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, astNodePrototype, {
   constructor: Root,
-  [refqlType]: rootType,
+  [refqlType]: type,
   caseOf
 });
 
 function Root<Params>(table: Table, members: ASTNode<Params>[]) {
-  let root: Root<Params> = Object.create (rootPrototype);
+  let root: Root<Params> = Object.create (prototype);
 
   root.table = table;
   root.members = members;
@@ -33,7 +33,7 @@ function caseOf(this: Root<unknown>, structureMap: StringMap) {
 }
 
 Root.isRoot = function<Params> (value: any): value is Root<Params> {
-  return value != null && value[refqlType] === rootType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Root;

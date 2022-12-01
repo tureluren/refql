@@ -6,11 +6,11 @@ interface Literal extends ASTNode<unknown>, CastAs {
   value: string | number | boolean | null;
 }
 
-const literalType = "refql/Literal";
+const type = "refql/Literal";
 
 export const literalPrototype = Object.assign ({}, astNodePrototype, {
   caseOf,
-  [refqlType]: literalType
+  [refqlType]: type
 });
 
 function caseOf(this: Literal, structureMap: StringMap) {
@@ -18,7 +18,7 @@ function caseOf(this: Literal, structureMap: StringMap) {
 }
 
 export const isLiteral = function (value: any): value is Literal {
-  return value != null && value[refqlType] === literalType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Literal;

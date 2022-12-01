@@ -6,14 +6,14 @@ interface All extends ASTNode<unknown> {
   sign: string;
 }
 
-const allType = "refql/All";
+const type = "refql/All";
 
-const allPrototype = Object.assign ({}, astNodePrototype, {
-  constructor: All, caseOf, [refqlType]: allType
+const prototype = Object.assign ({}, astNodePrototype, {
+  constructor: All, caseOf, [refqlType]: type
 });
 
 function All(sign: string) {
-  let all: All = Object.create (allPrototype);
+  let all: All = Object.create (prototype);
 
   all.sign = sign;
 
@@ -25,7 +25,7 @@ function caseOf(this: All, structureMap: StringMap) {
 }
 
 All.isAll = function (value: any): value is All {
-  return value != null && value[refqlType] === allType;
+  return value != null && value[refqlType] === type;
 };
 
 export const all = All ("*");

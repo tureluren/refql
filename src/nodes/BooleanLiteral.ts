@@ -4,10 +4,12 @@ interface BooleanLiteral extends Literal {
   value: boolean;
 }
 
+const prototype = Object.assign ({}, literalPrototype, {
+  constructor: BooleanLiteral
+});
+
 function BooleanLiteral(value: boolean, as?: string, cast?: string) {
-  let booleanLiteral: BooleanLiteral = Object.create (
-    Object.assign ({}, literalPrototype, { constructor: BooleanLiteral })
-  );
+  let booleanLiteral: BooleanLiteral = Object.create (prototype);
 
   booleanLiteral.value = value;
   booleanLiteral.as = as;

@@ -9,11 +9,11 @@ interface Update {
   compile(paramIdx?: number): [string, any[]];
 }
 
-const updateType = "refql/Update";
+const type = "refql/Update";
 
 const prototype = {
   constructor: Update,
-  [refqlType]: updateType,
+  [refqlType]: type,
   compile, toString
 };
 
@@ -42,7 +42,7 @@ function compile(this: Update, paramIdx = 0) {
 }
 
 Update.isUpdate = function (value: any): value is Update {
-  return value != null && value[refqlType] === updateType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Update;

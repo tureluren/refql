@@ -6,11 +6,11 @@ interface In<T> {
   toString(): string;
 }
 
-const inType = "refql/In";
+const type = "refql/In";
 
 const prototype = {
   constructor: In,
-  [refqlType]: inType,
+  [refqlType]: type,
   compile, toString
 };
 
@@ -28,7 +28,7 @@ function compile(this: In<unknown>, paramIdx: number = 0) {
 }
 
 In.isIn = function <T> (value: any): value is In<T> {
-  return value != null && value[refqlType] === inType;
+  return value != null && value[refqlType] === type;
 };
 
 export default In;

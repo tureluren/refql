@@ -16,16 +16,16 @@ interface Table {
   [flEquals]: Table["equals"];
 }
 
-const tableType = "refql/Table";
+const type = "refql/Table";
 
-const prototype = {
+const prototype = Object.assign (Object.create (Function.prototype), {
   constructor: Table,
-  [refqlType]: tableType,
+  [refqlType]: type,
   equals, [flEquals]: equals,
   empty, [flEmpty]: empty,
   toString,
   run
-};
+});
 
 function Table(name: string, refs?: any[]) {
 
@@ -35,10 +35,7 @@ function Table(name: string, refs?: any[]) {
     return RQLTag<Params> (parser.Root ());
   }) as Table;
 
-  Object.setPrototypeOf (
-    table,
-    Object.assign (Object.create (Function.prototype), prototype)
-  );
+  Object.setPrototypeOf (table, prototype);
 
   const [tableName, schema] = name.trim ().split (".").reverse ();
 
@@ -76,7 +73,7 @@ function equals(this: Table, other: Table) {
 }
 
 Table.isTable = function (value: any): value is Table {
-  return value != null && value[refqlType] === tableType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Table;

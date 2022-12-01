@@ -9,18 +9,18 @@ interface HasMany<Params> extends ASTNode<Params> {
   info: HasManyInfo;
 }
 
-const hasManyType = "refql/HasMany";
+const type = "refql/HasMany";
 
-const hasManyPrototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, astNodePrototype, {
   constructor: HasMany,
-  [refqlType]: hasManyType,
+  [refqlType]: type,
   caseOf
 });
 
 
 // MEMBERS MOET RQLTAG worden
 function HasMany<Params>(table: Table, info: HasManyInfo, members: ASTNode<Params>[]) {
-  let hasMany: HasMany<Params> = Object.create (hasManyPrototype);
+  let hasMany: HasMany<Params> = Object.create (prototype);
 
   hasMany.table = table;
   hasMany.info = info;
@@ -38,7 +38,7 @@ function caseOf(this: HasMany<unknown>, structureMap: StringMap) {
 }
 
 HasMany.isHasMany = function <Params> (value: any): value is HasMany<Params> {
-  return value != null && value[refqlType] === hasManyType;
+  return value != null && value[refqlType] === type;
 };
 
 export default HasMany;

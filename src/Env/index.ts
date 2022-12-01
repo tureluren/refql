@@ -9,11 +9,11 @@ interface Env {
   [flMap]: Env["map"];
 }
 
-const envType = "refql/Env";
+const type = "refql/Env";
 
 const prototype = {
   constructor: Env,
-  [refqlType]: envType,
+  [refqlType]: type,
   extend, [flExtend]: extend,
   map, [flMap]: map
 };
@@ -34,7 +34,7 @@ function map(this: Env, f: (rec: Rec) => Rec) {
 }
 
 Env.isEnv = function (value: any): value is Env {
-  return value != null && value[refqlType] === envType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Env;

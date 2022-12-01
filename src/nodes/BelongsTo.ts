@@ -9,16 +9,16 @@ interface BelongsTo<Params> extends ASTNode<Params> {
   info: BelongsToInfo;
 }
 
-const belongsToType = "refql/BelongsTo";
+const type = "refql/BelongsTo";
 
-const belongsToPrototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, astNodePrototype, {
   constructor: BelongsTo,
-  [refqlType]: belongsToType,
+  [refqlType]: type,
   caseOf
 });
 
 function BelongsTo<Params>(table: Table, info: BelongsToInfo, members: ASTNode<Params>[]) {
-  let belongsTo: BelongsTo<Params> = Object.create (belongsToPrototype);
+  let belongsTo: BelongsTo<Params> = Object.create (prototype);
 
   belongsTo.table = table;
   belongsTo.info = info;
@@ -36,7 +36,7 @@ function caseOf(this: BelongsTo<unknown>, structureMap: StringMap) {
 }
 
 BelongsTo.isBelongsTo = function<Params> (value: any): value is BelongsTo<Params> {
-  return value != null && value[refqlType] === belongsToType;
+  return value != null && value[refqlType] === type;
 };
 
 export default BelongsTo;

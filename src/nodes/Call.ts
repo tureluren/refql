@@ -8,18 +8,16 @@ interface Call<Params> extends ASTNode<Params>, CastAs {
   addMember<Params2>(node: ASTNode<Params2>): Call<Params & Params2>;
 }
 
-const callType = "refql/Call";
+const type = "refql/Call";
 
-const callPrototype = {
+const prototype = Object.assign ({}, astNodePrototype, {
   constructor: Call,
   caseOf,
-  [refqlType]: callType
-};
+  [refqlType]: type
+});
 
 function Call<Params>(name: string, members: ASTNode<Params>[], as?: string, cast?: string) {
-  let call: Call<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, callPrototype)
-  );
+  let call: Call<Params> = Object.create (prototype);
 
   call.name = name;
   call.members = members;
@@ -34,7 +32,7 @@ function caseOf(this: Call<unknown>, structureMap: StringMap) {
 }
 
 Call.isCall = function <Params> (value: any): value is Call<Params> {
-  return value != null && value[refqlType] === callType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Call;

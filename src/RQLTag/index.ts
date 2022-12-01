@@ -13,11 +13,11 @@ interface RQLTag<Params> {
   [flMap]: RQLTag<Params>["map"];
 }
 
-const rqlTagType = "refql/RQLTag";
+const type = "refql/RQLTag";
 
 const prototype = {
   constructor: RQLTag,
-  [refqlType]: rqlTagType,
+  [refqlType]: type,
   concat, [flConcat]: concat,
   map, [flMap]: map, run
 };
@@ -72,7 +72,7 @@ function run(this: RQLTag<unknown>, querier: Querier<StringMap>, params?: unknow
 }
 
 RQLTag.isRQLTag = function <Params> (value: any): value is RQLTag<Params> {
-  return value != null && value[refqlType] === rqlTagType;
+  return value != null && value[refqlType] === type;
 };
 
 export default RQLTag;

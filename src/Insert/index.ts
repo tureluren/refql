@@ -9,11 +9,11 @@ interface Insert {
   compile(paramIdx?: number): [string, any[]];
 }
 
-const insertType = "refql/Insert";
+const type = "refql/Insert";
 
 const prototype = {
   constructor: Insert,
-  [refqlType]: insertType,
+  [refqlType]: type,
   compile, toString
 };
 
@@ -40,7 +40,7 @@ function compile(this: Insert, paramIdx = 0) {
 }
 
 Insert.isInsert = function (value: any): value is Insert {
-  return value != null && value[refqlType] === insertType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Insert;

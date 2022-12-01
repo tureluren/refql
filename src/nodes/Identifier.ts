@@ -6,14 +6,14 @@ interface Identifier extends ASTNode<unknown>, CastAs {
   name: string;
 }
 
-const identifierType = "refql/Identifier";
+const type = "refql/Identifier";
 
-const identifierPrototype = Object.assign ({}, astNodePrototype, {
-  constructor: Identifier, caseOf, [refqlType]: identifierType
+const prototype = Object.assign ({}, astNodePrototype, {
+  constructor: Identifier, caseOf, [refqlType]: type
 });
 
 function Identifier(name: string, as?: string, cast?: string) {
-  let identifier: Identifier = Object.create (identifierPrototype);
+  let identifier: Identifier = Object.create (prototype);
 
   identifier.name = name;
   identifier.as = as;
@@ -27,7 +27,7 @@ function caseOf(this: Identifier, structureMap: StringMap) {
 }
 
 Identifier.isIdentifier = function (value: any): value is Identifier {
-  return value != null && value[refqlType] === identifierType;
+  return value != null && value[refqlType] === type;
 };
 
 export default Identifier;

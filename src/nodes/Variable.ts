@@ -6,13 +6,13 @@ interface Variable<Params> extends ASTNode<Params>, CastAs {
   value: RefQLValue<Params>;
 }
 
-const variablePrototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, astNodePrototype, {
   constructor: Variable,
   caseOf
 });
 
 function Variable<Params>(value: RefQLValue<Params>, as?: string, cast?: string) {
-  let variable: Variable<Params> = Object.create (variablePrototype);
+  let variable: Variable<Params> = Object.create (prototype);
 
   variable.value = value;
   variable.as = as;

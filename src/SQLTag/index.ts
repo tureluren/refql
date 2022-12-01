@@ -13,11 +13,11 @@ interface SQLTag<Input, Output> {
   [flMap]: SQLTag<Input, Output>["map"];
 }
 
-const sqlTagType = "refql/SQLTag";
+const type = "refql/SQLTag";
 
 const prototype = {
   constructor: SQLTag,
-  [refqlType]: sqlTagType,
+  [refqlType]: type,
   concat, [flConcat]: concat,
   map, [flMap]: map, run
 };
@@ -57,7 +57,7 @@ SQLTag.empty = SQLTag[flEmpty] = function () {
 } as () => SQLTag<unknown, unknown>;
 
 SQLTag.isSQLTag = function <Input, Output> (value: any): value is SQLTag<Input, Output> {
-  return value != null && value[refqlType] === sqlTagType;
+  return value != null && value[refqlType] === type;
 };
 
 export default SQLTag;
