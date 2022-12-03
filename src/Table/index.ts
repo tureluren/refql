@@ -1,5 +1,6 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Querier, RefQLValue, StringMap, TableRefMakerPair } from "../common/types";
+import { astNodePrototype } from "../nodes/ASTNode";
 import Parser from "../Parser";
 import RQLTag from "../RQLTag";
 

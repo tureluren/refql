@@ -2,6 +2,8 @@ import { CastAs, RefQLValue, StringMap } from "../common/types";
 import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
+// remove ?? in use ?
+
 interface Variable<Params> extends ASTNode<Params>, CastAs {
   value: RefQLValue<Params>;
 }

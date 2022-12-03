@@ -1,3 +1,4 @@
+// nog nodig ?
 const formatSQLString = (sql: string) =>
   sql
     // replace multispaces with a single space

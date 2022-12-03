@@ -13,6 +13,8 @@ interface RQLTag<Params> {
   [flMap]: RQLTag<Params>["map"];
 }
 
+// maak aggregate functie op rqltag
+
 const type = "refql/RQLTag";
 
 const prototype = {

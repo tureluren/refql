@@ -1,12 +1,8 @@
-import In from "../In";
-import Insert from "../Insert";
 import { ASTNode, BelongsTo, BelongsToMany, HasMany, HasOne } from "../nodes";
 import Raw from "../Raw";
 import RQLTag from "../RQLTag";
-import Select from "../Select";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
-import Update from "../Update";
 
 export interface StringMap {
   [key: string]: any;
@@ -73,11 +69,7 @@ export type SqlTagParam<Input, Output> =
   | SQLTag<Input, Output>
   | Raw
   // unknown ?
+  // | Table
   | ParamF2<Input>
-  | In<unknown>
-  | Select
-  | Insert
-  | Update
-  | Table
   | Raw
   | BuiltIn;

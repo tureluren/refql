@@ -1,11 +1,9 @@
 import { flMap, refqlType } from "../common/consts";
+import { ParamF2, StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
 
 interface Raw extends ASTNode<unknown> {
-  value: boolean | number | string;
-  map(f: (value: string) => string): Raw;
-  toString(): string;
-  [flMap]: Raw["map"];
+  run: ParamF2<unknown>;
 }
 
 const type = "refql/Raw";
@@ -13,24 +11,19 @@ const type = "refql/Raw";
 const prototype = Object.assign ({}, astNodePrototype, {
   constructor: Raw,
   [refqlType]: type,
-  map, [flMap]: map,
-  toString
+  caseOf
 });
 
-function Raw(value: boolean | number | string) {
+function Raw(run: ParamF2<unknown> | boolean | number | string) {
   let raw: Raw = Object.create (prototype);
 
-  raw.value = value;
+  raw.run = typeof run === "function" ? run : () => run;
 
   return raw;
 }
 
-function map(this: Raw, f: (value: boolean | number | string) => string) {
-  return Raw (f (this.value));
-}
-
-function toString(this: Raw) {
-  return String (this.value);
+function caseOf(this: Raw, structureMap: StringMap) {
+  return structureMap.Raw (this.run);
 }
 
 Raw.isRaw = function (value: any): value is Raw {
