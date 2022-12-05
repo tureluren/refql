@@ -4,14 +4,16 @@ import pg from "pg";
 import SQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
-import { Param, Variable } from "../nodes";
+import { Variable } from "../nodes";
 import Raw from "../Raw";
 import { Player } from "../soccer";
 import Table from "../Table";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
+import { player } from "../test/tables";
 import userConfig from "../test/userConfig";
+import Values from "../Values";
 import sql from "./sql";
 
 describe ("SQLTag type", () => {
@@ -76,17 +78,17 @@ describe ("SQLTag type", () => {
   // });
 
   test ("run", async () => {
-    type Input = {
+    type Params = {
       limit: number;
       offset: number;
     };
 
-    const paginate = sql<Input, Player>`
+    const paginate = sql<Params, Player>`
       limit ${p => p.limit}
       offset ${p => p.offset}
     `;
 
-    const tag = sql<Input, Player>`
+    const tag = sql<Params, Player>`
       select id, first_name, ${rawLastName}
       from player
       ${paginate}
@@ -98,32 +100,66 @@ describe ("SQLTag type", () => {
     expect (players.length).toBe (5);
   });
 
-  // test ("In", async () => {
-  //   const tag = sql<{ids: number[]}, Player>`
-  //     select id, first_name, ${rawLastName}
-  //     from player
-  //     ${In (p => p.ids)}
-  //   `;
-  //   // klein frietje joppiesaus spicy viandel chilli cheese nuggets bitterballen geen kruiden op sate
+  test ("Values", async () => {
+    const tag = sql<{ids: number[]}, Player>`
+      select id, first_name, ${rawLastName}
+      from player
+      where id in ${Values (p => p.ids)}
+    `;
 
-  //   const players = await tag.run (querier, { limit: 5, offset: 1 });
+    const players = await tag.run (querier, { ids: [3, 4] });
 
-  //   expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
-  //   expect (players.length).toBe (5);
-  // });
+    expect (players[0].id).toBe (3);
+    expect (players[1].id).toBe (4);
+    expect (players.length).toBe (2);
+  });
 
+  test ("insert", async () => {
+    const insert = sql<{fields: string[]; table: Table; data: StringMap}, Player>`
+      insert into ${Raw (p => `${p.table}`)}
+      ${Raw (p => `(${p.fields.join (", ")})`)}
+      values ${Values (p => p.fields.map (f => p.data[f]))}
+      returning *
+    `;
 
-  // test ("errors", async () => {
-  //   try {
-  //     const tag = sql`
-  //       select ${Table ("player")`id`}
-  //     `;
-  //     await tag.run (() => Promise.resolve ([]), undefined);
-  //   } catch (err: any) {
-  //     expect (err.message).toBe ("You can't use RQL Tags inside SQL Tags");
-  //   }
-  // });
+    const raw = Raw ("buh");
+
+    const players = await insert.run (querier, {
+      table: player, fields: ["first_name", "last_name"], data: { first_name: "John", last_name: "Doe" }
+    });
+
+    console.log (players);
+  });
+
+  test ("insert multiple", async () => {
+    const insert = sql<{fields: string[]; table: Table; data: StringMap[]}, Player>`
+      insert into ${Raw (p => `${p.table}`)}
+      ${Raw (p => `(${p.fields.join (", ")})`)}
+      values ${Values (p => p.fields.map (f => p.data[f]))}
+      returning *
+    `;
+
+    const players = await insert.run (querier, {
+      table: player, fields: ["first_name", "last_name"], data: [
+        { first_name: "John", last_name: "Doe" },
+        { first_name: "jane", last_name: "Doe" }
+      ]
+    });
+
+    console.log (players);
+  });
+
 });
+// test ("errors", async () => {
+//   try {
+//     const tag = sql`
+//       select ${Table ("player")`id`}
+//     `;
+//     await tag.run (() => Promise.resolve ([]), undefined);
+//   } catch (err: any) {
+//     expect (err.message).toBe ("You can't use RQL Tags inside SQL Tags");
+//   }
+// });
 
 // const insert = sql<{fields: string[]; table: Table; data: StringMap}, any>`
 //   insert into ${Raw (p => `${p.table}`)}
@@ -134,7 +170,7 @@ describe ("SQLTag type", () => {
 // const insert = sql<{fields: string[]; table: Table; data: StringMap[]}, any>`
 //   insert into ${Raw (p => `${p.table}`)}
 //   ${Raw (p => p.fields.join (","))}
-//   values ${List(p => p.data.map(rec => List(p.fields.map (f => rec[f])))}
+//   values ${Values(p => p.data.map(rec => Values(p.fields.map (f => rec[f])))}
 // `;
 
 // List can hold array of arrays

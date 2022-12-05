@@ -3,6 +3,7 @@ import Raw from "../Raw";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
+import Values from "../Values";
 
 export interface StringMap {
   [key: string]: any;
@@ -19,10 +20,10 @@ export type BuiltIn =
 export type ParamF<Params, Return> = (p: Params, T?: Table) =>
   Return;
 
-export type RefQLValue<Input, Output, Ran extends boolean = false> =
+export type RefQLValue<Params, Output, Ran extends boolean = false> =
   Ran extends false
-  ? BuiltIn | SQLTag<Input, Output> | ParamF<Input, BuiltIn | SQLTag<Input, Output>>
-  : BuiltIn | SQLTag<Input, Output>;
+  ? BuiltIn | SQLTag<Params, Output> | ParamF<Params, BuiltIn | SQLTag<Params, Output>>
+  : BuiltIn | SQLTag<Params, Output>;
 
 export interface Ref {
   name: string; as: string;
@@ -63,13 +64,14 @@ export type TableRefMakerPair =
       BelongsTo<unknown> | BelongsToMany<unknown> | HasMany<unknown> | HasOne<unknown>
   ];
 
-export type ParamF2<Input> = (params: Input, table?: Table) => any;
+export type TagFunctionVariable<Params> = (params: Params, table?: Table) => any;
 
-export type SqlTagParam<Input, Output> =
-  | SQLTag<Input, Output>
-  | Raw
-  // unknown ?
+export type SQLTagVariable<Params, Output> =
+  | SQLTag<Params, Output>
   // | Table
-  | ParamF2<Input>
-  | Raw
+  | ASTNode<Params>
+  | TagFunctionVariable<Params>
   | BuiltIn;
+  // | ((run: (params: Params, table?: Table) => any[]) => Values)
+  // | ((run: (params: Params, table?: Table | undefined) => any[] | any[]) => Values<Params>);
+  // | ((run: (params: Params, table?: Table) => any[] | any[]) => Values<Params>);

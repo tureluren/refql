@@ -1,4 +1,3 @@
-import List from "./List";
 import Raw from "./Raw";
 import RQLTag from "./RQLTag";
 import SQLTag from "./SQLTag";
@@ -9,6 +8,7 @@ import belongsTo from "./Table/belongsTo";
 import belongsToMany from "./Table/belongsToMany";
 import hasMany from "./Table/hasMany";
 import hasOne from "./Table/hasOne";
+import Values from "./Values";
 
 export * from "./nodes";
 export * from "./common/types";
@@ -19,10 +19,10 @@ export {
   compileSQLTag,
   hasMany,
   hasOne,
-  List,
   Raw,
   RQLTag,
   sql,
   SQLTag,
-  Table
+  Table,
+  Values
 };

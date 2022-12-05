@@ -1,57 +1,52 @@
 import SQLTag from ".";
-import { ParamF2, RefQLValue, SqlTagParam } from "../common/types";
-import { ASTNode, Param, Variable } from "../nodes";
+import { TagFunctionVariable, RefQLValue, SQLTagVariable } from "../common/types";
+import { ASTNode, Value, Variable } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
 import Raw from "../Raw";
 import Table from "../Table";
 import formatTlString from "./formatTLString";
 
-// export type SqlTagParam<Input, Output> =
-//   | SQLTag<Input, Output>
+// export type SQLTagVariable<Params, Output> =
+//   | SQLTag<Params, Output>
 //   | Raw
 //   // unknown ?
-//   | ParamF2<Input>
+//   | TagFunctionVariable<Params>
 //   | In<unknown>
-//   | Select
-//   | Insert
-//   | Update
 //   | Table
 //   | Raw
 //   | BuiltIn;
 // of astnode
 
-const parse = <Input, Output>(strings: TemplateStringsArray, params: SqlTagParam<Input, Output>[]) => {
-  const nodes = [] as ASTNode<Input>[];
+const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output>[]) => {
+  const nodes = [] as ASTNode<Params>[];
 
   for (const idx in strings) {
     const string = strings[idx];
-    const param = params[idx];
+    const variable = variables[idx];
 
-    if (string) {
+    if (string.trim ()) {
       nodes.push (Raw (formatTlString (string)));
     }
 
-    if (!param) {
-    } else if (SQLTag.isSQLTag (param)) {
-      nodes.push (...param.nodes);
-    } else if (isASTNode (param)) {
-      nodes.push (param);
+    if (!variable) {
+    } else if (SQLTag.isSQLTag (variable)) {
+      nodes.push (...variable.nodes);
+    } else if (isASTNode (variable)) {
+      nodes.push (variable);
       // check ook of alle array elements astnodes zijn
-    } else if (Array.isArray (param)) {
-      nodes.push (...param);
-    } else if (typeof param === "function") {
-      nodes.push (Param (param as ParamF2<Input>));
+    } else if (Array.isArray (variable)) {
+      nodes.push (...variable);
     } else {
-      nodes.push (Param (() => param));
+      nodes.push (Value (variable));
     }
   }
 
   return nodes;
 };
 
-const sql = <Input, Output> (strings: TemplateStringsArray, ...params: SqlTagParam<Input, Output>[]) => {
-  const nodes = parse (strings, params);
-  return SQLTag<Input, Output> (nodes);
+const sql = <Params, Output> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
+  const nodes = parse (strings, variables);
+  return SQLTag<Params, Output> (nodes);
 };
 
 export default sql;

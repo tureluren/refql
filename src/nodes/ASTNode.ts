@@ -1,6 +1,6 @@
 import {
   BelongsToInfo, BelongsToManyInfo,
-  HasManyInfo, HasOneInfo, ParamF2, RefQLValue
+  HasManyInfo, HasOneInfo, TagFunctionVariable, RefQLValue
 } from "../common/types";
 import Table from "../Table";
 
@@ -18,9 +18,9 @@ type StructureMap<Params, Return> = Partial<{
   NumericLiteral: (value: number, as?: string, cast?: string) => Return;
   BooleanLiteral: (value: boolean, as?: string, cast?: string) => Return;
   NullLiteral: (value: null, as?: string, cast?: string) => Return;
-  Raw: (run: ParamF2<Params>) => Return;
-  Param: (f: ParamF2<Params>) => Return;
-  List: (run: (params: Params, table?: Table) => any[]) => Return;
+  Raw: (run: TagFunctionVariable<Params>) => Return;
+  Value: (run: TagFunctionVariable<Params>) => Return;
+  Values: (run: (params: Params, table?: Table) => any[]) => Return;
 }>;
 
 interface ASTNode<Params> {
@@ -33,7 +33,7 @@ export const astNodePrototype = {
   [astNode]: true
 };
 
-export const isASTNode = function <Input> (value: any): value is ASTNode<Input> {
+export const isASTNode = function <Params> (value: any): value is ASTNode<Params> {
   return value != null && value[astNode];
 };
 

@@ -1,5 +1,4 @@
 import SQLTag from ".";
-import In from "../In";
 import Raw from "../Raw";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
@@ -36,11 +35,11 @@ const compileSQLTag = <Params>(tag: SQLTag<Params>, paramIdx: number, params: Pa
         return `${acc} ${value}`;
       }
 
-      if (In.isIn (value)) {
-        const [inStr, inValues] = value.compile (paramIdx + values.length);
-        values.push (...inValues);
-        return `${acc} ${inStr}`;
-      }
+      // if (In.isIn (value)) {
+      //   const [inStr, inValues] = value.compile (paramIdx + values.length);
+      //   values.push (...inValues);
+      //   return `${acc} ${inStr}`;
+      // }
 
       values.push (value);
 

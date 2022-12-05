@@ -3,8 +3,8 @@ import concat from "../common/concat";
 import { Ref } from "../common/types";
 import { evolve, get, over, set } from "../Env/access";
 import Rec from "../Env/Rec";
-import In from "../In";
-import Select from "../Select";
+// import In from "../In";
+// import Select from "../Select";
 import Table from "../Table";
 
 export const castAs = (sql: boolean | null | number | string, as?: string, cast?: string) =>
@@ -12,7 +12,8 @@ export const castAs = (sql: boolean | null | number | string, as?: string, cast?
 
 export const fromTable = (table: Table, distinct: boolean = false) => chain (
   get ("comps"),
-  comps => set ("query", Select (table, comps).compile (false, distinct)[0])
+  // comps => set ("query", Select (table, comps).compile (false, distinct)[0])
+  comps => set ("query", "buh")
 );
 
 export const joinOn = (lRefs: Ref[], rRefs: Ref[], table: Table, xTable: Table) =>
@@ -42,7 +43,8 @@ export const whereIn = (lRefs: Ref[], rRefs: Ref[], rows: any[], table: Table) =
       const uniqRows = [...new Set (rows.map (r => r[lr.as]))];
       const rr = rRefs[idx];
       const op = idx === 0 ? "" : "and ";
-      const [inStr] = In (uniqRows).compile (vals.length);
+      const [inStr] = ["in"];
+      // const [inStr] = In (uniqRows).compile (vals.length);
 
       return [
         `${sql} ${op}${table.name}.${rr.name} ${inStr}`,
