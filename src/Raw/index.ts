@@ -3,7 +3,6 @@ import { TagFunctionVariable, StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
 
 interface Raw<Params> extends ASTNode<Params> {
-  // (run: TagFunctionVariable<Params> | boolean | number | string): Raw<Params>;
   run: TagFunctionVariable<Params>;
 }
 
@@ -15,7 +14,7 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Raw<Params>(run: TagFunctionVariable<Params> | boolean | number | string) {
+function Raw<Params>(run: boolean | number | string | TagFunctionVariable<Params>) {
   let raw: Raw<Params> = Object.create (prototype);
 
   raw.run = typeof run === "function" ? run : () => run;

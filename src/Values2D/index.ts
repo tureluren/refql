@@ -4,24 +4,24 @@ import { ASTNode } from "../nodes";
 import { astNodePrototype } from "../nodes/ASTNode";
 import Table from "../Table";
 
-interface Values<Params> extends ASTNode<Params> {
-  run(params: Params, table?: Table): any[];
+interface Values2D<Params> extends ASTNode<Params> {
+  run(params: Params, table?: Table): any[][];
   compile(paramIdx?: number): [string, any[]];
 }
 
-const type = "refql/Values";
+const type = "refql/Values2D";
 
 const prototype = Object.assign ({}, astNodePrototype, {
-  constructor: Values,
+  constructor: Values2D,
   [refqlType]: type,
   caseOf
 });
 
-function Values<Params>(run: any[] | ((params: Params, table?: Table) => any[])) {
-  let values: Values<Params> = Object.create (prototype);
-  values.run = typeof run === "function" ? run : () => run;
+function Values2D<Params>(run: any[][] | ((params: Params, table?: Table) => any[][])) {
+  let values2D: Values2D<Params> = Object.create (prototype);
+  values2D.run = typeof run === "function" ? run : () => run;
 
-  return values;
+  return values2D;
 }
 
 // function compile(this: In<unknown>, paramIdx: number = 0) {
@@ -30,12 +30,12 @@ function Values<Params>(run: any[] | ((params: Params, table?: Table) => any[]))
 //   return [`in (${paramStr})`, this.arr];
 // }
 
-function caseOf(this: Values<unknown>, structureMap: StringMap) {
-  return structureMap.Values (this.run);
+function caseOf(this: Values2D<unknown>, structureMap: StringMap) {
+  return structureMap.Values2D (this.run);
 }
 
-Values.isValues = function <Params> (value: any): value is Values<Params> {
+Values2D.isValues2D = function <Params> (value: any): value is Values2D<Params> {
   return value != null && value[refqlType] === type;
 };
 
-export default Values;
+export default Values2D;

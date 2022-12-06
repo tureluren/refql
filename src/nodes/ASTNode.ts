@@ -21,6 +21,7 @@ type StructureMap<Params, Return> = Partial<{
   Raw: (run: TagFunctionVariable<Params>) => Return;
   Value: (run: TagFunctionVariable<Params>) => Return;
   Values: (run: (params: Params, table?: Table) => any[]) => Return;
+  Values2D: (run: (params: Params, table?: Table) => any[][]) => Return;
 }>;
 
 interface ASTNode<Params> {

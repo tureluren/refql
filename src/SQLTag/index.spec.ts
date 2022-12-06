@@ -4,16 +4,17 @@ import pg from "pg";
 import SQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
-import { Variable } from "../nodes";
 import Raw from "../Raw";
 import { Player } from "../soccer";
 import Table from "../Table";
+import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import { player } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Values from "../Values";
+import Values2D from "../Values2D";
 import sql from "./sql";
 
 describe ("SQLTag type", () => {
@@ -42,7 +43,7 @@ describe ("SQLTag type", () => {
     const tag = SQLTag (nodes);
 
     expect (tag.nodes).toEqual (nodes);
-    expect (tag.compiled).toBe (undefined);
+    expect (tag.interpreted).toBe (undefined);
     expect (SQLTag.isSQLTag (tag)).toBe (true);
     expect (SQLTag.isSQLTag ({})).toBe (false);
   });
@@ -52,30 +53,36 @@ describe ("SQLTag type", () => {
     const tag2 = sql`from player`;
     const tag3 = sql`where id = ${2}`;
 
-    const res = tag[flConcat] (tag2)[flConcat] (tag3);
-    const res2 = tag[flConcat] (tag2[flConcat] (tag3));
+    const tag4 = tag[flConcat] (tag2)[flConcat] (tag3);
+    const tag5 = tag[flConcat] (tag2[flConcat] (tag3));
 
-    expect (res).toEqual (res2);
+    expect (tag4.compile ()).toEqual (tag5.compile ());
   });
 
   test ("Monoid", () => {
     const tag = sql`select id from player`;
 
-    expect (tag[flConcat] (SQLTag[flEmpty] ())).toEqual (tag);
-    expect (SQLTag[flEmpty] ()[flConcat] (tag)).toEqual (tag);
+    const tag2 = tag[flConcat] (SQLTag[flEmpty] ());
+    const tag3 = SQLTag[flEmpty] ()[flConcat] (tag);
+
+    expect (tag2.compile ()).toEqual (tag.compile ());
+    expect (tag3.compile ()).toEqual (tag.compile ());
   });
 
-  // test ("Functor", () => {
-  //   const tag = sql`select * from player where id = ${1}`;
+  test ("Functor", () => {
+    const tag = sql`select * from player where id = ${1}`;
 
-  //   const limit = (values: any[]) => values.concat (Raw ("limit 10"));
-  //   const offset = (values: any[]) => values.concat (Raw ("offset 0"));
+    const limit = (nodes: any[]) => nodes.concat (Raw ("limit 10"));
+    const offset = (nodes: any[]) => nodes.concat (Raw ("offset 0"));
 
-  //   expect (tag[flMap] (v => v)).toEqual (tag);
+    const tag2 = tag[flMap] (v => v);
+    expect (tag2.compile ()).toEqual (tag.compile ());
 
-  //   expect (tag[flMap] (v => offset (limit (v))))
-  //     .toEqual (tag[flMap] (limit)[flMap] (offset));
-  // });
+    const tag3 = tag[flMap] (v => offset (limit (v)));
+    const tag4 = tag[flMap] (limit)[flMap] (offset);
+
+    expect (tag3.compile ()).toEqual (tag4.compile ());
+  });
 
   test ("run", async () => {
     type Params = {
@@ -94,7 +101,23 @@ describe ("SQLTag type", () => {
       ${paginate}
     `;
 
-    const players = await tag.run (querier, { limit: 5, offset: 1 });
+    const params = {
+      limit: 5,
+      offset: 1
+    };
+
+    const [query, values] = tag.compile (params);
+
+    expect (query).toBe (format (`
+      select id, first_name, last_name
+      from player
+      limit $1
+      offset $2
+    `));
+
+    expect (values).toEqual ([5, 1]);
+
+    const players = await tag.run (querier, params);
 
     expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
     expect (players.length).toBe (5);
@@ -107,6 +130,16 @@ describe ("SQLTag type", () => {
       where id in ${Values (p => p.ids)}
     `;
 
+    const [query, values] = tag.compile ({ ids: [3, 4] });
+
+    expect (query).toBe (format (`
+      select id, first_name, last_name
+      from player
+      where id in ($1, $2)
+    `));
+
+    expect (values).toEqual ([3, 4]);
+
     const players = await tag.run (querier, { ids: [3, 4] });
 
     expect (players[0].id).toBe (3);
@@ -115,38 +148,97 @@ describe ("SQLTag type", () => {
   });
 
   test ("insert", async () => {
-    const insert = sql<{fields: string[]; table: Table; data: StringMap}, Player>`
+    const isPG = process.env.DB_TYPE === "pg";
+    console.log (isPG);
+    let cars = '["Mercedes", "volvo"]';
+    if (isPG) {
+      cars = JSON.parse (cars);
+    }
+
+    const insert = sql<{fields: string[]; table: Table; data: StringMap}, any>`
       insert into ${Raw (p => `${p.table}`)}
       ${Raw (p => `(${p.fields.join (", ")})`)}
       values ${Values (p => p.fields.map (f => p.data[f]))}
-      returning *
     `;
 
-    const raw = Raw ("buh");
+    const params = {
+      table: player,
+      fields: ["first_name", "last_name", "cars"],
+      data: { first_name: "John", last_name: "Doe", cars }
+    };
 
-    const players = await insert.run (querier, {
-      table: player, fields: ["first_name", "last_name"], data: { first_name: "John", last_name: "Doe" }
-    });
+    const [query, values] = insert.compile (params);
 
-    console.log (players);
+    expect (query).toBe (format (`
+      insert into player (first_name, last_name, cars)
+      values ($1, $2, $3)
+    `));
+
+    expect (values).toEqual (["John", "Doe", cars]);
+
+    await insert.run (querier, params);
+
+    let returning = sql<{}, any>`
+      select * from player
+      where cars = CAST(${cars} as json)
+      order by id desc
+      limit 1
+    `;
+
+    if (isPG) {
+      returning = sql<{}, any>`
+        select * from player
+        where cars = ${cars}
+        order by id desc
+        limit 1
+      `;
+    }
+
+    const players = await returning.run (querier);
+
+    expect (players[0].first_name).toBe ("John");
+    expect (players[0].last_name).toBe ("Doe");
+    expect (players[0].cars).toEqual (isPG ? cars : JSON.parse (cars));
+    expect (players.length).toBe (1);
   });
 
   test ("insert multiple", async () => {
-    const insert = sql<{fields: string[]; table: Table; data: StringMap[]}, Player>`
+    const insert = sql<{fields: string[]; table: Table; data: StringMap[]}, any>`
       insert into ${Raw (p => `${p.table}`)}
       ${Raw (p => `(${p.fields.join (", ")})`)}
-      values ${Values (p => p.fields.map (f => p.data[f]))}
-      returning *
+      values ${Values2D (p => p.data.map (x => p.fields.map (f => x[f])))}
     `;
 
-    const players = await insert.run (querier, {
-      table: player, fields: ["first_name", "last_name"], data: [
+    const params = {
+      table: player, fields: ["first_name", "last_name"],
+      data: [
         { first_name: "John", last_name: "Doe" },
-        { first_name: "jane", last_name: "Doe" }
+        { first_name: "Jane", last_name: "Doe" }
       ]
-    });
+    };
 
-    console.log (players);
+    const [query, values] = insert.compile (params);
+
+    expect (query).toBe (format (`
+      insert into player (first_name, last_name)
+      values ($1, $2), ($3, $4)
+    `));
+
+    expect (values).toEqual (["John", "Doe", "Jane", "Doe"]);
+
+    await insert.run (querier, params);
+
+    const returning = sql<{}, any>`
+      select * from player
+      order by id desc
+      limit 2
+    `;
+
+    const players = await returning.run (querier);
+
+    expect (players[0].first_name).toBe ("Jane");
+    expect (players[1].first_name).toBe ("John");
+    expect (players.length).toBe (2);
   });
 
 });
@@ -161,19 +253,5 @@ describe ("SQLTag type", () => {
 //   }
 // });
 
-// const insert = sql<{fields: string[]; table: Table; data: StringMap}, any>`
-//   insert into ${Raw (p => `${p.table}`)}
-//   ${p => Raw (p.fields.join (","))}
-//   values ${p => p.fields.map (f => p.data[f]))}
-// `;
 
-// const insert = sql<{fields: string[]; table: Table; data: StringMap[]}, any>`
-//   insert into ${Raw (p => `${p.table}`)}
-//   ${Raw (p => p.fields.join (","))}
-//   values ${Values(p => p.data.map(rec => Values(p.fields.map (f => rec[f])))}
-// `;
-
-// List can hold array of arrays
-
-// const insertInto = (table: Table) =>
-//   insert.run ({ table });
+// ARRAYS ?

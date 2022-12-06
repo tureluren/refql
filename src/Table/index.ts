@@ -5,14 +5,14 @@ import Parser from "../Parser";
 import RQLTag from "../RQLTag";
 
 interface Table {
-  <Params>(strings: TemplateStringsArray, ...values: RefQLValue<any>[]): RQLTag<Params>;
+  <Params>(strings: TemplateStringsArray, ...values: any[]): RQLTag<Params>;
   name: string;
   schema?: string;
   refs: TableRefMakerPair[];
   equals(other: Table): boolean;
   empty(): RQLTag<unknown>;
   toString(): string;
-  run<Return>(querier: Querier<Return>): Promise<Return[]>;
+  run<Return>(querier: Querier): Promise<Return[]>;
   [flEmpty]: Table["empty"];
   [flEquals]: Table["equals"];
 }
@@ -30,7 +30,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
 
 function Table(name: string, refs?: any[]) {
 
-  const table = (<Params>(strings: TemplateStringsArray, ...values: RefQLValue<Params>[]) => {
+  const table = (<Params>(strings: TemplateStringsArray, ...values: any[]) => {
     const parser = new Parser (strings.join ("$"), values, table);
 
     return RQLTag<Params> (parser.Root ());
@@ -56,7 +56,7 @@ function empty(this: Table) {
   return this``;
 }
 
-function run(this: Table, querier: Querier<StringMap>) {
+function run(this: Table, querier: Querier) {
   return this.empty ().run (querier);
 }
 

@@ -1,4 +1,4 @@
-import { ASTNode, BelongsTo, BelongsToMany, HasMany, HasOne } from "../nodes";
+import { ASTNode, BelongsTo, BelongsToMany, HasMany, HasOne, Value } from "../nodes";
 import Raw from "../Raw";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
@@ -68,10 +68,9 @@ export type TagFunctionVariable<Params> = (params: Params, table?: Table) => any
 
 export type SQLTagVariable<Params, Output> =
   | SQLTag<Params, Output>
-  // | Table
-  | ASTNode<Params>
+  | Values<Params>
+  | Value<Params>
+  | Raw<Params>
   | TagFunctionVariable<Params>
+  | Array<BuiltIn>
   | BuiltIn;
-  // | ((run: (params: Params, table?: Table) => any[]) => Values)
-  // | ((run: (params: Params, table?: Table | undefined) => any[] | any[]) => Values<Params>);
-  // | ((run: (params: Params, table?: Table) => any[] | any[]) => Values<Params>);

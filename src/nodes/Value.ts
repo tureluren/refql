@@ -12,7 +12,7 @@ const prototype = Object.assign ({}, astNodePrototype, {
   constructor: Value, caseOf, [refqlType]: type
 });
 
-function Value<Params>(run: TagFunctionVariable<Params> | any) {
+function Value<Params>(run: any | TagFunctionVariable<Params>) {
   let value: Value<Params> = Object.create (prototype);
   value.run = typeof run === "function" ? run : () => run;
 

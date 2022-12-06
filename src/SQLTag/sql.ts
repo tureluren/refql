@@ -34,8 +34,6 @@ const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagV
     } else if (isASTNode (variable)) {
       nodes.push (variable);
       // check ook of alle array elements astnodes zijn
-    } else if (Array.isArray (variable)) {
-      nodes.push (...variable);
     } else {
       nodes.push (Value (variable));
     }

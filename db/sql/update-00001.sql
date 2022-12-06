@@ -21,6 +21,7 @@ create table `player` (
   `id` integer auto_increment,
   `first_name` text,
   `last_name` text,
+  `cars` json,
   `birthday` date,
   `team_id` integer references `team` (`id`),
   `position_id` integer references `position` (`id`),

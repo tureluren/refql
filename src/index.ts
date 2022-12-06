@@ -9,6 +9,7 @@ import belongsToMany from "./Table/belongsToMany";
 import hasMany from "./Table/hasMany";
 import hasOne from "./Table/hasOne";
 import Values from "./Values";
+import Values2D from "./Values2D";
 
 export * from "./nodes";
 export * from "./common/types";
@@ -24,5 +25,6 @@ export {
   sql,
   SQLTag,
   Table,
-  Values
+  Values,
+  Values2D
 };
