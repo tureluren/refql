@@ -232,7 +232,7 @@ describe ("Interpreter", () => {
       where player_id = player.id
     `, "goal_count");
 
-    const byId = Variable (sql<Params>`where player.id = ${p => p.id}`);
+    const byId = Variable (sql<Params, any>`where player.id = ${p => p.id}`);
 
     const rootNode = Root<Params> (
       Table ("player"),

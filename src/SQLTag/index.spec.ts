@@ -149,8 +149,8 @@ describe ("SQLTag type", () => {
 
   test ("insert", async () => {
     const isPG = process.env.DB_TYPE === "pg";
-    console.log (isPG);
     let cars = '["Mercedes", "volvo"]';
+
     if (isPG) {
       cars = JSON.parse (cars);
     }
@@ -252,6 +252,3 @@ describe ("SQLTag type", () => {
 //     expect (err.message).toBe ("You can't use RQL Tags inside SQL Tags");
 //   }
 // });
-
-
-// ARRAYS ?

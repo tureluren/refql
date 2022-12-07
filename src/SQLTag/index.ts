@@ -15,7 +15,7 @@ interface SQLTag<Params, Output> {
   concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   map<Params2, Output2>(f: (values: ASTNode<Params>[]) => ASTNode<Params2>[]): SQLTag<Params2, Output2>;
   interpret(): InterpretedSQLTag<Params>;
-  compile(params?: Params, paramIdx?: number): [string, any[]];
+  compile(params?: Params, paramIdx?: number, table?: Table): [string, any[]];
   run(querier: Querier, params?: Params): Promise<Output[]>;
   [flConcat]: SQLTag<Params, Output>["concat"];
   [flMap]: SQLTag<Params, Output>["map"];
@@ -91,7 +91,7 @@ function interpret(this: SQLTag<unknown, unknown>): InterpretedSQLTag<unknown> {
   return { params, strings };
 }
 
-function compile(this: SQLTag<unknown, unknown>, data: unknown = {}, paramIdx: number = 0) {
+function compile(this: SQLTag<unknown, unknown>, data: unknown = {}, paramIdx: number = 0, table?: Table) {
   if (!this.interpreted) {
     this.interpreted = this.interpret ();
   }
@@ -99,7 +99,7 @@ function compile(this: SQLTag<unknown, unknown>, data: unknown = {}, paramIdx: n
 
   return [
     strings.reduce (([query, idx]: [string, number], f): [string, number] => {
-      const [s, n] = f (data, idx);
+      const [s, n] = f (data, idx, table);
       return [`${query} ${s}`.trim (), idx + n];
     }, ["", paramIdx])[0],
     params.map (f => f (data)).flat (1)

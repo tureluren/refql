@@ -5,6 +5,7 @@ import RQLTag from ".";
 import { flConcat, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import { all, Identifier, Root } from "../nodes";
+import Raw from "../Raw";
 import { Player } from "../soccer";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -16,7 +17,7 @@ import userConfig from "../test/userConfig";
 
 describe ("RQLTag type", () => {
   let pool: any;
-  let querier: Querier<Player>;
+  let querier: Querier;
 
   if (process.env.DB_TYPE === "mysql") {
     pool = mySQL.createPool (userConfig ("mysql"));
@@ -182,7 +183,7 @@ describe ("RQLTag type", () => {
     const playerTeam = player1.team;
     const playerGame = player1.games[0];
 
-    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "birthday", "team_id", "position_id", "team", "games"]);
+    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "cars", "birthday", "team_id", "position_id", "team", "games"]);
     expect (Object.keys (playerTeam)).toEqual (["id", "name", "league_id"]);
     expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
   });
@@ -216,7 +217,7 @@ describe ("RQLTag type", () => {
     const tag = player`
       *
       ${sql`
-        where ${(_p, t) => t}.id = 1
+        where ${Raw ((_p, t) => t!.name)}.id = 1
       `}
     `;
 

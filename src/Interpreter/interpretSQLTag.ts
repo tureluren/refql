@@ -8,7 +8,8 @@ import Table from "../Table";
 const interpretSQLTag = <Params>(params: Params) => (table: Table, correctWhere: boolean = true) => (rec: Rec) => {
   const { sqlTag, values } = rec;
 
-  let [query, newValues] = compileSQLTag (sqlTag as SQLTag<Params>, values.length, params, table);
+  // let [query, newValues] = compileSQLTag (sqlTag as SQLTag<Params>, values.length, params, table);
+  let [query, newValues] = sqlTag.compile (params, values.length, table);
 
   if (!query) return rec;
 

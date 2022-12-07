@@ -3,6 +3,7 @@ import {
   Identifier, isLiteral, Literal, NullLiteral,
   NumericLiteral, Root, StringLiteral, Variable
 } from "../nodes";
+import { isASTNode } from "../nodes/ASTNode";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Tokenizer, { Token, TokenType } from "../Tokenizer";
@@ -95,7 +96,7 @@ class Parser {
     if (this.isNext ("VARIABLE") && Array.isArray (this.values[this.idx])) {
       const members = this.spliceValue ();
       if (
-        !members.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && m.isASTNode, true)
+        !members.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && isASTNode (m), true)
       ) {
         throw new SyntaxError ("Invalid dynamic members, expected Array of ASTNode");
       }

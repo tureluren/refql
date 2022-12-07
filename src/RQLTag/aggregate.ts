@@ -19,7 +19,7 @@ const match = (row: any, nextRows: any[], lRefs: string[], rRefs: string[]) =>
     return matched;
   });
 
-const aggregate = (querier: Querier<StringMap>, interpret: InterpretF<unknown>, node: Root<unknown>) => {
+const aggregate = (querier: Querier, interpret: InterpretF<unknown>, node: Root<unknown>) => {
   const go = (compiled: Rec): Promise<any[]> => {
     return querier (compiled.query, compiled.values).then (rows => {
       if (!rows.length) {

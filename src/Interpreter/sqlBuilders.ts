@@ -12,8 +12,7 @@ export const castAs = (sql: boolean | null | number | string, as?: string, cast?
 
 export const fromTable = (table: Table, distinct: boolean = false) => chain (
   get ("comps"),
-  // comps => set ("query", Select (table, comps).compile (false, distinct)[0])
-  comps => set ("query", "buh")
+  comps => set ("query", `select${distinct ? " distinct" : ""} ${comps.join (", ")} from ${table}`)
 );
 
 export const joinOn = (lRefs: Ref[], rRefs: Ref[], table: Table, xTable: Table) =>
@@ -43,8 +42,8 @@ export const whereIn = (lRefs: Ref[], rRefs: Ref[], rows: any[], table: Table) =
       const uniqRows = [...new Set (rows.map (r => r[lr.as]))];
       const rr = rRefs[idx];
       const op = idx === 0 ? "" : "and ";
-      const [inStr] = ["in"];
-      // const [inStr] = In (uniqRows).compile (vals.length);
+      // use Values ?
+      const inStr = `in (${uniqRows.map ((_, idx) => `$${idx + vals.length + 1}`).join (", ")})`;
 
       return [
         `${sql} ${op}${table.name}.${rr.name} ${inStr}`,

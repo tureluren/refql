@@ -7,7 +7,6 @@ import concat from "../common/concat";
 import { all, All, ASTNode, Call, Identifier, isLiteral } from "../nodes";
 import Raw from "../Raw";
 import SQLTag from "../SQLTag";
-import compileSQLTag from "../SQLTag/compileSQLTag";
 import Table from "../Table";
 import interpretSQLTag from "./interpretSQLTag";
 import {
@@ -103,11 +102,11 @@ const Interpreter = <Params> (params: Params) => {
       },
 
       Variable: (value, as, cast) => {
-        if (Raw.isRaw (value)) return select (Raw.toString (), rec);
+        if (Raw.isRaw (value)) return select (value.run (params), rec);
 
-        if (SQLTag.isSQLTag<Params> (value)) {
+        if (SQLTag.isSQLTag<Params, any> (value)) {
           if (inCall || as) {
-            const [query, vals] = compileSQLTag (value, values.length, params, parent);
+            const [query, vals] = value.compile (params, values.length, parent);
 
             return evolve ({
               comps: concat (castAs (`(${query})`, as, cast)),

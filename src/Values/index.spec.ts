@@ -1,20 +1,11 @@
-import In from ".";
+import Values from ".";
 
-describe ("In type", () => {
-  test ("create In", () => {
-    const inn = In ([1, 2, 3]);
+describe ("Values type", () => {
+  test ("create Values", () => {
+    const values = Values ([1, 2, 3]);
 
-    expect (inn.arr).toEqual ([1, 2, 3]);
-    expect (In.isIn (inn)).toBe (true);
-    expect (In.isIn ({})).toBe (false);
-  });
-
-  test ("compile In", () => {
-    const arr = [1, 2, 3];
-    const inn = In (arr);
-    const [query, values] = inn.compile ();
-
-    expect (query).toBe ("in ($1, $2, $3)");
-    expect (values).toEqual (arr);
+    expect (values.run ({})).toEqual ([1, 2, 3]);
+    expect (Values.isValues (values)).toBe (true);
+    expect (Values.isValues ({})).toBe (false);
   });
 });

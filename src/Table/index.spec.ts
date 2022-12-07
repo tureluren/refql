@@ -6,7 +6,6 @@ import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
 import { all, BelongsTo, BelongsToMany, HasMany } from "../nodes";
 import HasOne from "../nodes/HasOne";
-import { Player } from "../soccer";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
@@ -19,7 +18,7 @@ import hasOne from "./hasOne";
 
 describe ("Table type", () => {
   let pool: any;
-  let querier: Querier<Player>;
+  let querier: Querier;
 
   if (process.env.DB_TYPE === "mysql") {
     pool = mySQL.createPool (userConfig ("mysql"));
