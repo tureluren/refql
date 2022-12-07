@@ -60,7 +60,7 @@ export interface HasOneInfo extends RefInfo {}
 export type TableRefMakerPair =
   [
     Table,
-    (parent: Table, members: ASTNode<unknown>[], as?: string) =>
+    (parent: Table, tag: RQLTag<unknown, unknown>, as?: string) =>
       BelongsTo<unknown> | BelongsToMany<unknown> | HasMany<unknown> | HasOne<unknown>
   ];
 

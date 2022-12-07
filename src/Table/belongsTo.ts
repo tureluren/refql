@@ -1,12 +1,13 @@
 import Table from ".";
 import { BelongsToInfo, TableRefMakerPair } from "../common/types";
 import { ASTNode, BelongsTo } from "../nodes";
+import RQLTag from "../RQLTag";
 
 const belongsTo = (table: string, info?: Partial<BelongsToInfo>): TableRefMakerPair => {
   const belongsToInfo = info || {};
   const child = Table (table);
 
-  const makeBelongsTo = (_parent: Table, members: ASTNode<unknown>[], as?: string) =>
+  const makeBelongsTo = (tag: RQLTag<unknown, unknown>, as?: string) =>
     BelongsTo (
       child,
       {
@@ -14,7 +15,7 @@ const belongsTo = (table: string, info?: Partial<BelongsToInfo>): TableRefMakerP
         lRef: belongsToInfo.lRef || `${child.name}_id`,
         rRef: belongsToInfo.rRef || "id"
       },
-      members
+      tag
     );
 
   return [child, makeBelongsTo];

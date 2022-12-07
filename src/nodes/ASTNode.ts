@@ -2,11 +2,12 @@ import {
   BelongsToInfo, BelongsToManyInfo,
   HasManyInfo, HasOneInfo, TagFunctionVariable, RefQLValue
 } from "../common/types";
+import RQLTag from "../RQLTag";
 import Table from "../Table";
 
 type StructureMap<Params, Return> = Partial<{
   Root: (table: Table, members: ASTNode<Params>[]) => Return;
-  BelongsTo: (table: Table, members: ASTNode<Params>[], info: BelongsToInfo) => Return;
+  BelongsTo: (table: Table, tag: RQLTag<Params, unknown>, info: BelongsToInfo) => Return;
   BelongsToMany: (table: Table, members: ASTNode<Params>[], info: BelongsToManyInfo) => Return;
   HasMany: (table: Table, members: ASTNode<Params>[], info: HasManyInfo) => Return;
   HasOne: (table: Table, members: ASTNode<Params>[], info: HasOneInfo) => Return;

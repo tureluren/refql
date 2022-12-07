@@ -12,7 +12,7 @@ export const castAs = (sql: boolean | null | number | string, as?: string, cast?
 
 export const fromTable = (table: Table, distinct: boolean = false) => chain (
   get ("comps"),
-  comps => set ("query", `select${distinct ? " distinct" : ""} ${comps.join (", ")} from ${table}`)
+  comps => set ("strings", [() => `select${distinct ? " distinct" : ""}`, p => `${comps.map (f => f (p)).join (", ")}`, () => `from ${table}`])
 );
 
 export const joinOn = (lRefs: Ref[], rRefs: Ref[], table: Table, xTable: Table) =>
@@ -29,11 +29,11 @@ export const joinOn = (lRefs: Ref[], rRefs: Ref[], table: Table, xTable: Table) 
 export const refsToComp = (table: Table, refs: Ref[]) =>
   refs.map (r => `${table.name}.${r.name} ${r.as}`);
 
-export const select = (comps: string | string[], rec: Rec) =>
+export const select = (comps: (() => string) | (() => string[]), rec: Rec) =>
   over ("comps", concat (comps), rec);
 
 export const selectRefs = (table: Table, refs: Ref[]) => (rec: Rec) =>
-  select (refsToComp (table, refs), rec);
+  select (() => refsToComp (table, refs), rec);
 
 export const whereIn = (lRefs: Ref[], rRefs: Ref[], rows: any[], table: Table) => chain (
   get ("values"),

@@ -1,20 +1,16 @@
-import { Refs } from "../common/types";
+import { Refs, TagFunctionVariable } from "../common/types";
 import { ASTNode } from "../nodes";
+import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
 
-export interface Next {
-  node: ASTNode<unknown>;
-  refs: Refs;
-}
-
 export default interface Rec {
   table: Table;
-  query: string;
+  strings: TagFunctionVariable<unknown>[];
   sqlTag: SQLTag<unknown, unknown>;
-  comps: string[];
-  values: any[];
-  next: Next[];
+  comps: (() => string)[];
+  values: TagFunctionVariable<unknown>[];
+  next: RQLTag<unknown, unknown>[];
   refs: Refs;
   inCall: boolean;
 }

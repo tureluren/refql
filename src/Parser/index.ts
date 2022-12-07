@@ -42,24 +42,24 @@ class Parser {
     return all;
   }
 
-  refer(table: Table, members: ASTNode<unknown>[], as?: string) {
+  refer(tag: RQLTag<unknown, unknown>, as?: string) {
     this.values.splice (this.idx, 1);
 
-    if (table.equals (this.table)) {
-      return members;
+    if (tag.node.table.equals (this.table)) {
+      return tag.node.members;
     }
 
     const ref = this.table.refs.find (([t]) => {
-      return t.equals (table);
+      return t.equals (tag.node.table);
     });
 
     if (!ref) {
       throw new Error (
-        `${this.table.name} has no ref defined for: ${table.name}`
+        `${this.table.name} has no ref defined for: ${tag.node.table.name}`
       );
     }
 
-    return ref[1] (this.table, members, as);
+    return ref[1] (tag, as);
   }
 
   Variable(inCall = false) {
@@ -76,8 +76,7 @@ class Parser {
 
     if (RQLTag.isRQLTag (value)) {
       if (!inCall) {
-        const { table, members } = value.node;
-        return this.refer (table, members, as);
+        return this.refer (value, as);
       }
       throw new Error ("U can't use a RQLTag as a function argument");
     }

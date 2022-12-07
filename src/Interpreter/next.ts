@@ -39,10 +39,10 @@ const next = <Params>(params: Params) => (node: ASTNode<Params>, rec: Rec) => {
       refs.lxRefs = refOf ("lxref", lxRef);
       refs.rxRefs = refOf ("rxref", rxRef);
     }
-  }, params, table);
+  });
 
   return evolve ({
-    comps: concat (refsToComp (table, refs.lRefs)),
+    comps: concat (() => refsToComp (table, refs.lRefs)),
     next: concat ({ node, refs })
   }, rec);
 };
