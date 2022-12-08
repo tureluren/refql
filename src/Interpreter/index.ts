@@ -11,10 +11,10 @@ import Table from "../Table";
 import interpretSQLTag from "./interpretSQLTag";
 import {
   castAs, fromTable, joinOn, refsToComp,
+  refToComp,
   select, selectRefs, whereIn
 } from "./sqlBuilders";
 import next from "./next";
-import emptyRefs from "../common/emptyRefs";
 import sql from "../SQLTag/sql";
 import Values from "../Values";
 
@@ -27,11 +27,10 @@ export type InterpretF<Params> = (exp: ASTNode<Params>, env: Env, rows?: any[]) 
 const includeSQL = interpretSQLTag ({});
 const toNext = next ({});
 
-const createRef = (as: string) => (kw: string, refs: string) =>
-  refs.split (",").map ((ref, idx) => ({
-    name: ref.trim (),
-    as: `${(as).replace (/_/g, "").toLowerCase ()}${kw}${idx}`
-  }));
+const createRef = (as: string) => (kw: string, ref: string) => ({
+  name: ref.trim (),
+  as: `${(as).replace (/_/g, "").toLowerCase ()}${kw}`
+});
 
 const interpretMembers = <Params>(members: ASTNode<Params>[], table: Table, inCall = false) => {
   const nodes = members.filter (m =>
@@ -77,26 +76,18 @@ const interpret: InterpretF<unknown> = (node, env, rows) => {
 
     BelongsTo: (table, tag, { as, lRef, rRef }) => {
       // / select refs voor huidige tabel
-      // concat tag and add to next
       let child = tag.node.table;
 
-      let refs = emptyRefs ();
-
       const refOf = createRef (as);
-      refs.lRefs = refOf ("lref", lRef);
-      refs.rRefs = refOf ("rref", rRef);
-      const lref = refs.lRefs[0];
-      const rref = refs.rRefs[0];
-
-      const identifiers = refs.rRefs.map (r => Identifier (r.name, r.as));
+      const lr = refOf ("lref", lRef);
+      const rr = refOf ("rref", rRef);
 
       const refTag = child<{rows: any[]}, any>`
-
-        ${[...identifiers, Variable (sql<{rows: any[]}, any>`
-          where ${Raw (`${child.name}.${rref.name}`)} 
+        ${[Identifier (rr.name, rr.as), Variable (sql<{rows: any[]}, any>`
+          where ${Raw (`${child.name}.${rr.name}`)} 
           in ${Values (
             p => {
-              const uniqRows = [...new Set (p.rows.map (r => r[lref.as]))];
+              const uniqRows = [...new Set (p.rows.map (r => r[lr.as]))];
               return uniqRows;
             }
           )}
@@ -104,8 +95,8 @@ const interpret: InterpretF<unknown> = (node, env, rows) => {
       `.concat (tag);
 
       return evolve ({
-        comps: concat (() => refsToComp (parent, refs.lRefs)),
-        next: concat (refTag)
+        comps: concat (() => refToComp (parent, lr)),
+        next: concat ({ tag: refTag, refs: { lRef: lr, rRef: rr }, as, refType: "BelongsTo" })
       }, rec);
 
       // if (!rows) return toNext (node, rec);

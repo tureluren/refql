@@ -29,6 +29,9 @@ export const joinOn = (lRefs: Ref[], rRefs: Ref[], table: Table, xTable: Table) 
 export const refsToComp = (table: Table, refs: Ref[]) =>
   refs.map (r => `${table.name}.${r.name} ${r.as}`);
 
+export const refToComp = (table: Table, ref: Ref) =>
+  `${table.name}.${ref.name} ${ref.as}`;
+
 export const select = (comps: (() => string) | (() => string[]), rec: Rec) =>
   over ("comps", concat (comps), rec);
 

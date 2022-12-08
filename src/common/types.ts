@@ -30,8 +30,8 @@ export interface Ref {
 }
 
 export interface Refs {
-  lRefs: Ref[]; rRefs: Ref[];
-  lxRefs: Ref[]; rxRefs: Ref[];
+  lRef?: Ref; rRef?: Ref;
+  lxRef?: Ref; rxRef?: Ref;
 }
 
 export interface CastAs {

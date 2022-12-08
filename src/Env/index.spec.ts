@@ -1,6 +1,5 @@
 import Env from ".";
 import { flExtend, flMap } from "../common/consts";
-import emptyRefs from "../common/emptyRefs";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
 import { set } from "./access";
@@ -15,7 +14,7 @@ describe ("Env type", () => {
       values: [],
       next: [],
       comps: [],
-      refs: emptyRefs (),
+      refs: {},
       inCall: false
     };
 

@@ -1,5 +1,4 @@
 import concat from "../common/concat";
-import emptyRefs from "../common/emptyRefs";
 import { evolve } from "../Env/access";
 import Rec from "../Env/Rec";
 import { ASTNode } from "../nodes";
@@ -14,7 +13,7 @@ const createRef = (as: string) => (kw: string, refs: string) =>
 const next = <Params>(params: Params) => (node: ASTNode<Params>, rec: Rec) => {
   const { table } = rec;
 
-  let refs = emptyRefs ();
+  let refs = {};
 
   node.caseOf<void> ({
     BelongsTo: (_c, _m, { lRef, rRef, as }) => {

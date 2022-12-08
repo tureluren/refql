@@ -89,17 +89,12 @@ function compile(this: RQLTag<unknown, unknown>, data: unknown = {}, paramIdx: n
   ];
 }
 
-const match = (row: any, nextRows: any[], lRefs: string[], rRefs: string[]) =>
+const match = (row: any, nextRows: any[], lRef: string, rRef: string) =>
   nextRows.filter ((r: any) =>
-    rRefs.reduce ((acc, rr, idx) =>
-      acc && (r[rr] === row[lRefs[idx]]),
-      true as boolean
-    )
+    r[rRef] === row[lRef]
   ).map (r => {
     const matched = { ...r };
-    rRefs.forEach (rr => {
-      delete matched[rr];
-    });
+    // delete matched[rr];
     return matched;
   });
 
@@ -111,32 +106,28 @@ function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: unk
       return Promise.resolve ([]);
     }
 
-    return Promise.all (next.map (n => n.aggregate (querier, params))).then (nextData =>
+    return Promise.all (next.map (n => n.tag.aggregate (querier, params))).then (nextData =>
       rows.map (row =>
         nextData.reduce ((agg, nextRows, idx) => {
-          console.log (next[0]);
-          const { node, refs } = compiled.next[idx];
+          const { refType, as, refs } = next[idx];
 
-          const lRefs = refs.lRefs.map (lr => lr.as);
-          const rRefs = refs.rRefs.map (rr => rr.as);
-          const lxRefs = refs.lxRefs.map (lxr => lxr.as);
-
-          if (BelongsTo.isBelongsTo (node)) {
-            agg[node.info.as] = match (row, nextRows, lRefs, rRefs)[0];
-
-          } else if (HasMany.isHasMany (node)) {
-            agg[node.info.as] = match (row, nextRows, lRefs, rRefs);
-
-          } else if (HasOne.isHasOne (node)) {
-            agg[node.info.as] = match (row, nextRows, lRefs, rRefs)[0];
-
-          } else if (BelongsToMany.isBelongsToMany (node)) {
-            agg[node.info.as] = match (row, nextRows, lRefs, lxRefs);
+          if (refType === "BelongsTo") {
+            agg[as] = match (row, nextRows, refs.lRef, refs.rRef)[0];
           }
 
-          lRefs.forEach (lr => {
-            delete agg[lr];
-          });
+          // } else if (HasMany.isHasMany (node)) {
+          //   agg[node.info.as] = match (row, nextRows, lRefs, rRefs);
+
+          // } else if (HasOne.isHasOne (node)) {
+          //   agg[node.info.as] = match (row, nextRows, lRefs, rRefs)[0];
+
+          // } else if (BelongsToMany.isBelongsToMany (node)) {
+          //   agg[node.info.as] = match (row, nextRows, lRefs, lxRefs);
+          // }
+
+          // lRefs.forEach (lr => {
+          //   delete agg[lr];
+          // });
 
           return agg;
         }, row)
