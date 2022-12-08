@@ -3,7 +3,9 @@ import { Querier, TagFunctionVariable } from "../common/types";
 import createEnv from "../Env/createEnv";
 import { Next } from "../Env/Rec";
 import Interpreter from "../Interpreter";
+import { ASTNode } from "../nodes";
 import Root from "../nodes/Root";
+import Table from "../Table";
 
 interface InterpretedRQLTag<Params> {
   values: TagFunctionVariable<Params>[];
@@ -12,11 +14,12 @@ interface InterpretedRQLTag<Params> {
 }
 
 interface RQLTag<Params, Output> {
-  node: Root<Params>;
+  table: Table;
+  nodes: ASTNode<Params>[];
   interpreted: InterpretedRQLTag<Params>;
   // Output2 ?
   concat<Params2>(other: RQLTag<Params2, Output>): RQLTag<Params & Params2, Output>;
-  map<Params2>(f: (node: Root<Params>) => Root<Params2>): RQLTag<Params2, Output>;
+  map<Params2>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): RQLTag<Params2, Output>;
   interpret(): InterpretedRQLTag<Params>;
   compile(params?: Params, paramIdx?: number): [string, any[]];
   aggregate(querier: Querier, params: Params): Promise<Output[]>;
@@ -36,37 +39,31 @@ const prototype = {
   map, [flMap]: map, run, interpret, compile, aggregate
 };
 
-function RQLTag<Params, Output>(node: Root<Params>) {
-  if (!(Root.isRoot (node))) {
-    throw new Error ("RQLTag should hold a Root node");
-  }
-
+function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params>[]) {
   let tag: RQLTag<Params, Output> = Object.create (prototype);
-  tag.node = node;
+  tag.table = table;
+  tag.nodes = nodes;
 
   return tag;
 }
 
 function concat(this: RQLTag<unknown, unknown>, other: RQLTag<unknown, unknown>) {
-  const { table, members } = this.node;
-  const { table: table2, members: members2 } = other.node;
-
-  if (!table.equals (table2)) {
+  if (!this.table.equals (other.table)) {
     throw new Error ("U can't concat RQLTags with a different root table");
   }
 
-  return RQLTag (Root (
-    table,
-    members.concat (members2)
-  ));
+  return RQLTag (
+    this.table,
+    this.nodes.concat (other.nodes)
+  );
 }
 
-function map(this: RQLTag<unknown, unknown>, f: (node: Root<unknown>) => Root<unknown>) {
-  return RQLTag (f (this.node));
+function map(this: RQLTag<unknown, unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<unknown>[]) {
+  return RQLTag (this.table, f (this.nodes));
 }
 
 function interpret(this: RQLTag<unknown, unknown>): InterpretedRQLTag<unknown> {
-  const { strings, values, next } = Interpreter (this.node, createEnv (this.node.table));
+  const { strings, values, next } = Interpreter (this.table, this.nodes);
 
   return {
     strings, values, next
@@ -81,7 +78,7 @@ function compile(this: RQLTag<unknown, unknown>, data: unknown = {}, paramIdx: n
 
   return [
     strings.reduce ((query: string, f): string => {
-      const s = f (data, this.node.table);
+      const s = f (data, this.table);
       return `${query} ${s}`.trim ();
     }, ""),
     values.map (f => f (data)).flat (1),
@@ -136,16 +133,6 @@ function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: unk
 
 function run(this: RQLTag<unknown, unknown>, querier: Querier, params?: unknown) {
   return new Promise ((res, rej) => {
-    if (!(Root.isRoot (this.node))) {
-      rej (new Error ("You can only run a RQLTag that holds a Root node"));
-      return;
-    }
-
-    if (!this.node.hasOwnProperty ("table")) {
-      rej (new Error ("The Root node has no table"));
-      return;
-    }
-
     this.aggregate (querier, params)
       .then (res)
       .catch (rej);

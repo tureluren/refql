@@ -35,10 +35,9 @@ describe ("RQLTag type", () => {
   });
 
   test ("create RQLTag", () => {
-    const node = Root (player, [all]);
-    const tag = RQLTag (node);
+    const tag = RQLTag (player, []);
 
-    expect (tag.node).toEqual (node);
+    expect (tag.nodes).toEqual ([]);
     expect (RQLTag.isRQLTag (tag)).toBe (true);
     expect (RQLTag.isRQLTag ({})).toBe (false);
   });
@@ -55,9 +54,6 @@ describe ("RQLTag type", () => {
     `;
 
     const compiled = tag.compile ({});
-    console.log (tag.interpreted);
-
-    console.log (compiled);
 
     const players = await tag.run (querier, {});
 

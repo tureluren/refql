@@ -14,7 +14,6 @@ export interface Next {
 }
 
 export default interface Rec {
-  table: Table;
   strings: TagFunctionVariable<unknown>[];
   sqlTag: SQLTag<unknown, unknown>;
   comps: (() => string)[];

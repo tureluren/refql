@@ -25,10 +25,6 @@ class Parser {
     this.table = table;
   }
 
-  Root() {
-    return Root (this.table, this.members ());
-  }
-
   Identifier() {
     const name = this.eat ("IDENTIFIER").value;
     const [as, cast] = this.castAs ();
@@ -45,17 +41,17 @@ class Parser {
   refer(tag: RQLTag<unknown, unknown>, as?: string) {
     this.values.splice (this.idx, 1);
 
-    if (tag.node.table.equals (this.table)) {
-      return tag.node.members;
+    if (tag.table.equals (this.table)) {
+      return tag.nodes;
     }
 
     const ref = this.table.refs.find (([t]) => {
-      return t.equals (tag.node.table);
+      return t.equals (tag.table);
     });
 
     if (!ref) {
       throw new Error (
-        `${this.table.name} has no ref defined for: ${tag.node.table.name}`
+        `${this.table.name} has no ref defined for: ${tag.table.name}`
       );
     }
 

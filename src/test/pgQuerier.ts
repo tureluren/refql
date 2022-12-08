@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 
 const pgQuerier = (pool: Pool) => <T>(query: string, values: any[]) => {
+  console.log (query);
   return pool.query (
     query,
     values

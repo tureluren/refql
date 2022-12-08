@@ -33,7 +33,7 @@ function Table(name: string, refs?: any[]) {
   const table = (<Params, Output>(strings: TemplateStringsArray, ...values: any[]) => {
     const parser = new Parser (strings.join ("$"), values, table);
 
-    return RQLTag<Params, Output> (parser.Root ());
+    return RQLTag<Params, Output> (table, parser.members ());
   }) as Table;
 
   Object.setPrototypeOf (table, prototype);
