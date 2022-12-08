@@ -67,6 +67,19 @@ class Parser {
     const value = this.values[this.idx];
     const [as, cast] = this.castAs ();
 
+    if (Array.isArray (value)) {
+
+      if (
+        !value.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && isASTNode (m), true)
+      ) {
+        throw new SyntaxError ("Invalid dynamic members, expected Array of ASTNode");
+      }
+
+      this.values.splice (this.idx, 1);
+
+      return value;
+    }
+
     if (Table.isTable (value)) {
       if (!inCall) {
         return this.refer (value, [all], as);
@@ -81,6 +94,13 @@ class Parser {
       throw new Error ("U can't use a RQLTag as a function argument");
     }
 
+    if (isASTNode (value)) {
+
+      this.values.splice (this.idx, 1);
+
+      return value;
+    }
+
     const variable = Variable (value, as, cast);
     this.idx += 1;
 
@@ -92,19 +112,6 @@ class Parser {
   }
 
   members(): ASTNode<unknown>[] {
-    if (this.isNext ("VARIABLE") && Array.isArray (this.values[this.idx])) {
-      const members = this.spliceValue ();
-      if (
-        !members.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && isASTNode (m), true)
-      ) {
-        throw new SyntaxError ("Invalid dynamic members, expected Array of ASTNode");
-      }
-
-      this.eat ("EOT");
-
-      return members;
-    }
-
     const members = [];
 
     while (!this.isNext ("EOT")) {
@@ -119,7 +126,7 @@ class Parser {
 
     this.eat ("EOT");
 
-    return members.flat ();
+    return members.flat (1);
   }
 
   arguments() {
@@ -163,13 +170,7 @@ class Parser {
     return [as, cast];
   }
 
-  spliceValue() {
-    const value = this.values[this.idx];
-    this.values.splice (this.idx, 1);
-    this.eat ("VARIABLE");
 
-    return value;
-  }
 
   Member() {
     if (this.isNextLiteral ()) {

@@ -7,7 +7,7 @@ import Table from "../Table";
 
 type StructureMap<Params, Return> = Partial<{
   Root: (table: Table, members: ASTNode<Params>[]) => Return;
-  BelongsTo: (table: Table, tag: RQLTag<Params, unknown>, info: BelongsToInfo) => Return;
+  BelongsTo: (tag: RQLTag<Params, unknown>, info: BelongsToInfo) => Return;
   BelongsToMany: (table: Table, members: ASTNode<Params>[], info: BelongsToManyInfo) => Return;
   HasMany: (table: Table, members: ASTNode<Params>[], info: HasManyInfo) => Return;
   HasOne: (table: Table, members: ASTNode<Params>[], info: HasOneInfo) => Return;

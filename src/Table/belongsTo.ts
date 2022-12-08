@@ -9,7 +9,6 @@ const belongsTo = (table: string, info?: Partial<BelongsToInfo>): TableRefMakerP
 
   const makeBelongsTo = (tag: RQLTag<unknown, unknown>, as?: string) =>
     BelongsTo (
-      child,
       {
         as: as || belongsToInfo.as || child.name,
         lRef: belongsToInfo.lRef || `${child.name}_id`,

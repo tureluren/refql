@@ -1,11 +1,9 @@
 import { refqlType } from "../common/consts";
 import { BelongsToInfo, StringMap } from "../common/types";
 import RQLTag from "../RQLTag";
-import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
 interface BelongsTo<Params> extends ASTNode<Params> {
-  table: Table;
   tag: RQLTag<Params, unknown>;
   info: BelongsToInfo;
 }
@@ -18,10 +16,9 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function BelongsTo<Params>(table: Table, info: BelongsToInfo, tag: RQLTag<Params, unknown>) {
+function BelongsTo<Params>(info: BelongsToInfo, tag: RQLTag<Params, unknown>) {
   let belongsTo: BelongsTo<Params> = Object.create (prototype);
 
-  belongsTo.table = table;
   belongsTo.info = info;
   belongsTo.tag = tag;
 
@@ -30,7 +27,6 @@ function BelongsTo<Params>(table: Table, info: BelongsToInfo, tag: RQLTag<Params
 
 function caseOf(this: BelongsTo<unknown>, structureMap: StringMap) {
   return structureMap.BelongsTo (
-    this.table,
     this.tag,
     this.info
   );

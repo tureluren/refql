@@ -94,7 +94,7 @@ const match = (row: any, nextRows: any[], lRef: string, rRef: string) =>
     r[rRef] === row[lRef]
   ).map (r => {
     const matched = { ...r };
-    // delete matched[rr];
+    delete matched[rRef.as];
     return matched;
   });
 
@@ -109,10 +109,10 @@ function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: unk
     return Promise.all (next.map (n => n.tag.aggregate (querier, params))).then (nextData =>
       rows.map (row =>
         nextData.reduce ((agg, nextRows, idx) => {
-          const { refType, as, refs } = next[idx];
+          const { refType, as, lRef, rRef } = next[idx];
 
           if (refType === "BelongsTo") {
-            agg[as] = match (row, nextRows, refs.lRef, refs.rRef)[0];
+            agg[as] = match (row, nextRows, lRef, rRef)[0];
           }
 
           // } else if (HasMany.isHasMany (node)) {
@@ -125,9 +125,7 @@ function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: unk
           //   agg[node.info.as] = match (row, nextRows, lRefs, lxRefs);
           // }
 
-          // lRefs.forEach (lr => {
-          //   delete agg[lr];
-          // });
+          delete agg[lRef.as];
 
           return agg;
         }, row)

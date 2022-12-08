@@ -74,39 +74,30 @@ const interpret: InterpretF<unknown> = (node, env, rows) => {
         .rec;
     },
 
-    BelongsTo: (table, tag, { as, lRef, rRef }) => {
-      // / select refs voor huidige tabel
-      let child = tag.node.table;
+    BelongsTo: (tag, { as, lRef, rRef }) => {
+      const { table } = tag.node;
 
       const refOf = createRef (as);
       const lr = refOf ("lref", lRef);
       const rr = refOf ("rref", rRef);
 
-      const refTag = child<{rows: any[]}, any>`
-        ${[Identifier (rr.name, rr.as), Variable (sql<{rows: any[]}, any>`
-          where ${Raw (`${child.name}.${rr.name}`)} 
-          in ${Values (
-            p => {
-              const uniqRows = [...new Set (p.rows.map (r => r[lr.as]))];
-              return uniqRows;
-            }
-          )}
-        `)]} 
+      const whereIn = sql<{rows: any[]}, any>`
+        where ${Raw (`${table.name}.${rr.name}`)} 
+        in ${Values (
+          p =>
+            [...new Set (p.rows.map (r => r[lr.as]))]
+        )}
+      `;
+
+      const refTag = table<{rows: any[]}, any>`
+        ${Identifier (rr.name, rr.as)}
+        ${Variable (whereIn)} 
       `.concat (tag);
 
       return evolve ({
         comps: concat (() => refToComp (parent, lr)),
-        next: concat ({ tag: refTag, refs: { lRef: lr, rRef: rr }, as, refType: "BelongsTo" })
+        next: concat ({ tag: refTag, lRef: lr, rRef: rr, as, refType: "BelongsTo" })
       }, rec);
-
-      // if (!rows) return toNext (node, rec);
-
-      // return interpretMembers (members, table)
-      //   .map (selectRefs (table, refs.rRefs))
-      //   .map (fromTable (table))
-      //   .map (whereIn (refs.lRefs, refs.rRefs, rows, table))
-      // .map (includeSQL (table))
-      // .rec;
     },
 
     // als includeSQL niet empty is, empty monoid sqlTag, gebruik dan LITERAL
