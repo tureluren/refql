@@ -59,7 +59,7 @@ const interpretMembers = <Params>(members: ASTNode<Params>[], table: Table, inCa
       acc.extend (env => interpret (mem, env)), createEnv (table, undefined, inCall));
 };
 
-const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
+const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = false) => {
   // const { rec } = env;
   // const { values, table: parent, refs, inCall } = rec;
   const comps = [] as (() => string)[];
@@ -171,6 +171,14 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
         next.push ({ tag: refTag, lRef: lr, rRef: rr, as, refType: "HasMany" });
       },
 
+      Call: (name, nodes, as, cast) => {
+        // aparte interpret in compile voor call maken ?
+        const call = interpret (table, nodes, true);
+
+        comps.push (p => castAs (`${name} (${call.comps.map (c => c (p)).join (", ")})`, as, cast));
+        // values: concat (callRecord.values)
+      },
+
       All: sign => {
         comps.push (() => `${table.name}.${sign}`);
       },
@@ -225,12 +233,14 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
 
   }
 
-  // distinct ?
-  strings = [() => "select", p => `${comps.map (f => f (p)).join (", ")}`, () => `from ${table}`, p => {
-    const [query] = sqlTag.compile (p);
-    return query;
-  }];
-  // .map (includeSQL (table, false))
+  if (!inCall) {
+    // distinct ?
+    strings = [() => "select", p => `${comps.map (f => f (p)).join (", ")}`, () => `from ${table}`, p => {
+      const [query] = sqlTag.compile (p);
+      return query;
+    }];
+    // .map (includeSQL (table, false))
+  }
 
   values = [p => {
     const [_q, values] = sqlTag.compile (p);
@@ -238,59 +248,10 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
   }].flat (1);
 
   return {
-    next, strings, values
+    next, strings, values, comps
   };
 
   // node.caseOf<Rec> ({
-  //   HasMany: (table, members) => {
-  //     if (!rows) return toNext (node, rec);
-
-  //     return interpretMembers (members, table)
-  //       .map (selectRefs (table, refs.rRefs))
-  //       .map (fromTable (table))
-  //       .map (whereIn (refs.lRefs, refs.rRefs, rows, table))
-  //       .map (includeSQL (table))
-  //       .rec;
-  //   },
-
-  //   HasOne: (table, members) => {
-  //     if (!rows) return toNext (node, rec);
-
-  //     return interpretMembers (members, table)
-  //       .map (selectRefs (table, refs.rRefs))
-  //       .map (fromTable (table))
-  //       .map (whereIn (refs.lRefs, refs.rRefs, rows, table))
-  //       .map (includeSQL (table))
-  //       .rec;
-  //   },
-
-
-  //   // als includeSQL niet empty is, empty monoid sqlTag, gebruik dan LITERAL
-  //   BelongsToMany: (table, members, { xTable }) => {
-  //     if (!rows) return toNext (node, rec);
-
-  //     return interpretMembers (members, table)
-  //       .map (selectRefs (xTable, refs.lxRefs))
-  //       .map (fromTable (table, true))
-  //       .map (joinOn (refs.rxRefs, refs.rRefs, table, xTable))
-  //       .map (whereIn (refs.lRefs, refs.lxRefs, rows, xTable))
-  //       .map (includeSQL (table))
-  //       .rec;
-  //   },
-
-  //   Call: (name, args, as, cast) => {
-  //     const callRecord = interpretMembers (args, parent, true)
-  //       .map (chain (
-  //           get ("comps"), comps =>
-  //             set ("query", castAs (`${name} (${comps.join (", ")})`, as, cast))))
-
-  //       .rec;
-
-  //     return evolve ({
-  //       comps: concat (callRecord.query),
-  //       values: concat (callRecord.values)
-  //     }, rec);
-  //   },
 
   //   Variable: (value, as, cast) => {
   //     if (Raw.isRaw (value)) return select (value.run, rec);

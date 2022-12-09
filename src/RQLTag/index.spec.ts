@@ -47,6 +47,7 @@ describe ("RQLTag type", () => {
       id
       first_name
       last_name 
+      concat:full_name(first_name, ${Raw ("'  '")}, last_name)
       ${team`
         id
         name 
