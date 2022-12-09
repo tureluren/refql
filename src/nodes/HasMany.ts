@@ -1,11 +1,10 @@
 import { refqlType } from "../common/consts";
 import { HasManyInfo, StringMap } from "../common/types";
-import Table from "../Table";
+import RQLTag from "../RQLTag";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
 interface HasMany<Params> extends ASTNode<Params> {
-  table: Table;
-  members: ASTNode<Params>[];
+  tag: RQLTag<Params, unknown>;
   info: HasManyInfo;
 }
 
@@ -18,21 +17,18 @@ const prototype = Object.assign ({}, astNodePrototype, {
 });
 
 
-// MEMBERS MOET RQLTAG worden
-function HasMany<Params>(table: Table, info: HasManyInfo, members: ASTNode<Params>[]) {
+function HasMany<Params>(info: HasManyInfo, tag: RQLTag<Params, unknown>) {
   let hasMany: HasMany<Params> = Object.create (prototype);
 
-  hasMany.table = table;
   hasMany.info = info;
-  hasMany.members = members;
+  hasMany.tag = tag;
 
   return hasMany;
 }
 
 function caseOf(this: HasMany<unknown>, structureMap: StringMap) {
   return structureMap.HasMany (
-    this.table,
-    this.members,
+    this.tag,
     this.info
   );
 }

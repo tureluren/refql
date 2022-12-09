@@ -4,6 +4,7 @@ import {
   NumericLiteral, Root, StringLiteral, Variable
 } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
+import Raw from "../Raw";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Tokenizer, { Token, TokenType } from "../Tokenizer";
@@ -55,7 +56,7 @@ class Parser {
       );
     }
 
-    return ref[1] (tag, as);
+    return ref[1] (this.table, tag, as);
   }
 
   Variable(inCall = false) {

@@ -51,13 +51,27 @@ describe ("RQLTag type", () => {
         id
         name 
       `}
+      ${goal`
+        id
+        minute 
+      `}
+      ${rating`
+        * 
+      `}
+      ${game`
+        * 
+      `
+      }
+      ${sql`
+        limit ${20} 
+      `}
     `;
 
     const compiled = tag.compile ({});
 
     const players = await tag.run (querier, {});
 
-    console.log (players[0]);
+    console.log (players[9]);
   });
 
   // test ("Semigroup", () => {

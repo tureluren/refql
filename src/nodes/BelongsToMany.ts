@@ -1,11 +1,11 @@
 import { refqlType } from "../common/consts";
 import { BelongsToManyInfo, StringMap } from "../common/types";
+import RQLTag from "../RQLTag";
 import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
 interface BelongsToMany<Params> extends ASTNode<Params> {
-  table: Table;
-  members: ASTNode<Params>[];
+  tag: RQLTag<Params, unknown>;
   info: BelongsToManyInfo;
 }
 
@@ -17,20 +17,18 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function BelongsToMany<Params>(table: Table, info: BelongsToManyInfo, members: ASTNode<Params>[]) {
+function BelongsToMany<Params>(info: BelongsToManyInfo, tag: RQLTag<Params, unknown>) {
   let belongsToMany: BelongsToMany<Params> = Object.create (prototype);
 
-  belongsToMany.table = table;
+  belongsToMany.tag = tag;
   belongsToMany.info = info;
-  belongsToMany.members = members;
 
   return belongsToMany;
 }
 
 function caseOf(this: BelongsToMany<unknown>, structureMap: StringMap) {
   return structureMap.BelongsToMany (
-    this.table,
-    this.members,
+    this.tag,
     this.info
   );
 }

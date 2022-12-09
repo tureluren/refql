@@ -88,7 +88,7 @@ function compile(this: RQLTag<unknown, unknown>, data: unknown = {}, paramIdx: n
 
 const match = (row: any, nextRows: any[], lRef: string, rRef: string) =>
   nextRows.filter ((r: any) =>
-    r[rRef] === row[lRef]
+    r[rRef.as] === row[lRef.as]
   ).map (r => {
     const matched = { ...r };
     delete matched[rRef.as];
@@ -98,29 +98,28 @@ const match = (row: any, nextRows: any[], lRef: string, rRef: string) =>
 function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: unknown): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
-  return querier (query, values).then (rows => {
-    if (!rows.length) {
+  return querier (query, values).then (refQLRows => {
+    console.log (refQLRows.length);
+    if (!refQLRows.length) {
       return Promise.resolve ([]);
     }
 
-    return Promise.all (next.map (n => n.tag.aggregate (querier, params))).then (nextData =>
-      rows.map (row =>
+    return Promise.all (next.map (n => n.tag.aggregate (querier, { ...(params || {}), refQLRows }))).then (nextData =>
+      refQLRows.map (row =>
         nextData.reduce ((agg, nextRows, idx) => {
           const { refType, as, lRef, rRef } = next[idx];
 
+          // refType vervangen door one of multiple
           if (refType === "BelongsTo") {
             agg[as] = match (row, nextRows, lRef, rRef)[0];
+          } else if (refType === "HasMany") {
+            agg[as] = match (row, nextRows, lRef, rRef);
+          } else if (refType === "HasOne") {
+            agg[as] = match (row, nextRows, lRef, rRef)[0];
+          } else if (refType === "BelongsToMany") {
+            agg[as] = match (row, nextRows, lRef, rRef);
           }
 
-          // } else if (HasMany.isHasMany (node)) {
-          //   agg[node.info.as] = match (row, nextRows, lRefs, rRefs);
-
-          // } else if (HasOne.isHasOne (node)) {
-          //   agg[node.info.as] = match (row, nextRows, lRefs, rRefs)[0];
-
-          // } else if (BelongsToMany.isBelongsToMany (node)) {
-          //   agg[node.info.as] = match (row, nextRows, lRefs, lxRefs);
-          // }
 
           delete agg[lRef.as];
 

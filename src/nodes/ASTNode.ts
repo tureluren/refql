@@ -6,11 +6,10 @@ import RQLTag from "../RQLTag";
 import Table from "../Table";
 
 type StructureMap<Params, Return> = Partial<{
-  Root: (table: Table, members: ASTNode<Params>[]) => Return;
   BelongsTo: (tag: RQLTag<Params, unknown>, info: BelongsToInfo) => Return;
-  BelongsToMany: (table: Table, members: ASTNode<Params>[], info: BelongsToManyInfo) => Return;
-  HasMany: (table: Table, members: ASTNode<Params>[], info: HasManyInfo) => Return;
-  HasOne: (table: Table, members: ASTNode<Params>[], info: HasOneInfo) => Return;
+  BelongsToMany: (tag: RQLTag<Params, unknown>, info: BelongsToManyInfo) => Return;
+  HasMany: (tag: RQLTag<Params, unknown>, info: HasManyInfo) => Return;
+  HasOne: (tag: RQLTag<Params, unknown>, info: HasOneInfo) => Return;
   All: (sign: string) => Return;
   Identifier: (name: string, as?: string, cast?: string) => Return;
   Variable: (value: RefQLValue<Params, true>, as?: string, cast?: string) => Return;

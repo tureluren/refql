@@ -1,11 +1,10 @@
 import { refqlType } from "../common/consts";
 import { HasOneInfo, StringMap } from "../common/types";
-import Table from "../Table";
+import RQLTag from "../RQLTag";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
 interface HasOne<Params> extends ASTNode<Params> {
-  table: Table;
-  members: ASTNode<Params>[];
+  tag: RQLTag<Params, unknown>;
   info: HasOneInfo;
 }
 
@@ -17,20 +16,18 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function HasOne<Params>(table: Table, info: HasOneInfo, members: ASTNode<Params>[]) {
+function HasOne<Params>(info: HasOneInfo, tag: RQLTag<Params, unknown>) {
   let hasOne: HasOne<Params> = Object.create (prototype);
 
-  hasOne.table = table;
   hasOne.info = info;
-  hasOne.members = members;
+  hasOne.tag = tag;
 
   return hasOne;
 }
 
 function caseOf(this: HasOne<unknown>, structureMap: StringMap) {
   return structureMap.HasOne (
-    this.table,
-    this.members,
+    this.tag,
     this.info
   );
 }

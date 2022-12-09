@@ -1,14 +1,14 @@
 import Table from ".";
 import { BelongsToManyInfo, TableRefMakerPair } from "../common/types";
 import { ASTNode, BelongsToMany } from "../nodes";
+import RQLTag from "../RQLTag";
 
 const belongsToMany = (table: string, info?: Partial<Omit<BelongsToManyInfo, "xTable"> & { xTable: string }>): TableRefMakerPair => {
   const belongsToManyInfo = info || {};
   const child = Table (table);
 
-  const makeBelongsToMany = (parent: Table, members: ASTNode<unknown>[], as?: string) =>
+  const makeBelongsToMany = (parent: Table, tag: RQLTag<unknown, unknown>, as?: string) =>
     BelongsToMany (
-      child,
       {
         xTable: Table (
           belongsToManyInfo.xTable ||
@@ -20,7 +20,7 @@ const belongsToMany = (table: string, info?: Partial<Omit<BelongsToManyInfo, "xT
         lxRef: belongsToManyInfo.lxRef || `${parent.name}_id`,
         rxRef: belongsToManyInfo.rxRef || `${child.name}_id`
       },
-      members
+      tag
     );
 
   return [child, makeBelongsToMany];

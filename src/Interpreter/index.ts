@@ -65,6 +65,8 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
   const comps = [] as (() => string)[];
   const next = [] as Next[];
   let strings = [] as TagFunctionVariable<Params>[];
+  let values = [] as TagFunctionVariable<Params>[];
+  let sqlTag = SQLTag.empty ();
 
   for (const node of nodes) {
     node.caseOf<void> ({
@@ -75,11 +77,11 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
         const lr = refOf ("lref", lRef);
         const rr = refOf ("rref", rRef);
 
-        const whereIn = sql<{rows: any[]}, any>`
+        const whereIn = sql<{refQLRows: any[]}, any>`
           where ${Raw (`${child.name}.${rr.name}`)}
           in ${Values (
             p =>
-              [...new Set (p.rows.map (r => r[lr.as]))]
+              [...new Set (p.refQLRows.map (r => r[lr.as]))]
           )}
         `;
 
@@ -92,16 +94,112 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
         next.push ({ tag: refTag, lRef: lr, rRef: rr, as, refType: "BelongsTo" });
       },
 
+      BelongsToMany: (tag, { as, lRef, rRef, lxRef, rxRef, xTable }) => {
+        const child = tag.table;
+
+        const refOf = createRef (as);
+        const lr = refOf ("lref", lRef);
+        const rr = refOf ("rref", rRef);
+
+        const lxr = refOf ("lxref", lxRef);
+        const rxr = refOf ("rxref", rxRef);
+
+        const whereIn = sql<{refQLRows: any[]}, any>`
+          join ${Raw (`${xTable.name} on ${xTable.name}.${rxr.name} = ${child.name}.${rr.name}`)}
+          where ${Raw (`${xTable.name}.${lxr.name}`)}
+          in ${Values (
+            p =>
+              [...new Set (p.refQLRows.map (r => r[lr.as]))]
+          )}
+        `;
+
+        const refTag = child<{rows: any[]}, any>`
+          ${Raw (`${xTable.name}.${lxr.name} ${lxr.as}`)}
+          ${Variable (whereIn)}
+        `.concat (tag);
+
+        comps.push (() => refToComp (table, lr));
+        next.push ({ tag: refTag, lRef: lr, rRef: lxr, as, refType: "BelongsToMany" });
+      },
+
+      HasOne: (tag, { as, lRef, rRef }) => {
+        const child = tag.table;
+
+        const refOf = createRef (as);
+        const lr = refOf ("lref", lRef);
+        const rr = refOf ("rref", rRef);
+
+        const whereIn = sql<{refQLRows: any[]}, any>`
+          where ${Raw (`${child.name}.${rr.name}`)}
+          in ${Values (
+            p =>
+              [...new Set (p.refQLRows.map (r => r[lr.as]))]
+          )}
+        `;
+
+        const refTag = child<{rows: any[]}, any>`
+          ${Identifier (rr.name, rr.as)}
+          ${Variable (whereIn)}
+        `.concat (tag);
+
+        comps.push (() => refToComp (table, lr));
+        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, refType: "HasOne" });
+      },
+
+      HasMany: (tag, { as, lRef, rRef }) => {
+
+        const child = tag.table;
+
+        const refOf = createRef (as);
+        const lr = refOf ("lref", lRef);
+        const rr = refOf ("rref", rRef);
+
+        const whereIn = sql<{refQLRows: any[]}, any>`
+          where ${Raw (`${child.name}.${rr.name}`)}
+          in ${Values (
+            p =>
+              [...new Set (p.refQLRows.map (r => r[lr.as]))]
+          )}
+        `;
+
+        const refTag = child<{rows: any[]}, any>`
+          ${Identifier (rr.name, rr.as)}
+          ${Variable (whereIn)}
+        `.concat (tag);
+
+        comps.push (() => refToComp (table, lr));
+        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, refType: "HasMany" });
+      },
+
+      All: sign => {
+        comps.push (() => `${table.name}.${sign}`);
+      },
 
       Identifier: (name, as, cast) => {
         comps.push (() => castAs (`${table.name}.${name}`, as, cast));
       },
 
+      StringLiteral: (value, as, cast) => {
+        comps.push (() => castAs (`'${value}'`, as, cast));
+      },
+
+      NumericLiteral: (value, as, cast) => {
+        comps.push (() => castAs (value, as, cast));
+      },
+
+      BooleanLiteral: (value, as, cast) => {
+        comps.push (() => castAs (value, as, cast));
+      },
+
+      NullLiteral: (value, as, cast) => {
+        comps.push (() => castAs (value, as, cast));
+      },
+
+      Raw: run => {
+        comps.push (run);
+      },
 
       Variable: (value, as, cast) => {
-        if (Raw.isRaw (value)) {
-          comps.push (value.run);
-        }
 
         if (SQLTag.isSQLTag<unknown, any> (value)) {
           // if (inCall || as) {
@@ -113,7 +211,7 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
           //   }, rec);
           // }
 
-          // return over ("sqlTag", concat (value), rec);
+          sqlTag = sqlTag.concat (value);
         }
 
         // return evolve ({
@@ -128,20 +226,22 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
   }
 
   // distinct ?
-  strings = [() => "select", p => `${comps.map (f => f (p)).join (", ")}`, () => `from ${table}`];
+  strings = [() => "select", p => `${comps.map (f => f (p)).join (", ")}`, () => `from ${table}`, p => {
+    const [query] = sqlTag.compile (p);
+    return query;
+  }];
   // .map (includeSQL (table, false))
 
+  values = [p => {
+    const [_q, values] = sqlTag.compile (p);
+    return values;
+  }].flat (1);
+
   return {
-    next, strings, values: []
+    next, strings, values
   };
 
   // node.caseOf<Rec> ({
-  //   Root: (table, members) =>
-  //     interpretMembers (members, table)
-  //       .map (fromTable (table))
-  //     // .map (includeSQL (table, false))
-  //       .rec,
-
   //   HasMany: (table, members) => {
   //     if (!rows) return toNext (node, rec);
 
@@ -164,31 +264,6 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
   //       .rec;
   //   },
 
-  //   BelongsTo: (tag, { as, lRef, rRef }) => {
-  //     const { table } = tag.node;
-
-  //     const refOf = createRef (as);
-  //     const lr = refOf ("lref", lRef);
-  //     const rr = refOf ("rref", rRef);
-
-  //     const whereIn = sql<{rows: any[]}, any>`
-  //       where ${Raw (`${table.name}.${rr.name}`)}
-  //       in ${Values (
-  //         p =>
-  //           [...new Set (p.rows.map (r => r[lr.as]))]
-  //       )}
-  //     `;
-
-  //     const refTag = table<{rows: any[]}, any>`
-  //       ${Identifier (rr.name, rr.as)}
-  //       ${Variable (whereIn)}
-  //     `.concat (tag);
-
-  //     return evolve ({
-  //       comps: concat (() => refToComp (parent, lr)),
-  //       next: concat ({ tag: refTag, lRef: lr, rRef: rr, as, refType: "BelongsTo" })
-  //     }, rec);
-  //   },
 
   //   // als includeSQL niet empty is, empty monoid sqlTag, gebruik dan LITERAL
   //   BelongsToMany: (table, members, { xTable }) => {
@@ -239,23 +314,6 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
   //     }, rec);
   //   },
 
-  //   All: sign =>
-  //     select (`${parent.name}.${sign}`, rec),
-
-  //   Identifier: (name, as, cast) =>
-  //     select (() => castAs (`${parent.name}.${name}`, as, cast), rec),
-
-  //   StringLiteral: (value, as, cast) =>
-  //     select (castAs (`'${value}'`, as, cast), rec),
-
-  //   NumericLiteral: (value, as, cast) =>
-  //     select (castAs (value, as, cast), rec),
-
-  //   BooleanLiteral: (value, as, cast) =>
-  //     select (castAs (value, as, cast), rec),
-
-  //   NullLiteral: (value, as, cast) =>
-  //     select (castAs (value, as, cast), rec)
   // });
 };
 
