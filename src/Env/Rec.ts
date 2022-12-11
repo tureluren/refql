@@ -10,7 +10,7 @@ export interface Next {
   lRef: Ref;
   rRef: Ref;
   as: string;
-  refType: "BelongsTo" | "HasOne";
+  single: boolean;
 }
 
 export default interface Rec {

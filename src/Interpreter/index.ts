@@ -91,7 +91,7 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
         `.concat (tag);
 
         comps.push (() => refToComp (table, lr));
-        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, refType: "BelongsTo" });
+        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, single: true });
       },
 
       BelongsToMany: (tag, { as, lRef, rRef, lxRef, rxRef, xTable }) => {
@@ -119,7 +119,7 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
         `.concat (tag);
 
         comps.push (() => refToComp (table, lr));
-        next.push ({ tag: refTag, lRef: lr, rRef: lxr, as, refType: "BelongsToMany" });
+        next.push ({ tag: refTag, lRef: lr, rRef: lxr, as, single: false });
       },
 
       HasOne: (tag, { as, lRef, rRef }) => {
@@ -143,7 +143,7 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
         `.concat (tag);
 
         comps.push (() => refToComp (table, lr));
-        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, refType: "HasOne" });
+        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, single: true });
       },
 
       HasMany: (tag, { as, lRef, rRef }) => {
@@ -168,7 +168,7 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
         `.concat (tag);
 
         comps.push (() => refToComp (table, lr));
-        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, refType: "HasMany" });
+        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, single: false });
       },
 
       Call: (name, nodes, as, cast) => {
@@ -177,6 +177,10 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
 
         comps.push (p => castAs (`${name} (${call.comps.map (c => c (p)).join (", ")})`, as, cast));
         // values: concat (callRecord.values)
+      },
+
+      Values: () => {
+        throw new Error ("jdjdjd");
       },
 
       All: sign => {
