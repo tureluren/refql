@@ -80,7 +80,7 @@ const createRefTag = tag =>
   `.concat (tag);
 
 
-const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = false) => {
+const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
   // const { rec } = env;
   // const { values, table: parent, refs, inCall } = rec;
   const comps = [] as (() => string)[];
@@ -117,11 +117,11 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
       },
 
 
-      Call: (name, nodes, as, cast) => {
-        // aparte interpret in compile voor call maken ?
-        const call = interpret (table, nodes, true);
+      Call: call => {
+        // const call = interpret (table, nodes, true);
+        comps.push (call.stringF);
 
-        comps.push (p => castAs (`${name} (${call.comps.map (c => c (p)).join (", ")})`, as, cast));
+        // comps.push (p => castAs (`${name} (${call.comps.map (c => c (p)).join (", ")})`, as, cast));
         // values: concat (callRecord.values)
       },
 
@@ -175,14 +175,12 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
 
   }
 
-  if (!inCall) {
-    // distinct ?
-    strings = [() => "select", (p, t) => `${comps.map (f => f (p, t)).join (", ")}`, () => `from ${table}`, (p, t) => {
-      const [query] = sqlTag.compile (p, 0, t);
-      return query;
-    }];
-    // .map (includeSQL (table, false))
-  }
+  // distinct ?
+  strings = [() => "select", (p, t) => `${comps.map (f => f (p, t)).join (", ")}`, () => `from ${table}`, (p, t) => {
+    const [query] = sqlTag.compile (p, 0, t);
+    return query;
+  }];
+  // .map (includeSQL (table, false))
 
   values = [(p, t) => {
     const [_q, values] = sqlTag.compile (p, 0, t);
