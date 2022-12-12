@@ -41,16 +41,16 @@ export interface CastAs {
 
 export interface RefInfo {
   as: string;
-  lRef: string;
-  rRef: string;
+  lRef: Ref;
+  rRef: Ref;
 }
 
 export interface BelongsToInfo extends RefInfo {}
 
 export interface BelongsToManyInfo extends RefInfo {
   xTable: Table;
-  lxRef: string;
-  rxRef: string;
+  lxRef: Ref;
+  rxRef: Ref;
 }
 
 export interface HasManyInfo extends RefInfo {}

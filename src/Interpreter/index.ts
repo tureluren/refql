@@ -12,7 +12,7 @@ import interpretSQLTag from "./interpretSQLTag";
 import {
   castAs, fromTable, joinOn, refsToComp,
   refToComp,
-  select, selectRefs, whereIn
+  select, selectRefs
 } from "./sqlBuilders";
 import next from "./next";
 import sql from "../SQLTag/sql";
@@ -24,10 +24,10 @@ export type InterpretF<Params> = (exp: ASTNode<Params>, env: Env, rows?: any[]) 
 
 export interface Next {
   tag: RQLTag<unknown, unknown>;
-  lRef: Ref;
-  rRef: Ref;
+  lRef: string;
+  rRef: string;
   as: string;
-  refType: "BelongsTo" | "HasOne";
+  single: boolean;
 }
 
 // export default interface Rec {
@@ -45,10 +45,6 @@ export interface Next {
 const includeSQL = interpretSQLTag ({});
 const toNext = next ({});
 
-const createRef = (as: string) => (kw: string, ref: string) => ({
-  name: ref.trim (),
-  as: `${(as).replace (/_/g, "").toLowerCase ()}${kw}`
-});
 
 const interpretMembers = <Params>(members: ASTNode<Params>[], table: Table, inCall = false) => {
   const nodes = members.filter (m =>
@@ -59,6 +55,31 @@ const interpretMembers = <Params>(members: ASTNode<Params>[], table: Table, inCa
       acc.extend (env => interpret (mem, env)), createEnv (table, undefined, inCall));
 };
 
+const rowValues = Values (p =>
+  [...new Set (p.refQL.rows.map (r => r[p.refQL.lRef.as]))]
+);
+
+const whereIn = sql<{refQLRows: any[]}, any>`
+  ${Raw ((p, t) => `where ${t.name}.${p.refQL.rRef.name}`)}
+  in ${rowValues}
+`;
+
+const joinWhereIn = sql<{refQLRows: any[]}, any>`
+  ${Raw ((p, t) => `
+    join ${p.refQL.xTable.name}
+    on ${p.refQL.xTable.name}.${p.refQL.rxRef.name} = ${t.name}.${p.refQL.rRef.name}
+    where ${p.refQL.xTable.name}.${p.refQL.lxRef.name}
+  `)}
+  in ${rowValues}
+`;
+
+const createRefTag = tag =>
+  tag.table<{rows: any[]}, any>`
+    ${Raw ((p, t) => `${t.name}.${p.refQL.rRef.name} ${p.refQL.rRef.as}`)}
+    ${Variable (whereIn)}
+  `.concat (tag);
+
+
 const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = false) => {
   // const { rec } = env;
   // const { values, table: parent, refs, inCall } = rec;
@@ -68,108 +89,33 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
   let values = [] as TagFunctionVariable<Params>[];
   let sqlTag = SQLTag.empty ();
 
+  const caseOfRef = (single: boolean) => (tag, params) => {
+    const refTag = createRefTag (tag);
+
+    comps.push (() => refToComp (table, params.lRef));
+    next.push ({ tag: refTag, params, single });
+  };
+
+  const caseOfLiteral = (value, as, cast) => {
+    comps.push (() => castAs (value, as, cast));
+  };
+
   for (const node of nodes) {
     node.caseOf<void> ({
-      BelongsTo: (tag, { as, lRef, rRef }) => {
-        const child = tag.table;
+      BelongsTo: caseOfRef (true),
+      HasOne: caseOfRef (true),
+      HasMany: caseOfRef (false),
 
-        const refOf = createRef (as);
-        const lr = refOf ("lref", lRef);
-        const rr = refOf ("rref", rRef);
-
-        const whereIn = sql<{refQLRows: any[]}, any>`
-          where ${Raw (`${child.name}.${rr.name}`)}
-          in ${Values (
-            p =>
-              [...new Set (p.refQLRows.map (r => r[lr.as]))]
-          )}
-        `;
-
-        const refTag = child<{rows: any[]}, any>`
-          ${Identifier (rr.name, rr.as)}
-          ${Variable (whereIn)}
+      BelongsToMany: (tag, params) => {
+        const refTag = tag.table<{rows: any[]}, any>`
+          ${Raw (p => `${p.refQL.xTable.name}.${p.refQL.lxRef.name} ${p.refQL.lxRef.as}`)}
+          ${Variable (joinWhereIn)}
         `.concat (tag);
 
-        comps.push (() => refToComp (table, lr));
-        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, single: true });
+        comps.push (() => refToComp (table, params.lRef));
+        next.push ({ tag: refTag, params, single: false });
       },
 
-      BelongsToMany: (tag, { as, lRef, rRef, lxRef, rxRef, xTable }) => {
-        const child = tag.table;
-
-        const refOf = createRef (as);
-        const lr = refOf ("lref", lRef);
-        const rr = refOf ("rref", rRef);
-
-        const lxr = refOf ("lxref", lxRef);
-        const rxr = refOf ("rxref", rxRef);
-
-        const whereIn = sql<{refQLRows: any[]}, any>`
-          join ${Raw (`${xTable.name} on ${xTable.name}.${rxr.name} = ${child.name}.${rr.name}`)}
-          where ${Raw (`${xTable.name}.${lxr.name}`)}
-          in ${Values (
-            p =>
-              [...new Set (p.refQLRows.map (r => r[lr.as]))]
-          )}
-        `;
-
-        const refTag = child<{rows: any[]}, any>`
-          ${Raw (`${xTable.name}.${lxr.name} ${lxr.as}`)}
-          ${Variable (whereIn)}
-        `.concat (tag);
-
-        comps.push (() => refToComp (table, lr));
-        next.push ({ tag: refTag, lRef: lr, rRef: lxr, as, single: false });
-      },
-
-      HasOne: (tag, { as, lRef, rRef }) => {
-        const child = tag.table;
-
-        const refOf = createRef (as);
-        const lr = refOf ("lref", lRef);
-        const rr = refOf ("rref", rRef);
-
-        const whereIn = sql<{refQLRows: any[]}, any>`
-          where ${Raw (`${child.name}.${rr.name}`)}
-          in ${Values (
-            p =>
-              [...new Set (p.refQLRows.map (r => r[lr.as]))]
-          )}
-        `;
-
-        const refTag = child<{rows: any[]}, any>`
-          ${Identifier (rr.name, rr.as)}
-          ${Variable (whereIn)}
-        `.concat (tag);
-
-        comps.push (() => refToComp (table, lr));
-        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, single: true });
-      },
-
-      HasMany: (tag, { as, lRef, rRef }) => {
-
-        const child = tag.table;
-
-        const refOf = createRef (as);
-        const lr = refOf ("lref", lRef);
-        const rr = refOf ("rref", rRef);
-
-        const whereIn = sql<{refQLRows: any[]}, any>`
-          where ${Raw (`${child.name}.${rr.name}`)}
-          in ${Values (
-            p =>
-              [...new Set (p.refQLRows.map (r => r[lr.as]))]
-          )}
-        `;
-
-        const refTag = child<{rows: any[]}, any>`
-          ${Identifier (rr.name, rr.as)}
-          ${Variable (whereIn)}
-        `.concat (tag);
-
-        comps.push (() => refToComp (table, lr));
-        next.push ({ tag: refTag, lRef: lr, rRef: rr, as, single: false });
-      },
 
       Call: (name, nodes, as, cast) => {
         // aparte interpret in compile voor call maken ?
@@ -195,17 +141,9 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
         comps.push (() => castAs (`'${value}'`, as, cast));
       },
 
-      NumericLiteral: (value, as, cast) => {
-        comps.push (() => castAs (value, as, cast));
-      },
-
-      BooleanLiteral: (value, as, cast) => {
-        comps.push (() => castAs (value, as, cast));
-      },
-
-      NullLiteral: (value, as, cast) => {
-        comps.push (() => castAs (value, as, cast));
-      },
+      NumericLiteral: caseOfLiteral,
+      BooleanLiteral: caseOfLiteral,
+      NullLiteral: caseOfLiteral,
 
       Raw: run => {
         comps.push (run);
@@ -239,15 +177,15 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[], inCall = fals
 
   if (!inCall) {
     // distinct ?
-    strings = [() => "select", p => `${comps.map (f => f (p)).join (", ")}`, () => `from ${table}`, p => {
-      const [query] = sqlTag.compile (p);
+    strings = [() => "select", (p, t) => `${comps.map (f => f (p, t)).join (", ")}`, () => `from ${table}`, (p, t) => {
+      const [query] = sqlTag.compile (p, 0, t);
       return query;
     }];
     // .map (includeSQL (table, false))
   }
 
-  values = [p => {
-    const [_q, values] = sqlTag.compile (p);
+  values = [(p, t) => {
+    const [_q, values] = sqlTag.compile (p, 0, t);
     return values;
   }].flat (1);
 

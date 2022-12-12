@@ -43,6 +43,20 @@ describe ("RQLTag type", () => {
   });
 
   test ("compile", async () => {
+    // const tag = player`
+    //   id
+    //   first_name
+    //   last_name
+    //   concat:full_name(first_name, ${Raw ("'  '")}, last_name)
+    //   ${team`
+    //     id
+    //     name
+    //   `}
+    //   ${rating`
+    //     *
+    //   `}
+    // `;
+
     const tag = player`
       id
       first_name
@@ -52,19 +66,18 @@ describe ("RQLTag type", () => {
         id
         name 
       `}
-      ${goal`
-        id
-        minute 
-      `}
       ${rating`
-        * 
+        *
+      `}
+      ${goal`
+        *
       `}
       ${game`
-        * 
+        *
       `
       }
       ${sql`
-        limit ${20} 
+        limit ${20}
       `}
     `;
 

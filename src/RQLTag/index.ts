@@ -81,7 +81,7 @@ function compile(this: RQLTag<unknown, unknown>, data: unknown = {}, paramIdx: n
       const s = f (data, this.table);
       return `${query} ${s}`.trim ();
     }, ""),
-    values.map (f => f (data)).flat (1),
+    values.map (f => f (data, this.table)).flat (1),
     next
   ];
 }
@@ -89,24 +89,27 @@ function compile(this: RQLTag<unknown, unknown>, data: unknown = {}, paramIdx: n
 function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: unknown): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
-  return querier (query, values).then (refQLRows => {
-    console.log (refQLRows.length);
-    if (!refQLRows.length) {
+  return querier (query, values).then (rows => {
+    if (!rows.length) {
       return Promise.resolve ([]);
     }
 
-    return Promise.all (next.map (n => n.tag.aggregate (querier, { ...(params || {}), refQLRows }))).then (nextData =>
-      refQLRows.map (row =>
+    return Promise.all (next.map (n => n.tag.aggregate (querier, { ...(params || {}), refQL: { rows, ...n.params } }))).then (nextData =>
+      rows.map (row =>
         nextData.reduce ((agg, nextRows, idx) => {
-          const { single, as, lRef, rRef } = next[idx];
+          const { single, params } = next[idx];
+          const { as, lRef, rRef, lxRef } = params;
+
+          const lr = lRef.as;
+          const rr = (lxRef || rRef).as;
 
           agg[as] = nextRows
             .filter ((r: any) =>
-              r[rRef.as] === row[lRef.as]
+              r[rr] === row[lr]
             )
             .map (r => {
               const matched = { ...r };
-              delete matched[rRef.as];
+              delete matched[rr];
               return matched;
             });
 
@@ -114,7 +117,7 @@ function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: unk
             agg[as] = agg[as][0];
           }
 
-          delete agg[lRef.as];
+          delete agg[lr];
 
           return agg;
         }, row)
