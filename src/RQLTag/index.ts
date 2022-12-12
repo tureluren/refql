@@ -63,7 +63,7 @@ function map(this: RQLTag<unknown, unknown>, f: (nodes: ASTNode<unknown>[]) => A
 }
 
 function interpret(this: RQLTag<unknown, unknown>): InterpretedRQLTag<unknown> {
-  const { strings, values, next } = Interpreter (this.table, this.nodes);
+  const { strings, values, next } = Interpreter (this.nodes);
 
   return {
     strings, values, next

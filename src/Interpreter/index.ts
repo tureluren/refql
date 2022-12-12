@@ -14,7 +14,6 @@ import {
   refToComp,
   select, selectRefs
 } from "./sqlBuilders";
-import next from "./next";
 import sql from "../SQLTag/sql";
 import Values from "../Values";
 import RQLTag from "../RQLTag";
@@ -43,7 +42,6 @@ export interface Next {
 // const includeSQL = interpretSQLTag (params);
 // const toNext = next (params);
 const includeSQL = interpretSQLTag ({});
-const toNext = next ({});
 
 
 const interpretMembers = <Params>(members: ASTNode<Params>[], table: Table, inCall = false) => {
@@ -80,7 +78,7 @@ const createRefTag = tag =>
   `.concat (tag);
 
 
-const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
+const interpret = <Params>(nodes: ASTNode<Params>[]) => {
   // const { rec } = env;
   // const { values, table: parent, refs, inCall } = rec;
   const comps = [] as (() => string)[];
@@ -92,7 +90,7 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
   const caseOfRef = (single: boolean) => (tag, params) => {
     const refTag = createRefTag (tag);
 
-    comps.push (() => refToComp (table, params.lRef));
+    comps.push ((p, t) => refToComp (t, params.lRef));
     next.push ({ tag: refTag, params, single });
   };
 
@@ -112,14 +110,14 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
           ${Variable (joinWhereIn)}
         `.concat (tag);
 
-        comps.push (() => refToComp (table, params.lRef));
+        comps.push ((_p, t) => refToComp (t, params.lRef));
         next.push ({ tag: refTag, params, single: false });
       },
 
 
-      Call: call => {
+      Call: compileCall => {
         // const call = interpret (table, nodes, true);
-        comps.push (call.stringF);
+        comps.push ((p, t) => compileCall (p, t));
 
         // comps.push (p => castAs (`${name} (${call.comps.map (c => c (p)).join (", ")})`, as, cast));
         // values: concat (callRecord.values)
@@ -130,11 +128,37 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
       },
 
       All: sign => {
-        comps.push (() => `${table.name}.${sign}`);
+        comps.push ((p, t) => `${t.name}.${sign}`);
       },
 
       Identifier: (name, as, cast) => {
-        comps.push (() => castAs (`${table.name}.${name}`, as, cast));
+        comps.push ((_p, t) => castAs (`${t.name}.${name}`, as, cast));
+      },
+
+      Raw: run => {
+        comps.push (run);
+      },
+
+      Variable: (value, as, cast) => {
+        if (SQLTag.isSQLTag<unknown, any> (value)) {
+          if (as) {
+
+            comps.push ((p, t) => {
+              const [query, vals] = value.compile (p, values.length, t);
+              return castAs (`(${query})`, as, cast);
+            });
+            // values: concat (vals)
+          } else {
+
+            sqlTag = sqlTag.concat (value);
+          }
+
+        }
+
+        // return evolve ({
+        //   comps: concat (castAs (`$${values.length + 1}`, as, cast)),
+        //   values: concat (value)
+        // }, rec);
       },
 
       StringLiteral: (value, as, cast) => {
@@ -143,40 +167,14 @@ const interpret = <Params>(table: Table, nodes: ASTNode<Params>[]) => {
 
       NumericLiteral: caseOfLiteral,
       BooleanLiteral: caseOfLiteral,
-      NullLiteral: caseOfLiteral,
-
-      Raw: run => {
-        comps.push (run);
-      },
-
-      Variable: (value, as, cast) => {
-
-        if (SQLTag.isSQLTag<unknown, any> (value)) {
-          // if (inCall || as) {
-          //   const [query, vals] = value.compile (params, values.length, parent);
-
-          //   return evolve ({
-          //     comps: concat (castAs (`(${query})`, as, cast)),
-          //     values: concat (vals)
-          //   }, rec);
-          // }
-
-          sqlTag = sqlTag.concat (value);
-        }
-
-        // return evolve ({
-        //   comps: concat (castAs (`$${values.length + 1}`, as, cast)),
-        //   values: concat (value)
-        // }, rec);
-      }
-
+      NullLiteral: caseOfLiteral
     });
 
 
   }
 
   // distinct ?
-  strings = [() => "select", (p, t) => `${comps.map (f => f (p, t)).join (", ")}`, () => `from ${table}`, (p, t) => {
+  strings = [(p, t) => `select ${comps.map (f => f (p, t)).join (", ")} from ${t}`, (p, t) => {
     const [query] = sqlTag.compile (p, 0, t);
     return query;
   }];

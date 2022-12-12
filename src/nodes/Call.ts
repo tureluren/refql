@@ -42,7 +42,7 @@ function interpret(this: Call<unknown>): InterpretedCall<unknown> {
   for (const node of this.nodes) {
     node.caseOf<unknown> ({
       Call: call => {
-        strings.push (call.stringF);
+        strings.push (call);
       },
       Identifier: (name, _as, cast) => {
         strings.push ((_, t) => castAs (`${t.name}.${name}`, undefined, cast));
@@ -53,10 +53,12 @@ function interpret(this: Call<unknown>): InterpretedCall<unknown> {
     });
   }
 
-  const stringF = (p, t) =>
-    castAs (`${this.name} (${strings.map (c => c (p, t)).join (", ")})`, this.as, this.cast);
+  const compile = (p, t) => {
 
-  return { params, stringF };
+    return castAs (`${this.name} (${strings.map (c => c (p, t)).join (", ")})`, this.as, this.cast);
+  };
+
+  return compile;
 }
 
 function caseOf(this: Call<unknown>, structureMap: StringMap) {
