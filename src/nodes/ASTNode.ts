@@ -3,8 +3,8 @@ import {
   HasManyInfo, HasOneInfo, TagFunctionVariable, RefQLValue
 } from "../common/types";
 import RQLTag from "../RQLTag";
+import SQLTag from "../SQLTag";
 import Table from "../Table";
-import { InterpretedCall } from "./Call";
 
 type StructureMap<Params, Return> = Partial<{
   BelongsTo: (tag: RQLTag<Params, unknown>, info: BelongsToInfo) => Return;
@@ -14,7 +14,7 @@ type StructureMap<Params, Return> = Partial<{
   All: (sign: string) => Return;
   Identifier: (name: string, as?: string, cast?: string) => Return;
   Variable: (value: RefQLValue<Params, true>, as?: string, cast?: string) => Return;
-  Call: (interpretedCall: InterpretedCall<Params>) => Return;
+  Call: (tag: SQLTag<Params, unknown>) => Return;
   StringLiteral: (value: string, as?: string, cast?: string) => Return;
   NumericLiteral: (value: number, as?: string, cast?: string) => Return;
   BooleanLiteral: (value: boolean, as?: string, cast?: string) => Return;

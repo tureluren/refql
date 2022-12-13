@@ -62,20 +62,6 @@ describe ("RQLTag type", () => {
       first_name
       last_name 
       concat:full_name(upper(first_name), ${Raw ("' '")}, last_name)
-      ${team`
-        id
-        name 
-      `}
-      ${rating`
-        *
-      `}
-      ${goal`
-        *
-      `}
-      ${game`
-        *
-      `
-      }
       ${sql`
         limit ${20}
       `}
@@ -105,12 +91,12 @@ describe ("RQLTag type", () => {
   //   expect (JSON.stringify (res.node)).toEqual (JSON.stringify (expected));
   // });
 
-  // test ("Monoid", () => {
-  //   const tag = player`id last_name`;
+  test ("Monoid", () => {
+    const tag = player`id last_name`;
 
-  //   expect (tag.concat (player.empty ())).toEqual (tag);
-  //   expect (player.empty ().concat (tag)).toEqual (tag);
-  // });
+    expect (tag.concat (player.empty ())).toEqual (tag);
+    expect (player.empty ().concat (tag)).toEqual (tag);
+  });
 
   // test ("Functor", () => {
   //   const tag = RQLTag (Root (player, [Identifier ("first_name"), Identifier ("last_name")]));
@@ -169,53 +155,53 @@ describe ("RQLTag type", () => {
   //   }
   // });
 
-  // test ("aggregate", async () => {
-  //   const tag = player`
-  //     id
-  //     first_name
-  //     ${player`
-  //       last_name
-  //     `}
-  //     ${team`
-  //       name
-  //       ${league`
-  //         name
-  //       `}
-  //       ${player`
-  //         last_name
-  //       `}: players
-  //     `}
-  //     ${game`
-  //       result
-  //     `}: games
-  //     ${rating`
-  //       acceleration
-  //       stamina
-  //     `}
-  //     ${sql`
-  //       limit 30
-  //     `}
-  //   `;
+  test ("aggregate", async () => {
+    const tag = player`
+      id
+      first_name
+      ${player`
+        last_name
+      `}
+      ${team`
+        name
+        ${league`
+          name
+        `}
+        ${player`
+          last_name
+        `}: players
+      `}
+      ${game`
+        result
+      `}: games
+      ${rating`
+        acceleration
+        stamina
+      `}
+      ${sql`
+        limit 30
+      `}
+    `;
 
-  //   const players = await tag.run<Player> (querier, {});
-  //   const player1 = players[0];
-  //   const playerTeam = player1.team;
-  //   const teammate = playerTeam.players[0];
-  //   const teamLeague = player1.team.league;
-  //   const playerGame = player1.games[0];
-  //   const playerRating = player1.rating;
+    const players = await tag.run<Player> (querier, {});
+    const player1 = players[0];
+    const playerTeam = player1.team;
+    const teammate = playerTeam.players[0];
+    const teamLeague = player1.team.league;
+    const playerGame = player1.games[0];
+    const playerRating = player1.rating;
 
-  //   expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team", "games", "rating"]);
-  //   expect (Object.keys (playerTeam)).toEqual (["name", "league", "players"]);
-  //   expect (Object.keys (teamLeague)).toEqual (["name"]);
-  //   expect (Object.keys (teammate)).toEqual (["last_name"]);
-  //   expect (Object.keys (playerGame)).toEqual (["result"]);
-  //   expect (Object.keys (playerRating)).toEqual (["acceleration", "stamina"]);
-  //   expect (players.length).toBe (30);
-  // });
+    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team", "games", "rating"]);
+    expect (Object.keys (playerTeam)).toEqual (["name", "league", "players"]);
+    expect (Object.keys (teamLeague)).toEqual (["name"]);
+    expect (Object.keys (teammate)).toEqual (["last_name"]);
+    expect (Object.keys (playerGame)).toEqual (["result"]);
+    expect (Object.keys (playerRating)).toEqual (["acceleration", "stamina"]);
+    expect (players.length).toBe (30);
+  });
 
   // test ("simplistic", async () => {
-  //   const tag = player`
+  //   const tag = player<{}, Player>`
   //     ${team}
   //     ${game}
   //     ${sql`
@@ -223,7 +209,7 @@ describe ("RQLTag type", () => {
   //     `}
   //   `;
 
-  //   const players = await tag.run<Player> (querier, {});
+  //   const players = await tag.run (querier, {});
   //   const player1 = players[0];
   //   const playerTeam = player1.team;
   //   const playerGame = player1.games[0];
@@ -233,58 +219,58 @@ describe ("RQLTag type", () => {
   //   expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
   // });
 
-  // test ("concat", async () => {
-  //   const tag = player`
-  //     id
-  //     first_name
-  //     ${team`
-  //       name
-  //     `}
-  //   `;
+  test ("concat", async () => {
+    const tag = player`
+      id
+      first_name
+      ${team`
+        name
+      `}
+    `;
 
-  //   const tag2 = player`
-  //     last_name
-  //     ${sql`
-  //       limit 30
-  //     `}
-  //   `;
+    const tag2 = player`
+      last_name
+      ${sql`
+        limit 30
+      `}
+    `;
 
-  //   const players = await tag.concat (tag2).run<Player> (querier, {});
-  //   const player1 = players[0];
-  //   const playerTeam = player1.team;
+    const players = await tag.concat (tag2).run<Player> (querier, {});
+    const player1 = players[0];
+    const playerTeam = player1.team;
 
-  //   expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team"]);
-  //   expect (Object.keys (playerTeam)).toEqual (["name"]);
-  //   expect (players.length).toBe (30);
-  // });
+    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team"]);
+    expect (Object.keys (playerTeam)).toEqual (["name"]);
+    expect (players.length).toBe (30);
+  });
 
-  // test ("By id", async () => {
-  //   const tag = player`
-  //     *
-  //     ${sql`
-  //       where ${Raw ((_p, t) => t!.name)}.id = 1
-  //     `}
-  //   `;
+  test ("By id", async () => {
+    const tag = player`
+      *
+      ${sql`
+        where ${Raw ((_p, t) => t!.name)}.id = 1
+      `}
+    `;
 
-  //   const players = await tag.run<Player> (querier, {});
-  //   const player1 = players[0];
+    const players = await tag.run<Player> (querier, {});
+    const player1 = players[0];
 
-  //   expect (player1.id).toBe (1);
-  //   expect (players.length).toBe (1);
-  // });
+    expect (player1.id).toBe (1);
+    expect (players.length).toBe (1);
+  });
 
-  // test ("No record found", async () => {
-  //   const tag = player`
-  //     ${goal`
-  //       *
-  //     `}
-  //     ${sql`
-  //       where player.id = 999999999
-  //     `}
-  //   `;
+  test ("No record found", async () => {
+    const tag = player`
+      ${goal`
+        *
+      `}
+      ${sql`
+        where player.id = 999999999
+      `}
+    `;
 
-  //   const players = await tag.run<Player> (querier, {});
+    const players = await tag.run<Player> (querier, {});
 
-  //   expect (players.length).toBe (0);
-  // });
+    expect (players.length).toBe (0);
+  });
 });

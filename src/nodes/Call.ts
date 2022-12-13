@@ -1,18 +1,16 @@
 import { refqlType } from "../common/consts";
 import { CastAs, StringMap, TagFunctionVariable } from "../common/types";
 import { castAs } from "../Interpreter/sqlBuilders";
+import Raw from "../Raw";
+import SQLTag from "../SQLTag";
+import sql from "../SQLTag/sql";
 import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
-
-export interface InterpretedCall<Params> {
-  params: TagFunctionVariable<Params>[];
-  stringF: TagFunctionVariable<Params>[];
-}
 
 interface Call<Params> extends ASTNode<Params>, CastAs {
   name: string;
   nodes: ASTNode<Params>[];
-  interpret(): InterpretedCall<Params>;
+  interpret(): SQLTag<Params, unknown>;
 }
 
 const type = "refql/Call";
@@ -35,34 +33,34 @@ function Call<Params>(name: string, nodes: ASTNode<Params>[], as?: string, cast?
   return call;
 }
 
-function interpret(this: Call<unknown>): InterpretedCall<unknown> {
-  const params = [] as ((p: unknown, t?: Table) => any)[];
-  const strings = [] as ((p: unknown, idx: number, t?: Table) => [string, number])[];
+function interpret(this: Call<unknown>): SQLTag<unknown, unknown> {
+  const args = [] as any[];
 
   for (const node of this.nodes) {
     node.caseOf<unknown> ({
-      Call: call => {
-        strings.push (call);
+      Call: (call, name, _as, cast) => {
+        args.push (sql`
+          ${Raw (name)} (${call}) ${Raw (cast ? `::${cast}` : "")}
+        `);
       },
       Identifier: (name, _as, cast) => {
-        strings.push ((_, t) => castAs (`${t.name}.${name}`, undefined, cast));
+        args.push (Raw ((_, t) => castAs (`${t.name}.${name}`, undefined, cast)));
       },
       Raw: run => {
-        strings.push (run);
+       args.push (Raw (run));
       }
     });
   }
 
-  const compile = (p, t) => {
-
-    return castAs (`${this.name} (${strings.map (c => c (p, t)).join (", ")})`, this.as, this.cast);
-  };
-
-  return compile;
+  return args.reduce ((tag, arg, idx) => {
+    return tag.concat (sql`
+      ${Raw (idx ? ", " : "")}${arg} 
+    `);
+  }, SQLTag.empty ());
 }
 
 function caseOf(this: Call<unknown>, structureMap: StringMap) {
-  return structureMap.Call (this.interpret ());
+  return structureMap.Call (this.interpret (), this.name, this.as, this.cast);
 }
 
 Call.isCall = function <Params> (value: any): value is Call<Params> {

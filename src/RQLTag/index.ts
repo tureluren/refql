@@ -3,13 +3,13 @@ import { Querier, TagFunctionVariable } from "../common/types";
 import createEnv from "../Env/createEnv";
 import { Next } from "../Env/Rec";
 import Interpreter from "../Interpreter";
-import { ASTNode } from "../nodes";
+import { all, ASTNode } from "../nodes";
 import Root from "../nodes/Root";
+import SQLTag from "../SQLTag";
 import Table from "../Table";
 
 interface InterpretedRQLTag<Params> {
-  values: TagFunctionVariable<Params>[];
-  strings: TagFunctionVariable<Params>[];
+  tag: SQLTag<Params, unknown>[];
   next: Next[];
 }
 
@@ -63,10 +63,10 @@ function map(this: RQLTag<unknown, unknown>, f: (nodes: ASTNode<unknown>[]) => A
 }
 
 function interpret(this: RQLTag<unknown, unknown>): InterpretedRQLTag<unknown> {
-  const { strings, values, next } = Interpreter (this.nodes);
+  const { tag, next } = Interpreter (this.nodes);
 
   return {
-    strings, values, next
+    tag, next
   };
 }
 
@@ -74,16 +74,9 @@ function compile(this: RQLTag<unknown, unknown>, data: unknown = {}, paramIdx: n
   if (!this.interpreted) {
     this.interpreted = this.interpret ();
   }
-  const { strings, values, next } = this.interpreted;
+  const { tag, next } = this.interpreted;
 
-  return [
-    strings.reduce ((query: string, f): string => {
-      const s = f (data, this.table);
-      return `${query} ${s}`.trim ();
-    }, ""),
-    values.map (f => f (data, this.table)).flat (1),
-    next
-  ];
+  return [...tag.compile (data, paramIdx, this.table), next];
 }
 
 function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: unknown): Promise<any[]> {

@@ -79,23 +79,19 @@ const createRefTag = tag =>
 
 
 const interpret = <Params>(nodes: ASTNode<Params>[]) => {
-  // const { rec } = env;
-  // const { values, table: parent, refs, inCall } = rec;
-  const comps = [] as (() => string)[];
   const next = [] as Next[];
-  let strings = [] as TagFunctionVariable<Params>[];
-  let values = [] as TagFunctionVariable<Params>[];
+  const members = [] as any[];
   let sqlTag = SQLTag.empty ();
 
   const caseOfRef = (single: boolean) => (tag, params) => {
     const refTag = createRefTag (tag);
 
-    comps.push ((p, t) => refToComp (t, params.lRef));
+    members.push (Raw ((p, t) => refToComp (t, params.lRef)));
     next.push ({ tag: refTag, params, single });
   };
 
   const caseOfLiteral = (value, as, cast) => {
-    comps.push (() => castAs (value, as, cast));
+    members.push (Raw (castAs (value, as, cast)));
   };
 
   for (const node of nodes) {
@@ -110,14 +106,18 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
           ${Variable (joinWhereIn)}
         `.concat (tag);
 
-        comps.push ((_p, t) => refToComp (t, params.lRef));
+        members.push (Raw ((_p, t) => refToComp (t, params.lRef)));
         next.push ({ tag: refTag, params, single: false });
       },
 
 
-      Call: compileCall => {
+      Call: (tag, name, as, cast) => {
         // const call = interpret (table, nodes, true);
-        comps.push ((p, t) => compileCall (p, t));
+        // comps.push ((p, t) => compileCall (p, t));
+        members.push (sql`
+          ${Raw (name)} (${tag}) ${Raw (`${as}${cast ? `::${cast}` : ""}`)} 
+        `);
+
 
         // comps.push (p => castAs (`${name} (${call.comps.map (c => c (p)).join (", ")})`, as, cast));
         // values: concat (callRecord.values)
@@ -128,28 +128,26 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
       },
 
       All: sign => {
-        comps.push ((p, t) => `${t.name}.${sign}`);
+        // comps.push ((p, t) => `${t.name}.${sign}`);
+        members.push (Raw ((p, t) => `${t.name}.${sign}`));
       },
 
       Identifier: (name, as, cast) => {
-        comps.push ((_p, t) => castAs (`${t.name}.${name}`, as, cast));
+        // comps.push ((_p, t) => castAs (`${t.name}.${name}`, as, cast));
+        members.push (Raw ((_p, t) => castAs (`${t.name}.${name}`, as, cast)));
       },
 
       Raw: run => {
-        comps.push (run);
+        members.push (Raw (run));
       },
 
       Variable: (value, as, cast) => {
         if (SQLTag.isSQLTag<unknown, any> (value)) {
           if (as) {
-
-            comps.push ((p, t) => {
-              const [query, vals] = value.compile (p, values.length, t);
-              return castAs (`(${query})`, as, cast);
-            });
-            // values: concat (vals)
+            select.concat (sql`
+              (${value}) ${Raw (`${as}${cast ? `::${cast}` : ""}`)} 
+            `);
           } else {
-
             sqlTag = sqlTag.concat (value);
           }
 
@@ -162,7 +160,7 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
       },
 
       StringLiteral: (value, as, cast) => {
-        comps.push (() => castAs (`'${value}'`, as, cast));
+        members.push (Raw (castAs (`'${value}'`, as, cast)));
       },
 
       NumericLiteral: caseOfLiteral,
@@ -173,20 +171,20 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
 
   }
 
-  // distinct ?
-  strings = [(p, t) => `select ${comps.map (f => f (p, t)).join (", ")} from ${t}`, (p, t) => {
-    const [query] = sqlTag.compile (p, 0, t);
-    return query;
-  }];
-  // .map (includeSQL (table, false))
+  const select = members.reduce ((tag, member, idx) => {
+    return tag.concat (sql`
+      ${Raw (idx ? ", " : "")}${member} 
+    `);
+  }, SQLTag.empty ());
 
-  values = [(p, t) => {
-    const [_q, values] = sqlTag.compile (p, 0, t);
-    return values;
-  }].flat (1);
+  const finalTag = sql`
+    select ${select}
+    from ${Raw ((p, t) => `${t}`)}
+    ${sqlTag} 
+  `;
 
   return {
-    next, strings, values, comps
+    next, tag: finalTag
   };
 
   // node.caseOf<Rec> ({

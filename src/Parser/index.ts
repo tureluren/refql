@@ -79,7 +79,7 @@ class Parser {
 
     if (Table.isTable (value)) {
       if (!inCall) {
-        return this.refer (value, [all], as);
+        return this.refer (value.empty (), as);
       }
       throw new Error ("U can't use a Table as a function argument");
     }
