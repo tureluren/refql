@@ -62,6 +62,9 @@ describe ("RQLTag type", () => {
       first_name
       last_name 
       concat:full_name(upper(first_name), ${Raw ("' '")}, last_name)
+      ${game`
+        * 
+      `}
       ${sql`
         limit ${20}
       `}

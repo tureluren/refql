@@ -74,7 +74,7 @@ const joinWhereIn = sql<{refQLRows: any[]}, any>`
 const createRefTag = tag =>
   tag.table<{rows: any[]}, any>`
     ${Raw ((p, t) => `${t.name}.${p.refQL.rRef.name} ${p.refQL.rRef.as}`)}
-    ${Variable (whereIn)}
+    ${whereIn}
   `.concat (tag);
 
 
@@ -84,10 +84,8 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
   let sqlTag = SQLTag.empty ();
 
   const caseOfRef = (single: boolean) => (tag, params) => {
-    const refTag = createRefTag (tag);
-
     members.push (Raw ((p, t) => refToComp (t, params.lRef)));
-    next.push ({ tag: refTag, params, single });
+    next.push ({ tag: createRefTag (tag), params, single });
   };
 
   const caseOfLiteral = (value, as, cast) => {
@@ -99,17 +97,15 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
       BelongsTo: caseOfRef (true),
       HasOne: caseOfRef (true),
       HasMany: caseOfRef (false),
-
       BelongsToMany: (tag, params) => {
         const refTag = tag.table<{rows: any[]}, any>`
           ${Raw (p => `${p.refQL.xTable.name}.${p.refQL.lxRef.name} ${p.refQL.lxRef.as}`)}
-          ${Variable (joinWhereIn)}
+          ${joinWhereIn}
         `.concat (tag);
 
         members.push (Raw ((_p, t) => refToComp (t, params.lRef)));
         next.push ({ tag: refTag, params, single: false });
       },
-
 
       Call: (tag, name, as, cast) => {
         members.push (sql`
@@ -143,20 +139,19 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
             sqlTag = sqlTag.concat (value);
           }
 
+        } else {
+          members.push (sql`
+            ${Value (value)} ${Raw (`${as}${cast ? `::${cast}` : ""}`)}
+          `);
         }
-
-        members.push (sql`
-          ${Value (value)} ${Raw (`${as}${cast ? `::${cast}` : ""}`)} 
-        `);
-      },
-
-      StringLiteral: (value, as, cast) => {
-        members.push (Raw (castAs (`'${value}'`, as, cast)));
       },
 
       NumericLiteral: caseOfLiteral,
       BooleanLiteral: caseOfLiteral,
-      NullLiteral: caseOfLiteral
+      NullLiteral: caseOfLiteral,
+      StringLiteral: (value, as, cast) => {
+        members.push (Raw (castAs (`'${value}'`, as, cast)));
+      }
     });
 
 
