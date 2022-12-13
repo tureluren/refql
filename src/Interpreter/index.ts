@@ -4,7 +4,7 @@ import createEnv from "../Env/createEnv";
 import Rec from "../Env/Rec";
 import chain from "../common/chain";
 import concat from "../common/concat";
-import { all, All, ASTNode, Call, Identifier, isLiteral, Variable } from "../nodes";
+import { all, All, ASTNode, Call, Identifier, isLiteral, Value, Variable } from "../nodes";
 import Raw from "../Raw";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
@@ -112,15 +112,9 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
 
 
       Call: (tag, name, as, cast) => {
-        // const call = interpret (table, nodes, true);
-        // comps.push ((p, t) => compileCall (p, t));
         members.push (sql`
           ${Raw (name)} (${tag}) ${Raw (`${as}${cast ? `::${cast}` : ""}`)} 
         `);
-
-
-        // comps.push (p => castAs (`${name} (${call.comps.map (c => c (p)).join (", ")})`, as, cast));
-        // values: concat (callRecord.values)
       },
 
       Values: () => {
@@ -128,12 +122,10 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
       },
 
       All: sign => {
-        // comps.push ((p, t) => `${t.name}.${sign}`);
         members.push (Raw ((p, t) => `${t.name}.${sign}`));
       },
 
       Identifier: (name, as, cast) => {
-        // comps.push ((_p, t) => castAs (`${t.name}.${name}`, as, cast));
         members.push (Raw ((_p, t) => castAs (`${t.name}.${name}`, as, cast)));
       },
 
@@ -153,10 +145,9 @@ const interpret = <Params>(nodes: ASTNode<Params>[]) => {
 
         }
 
-        // return evolve ({
-        //   comps: concat (castAs (`$${values.length + 1}`, as, cast)),
-        //   values: concat (value)
-        // }, rec);
+        members.push (sql`
+          ${Value (value)} ${Raw (`${as}${cast ? `::${cast}` : ""}`)} 
+        `);
       },
 
       StringLiteral: (value, as, cast) => {
