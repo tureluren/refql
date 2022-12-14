@@ -4,18 +4,28 @@ import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
 import Values from "../Values";
+import Values2D from "../Values2D";
 
-export interface StringMap {
-  [key: string]: any;
-}
+type NotFunction<T> = T extends Function ? never : T;
+
+
+const id = (x: any) => x;
+
+export type StringMap = { [k: string]: any };
 
 export type Querier = <T>(query: string, values: any[]) =>
   Promise<T[]>;
 
 export type BuiltIn =
-  | boolean | null
-  | undefined | number
-  | bigint | string;
+  | boolean
+  | null
+  | undefined
+  | number
+  | bigint
+  | string;
+  // | StringMap;
+
+const bi: NotFunction<typeof id> = "1";
 
 export type ParamF<Params, Return> = (p: Params, T?: Table) =>
   Return;
@@ -64,13 +74,23 @@ export type TableRefMakerPair =
       BelongsTo<unknown> | BelongsToMany<unknown> | HasMany<unknown> | HasOne<unknown>
   ];
 
-export type TagFunctionVariable<Params> = (params: Params, table?: Table) => any;
+export type TagFunctionVariable<Params, InRQL extends boolean = false, Return = any> =
+  InRQL extends false
+  ? (params: Params, table?: Table) => Return
+  : (params: Params, table: Table) => Return;
 
-export type SQLTagVariable<Params, Output> =
-  | SQLTag<Params, Output>
-  | Values<Params>
-  | Value<Params>
-  | Raw<Params>
-  | TagFunctionVariable<Params>
-  | Array<BuiltIn>
+export type SQLTagVariable<Params, Output, InRQL extends boolean = false> =
+  | SQLTag<Params, Output, InRQL>
+  | Value<Params, InRQL>
+  | Values<Params, InRQL>
+  | Values2D<Params, InRQL>
+  | Raw<Params, InRQL>
+  | TagFunctionVariable<Params, InRQL>
   | BuiltIn;
+
+export type RQLTagVariable<Params, Output> =
+  | RQLTag<Params, Output>
+  | SQLTag<Params, Output, true>
+  | Raw<Params, true>
+  | TagFunctionVariable<Params, true>
+  | Array<ASTNode<Params>>;

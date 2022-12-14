@@ -10,7 +10,6 @@ import Literal, { isLiteral } from "./Literal";
 import BelongsToMany from "./BelongsToMany";
 import NullLiteral from "./NullLiteral";
 import NumericLiteral from "./NumericLiteral";
-import Root from "./Root";
 import StringLiteral from "./StringLiteral";
 import Value from "./Value";
 import Variable from "./Variable";
@@ -30,7 +29,6 @@ export {
   BelongsToMany,
   NullLiteral,
   NumericLiteral,
-  Root,
   StringLiteral,
   Value,
   Variable

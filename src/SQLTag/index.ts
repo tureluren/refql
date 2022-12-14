@@ -2,37 +2,44 @@ import { flConcat, flEmpty, flMap, refqlType } from "../common/consts";
 import { TagFunctionVariable, Querier } from "../common/types";
 import { ASTNode } from "../nodes";
 import Table from "../Table";
+import formatSQLString from "./formatSQLString";
 import sql from "./sql";
 
+type StringFunction <Params> = (params: Params, idx: number, table?: Table) => [string, number];
+
 interface InterpretedSQLTag<Params> {
-  params: TagFunctionVariable<Params>[];
-  strings: TagFunctionVariable<Params>[];
+  strings: StringFunction<Params>[];
+  values: TagFunctionVariable<Params>[];
 }
 
-interface SQLTag<Params, Output> {
+interface SQLTag<Params, Output, InRQL extends boolean = false> {
   nodes: ASTNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
   concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
-  map<Params2, Output2>(f: (values: ASTNode<Params>[]) => ASTNode<Params2>[]): SQLTag<Params2, Output2>;
-  interpret(): InterpretedSQLTag<Params>;
-  compile(params?: Params, paramIdx?: number, table?: Table): [string, any[]];
-  run(querier: Querier, params?: Params): Promise<Output[]>;
   [flConcat]: SQLTag<Params, Output>["concat"];
+  map<Params2, Output2>(f: (values: ASTNode<Params>[]) => ASTNode<Params2>[]): SQLTag<Params2, Output2>;
   [flMap]: SQLTag<Params, Output>["map"];
+  interpret(): InterpretedSQLTag<Params>;
+  compile(params?: Params, table?: Table): [string, any[]];
+  run(querier: Querier, params?: Params): Promise<Output[]>;
 }
 
 const type = "refql/SQLTag";
 
 const prototype = {
-  constructor: SQLTag,
   [refqlType]: type,
-  concat, [flConcat]: concat,
-  map, [flMap]: map,
-  run, compile, interpret
+  constructor: SQLTag,
+  concat,
+  [flConcat]: concat,
+  map,
+  [flMap]: map,
+  interpret,
+  compile,
+  run
 };
 
-function SQLTag<Params, Output>(nodes: ASTNode<Params>[]) {
-  let tag: SQLTag<Params, Output> = Object.create (prototype);
+function SQLTag<Params, Output, InRQL extends boolean = false>(nodes: ASTNode<Params>[]) {
+  let tag: SQLTag<Params, Output, InRQL> = Object.create (prototype);
   tag.nodes = nodes;
 
   return tag;
@@ -47,38 +54,40 @@ function map(this: SQLTag<unknown, unknown>, f: (nodes: ASTNode<unknown>[]) => A
 }
 
 function interpret(this: SQLTag<unknown, unknown>): InterpretedSQLTag<unknown> {
-  const params = [] as ((p: unknown, t?: Table) => any)[];
-  const strings = [] as ((p: unknown, idx: number, t?: Table) => [string, number])[];
+  const strings = [] as StringFunction<unknown>[];
+  const values = [] as TagFunctionVariable<unknown>[];
 
   for (const node of this.nodes) {
     node.caseOf<unknown> ({
       Raw: run => {
-        strings.push ((p, _idx, t) => [run (p, t), 0]);
+        strings.push ((p, _i, t) => [run (p, t), 0]);
       },
       Value: run => {
-        params.push (p => [run (p)]);
-        strings.push ((_p, idx) => [`$${idx + 1}`, 1]);
+        values.push ((p, t) => [run (p, t)]);
+        strings.push ((_p, i) => [`$${i + 1}`, 1]);
       },
       Values: run => {
-        params.push (p => run (p));
-        strings.push ((p, idx) => {
-          const values = run (p);
+        values.push (run);
+
+        strings.push ((p, i) => {
+          const xs = run (p);
           return [
-            `(${values.map ((_x, i) => `$${idx + i + 1}`).join (", ")})`,
-            values.length
+            `(${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
+            xs.length
           ];
         });
       },
       Values2D: run => {
-        params.push (p => run (p).flat (1));
-        strings.push ((p, idx) => {
+        values.push (p => run (p).flat (1));
+
+        strings.push ((p, i) => {
           const values2D = run (p);
           let n = 0;
           const s = [];
 
           for (const values of values2D) {
             s.push (
-              `(${values.map (() => { n += 1; return `$${idx + n}`; }).join (", ")})`
+              `(${values.map (() => { n += 1; return `$${i + n}`; }).join (", ")})`
             );
           }
 
@@ -88,38 +97,40 @@ function interpret(this: SQLTag<unknown, unknown>): InterpretedSQLTag<unknown> {
     });
   }
 
-  return { params, strings };
+  return { strings, values };
 }
 
-function compile(this: SQLTag<unknown, unknown>, data: unknown = {}, paramIdx: number = 0, table?: Table) {
+function compile(this: SQLTag<unknown, unknown>, params: unknown = {}, table?: Table) {
   if (!this.interpreted) {
     this.interpreted = this.interpret ();
   }
-  const { strings, params } = this.interpreted;
+
+  const { strings, values } = this.interpreted;
 
   return [
-    strings.reduce (([query, idx]: [string, number], f): [string, number] => {
-      const [s, n] = f (data, idx, table);
-      return [`${query} ${s}`.trim (), idx + n];
-    }, ["", paramIdx])[0],
-    params.map (f => f (data)).flat (1)
+    formatSQLString (
+      strings.reduce (([query, idx]: [string, number], f): [string, number] => {
+        const [s, n] = f (params, idx, table);
+
+        return [`${query} ${s}`, idx + n];
+      }, ["", 0])[0]
+    ),
+
+    values.map (f => f (params)).flat (1)
   ];
 }
 
-function run(this: SQLTag<unknown, unknown>, querier: Querier, data: unknown = {}) {
+function run(this: SQLTag<unknown, unknown>, querier: Querier, params: unknown = {}) {
   return new Promise ((res, rej) => {
     let query, values;
     try {
-      [query, values] = this.compile (data, 0);
+      [query, values] = this.compile (params);
     } catch (err: any) {
       rej (err);
       return;
     }
 
-
-    querier (
-      query, values
-    ).then (res).catch (rej);
+    querier (query, values).then (res).catch (rej);
   });
 }
 

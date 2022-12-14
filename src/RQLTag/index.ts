@@ -1,15 +1,18 @@
 import { flConcat, flMap, refqlType } from "../common/consts";
-import { Querier, TagFunctionVariable } from "../common/types";
-import createEnv from "../Env/createEnv";
-import { Next } from "../Env/Rec";
+import { Querier, StringMap } from "../common/types";
 import Interpreter from "../Interpreter";
-import { all, ASTNode } from "../nodes";
-import Root from "../nodes/Root";
+import { ASTNode } from "../nodes";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
 
+export interface Next {
+  tag: RQLTag<unknown, unknown>;
+  single: boolean;
+  params: StringMap;
+}
+
 interface InterpretedRQLTag<Params> {
-  tag: SQLTag<Params, unknown>[];
+  tag: SQLTag<Params, unknown>;
   next: Next[];
 }
 
@@ -17,26 +20,29 @@ interface RQLTag<Params, Output> {
   table: Table;
   nodes: ASTNode<Params>[];
   interpreted: InterpretedRQLTag<Params>;
-  // Output2 ?
-  concat<Params2>(other: RQLTag<Params2, Output>): RQLTag<Params & Params2, Output>;
-  map<Params2>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): RQLTag<Params2, Output>;
-  interpret(): InterpretedRQLTag<Params>;
-  compile(params?: Params, paramIdx?: number): [string, any[]];
-  aggregate(querier: Querier, params: Params): Promise<Output[]>;
-  run<Return>(querier: Querier, params?: Params): Promise<Return[]>;
+  concat<Params2, Output2>(other: RQLTag<Params2, Output2>): RQLTag<Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<Params, Output>["concat"];
+  map<Params2>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): RQLTag<Params2, Output>;
   [flMap]: RQLTag<Params, Output>["map"];
+  interpret(): InterpretedRQLTag<Params>;
+  compile(params?: Params): [string, any[], Next[]];
+  aggregate(querier: Querier, params: Params): Promise<Output[]>;
+  run(querier: Querier, params?: Params): Promise<Output[]>;
 }
-
-// maak aggregate functie op rqltag
 
 const type = "refql/RQLTag";
 
 const prototype = {
-  constructor: RQLTag,
   [refqlType]: type,
-  concat, [flConcat]: concat,
-  map, [flMap]: map, run, interpret, compile, aggregate
+  constructor: RQLTag,
+  concat,
+  [flConcat]: concat,
+  map,
+  [flMap]: map,
+  interpret,
+  compile,
+  aggregate,
+  run
 };
 
 function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params>[]) {
@@ -70,13 +76,13 @@ function interpret(this: RQLTag<unknown, unknown>): InterpretedRQLTag<unknown> {
   };
 }
 
-function compile(this: RQLTag<unknown, unknown>, data: unknown = {}, paramIdx: number = 0) {
+function compile(this: RQLTag<unknown, unknown>, params: unknown = {}) {
   if (!this.interpreted) {
     this.interpreted = this.interpret ();
   }
   const { tag, next } = this.interpreted;
 
-  return [...tag.compile (data, paramIdx, this.table), next];
+  return [...tag.compile (params, this.table), next];
 }
 
 function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: unknown): Promise<any[]> {

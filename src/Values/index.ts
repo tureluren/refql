@@ -1,12 +1,10 @@
 import { refqlType } from "../common/consts";
-import { StringMap } from "../common/types";
+import { StringMap, TagFunctionVariable } from "../common/types";
 import { ASTNode } from "../nodes";
 import { astNodePrototype } from "../nodes/ASTNode";
-import Table from "../Table";
 
-interface Values<Params> extends ASTNode<Params> {
-  run(params: Params, table?: Table): any[];
-  compile(paramIdx?: number): [string, any[]];
+interface Values<Params, InRQL extends boolean = false> extends ASTNode<Params> {
+  run: TagFunctionVariable<Params, InRQL, any[]>;
 }
 
 const type = "refql/Values";
@@ -17,18 +15,12 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Values<Params>(run: any[] | ((params: Params, table?: Table) => any[])) {
-  let values: Values<Params> = Object.create (prototype);
+function Values<Params, InRQL extends boolean = false>(run: any[] | TagFunctionVariable<Params, InRQL, any[]>) {
+  let values: Values<Params, InRQL> = Object.create (prototype);
   values.run = typeof run === "function" ? run : () => run;
 
   return values;
 }
-
-// function compile(this: In<unknown>, paramIdx: number = 0) {
-//   let paramStr = this.arr.map ((_, idx) => `$${idx + paramIdx + 1}`).join (", ");
-
-//   return [`in (${paramStr})`, this.arr];
-// }
 
 function caseOf(this: Values<unknown>, structureMap: StringMap) {
   return structureMap.Values (this.run);

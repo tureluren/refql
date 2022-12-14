@@ -48,6 +48,9 @@ function interpret(this: Call<unknown>): SQLTag<unknown, unknown> {
       },
       Raw: run => {
        args.push (Raw (run));
+      },
+      StringLiteral: value => {
+        args.push (Raw (`'${value}'`));
       }
     });
   }

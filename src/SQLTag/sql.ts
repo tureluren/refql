@@ -1,23 +1,11 @@
 import SQLTag from ".";
-import { TagFunctionVariable, RefQLValue, SQLTagVariable } from "../common/types";
-import { ASTNode, Value, Variable } from "../nodes";
+import { SQLTagVariable } from "../common/types";
+import { ASTNode, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
 import Raw from "../Raw";
-import Table from "../Table";
 import formatTlString from "./formatTLString";
 
-// export type SQLTagVariable<Params, Output> =
-//   | SQLTag<Params, Output>
-//   | Raw
-//   // unknown ?
-//   | TagFunctionVariable<Params>
-//   | In<unknown>
-//   | Table
-//   | Raw
-//   | BuiltIn;
-// of astnode
-
-const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output>[]) => {
+const parse = <Params, Output, InRQL extends boolean = false>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output, InRQL>[]) => {
   const nodes = [] as ASTNode<Params>[];
 
   for (const idx in strings) {
@@ -33,7 +21,6 @@ const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagV
       nodes.push (...variable.nodes);
     } else if (isASTNode (variable)) {
       nodes.push (variable);
-      // check ook of alle array elements astnodes zijn
     } else {
       nodes.push (Value (variable));
     }
@@ -42,9 +29,9 @@ const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagV
   return nodes;
 };
 
-const sql = <Params, Output> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
+const sql = <Params, Output, InRQL extends boolean = false> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, InRQL>[]) => {
   const nodes = parse (strings, variables);
-  return SQLTag<Params, Output> (nodes);
+  return SQLTag<Params, Output, InRQL> (nodes);
 };
 
 export default sql;
