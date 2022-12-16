@@ -1,8 +1,8 @@
 import { refqlType } from "../common/consts";
-import { CastAs, TagFunctionVariable, StringMap, BuiltIn } from "../common/types";
+import { CastAs, TagFunctionVariable, StringMap, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Value<Params, InRQL extends boolean = false> extends ASTNode<Params> {
+interface Value<Params, InRQL extends boolean = true> extends ASTNode<Params> {
   run: TagFunctionVariable<Params, InRQL>;
 }
 
@@ -12,7 +12,7 @@ const prototype = Object.assign ({}, astNodePrototype, {
   constructor: Value, caseOf, [refqlType]: type
 });
 
-function Value<Params, InRQL extends boolean = false>(run: BuiltIn | TagFunctionVariable<Params, InRQL>) {
+function Value<Params, InRQL extends boolean = true>(run: ValueType | TagFunctionVariable<Params, InRQL>): Value<Params, InRQL> {
   let value: Value<Params, InRQL> = Object.create (prototype);
   value.run = typeof run === "function" ? run : () => run;
 

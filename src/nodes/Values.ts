@@ -3,7 +3,7 @@ import { StringMap, TagFunctionVariable } from "../common/types";
 import { ASTNode } from "../nodes";
 import { astNodePrototype } from "../nodes/ASTNode";
 
-interface Values<Params, InRQL extends boolean = false> extends ASTNode<Params> {
+interface Values<Params, InRQL extends boolean = true> extends ASTNode<Params> {
   run: TagFunctionVariable<Params, InRQL, any[]>;
 }
 
@@ -15,7 +15,7 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Values<Params, InRQL extends boolean = false>(run: any[] | TagFunctionVariable<Params, InRQL, any[]>) {
+function Values<Params, InRQL extends boolean = true>(run: any[] | TagFunctionVariable<Params, InRQL, any[]>) {
   let values: Values<Params, InRQL> = Object.create (prototype);
   values.run = typeof run === "function" ? run : () => run;
 

@@ -1,28 +1,29 @@
 import Table from ".";
-import createRef from "../common/createRef";
-import { BelongsToManyInfo, TableRefMakerPair } from "../common/types";
-import { ASTNode, BelongsToMany } from "../nodes";
+import { RefInfo, RefInfoInput } from "../common/types";
+import { ASTNode, BelongsToMany, Ref } from "../nodes";
 import RQLTag from "../RQLTag";
 
-const belongsToMany = (table: string, info?: Partial<Omit<BelongsToManyInfo, "xTable"> & { xTable: string }>): TableRefMakerPair => {
+const belongsToMany = (table: string, info?: RefInfoInput) => {
   const belongsToManyInfo = info || {};
   const child = Table (table);
 
-  const makeBelongsToMany = (parent: Table, tag: RQLTag<unknown, unknown>, as?: string) => {
+  const makeBelongsToMany = (parent: Table, tag: RQLTag<unknown>, as?: string) => {
     as = as || belongsToManyInfo.as || `${child.name}s`;
-    const refOf = createRef (as);
+    const refOf = Ref.refOf (as);
+
+    const xTable = Table (
+      belongsToManyInfo.xTable ||
+      (parent.name < child.name ? `${parent.name}_${child.name}` : `${child.name}_${parent.name}`)
+    );
 
     return BelongsToMany (
       {
         as,
-        xTable: Table (
-          belongsToManyInfo.xTable ||
-          (parent.name < child.name ? `${parent.name}_${child.name}` : `${child.name}_${parent.name}`)
-        ),
-        lRef: refOf ("lref", belongsToManyInfo.lRef || "id"),
-        rRef: refOf ("rref", belongsToManyInfo.rRef || "id"),
-        lxRef: refOf ("lxref", belongsToManyInfo.lxRef || `${parent.name}_id`),
-        rxRef: refOf ("rxref", belongsToManyInfo.rxRef || `${child.name}_id`)
+        xTable,
+        lRef: refOf (parent, "lref", belongsToManyInfo.lRef || "id"),
+        rRef: refOf (child, "rref", belongsToManyInfo.rRef || "id"),
+        lxRef: refOf (xTable, "lxref", belongsToManyInfo.lxRef || `${parent.name}_id`),
+        rxRef: refOf (xTable, "rxref", belongsToManyInfo.rxRef || `${child.name}_id`)
       },
       tag
     );

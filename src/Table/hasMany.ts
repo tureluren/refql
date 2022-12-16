@@ -1,22 +1,21 @@
 import Table from ".";
-import createRef from "../common/createRef";
-import { HasManyInfo, TableRefMakerPair } from "../common/types";
-import { ASTNode, HasMany } from "../nodes";
+import { RefInfo, RefInfoInput } from "../common/types";
+import { ASTNode, HasMany, Ref } from "../nodes";
 import RQLTag from "../RQLTag";
 
-const hasMany = (table: string, info?: Partial<HasManyInfo>): TableRefMakerPair => {
+const hasMany = (table: string, info?: Omit<RefInfoInput, "lxRef" | "rxRef" | "xTable">) => {
   const hasManyInfo = info || {};
   const child = Table (table);
 
-  const makeHasMany = (parent: Table, tag: RQLTag<unknown, unknown>, as?: string) => {
+  const makeHasMany = (parent: Table, tag: RQLTag<unknown>, as?: string) => {
     as = as || hasManyInfo.as || `${child.name}s`;
-    const refOf = createRef (as);
+    const refOf = Ref.refOf (as);
 
     return HasMany (
       {
         as,
-        lRef: refOf ("lref", hasManyInfo.lRef || "id"),
-        rRef: refOf ("rref", hasManyInfo.rRef || `${parent.name}_id`)
+        lRef: refOf (parent, "lref", hasManyInfo.lRef || "id"),
+        rRef: refOf (child, "rref", hasManyInfo.rRef || `${parent.name}_id`)
       },
       tag
     );

@@ -1,23 +1,22 @@
 import { refqlType } from "../common/consts";
-import { BelongsToManyInfo, StringMap } from "../common/types";
+import { RefInfo, StringMap } from "../common/types";
 import RQLTag from "../RQLTag";
-import Table from "../Table";
-import ASTNode, { astNodePrototype } from "./ASTNode";
+import RefNode, { createNextTagX, refNodePrototype } from "./RefNode";
 
-interface BelongsToMany<Params> extends ASTNode<Params> {
-  tag: RQLTag<Params, unknown>;
-  info: BelongsToManyInfo;
+interface BelongsToMany<Params> extends RefNode<Params> {
+  tag: RQLTag<Params>;
+  info: Required<RefInfo>;
 }
 
 const type = "refql/BelongsToMany";
 
-const prototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, refNodePrototype, {
   constructor: BelongsToMany,
   [refqlType]: type,
   caseOf
 });
 
-function BelongsToMany<Params>(info: BelongsToManyInfo, tag: RQLTag<Params, unknown>) {
+function BelongsToMany<Params>(info: Required<RefInfo>, tag: RQLTag<Params>) {
   let belongsToMany: BelongsToMany<Params> = Object.create (prototype);
 
   belongsToMany.tag = tag;
@@ -28,7 +27,7 @@ function BelongsToMany<Params>(info: BelongsToManyInfo, tag: RQLTag<Params, unkn
 
 function caseOf(this: BelongsToMany<unknown>, structureMap: StringMap) {
   return structureMap.BelongsToMany (
-    this.tag,
+    createNextTagX (this.tag, this.info),
     this.info
   );
 }

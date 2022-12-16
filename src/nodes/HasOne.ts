@@ -1,22 +1,22 @@
 import { refqlType } from "../common/consts";
-import { HasOneInfo, StringMap } from "../common/types";
+import { RefInfo, StringMap } from "../common/types";
 import RQLTag from "../RQLTag";
-import ASTNode, { astNodePrototype } from "./ASTNode";
+import RefNode, { createNextTag, refNodePrototype } from "./RefNode";
 
-interface HasOne<Params> extends ASTNode<Params> {
-  tag: RQLTag<Params, unknown>;
-  info: HasOneInfo;
+interface HasOne<Params> extends RefNode<Params> {
+  tag: RQLTag<Params>;
+  info: RefInfo;
 }
 
 const type = "refql/HasOne";
 
-const prototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, refNodePrototype, {
   constructor: HasOne,
   [refqlType]: type,
   caseOf
 });
 
-function HasOne<Params>(info: HasOneInfo, tag: RQLTag<Params, unknown>) {
+function HasOne<Params>(info: RefInfo, tag: RQLTag<Params>) {
   let hasOne: HasOne<Params> = Object.create (prototype);
 
   hasOne.info = info;
@@ -27,7 +27,7 @@ function HasOne<Params>(info: HasOneInfo, tag: RQLTag<Params, unknown>) {
 
 function caseOf(this: HasOne<unknown>, structureMap: StringMap) {
   return structureMap.HasOne (
-    this.tag,
+    createNextTag (this.tag, this.info),
     this.info
   );
 }

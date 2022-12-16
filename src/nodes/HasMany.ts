@@ -1,23 +1,23 @@
 import { refqlType } from "../common/consts";
-import { HasManyInfo, StringMap } from "../common/types";
+import { RefInfo, StringMap } from "../common/types";
 import RQLTag from "../RQLTag";
-import ASTNode, { astNodePrototype } from "./ASTNode";
+import RefNode, { createNextTag, refNodePrototype } from "./RefNode";
 
-interface HasMany<Params> extends ASTNode<Params> {
-  tag: RQLTag<Params, unknown>;
-  info: HasManyInfo;
+interface HasMany<Params> extends RefNode<Params> {
+  tag: RQLTag<Params>;
+  info: RefInfo;
 }
 
 const type = "refql/HasMany";
 
-const prototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, refNodePrototype, {
   constructor: HasMany,
   [refqlType]: type,
   caseOf
 });
 
 
-function HasMany<Params>(info: HasManyInfo, tag: RQLTag<Params, unknown>) {
+function HasMany<Params>(info: RefInfo, tag: RQLTag<Params>) {
   let hasMany: HasMany<Params> = Object.create (prototype);
 
   hasMany.info = info;
@@ -28,7 +28,7 @@ function HasMany<Params>(info: HasManyInfo, tag: RQLTag<Params, unknown>) {
 
 function caseOf(this: HasMany<unknown>, structureMap: StringMap) {
   return structureMap.HasMany (
-    this.tag,
+    createNextTag (this.tag, this.info),
     this.info
   );
 }

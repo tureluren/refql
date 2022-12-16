@@ -1,21 +1,21 @@
 import Table from ".";
-import createRef from "../common/createRef";
-import { BelongsToInfo, TableRefMakerPair } from "../common/types";
-import { ASTNode, BelongsTo } from "../nodes";
+import { RefInfo, RefInfoInput } from "../common/types";
+import { ASTNode, BelongsTo, Ref } from "../nodes";
 import RQLTag from "../RQLTag";
 
-const belongsTo = (table: string, info?: Partial<BelongsToInfo>): TableRefMakerPair => {
+const belongsTo = (table: string, info?: Omit<RefInfoInput, "lxRef" | "rxRef" | "xTable">) => {
   const belongsToInfo = info || {};
   const child = Table (table);
 
-  const makeBelongsTo = (_parent: Table, tag: RQLTag<unknown, unknown>, as?: string) => {
+  const makeBelongsTo = (parent: Table, tag: RQLTag<unknown>, as?: string) => {
     as = as || belongsToInfo.as || child.name;
-    const refOf = createRef (as);
+    const refOf = Ref.refOf (as);
+
     return BelongsTo (
       {
         as,
-        lRef: refOf ("lref", belongsToInfo.lRef || `${child.name}_id`),
-        rRef: refOf ("rref", belongsToInfo.rRef || "id")
+        lRef: refOf (parent, "lref", belongsToInfo.lRef || `${child.name}_id`),
+        rRef: refOf (child, "rref", belongsToInfo.rRef || "id")
       },
       tag
     );

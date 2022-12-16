@@ -1,16 +1,17 @@
+import castAs from "../common/castAs";
 import { refqlType } from "../common/consts";
-import { CastAs, StringMap, TagFunctionVariable } from "../common/types";
-import { castAs } from "../Interpreter/sqlBuilders";
-import Raw from "../Raw";
+import joinMembers from "../common/joinMembers";
+import { CastAs, StringMap } from "../common/types";
+import unimplemented from "../common/unimplemented";
 import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
-import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
+import Raw from "./Raw";
 
 interface Call<Params> extends ASTNode<Params>, CastAs {
   name: string;
   nodes: ASTNode<Params>[];
-  interpret(): SQLTag<Params, unknown>;
+  interpret(): SQLTag<Params>;
 }
 
 const type = "refql/Call";
@@ -33,33 +34,45 @@ function Call<Params>(name: string, nodes: ASTNode<Params>[], as?: string, cast?
   return call;
 }
 
-function interpret(this: Call<unknown>): SQLTag<unknown, unknown> {
-  const args = [] as any[];
+const unsupported = unimplemented ("Call");
+
+function interpret<Params>(this: Call<Params>) {
+  const args = [] as (Raw<Params> | SQLTag<Params>)[];
 
   for (const node of this.nodes) {
-    node.caseOf<unknown> ({
+    node.caseOf<void> ({
       Call: (call, name, _as, cast) => {
         args.push (sql`
-          ${Raw (name)} (${call}) ${Raw (cast ? `::${cast}` : "")}
+          ${Raw (name)} (${call}) ${Raw (castAs (cast))}
         `);
       },
       Identifier: (name, _as, cast) => {
-        args.push (Raw ((_, t) => castAs (`${t.name}.${name}`, undefined, cast)));
+        args.push (Raw ((_, t) => `${t.name}.${name}${castAs (cast)}`));
       },
       Raw: run => {
        args.push (Raw (run));
       },
       StringLiteral: value => {
         args.push (Raw (`'${value}'`));
-      }
+      },
+
+      BelongsTo: unsupported ("BelongsTo"),
+      BelongsToMany: unsupported ("BelongsToMany"),
+      HasMany: unsupported ("HasMany"),
+      HasOne: unsupported ("HasOne"),
+      All: unsupported ("All"),
+      Variable: unsupported ("Variable"),
+      Ref: unsupported ("Ref"),
+      NumericLiteral: unsupported ("NumericLiteral"),
+      BooleanLiteral: unsupported ("BooleanLiteral"),
+      NullLiteral: unsupported ("NullLiteral"),
+      Value: unsupported ("Value"),
+      Values: unsupported ("Values"),
+      Values2D: unsupported ("Values2D")
     });
   }
 
-  return args.reduce ((tag, arg, idx) => {
-    return tag.concat (sql`
-      ${Raw (idx ? ", " : "")}${arg} 
-    `);
-  }, SQLTag.empty ());
+  return joinMembers (args);
 }
 
 function caseOf(this: Call<unknown>, structureMap: StringMap) {

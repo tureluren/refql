@@ -1,48 +1,27 @@
-import { ASTNode, BelongsTo, BelongsToMany, HasMany, HasOne, Value } from "../nodes";
-import Raw from "../Raw";
+import { ASTNode, Raw, Ref, Value, Values, Values2D } from "../nodes";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
-import Values from "../Values";
-import Values2D from "../Values2D";
 
-type NotFunction<T> = T extends Function ? never : T;
+export type NotAFunction =
+  | { caller?: never }
+  | { bind?: never }
+  | { apply?: never }
+  | { call?: never };
 
+export type StringMap = { [k: string]: any } & NotAFunction;
 
-const id = (x: any) => x;
-
-export type StringMap = { [k: string]: any };
-
-export type Querier = <T>(query: string, values: any[]) =>
-  Promise<T[]>;
-
-export type BuiltIn =
+export type ValueType =
   | boolean
   | null
   | undefined
   | number
   | bigint
-  | string;
-  // | StringMap;
+  | string
+  | StringMap;
 
-const bi: NotFunction<typeof id> = "1";
-
-export type ParamF<Params, Return> = (p: Params, T?: Table) =>
-  Return;
-
-export type RefQLValue<Params, Output, Ran extends boolean = false> =
-  Ran extends false
-  ? BuiltIn | SQLTag<Params, Output> | ParamF<Params, BuiltIn | SQLTag<Params, Output>>
-  : BuiltIn | SQLTag<Params, Output>;
-
-export interface Ref {
-  name: string; as: string;
-}
-
-export interface Refs {
-  lRef?: Ref; rRef?: Ref;
-  lxRef?: Ref; rxRef?: Ref;
-}
+export type Querier = <T>(query: string, values: ValueType[]) =>
+  Promise<T[]>;
 
 export interface CastAs {
   as?: string;
@@ -53,44 +32,43 @@ export interface RefInfo {
   as: string;
   lRef: Ref;
   rRef: Ref;
+  xTable?: Table;
+  lxRef?: Ref;
+  rxRef?: Ref;
 }
 
-export interface BelongsToInfo extends RefInfo {}
-
-export interface BelongsToManyInfo extends RefInfo {
-  xTable: Table;
-  lxRef: Ref;
-  rxRef: Ref;
+export interface RefInfoInput {
+  as?: string;
+  lRef?: string;
+  rRef?: string;
+  xTable?: string;
+  lxRef?: string;
+  rxRef?: string;
 }
 
-export interface HasManyInfo extends RefInfo {}
-
-export interface HasOneInfo extends RefInfo {}
-
-export type TableRefMakerPair =
-  [
-    Table,
-    (parent: Table, tag: RQLTag<unknown, unknown>, as?: string) =>
-      BelongsTo<unknown> | BelongsToMany<unknown> | HasMany<unknown> | HasOne<unknown>
-  ];
-
-export type TagFunctionVariable<Params, InRQL extends boolean = false, Return = any> =
+export type TagFunctionVariable<Params, InRQL extends boolean = true, Return = ValueType> =
   InRQL extends false
   ? (params: Params, table?: Table) => Return
   : (params: Params, table: Table) => Return;
 
-export type SQLTagVariable<Params, Output, InRQL extends boolean = false> =
-  | SQLTag<Params, Output, InRQL>
+export type SQLTagVariable<Params, InRQL extends boolean = true> =
+  | SQLTag<Params, InRQL>
   | Value<Params, InRQL>
   | Values<Params, InRQL>
   | Values2D<Params, InRQL>
   | Raw<Params, InRQL>
   | TagFunctionVariable<Params, InRQL>
-  | BuiltIn;
+  | ValueType;
 
-export type RQLTagVariable<Params, Output> =
-  | RQLTag<Params, Output>
-  | SQLTag<Params, Output, true>
-  | Raw<Params, true>
-  | TagFunctionVariable<Params, true>
-  | Array<ASTNode<Params>>;
+export type RQLTagVariable<Params> =
+  | RQLTag<Params>
+  | SQLTag<Params>
+  | Table
+  | Raw<Params>
+  | TagFunctionVariable<Params>
+  | ASTNode<Params>[]
+  | Ref;
+
+export interface RefQLRows {
+  refQLRows: any[];
+}

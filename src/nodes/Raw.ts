@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { TagFunctionVariable, StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
 
-interface Raw<Params, InRQL extends boolean = false> extends ASTNode<Params> {
+interface Raw<Params, InRQL extends boolean = true> extends ASTNode<Params> {
   run: TagFunctionVariable<Params, InRQL>;
 }
 
@@ -14,7 +14,7 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Raw<Params, InRQL extends boolean = false>(run: boolean | number | string | TagFunctionVariable<Params, InRQL>) {
+function Raw<Params, InRQL extends boolean = true>(run: boolean | number | string | TagFunctionVariable<Params, InRQL>) {
   let raw: Raw<Params, InRQL> = Object.create (prototype);
 
   raw.run = typeof run === "function" ? run : () => run;

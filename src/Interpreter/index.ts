@@ -1,14 +1,13 @@
-import { ASTNode, Value } from "../nodes";
-import Raw from "../Raw";
+import { all, ASTNode, Raw, Ref, Value } from "../nodes";
 import SQLTag from "../SQLTag";
-import {
-  castAs, refToComp
-} from "./sqlBuilders";
 import sql from "../SQLTag/sql";
-import Values from "../Values";
 import RQLTag, { Next } from "../RQLTag";
-import { refqlType } from "../common/consts";
-import { BelongsToManyInfo, Ref, RefInfo, StringMap } from "../common/types";
+import { RefInfo } from "../common/types";
+import Table from "../Table";
+import joinMembers from "../common/joinMembers";
+import { isRefNode } from "../nodes/RefNode";
+import unimplemented from "../common/unimplemented";
+import castAs from "../common/castAs";
 
 
 // if (correctWhere) {
@@ -16,44 +15,20 @@ import { BelongsToManyInfo, Ref, RefInfo, StringMap } from "../common/types";
 // } else {
 //   query = query.replace (/^\b(and|or)\b/i, "where");
 // }
+const unsupported = unimplemented ("RQLTag");
 
-const rowValues = Values ((p: { refQL: { rows: any[]; lRef: Ref} }) =>
-  [...new Set (p.refQL.rows.map (r => r[p.refQL.lRef.as]))]
-);
+const interpret = <Params>(nodes: ASTNode<Params>[], table: Table) => {
+  const next = [] as Next<Params>[];
+  const members = [] as (Raw<Params> | SQLTag<Params>)[];
+  let sqlTag = SQLTag.empty<Params> ();
 
-const whereIn = sql<{refQL: RefInfo & { rows: any[] }}, unknown>`
-  ${Raw ((p, t) => `where ${t!.name}.${p.refQL.rRef.name}`)}
-  in ${rowValues}
-`;
-
-const joinWhereIn = sql<{refQL: BelongsToManyInfo & { rows: any[]}}, unknown>`
-  ${Raw ((p, t) => `
-    join ${p.refQL.xTable.name}
-    on ${p.refQL.xTable.name}.${p.refQL.rxRef.name} = ${t!.name}.${p.refQL.rRef.name}
-    where ${p.refQL.xTable.name}.${p.refQL.lxRef.name}
-  `)}
-  in ${rowValues}
-`;
-
-const createRefTag = (tag: RQLTag<unknown, unknown>) =>
-  tag.table<{refQL: RefInfo & { rows: any[]}}, unknown>`
-    ${Raw ((p, t) => `${t.name}.${p.refQL.rRef.name} ${p.refQL.rRef.as}`)}
-    ${whereIn}
-  `.concat (tag);
-
-
-const interpret = <Params extends { refQL: StringMap }>(nodes: ASTNode<Params>[]) => {
-  const next = [] as Next[];
-  const members = [] as any[];
-  let sqlTag = SQLTag.empty ();
-
-  const caseOfRef = (single: boolean) => (tag, params) => {
-    members.push (Raw ((p, t) => refToComp (t, params.lRef)));
-    next.push ({ tag: createRefTag (tag), params, single });
+  const caseOfRef = (single: boolean) => (tag: RQLTag<Params>, info: RefInfo) => {
+    members.push (Raw (`${info.lRef}`));
+    next.push ({ tag, info, single });
   };
 
-  const caseOfLiteral = (value, as, cast) => {
-    members.push (Raw (castAs (value, as, cast)));
+  const caseOfLiteral = (value: number | boolean | null, as?: string, cast?: string) => {
+    members.push (Raw (`${value}${castAs (cast, as)}`));
   };
 
   for (const node of nodes) {
@@ -61,37 +36,33 @@ const interpret = <Params extends { refQL: StringMap }>(nodes: ASTNode<Params>[]
       BelongsTo: caseOfRef (true),
       HasOne: caseOfRef (true),
       HasMany: caseOfRef (false),
-      BelongsToMany: (tag, params) => {
-        const refTag = tag.table<Params, unknown>`
-          ${Raw (p => `${p.refQL.xTable.name}.${p.refQL.lxRef.name} ${p.refQL.lxRef.as}`)}
-          ${joinWhereIn}
-        `.concat (tag);
-
-        members.push (Raw ((_p, t) => refToComp (t, params.lRef)));
-        next.push ({ tag: refTag, params, single: false });
-      },
+      BelongsToMany: caseOfRef (false),
       Call: (tag, name, as, cast) => {
         members.push (sql`
-          ${Raw (name)} (${tag}) ${Raw (`${as}${cast ? `::${cast}` : ""}`)} 
+          ${Raw (name)} (${tag}) ${Raw (castAs (cast, as))} 
         `);
       },
-      Values: () => {
-        throw new Error ("jdjdjd");
-      },
       All: sign => {
-        members.push (Raw ((p, t) => `${t.name}.${sign}`));
+        members.push (
+          Raw (`${table.name}.${sign}`)
+        );
       },
       Identifier: (name, as, cast) => {
-        members.push (Raw ((_p, t) => castAs (`${t.name}.${name}`, as, cast)));
+        members.push (
+          Raw (`${table.name}.${name}${castAs (cast, as)}`)
+        );
       },
       Raw: run => {
         members.push (Raw (run));
       },
+      Ref: (name, as) => {
+        members.push (Raw (`${name} ${as}`));
+      },
       Variable: (value, as, cast) => {
-        if (SQLTag.isSQLTag<unknown, any> (value)) {
+        if (SQLTag.isSQLTag (value)) {
           if (as) {
-            select.concat (sql`
-              (${value}) ${Raw (`${as}${cast ? `::${cast}` : ""}`)} 
+            members.push (sql`
+              (${value}) ${Raw (castAs (cast, as))} 
             `);
           } else {
             sqlTag = sqlTag.concat (value);
@@ -99,7 +70,7 @@ const interpret = <Params extends { refQL: StringMap }>(nodes: ASTNode<Params>[]
 
         } else {
           members.push (sql`
-            ${Value (value)} ${Raw (`${as}${cast ? `::${cast}` : ""}`)}
+            ${Value (value)}${Raw (castAs (cast, as))}
           `);
         }
       },
@@ -107,24 +78,29 @@ const interpret = <Params extends { refQL: StringMap }>(nodes: ASTNode<Params>[]
       BooleanLiteral: caseOfLiteral,
       NullLiteral: caseOfLiteral,
       StringLiteral: (value, as, cast) => {
-        members.push (Raw (castAs (`'${value}'`, as, cast)));
-      }
+        members.push (Raw (`'${value}'${castAs (cast, as)}`));
+      },
+      Value: unsupported ("Value"),
+      Values: unsupported ("Values"),
+      Values2D: unsupported ("Values2D")
     });
   }
 
-  const select = members.reduce ((tag, member, idx) => {
-    return tag.concat (sql`
-      ${Raw (idx ? ", " : "")}${member} 
-    `);
-  }, SQLTag.empty ());
+  const refMemberLength = nodes.reduce ((n, node) =>
+    isRefNode (node) || Ref.isRef (node) ? n + 1 : n
+  , 0);
 
-  const finalTag = sql`
-    select ${select}
-    from ${Raw ((_p, t) => `${t}`)}
+  if (refMemberLength === members.length) {
+    members.push (Raw (`${table.name}.${all.sign}`));
+  }
+
+  const tag = sql<Params>`
+    select ${joinMembers (members)}
+    from ${Raw (`${table}`)}
     ${sqlTag} 
   `;
 
-  return { next, tag: finalTag };
+  return { next, tag };
 };
 
 export default interpret;

@@ -7,7 +7,6 @@ import {
   NullLiteral, NumericLiteral, Root,
   StringLiteral, Variable
 } from "../nodes";
-import Raw from "../Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import format from "../test/format";
@@ -249,7 +248,7 @@ describe ("Interpreter", () => {
   //     where player_id = player.id
   //   `, "goal_count");
 
-  //   const byId = Variable (sql<Params, any>`where player.id = ${p => p.id}`);
+  //   const byId = Variable (sql<Params>`where player.id = ${p => p.id}`);
 
   //   const rootNode = Root<Params> (
   //     Table ("player"),

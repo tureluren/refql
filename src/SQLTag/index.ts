@@ -1,5 +1,6 @@
 import { flConcat, flEmpty, flMap, refqlType } from "../common/consts";
 import { TagFunctionVariable, Querier } from "../common/types";
+import unimplemented from "../common/unimplemented";
 import { ASTNode } from "../nodes";
 import Table from "../Table";
 import formatSQLString from "./formatSQLString";
@@ -12,16 +13,16 @@ interface InterpretedSQLTag<Params> {
   values: TagFunctionVariable<Params>[];
 }
 
-interface SQLTag<Params, Output, InRQL extends boolean = false> {
+interface SQLTag<Params, InRQL extends boolean = true> {
   nodes: ASTNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
-  concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
-  [flConcat]: SQLTag<Params, Output>["concat"];
-  map<Params2, Output2>(f: (values: ASTNode<Params>[]) => ASTNode<Params2>[]): SQLTag<Params2, Output2>;
-  [flMap]: SQLTag<Params, Output>["map"];
+  concat<Params2, InRQL2 extends boolean = false>(other: SQLTag<Params2, InRQL2>): SQLTag<Params & Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
+  [flConcat]: SQLTag<Params>["concat"];
+  map<Params2, InRQL2 extends boolean = false>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): SQLTag<Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
+  [flMap]: SQLTag<Params>["map"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params?: Params, table?: Table): [string, any[]];
-  run(querier: Querier, params?: Params): Promise<Output[]>;
+  run<Output>(querier: Querier, params?: Params): Promise<Output[]>;
 }
 
 const type = "refql/SQLTag";
@@ -38,29 +39,31 @@ const prototype = {
   run
 };
 
-function SQLTag<Params, Output, InRQL extends boolean = false>(nodes: ASTNode<Params>[]) {
-  let tag: SQLTag<Params, Output, InRQL> = Object.create (prototype);
+function SQLTag<Params, InRQL extends boolean = true>(nodes: ASTNode<Params>[]) {
+  let tag: SQLTag<Params, InRQL> = Object.create (prototype);
   tag.nodes = nodes;
 
   return tag;
 }
 
-function concat(this: SQLTag<unknown, unknown>, other: SQLTag<unknown, unknown>) {
+function concat(this: SQLTag<unknown>, other: SQLTag<unknown>) {
   return SQLTag (this.nodes.concat (other.nodes));
 }
 
-function map(this: SQLTag<unknown, unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<unknown>[]) {
-  return SQLTag<unknown, unknown> (f (this.nodes));
+function map(this: SQLTag<unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<unknown>[]) {
+  return SQLTag<unknown> (f (this.nodes));
 }
 
-function interpret(this: SQLTag<unknown, unknown>): InterpretedSQLTag<unknown> {
+const unsupported = unimplemented ("SQLTag");
+
+function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
   const strings = [] as StringFunction<unknown>[];
   const values = [] as TagFunctionVariable<unknown>[];
 
   for (const node of this.nodes) {
-    node.caseOf<unknown> ({
+    node.caseOf<void, false> ({
       Raw: run => {
-        strings.push ((p, _i, t) => [run (p, t), 0]);
+        strings.push ((p, _i, t) => [`${run (p, t)}`, 0]);
       },
       Value: run => {
         values.push ((p, t) => [run (p, t)]);
@@ -93,14 +96,28 @@ function interpret(this: SQLTag<unknown, unknown>): InterpretedSQLTag<unknown> {
 
           return [s.join (", "), n];
         });
-      }
+      },
+
+      Identifier: unsupported ("Identifier"),
+      BelongsTo: unsupported ("BelongsTo"),
+      BelongsToMany: unsupported ("BelongsToMany"),
+      HasMany: unsupported ("HasMany"),
+      HasOne: unsupported ("HasOne"),
+      All: unsupported ("All"),
+      Variable: unsupported ("Variable"),
+      Ref: unsupported ("Ref"),
+      Call: unsupported ("Call"),
+      StringLiteral: unsupported ("StringLiteral"),
+      NumericLiteral: unsupported ("NumericLiteral"),
+      BooleanLiteral: unsupported ("BooleanLiteral"),
+      NullLiteral: unsupported ("NullLiteral")
     });
   }
 
   return { strings, values };
 }
 
-function compile(this: SQLTag<unknown, unknown>, params: unknown = {}, table?: Table) {
+function compile(this: SQLTag<unknown>, params: unknown = {}, table?: Table) {
   if (!this.interpreted) {
     this.interpreted = this.interpret ();
   }
@@ -116,11 +133,11 @@ function compile(this: SQLTag<unknown, unknown>, params: unknown = {}, table?: T
       }, ["", 0])[0]
     ),
 
-    values.map (f => f (params)).flat (1)
+    values.map (f => f (params, table as Table)).flat (1)
   ];
 }
 
-function run(this: SQLTag<unknown, unknown>, querier: Querier, params: unknown = {}) {
+function run(this: SQLTag<unknown>, querier: Querier, params: unknown = {}) {
   return new Promise ((res, rej) => {
     let query, values;
     try {
@@ -136,9 +153,9 @@ function run(this: SQLTag<unknown, unknown>, querier: Querier, params: unknown =
 
 SQLTag.empty = SQLTag[flEmpty] = function () {
   return sql``;
-} as () => SQLTag<unknown, unknown>;
+} as <Params, InRQL extends boolean = true>() => SQLTag<Params, InRQL>;
 
-SQLTag.isSQLTag = function <Params, Output> (value: any): value is SQLTag<Params, Output> {
+SQLTag.isSQLTag = function <Params, InRQL extends boolean = true> (value: any): value is SQLTag<Params, InRQL> {
   return value != null && value[refqlType] === type;
 };
 

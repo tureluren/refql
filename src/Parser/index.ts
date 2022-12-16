@@ -1,10 +1,9 @@
 import {
   All, all, ASTNode, BooleanLiteral, Call,
   Identifier, isLiteral, Literal, NullLiteral,
-  NumericLiteral, Root, StringLiteral, Variable
+  NumericLiteral, StringLiteral, Variable
 } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
-import Raw from "../Raw";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Tokenizer, { Token, TokenType } from "../Tokenizer";
@@ -39,7 +38,7 @@ class Parser {
     return all;
   }
 
-  refer(tag: RQLTag<unknown, unknown>, as?: string) {
+  refer(tag: RQLTag<unknown>, as?: string) {
     this.values.splice (this.idx, 1);
 
     if (tag.table.equals (this.table)) {
@@ -108,7 +107,7 @@ class Parser {
     return Call (identifier.name, this.arguments (), identifier.as, identifier.cast);
   }
 
-  members(): ASTNode<unknown>[] {
+  nodes(): ASTNode<unknown>[] {
     const members = [];
 
     while (!this.isNext ("EOT")) {

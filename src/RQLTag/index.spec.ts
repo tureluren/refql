@@ -4,9 +4,7 @@ import pg from "pg";
 import RQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
-import { Identifier, Value } from "../nodes";
-import Raw from "../Raw";
-import { Player } from "../soccer";
+import { Identifier, Raw } from "../nodes";
 import sql from "../SQLTag/sql";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
@@ -44,7 +42,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("call", async () => {
-    const tag = player<{}, Player>`
+    const tag = player<{}>`
       concat:full_name (upper (last_name), " ", first_name)
       ${sql`limit 1`}
     `;
@@ -59,19 +57,19 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([]);
 
-    const [player1] = await tag.run (querier);
+    const [player1] = await tag.run<any> (querier);
 
     expect (Object.keys (player1)).toEqual (["full_name"]);
   });
 
   test ("merge variable of same table", async () => {
-    const tag = player<{}, Player>`
+    const tag = player<{}>`
       id
       first_name
       ${player`
-        last_name 
-      `} 
-      ${sql`where player.id = 1`} 
+        last_name
+      `}
+      ${sql`where player.id = 1`}
       ${player`
         team_id
         ${sql`order by ${Raw ((_p, t) => `${t}`)}.last_name`}
@@ -89,13 +87,13 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([]);
 
-    const [player1] = await tag.run (querier);
+    const [player1] = await tag.run<any> (querier);
 
     expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team_id"]);
   });
 
   test ("literals", async () => {
-    const tag = player<{}, Player>`
+    const tag = player<{}>`
       "1":one::int
       2:two::text
       true:t::text
@@ -189,36 +187,36 @@ describe ("RQLTag type", () => {
     expect (res.compile ()).toEqual (res2.compile ());
   });
 
-  //   // test ("errors", async () => {
-  //   //   const id = Identifier ("id");
+  // test ("errors", async () => {
+  //   const id = Identifier ("id");
 
-  //   //   expect (() => (RQLTag as any) (id))
-  //   //     .toThrowError (new Error ("RQLTag should hold a Root node"));
+  //   expect (() => (RQLTag as any) (id))
+  //     .toThrowError (new Error ("RQLTag should hold a Root node"));
 
-  //   //   expect (() => player`id`.concat (team`id`))
-  //   //     .toThrowError (new Error ("U can't concat RQLTags with a different root table"));
+  //   expect (() => player`id`.concat (team`id`))
+  //     .toThrowError (new Error ("U can't concat RQLTags with a different root table"));
 
-  //   //   try {
-  //   //     const tag = RQLTag (Root (player, []));
-  //   //     (tag as any).node = id;
+  //   try {
+  //     const tag = RQLTag (Root (player, []));
+  //     (tag as any).node = id;
 
-  //   //     await tag.run (() => Promise.resolve ([]), undefined);
-  //   //   } catch (err: any) {
-  //   //     expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
-  //   //   }
+  //     await tag.run (() => Promise.resolve ([]), undefined);
+  //   } catch (err: any) {
+  //     expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
+  //   }
 
-  //   //   try {
-  //   //     const tag = RQLTag (Root (player, []));
-  //   //     delete (tag as any).node.table;
+  //   try {
+  //     const tag = RQLTag (Root (player, []));
+  //     delete (tag as any).node.table;
 
-  //   //     await tag.run (() => Promise.resolve ([]), {});
-  //   //   } catch (err: any) {
-  //   //     expect (err.message).toBe ("The Root node has no table");
-  //   //   }
-  //   // });
+  //     await tag.run (() => Promise.resolve ([]), {});
+  //   } catch (err: any) {
+  //     expect (err.message).toBe ("The Root node has no table");
+  //   }
+  // });
 
   test ("aggregate", async () => {
-    const tag = player<{}, Player>`
+    const tag = player<{}>`
       id
       first_name
       ${player`
@@ -245,7 +243,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const players = await tag.run (querier, {});
+    const players = await tag.run<any> (querier, {});
     const player1 = players[0];
     const playerTeam = player1.team;
     const teammate = playerTeam.players[0];
@@ -262,50 +260,42 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (30);
   });
 
-  //   // test ("simplistic", async () => {
-  //   //   const tag = player<{}, Player>`
-  //   //     ${team}
-  //   //     ${game}
-  //   //     ${sql`
-  //   //       limit 30
-  //   //     `}
-  //   //   `;
-
-  //   //   const players = await tag.run (querier, {});
-  //   //   const player1 = players[0];
-  //   //   const playerTeam = player1.team;
-  //   //   const playerGame = player1.games[0];
-
-  //   //   expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "cars", "birthday", "team_id", "position_id", "team", "games"]);
-  //   //   expect (Object.keys (playerTeam)).toEqual (["id", "name", "league_id"]);
-  //   //   expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
-  //   // });
-
-  test ("concat", async () => {
-    const taggie = player<{id: number}, Player>`
+  test ("simplistic", async () => {
+    const tag = player<{}>`
+      ${team}
+      ${game}
       ${sql`
-        ${Raw ((p, t) => null)} 
-        ${Value ((p, t) => null)}
-        ${(a, b, c) => null}
+        limit 30
       `}
     `;
 
-    const tag = player<{}, { id: number; first_name: string}>`
+    const players = await tag.run<any> (querier, {});
+    const player1 = players[0];
+    const playerTeam = player1.team;
+    const playerGame = player1.games[0];
+
+    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "cars", "birthday", "team_id", "position_id", "team", "games"]);
+    expect (Object.keys (playerTeam)).toEqual (["id", "name", "league_id"]);
+    expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
+  });
+
+  test ("concat", async () => {
+    const tag = player<{}>`
       id
       first_name
     `;
 
-    const tag2 = player<{}, { last_name: string; team: {name: string}}>`
+    const tag2 = player<{}>`
       last_name
       ${team`
-        name 
+        name
       `}
       ${sql`
         limit 30
       `}
     `;
 
-    const players = await tag.concat (tag2).run (querier, {});
+    const players = await tag.concat (tag2).run<any> (querier, {});
     const player1 = players[0];
     const playerTeam = player1.team;
 
@@ -315,14 +305,14 @@ describe ("RQLTag type", () => {
   });
 
   test ("By id", async () => {
-    const tag = player<{}, Player>`
+    const tag = player<{}>`
       *
       ${sql`
         where ${Raw ((_p, t) => t!.name)}.id = 1
       `}
     `;
 
-    const players = await tag.run (querier, {});
+    const players = await tag.run<any> (querier, {});
     const player1 = players[0];
 
     expect (player1.id).toBe (1);
@@ -330,17 +320,39 @@ describe ("RQLTag type", () => {
   });
 
   test ("No record found", async () => {
-    const tag = player<{}, Player>`
-      ${goal`
+    const goals = goal`
+      *
+    `;
+
+    const tag = player`
+      ${team`
         *
       `}
+      ${goals}
       ${sql`
         where player.id = 999999999
       `}
     `;
 
-    const players = await tag.run (querier, {});
+    const players = await tag.run (querier);
 
     expect (players.length).toBe (0);
+  });
+
+  test ("REMOVE THIS", async () => {
+    const tag = player`
+      idd
+      ${sql`
+        limit 1
+      `}
+    `;
+
+    const swll = sql`
+      id 
+    `;
+
+    // const [player1] = await tag.run (querier);
+
+    // console.log (player1);
   });
 });

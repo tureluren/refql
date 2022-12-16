@@ -1,35 +1,34 @@
 import {
-  BelongsToInfo, BelongsToManyInfo,
-  HasManyInfo, HasOneInfo, TagFunctionVariable, RefQLValue
+  TagFunctionVariable, ValueType, RefInfo
 } from "../common/types";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
-import Table from "../Table";
 
-type StructureMap<Params, Return> = Partial<{
-  BelongsTo: (tag: RQLTag<Params, unknown>, info: BelongsToInfo) => Return;
-  BelongsToMany: (tag: RQLTag<Params, unknown>, info: BelongsToManyInfo) => Return;
-  HasMany: (tag: RQLTag<Params, unknown>, info: HasManyInfo) => Return;
-  HasOne: (tag: RQLTag<Params, unknown>, info: HasOneInfo) => Return;
+type StructureMap<Params, Return, InRQL extends boolean = true> = {
+  BelongsTo: (tag: RQLTag<Params>, info: RefInfo) => Return;
+  BelongsToMany: (tag: RQLTag<Params>, info: Required<RefInfo>) => Return;
+  HasMany: (tag: RQLTag<Params>, info: RefInfo) => Return;
+  HasOne: (tag: RQLTag<Params>, info: RefInfo) => Return;
   All: (sign: string) => Return;
   Identifier: (name: string, as?: string, cast?: string) => Return;
-  Variable: (value: RefQLValue<Params, true>, as?: string, cast?: string) => Return;
-  Call: (tag: SQLTag<Params, unknown>) => Return;
+  Variable: (value: SQLTag<Params> | ValueType, as?: string, cast?: string) => Return;
+  Call: (tag: SQLTag<Params>, name: string, as?: string, cast?: string) => Return;
+  Ref: (name: string, as: string) => Return;
   StringLiteral: (value: string, as?: string, cast?: string) => Return;
   NumericLiteral: (value: number, as?: string, cast?: string) => Return;
   BooleanLiteral: (value: boolean, as?: string, cast?: string) => Return;
   NullLiteral: (value: null, as?: string, cast?: string) => Return;
-  Raw: (run: TagFunctionVariable<Params>) => Return;
-  Value: (run: TagFunctionVariable<Params>) => Return;
-  Values: (run: (params: Params, table?: Table) => any[]) => Return;
-  Values2D: (run: (params: Params, table?: Table) => any[][]) => Return;
-}>;
+  Raw: (run: TagFunctionVariable<Params, InRQL>) => Return;
+  Value: (run: TagFunctionVariable<Params, InRQL>) => Return;
+  Values: (run: TagFunctionVariable<Params, InRQL, any[]>) => Return;
+  Values2D: (run: TagFunctionVariable<Params, InRQL, any[][]>) => Return;
+};
 
 interface ASTNode<Params> {
-  caseOf<Return>(structureMap: StructureMap<Params, Return>): Return;
+  caseOf<Return, InRQL extends boolean = true>(structureMap: StructureMap<Params, Return, InRQL>): Return;
 }
 
-const astNode = Symbol ("@@ASTNode");
+const astNode: symbol = Symbol ("@@ASTNode");
 
 export const astNodePrototype = {
   [astNode]: true
