@@ -1,9 +1,8 @@
 import { flConcat, flEmpty, flMap, refqlType } from "../common/consts";
 import { TagFunctionVariable, Querier } from "../common/types";
 import unimplemented from "../common/unimplemented";
-import { ASTNode } from "../nodes";
+import { ASTNode, Raw } from "../nodes";
 import Table from "../Table";
-import formatSQLString from "./formatSQLString";
 import sql from "./sql";
 
 type StringFunction <Params> = (params: Params, idx: number, table?: Table) => [string, number];
@@ -17,6 +16,7 @@ interface SQLTag<Params, InRQL extends boolean = true> {
   nodes: ASTNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
   concat<Params2, InRQL2 extends boolean = false>(other: SQLTag<Params2, InRQL2>): SQLTag<Params & Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
+  join<Params2, InRQL2 extends boolean = false>(delimiter: string, other: SQLTag<Params2, InRQL2>): SQLTag<Params & Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
   [flConcat]: SQLTag<Params>["concat"];
   map<Params2, InRQL2 extends boolean = false>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): SQLTag<Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
   [flMap]: SQLTag<Params>["map"];
@@ -31,6 +31,7 @@ const prototype = {
   [refqlType]: type,
   constructor: SQLTag,
   concat,
+  join,
   [flConcat]: concat,
   map,
   [flMap]: map,
@@ -47,7 +48,19 @@ function SQLTag<Params, InRQL extends boolean = true>(nodes: ASTNode<Params>[]) 
 }
 
 function concat(this: SQLTag<unknown>, other: SQLTag<unknown>) {
-  return SQLTag (this.nodes.concat (other.nodes));
+  if (!this.nodes.length) return other;
+
+  if (!other.nodes.length) return this;
+
+  return SQLTag (this.nodes.concat (Raw (" "), ...other.nodes));
+}
+
+function join(this: SQLTag<unknown>, delimiter: string, other: SQLTag<unknown>) {
+  if (!this.nodes.length) return other;
+
+  if (!other.nodes.length) return this;
+
+  return SQLTag (this.nodes.concat (Raw (delimiter), ...other.nodes));
 }
 
 function map(this: SQLTag<unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<unknown>[]) {
@@ -59,6 +72,8 @@ const unsupported = unimplemented ("SQLTag");
 function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
   const strings = [] as StringFunction<unknown>[];
   const values = [] as TagFunctionVariable<unknown>[];
+
+  // TABLE ???
 
   for (const node of this.nodes) {
     node.caseOf<void, false> ({
@@ -125,13 +140,11 @@ function compile(this: SQLTag<unknown>, params: unknown = {}, table?: Table) {
   const { strings, values } = this.interpreted;
 
   return [
-    formatSQLString (
-      strings.reduce (([query, idx]: [string, number], f): [string, number] => {
-        const [s, n] = f (params, idx, table);
+    strings.reduce (([query, idx]: [string, number], f): [string, number] => {
+      const [s, n] = f (params, idx, table);
 
-        return [`${query} ${s}`, idx + n];
-      }, ["", 0])[0]
-    ),
+      return [`${query}${s}`, idx + n];
+    }, ["", 0])[0],
 
     values.map (f => f (params, table as Table)).flat (1)
   ];

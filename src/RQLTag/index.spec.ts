@@ -43,14 +43,14 @@ describe ("RQLTag type", () => {
 
   test ("call", async () => {
     const tag = player<{}>`
-      concat:full_name (upper (last_name), " ", first_name)
+      concat:full_name (first_name, " ", upper(last_name))
       ${sql`limit 1`}
     `;
 
     const [query, values] = tag.compile ();
 
     expect (query).toBe (format (`
-      select concat (upper (player.last_name), ' ', player.first_name) full_name
+      select concat (player.first_name, ' ', upper (player.last_name)) full_name
       from player
       limit 1
     `));
@@ -92,8 +92,8 @@ describe ("RQLTag type", () => {
     expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team_id"]);
   });
 
-  test ("literals", async () => {
-    const tag = player<{}>`
+   test ("literals", async () => {
+     const tag = player<{}>`
       "1":one::int
       2:two::text
       true:t::text
@@ -102,7 +102,7 @@ describe ("RQLTag type", () => {
       ${sql`limit 1`}
     `;
 
-    const [query, values] = tag.compile ();
+     const [query, values] = tag.compile ();
 
     expect (query).toBe (format (`
       select '1'::int one, 2::text two, true::text t, false::text f, null::text n
@@ -115,36 +115,36 @@ describe ("RQLTag type", () => {
     const [player1] = await tag.run (querier);
 
     expect (player1).toEqual ({ one: 1, two: "2", t: "true", f: "false", n: null });
-  });
+   });
 
-  //   // test ("parser errors", () => {
-  //   //   expect (() => player`id, last_name`)
-  //   //     .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
+   //  //  // //   // test ("parser errors", () => {
+   //  //  // //   //   expect (() => player`id, last_name`)
+   //  //  // //   //     .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
 
-  //   //   expect (() => player`concat(*)`)
-  //   //     .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
+   //  //  // //   //   expect (() => player`concat(*)`)
+   //  //  // //   //     .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
 
-  //   //   expect (() => player`concat(${player})`)
-  //   //     .toThrowError (new SyntaxError ("U can't use a Table as a function argument"));
+   //  //  // //   //   expect (() => player`concat(${player})`)
+   //  //  // //   //     .toThrowError (new SyntaxError ("U can't use a Table as a function argument"));
 
-  //   //   expect (() => player`concat(${player``})`)
-  //   //     .toThrowError (new SyntaxError ("U can't use a RQLTag as a function argument"));
+   //  //  // //   //   expect (() => player`concat(${player``})`)
+   //  //  // //   //     .toThrowError (new SyntaxError ("U can't use a RQLTag as a function argument"));
 
-  //   //   expect (() => player`${league`*`}`)
-  //   //     .toThrowError (new SyntaxError ("player has no ref defined for: league"));
+   //  //  // //   //   expect (() => player`${league`*`}`)
+   //  //  // //   //     .toThrowError (new SyntaxError ("player has no ref defined for: league"));
 
-  //   //   expect (() => player`${["name"]}`)
-  //   //     .toThrowError (new SyntaxError ("Invalid dynamic members, expected Array of ASTNode"));
+   //  //  // //   //   expect (() => player`${["name"]}`)
+   //  //  // //   //     .toThrowError (new SyntaxError ("Invalid dynamic members, expected Array of ASTNode"));
 
-  //   //   expect (() => player`${[all]} last_name`)
-  //   //     .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: "EOT"'));
+   //  //  // //   //   expect (() => player`${[all]} last_name`)
+   //  //  // //   //     .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: "EOT"'));
 
-  //   //   const parser = new Parser ("*", [], player);
-  //   //   parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };
+   //  //  // //   //   const parser = new Parser ("*", [], player);
+   //  //  // //   //   parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };
 
-  //   //   expect (() => parser.Literal ())
-  //   //     .toThrowError (new SyntaxError ('Unknown Literal: "DOUBLE"'));
-  //   // });
+   //  //  // //   //   expect (() => parser.Literal ())
+   //  //  // //   //     .toThrowError (new SyntaxError ('Unknown Literal: "DOUBLE"'));
+   //  //  // //   // });
 
   test ("Semigroup", () => {
     const tag = player`id`;
@@ -187,33 +187,33 @@ describe ("RQLTag type", () => {
     expect (res.compile ()).toEqual (res2.compile ());
   });
 
-  // test ("errors", async () => {
-  //   const id = Identifier ("id");
+  //  //   // // test ("errors", async () => {
+  //  //   // //   const id = Identifier ("id");
 
-  //   expect (() => (RQLTag as any) (id))
-  //     .toThrowError (new Error ("RQLTag should hold a Root node"));
+  //  //   // //   expect (() => (RQLTag as any) (id))
+  //  //   // //     .toThrowError (new Error ("RQLTag should hold a Root node"));
 
-  //   expect (() => player`id`.concat (team`id`))
-  //     .toThrowError (new Error ("U can't concat RQLTags with a different root table"));
+  //  //   // //   expect (() => player`id`.concat (team`id`))
+  //  //   // //     .toThrowError (new Error ("U can't concat RQLTags with a different root table"));
 
-  //   try {
-  //     const tag = RQLTag (Root (player, []));
-  //     (tag as any).node = id;
+  //  //   // //   try {
+  //  //   // //     const tag = RQLTag (Root (player, []));
+  //  //   // //     (tag as any).node = id;
 
-  //     await tag.run (() => Promise.resolve ([]), undefined);
-  //   } catch (err: any) {
-  //     expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
-  //   }
+  //  //   // //     await tag.run (() => Promise.resolve ([]), undefined);
+  //  //   // //   } catch (err: any) {
+  //  //   // //     expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
+  //  //   // //   }
 
-  //   try {
-  //     const tag = RQLTag (Root (player, []));
-  //     delete (tag as any).node.table;
+  //  //   // //   try {
+  //  //   // //     const tag = RQLTag (Root (player, []));
+  //  //   // //     delete (tag as any).node.table;
 
-  //     await tag.run (() => Promise.resolve ([]), {});
-  //   } catch (err: any) {
-  //     expect (err.message).toBe ("The Root node has no table");
-  //   }
-  // });
+  //  //   // //     await tag.run (() => Promise.resolve ([]), {});
+  //  //   // //   } catch (err: any) {
+  //  //   // //     expect (err.message).toBe ("The Root node has no table");
+  //  //   // //   }
+  //  //   // // });
 
   test ("aggregate", async () => {
     const tag = player<{}>`
@@ -243,6 +243,87 @@ describe ("RQLTag type", () => {
       `}
     `;
 
+    const [query, values, next] = tag.compile ();
+
+    // player
+    expect (query).toBe (format (`
+      select player.id, player.first_name, player.last_name, player.team_id teamlref, player.id gameslref, player.id ratinglref
+      from player
+      limit 30
+    `));
+
+    expect (values).toEqual ([]);
+
+    // team
+    const teamTag = next[0].tag;
+
+    const [teamQuery, teamValues, teamNext] = teamTag.compile ({ refQLRows: [{ teamlref: 1 }, { teamlref: 1 }, { teamlref: 2 }] });
+
+    expect (teamQuery).toBe (format (`
+      select team.id teamrref, team.name, team.league_id leaguelref, team.id playerslref
+      from public.team
+      where team.id in ($1, $2)
+    `));
+
+    expect (teamValues).toEqual ([1, 2]);
+
+    // league
+    const leagueTag = teamNext[0].tag;
+
+    const [leagueQuery, leagueValues, leagueNext] = leagueTag.compile ({ refQLRows: [{ leaguelref: 1 }, { leaguelref: 2 }] });
+
+    expect (leagueQuery).toBe (format (`
+      select league.id leaguerref, league.name
+      from league
+      where league.id in ($1, $2)
+    `));
+
+    expect (leagueValues).toEqual ([1, 2]);
+    expect (leagueNext).toEqual ([]);
+
+    // players
+    const playersTag = teamNext[1].tag;
+
+    const [playersQuery, playersValues, playersNext] = playersTag.compile ({ refQLRows: [{ playerslref: 1 }, { playerslref: 2 }] });
+
+    expect (playersQuery).toBe (format (`
+      select player.team_id playersrref, player.last_name
+      from player
+      where player.team_id in ($1, $2)
+    `));
+
+    expect (playersValues).toEqual ([1, 2]);
+    expect (playersNext).toEqual ([]);
+
+    // game
+    const gamesTag = next[1].tag;
+
+    const [gamesQuery, gamesValues, gamesNext] = gamesTag.compile ({ refQLRows: [{ gameslref: 1 }, { gameslref: 2 }] });
+
+    expect (gamesQuery).toBe (format (`
+      select game_player.player_id gameslxref, game.result from game 
+      join game_player on game_player.game_id = game.id
+      where game_player.player_id in ($1, $2)
+    `));
+
+    expect (gamesValues).toEqual ([1, 2]);
+    expect (gamesNext).toEqual ([]);
+
+    // rating
+    const ratingTag = next[2].tag;
+
+    const [ratingQuery, ratingValues, ratingNext] = ratingTag.compile ({ refQLRows: [{ ratinglref: 1 }, { ratinglref: 2 }] });
+
+    expect (ratingQuery).toBe (format (`
+      select rating.player_id ratingrref, rating.acceleration, rating.stamina
+      from rating
+      where rating.player_id in ($1, $2)
+    `));
+
+    expect (ratingValues).toEqual ([1, 2]);
+    expect (ratingNext).toEqual ([]);
+
+    // db results
     const players = await tag.run<any> (querier, {});
     const player1 = players[0];
     const playerTeam = player1.team;
@@ -339,20 +420,31 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (0);
   });
 
-  test ("REMOVE THIS", async () => {
-    const tag = player`
-      idd
-      ${sql`
-        limit 1
-      `}
-    `;
+  // test ("REMOVE THIS", async () => {
+  //   const tag = player<{id: number; limit: number}>`
+  //     idd
+  //     ${sql<{id: number}>`
+  //       limit 1
+  //     `}
+  //     ${sql<{limit: number}>`
+  //       limit 1
+  //     `}
+  //   `;
 
-    const swll = sql`
-      id 
-    `;
+  //   const tag2 = player`
+  //     idd
+  //     ${sql`
+  //       limit 1
+  //     `}
+  //   `;
 
-    // const [player1] = await tag.run (querier);
 
-    // console.log (player1);
-  });
+  //   const swll = sql`
+  //     id
+  //   `;
+
+  //   // const [player1] = await tag.run (querier);
+
+  //   // console.log (player1);
+  // });
 });

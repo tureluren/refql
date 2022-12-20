@@ -39,7 +39,7 @@ const interpret = <Params>(nodes: ASTNode<Params>[], table: Table) => {
       BelongsToMany: caseOfRef (false),
       Call: (tag, name, as, cast) => {
         members.push (sql`
-          ${Raw (name)} (${tag}) ${Raw (castAs (cast, as))} 
+          ${Raw (name)} (${tag})${Raw (castAs (cast, as))}
         `);
       },
       All: sign => {
@@ -62,7 +62,7 @@ const interpret = <Params>(nodes: ASTNode<Params>[], table: Table) => {
         if (SQLTag.isSQLTag (value)) {
           if (as) {
             members.push (sql`
-              (${value}) ${Raw (castAs (cast, as))} 
+              (${value})${Raw (castAs (cast, as))} 
             `);
           } else {
             sqlTag = sqlTag.concat (value);

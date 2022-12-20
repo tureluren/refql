@@ -24,11 +24,7 @@ export const createNextTagX = <Params>(tag: RQLTag<Params>, info: Required<RefIn
   return tag.table<Params>`
     ${lxRef}
     ${sql`
-      ${Raw (`
-        join ${xTable.name}
-        on ${rxRef.name} = ${rRef.name}
-        where ${lxRef!.name}
-      `)}
+      ${Raw (`join ${xTable.name} on ${rxRef.name} = ${rRef.name} where ${lxRef!.name}`)}
       in ${rowValues (lRef)}
     `}
   `.concat (tag);

@@ -43,14 +43,14 @@ function interpret<Params>(this: Call<Params>) {
     node.caseOf<void> ({
       Call: (call, name, _as, cast) => {
         args.push (sql`
-          ${Raw (name)} (${call}) ${Raw (castAs (cast))}
+          ${Raw (name)} (${call})${Raw (castAs (cast))}
         `);
       },
       Identifier: (name, _as, cast) => {
         args.push (Raw ((_, t) => `${t.name}.${name}${castAs (cast)}`));
       },
       Raw: run => {
-       args.push (Raw (run));
+        args.push (Raw (run));
       },
       StringLiteral: value => {
         args.push (Raw (`'${value}'`));

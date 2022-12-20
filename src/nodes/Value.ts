@@ -23,8 +23,8 @@ function caseOf(this: Value<unknown>, structureMap: StringMap) {
   return structureMap.Value (this.run);
 }
 
-// Param.isParam = function (value: any): value is Identifier {
-//   return value != null && value[refqlType] === type;
-// };
+Value.isValue = function (value: any): value is Value {
+  return value != null && value[refqlType] === type;
+};
 
 export default Value;

@@ -23,7 +23,7 @@ function Raw<Params, InRQL extends boolean = true>(run: boolean | number | strin
 }
 
 function caseOf(this: Raw<unknown>, structureMap: StringMap) {
-  return structureMap.Raw (this.run);
+  return structureMap.Raw (this.run, this.delimiter);
 }
 
 Raw.isRaw = function<Params> (value: any): value is Raw<Params> {
