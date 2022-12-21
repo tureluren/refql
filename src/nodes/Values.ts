@@ -3,7 +3,7 @@ import { StringMap, TagFunctionVariable } from "../common/types";
 import { ASTNode } from "../nodes";
 import { astNodePrototype } from "../nodes/ASTNode";
 
-interface Values<Params, InRQL extends boolean = true> extends ASTNode<Params> {
+interface Values<Params, InRQL extends boolean = true> extends ASTNode<Params, InRQL> {
   run: TagFunctionVariable<Params, InRQL, any[]>;
 }
 

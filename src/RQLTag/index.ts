@@ -1,8 +1,13 @@
+import castAs from "../common/castAs";
 import { flConcat, flMap, refqlType } from "../common/consts";
+import isEmptyTag from "../common/isEmptyTag";
+import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
-import Interpreter from "../Interpreter";
-import { ASTNode } from "../nodes";
+import unimplemented from "../common/unimplemented";
+import { all, ASTNode, Raw, Ref, Value } from "../nodes";
+import { isRefNode } from "../nodes/RefNode";
 import SQLTag from "../SQLTag";
+import sql from "../SQLTag/sql";
 import Table from "../Table";
 
 export interface Next<Params> {
@@ -55,7 +60,7 @@ function RQLTag<Params>(table: Table, nodes: ASTNode<Params>[]) {
 
 function concat(this: RQLTag<unknown>, other: RQLTag<unknown>) {
   if (!this.table.equals (other.table)) {
-    throw new Error ("U can't concat RQLTags with a different root table");
+    throw new Error ("U can't concat RQLTags that come from different tables");
   }
 
   return RQLTag (
@@ -68,13 +73,96 @@ function map(this: RQLTag<unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<un
   return RQLTag (this.table, f (this.nodes));
 }
 
-function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
-  const { tag, next } = Interpreter (this.nodes, this.table);
+const unsupported = unimplemented ("RQLTag");
 
-  return {
-    tag,
-    next
+function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
+  const { nodes, table } = this,
+    next = [] as Next<unknown>[],
+    members = [] as (Raw<unknown> | SQLTag<unknown>)[];
+
+  let sqlTag = SQLTag.empty<unknown> ();
+
+  const caseOfRef = (single: boolean) => (tag: RQLTag<unknown>, info: RefInfo) => {
+    members.push (Raw (`${info.lRef}`));
+    next.push ({ tag, info, single });
   };
+
+  const caseOfLiteral = (value: number | boolean | null, as?: string, cast?: string) => {
+    members.push (Raw (`${value}${castAs (cast, as)}`));
+  };
+
+  for (const node of nodes) {
+    node.caseOf<void> ({
+      BelongsTo: caseOfRef (true),
+      HasOne: caseOfRef (true),
+      HasMany: caseOfRef (false),
+      BelongsToMany: caseOfRef (false),
+      Call: (tag, name, as, cast) => {
+        members.push (sql`
+          ${Raw (name)} (${tag})${Raw (castAs (cast, as))}
+        `);
+      },
+      All: sign => {
+        members.push (
+          Raw (`${table.name}.${sign}`)
+        );
+      },
+      Identifier: (name, as, cast) => {
+        members.push (
+          Raw (`${table.name}.${name}${castAs (cast, as)}`)
+        );
+      },
+      Ref: (name, as) => {
+        members.push (Raw (`${name} ${as}`));
+      },
+      Variable: (value, as, cast) => {
+        if (SQLTag.isSQLTag (value)) {
+          if (as) {
+            members.push (sql`
+              (${value})${Raw (castAs (cast, as))} 
+            `);
+          } else {
+            sqlTag = sqlTag.concat (value);
+          }
+
+        } else {
+          // throw error, gaat enkel in call
+          members.push (sql`
+            ${Value (value)}${Raw (castAs (cast, as))}
+          `);
+        }
+      },
+      NumericLiteral: caseOfLiteral,
+      BooleanLiteral: caseOfLiteral,
+      NullLiteral: caseOfLiteral,
+      StringLiteral: (value, as, cast) => {
+        members.push (Raw (`'${value}'${castAs (cast, as)}`));
+      },
+      Raw: unsupported ("Raw"),
+      Value: unsupported ("Value"),
+      Values: unsupported ("Values"),
+      Values2D: unsupported ("Values2D")
+    });
+  }
+
+  const refMemberLength = nodes.reduce ((n, node) =>
+    isRefNode (node) || Ref.isRef (node) ? n + 1 : n
+  , 0);
+
+  if (refMemberLength === members.length) {
+    members.push (Raw (`${table.name}.${all.sign}`));
+  }
+
+  let tag = sql<unknown>`
+    select ${joinMembers (members)}
+    from ${Raw (`${table}`)}
+  `;
+
+  if (!isEmptyTag (sqlTag)) {
+    tag = tag.concat (sqlTag);
+  }
+
+  return { next, tag };
 }
 
 function compile(this: RQLTag<unknown>, params: unknown = {}) {

@@ -1,4 +1,5 @@
 import { flConcat, flEmpty, flMap, refqlType } from "../common/consts";
+import isEmptyTag from "../common/isEmptyTag";
 import { TagFunctionVariable, Querier } from "../common/types";
 import unimplemented from "../common/unimplemented";
 import { ASTNode, Raw } from "../nodes";
@@ -12,8 +13,8 @@ interface InterpretedSQLTag<Params> {
   values: TagFunctionVariable<Params>[];
 }
 
-interface SQLTag<Params, InRQL extends boolean = true> {
-  nodes: ASTNode<Params>[];
+interface SQLTag<Params, InRQL extends boolean = false> {
+  nodes: ASTNode<Params, InRQL>[];
   interpreted?: InterpretedSQLTag<Params>;
   concat<Params2, InRQL2 extends boolean = false>(other: SQLTag<Params2, InRQL2>): SQLTag<Params & Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
   join<Params2, InRQL2 extends boolean = false>(delimiter: string, other: SQLTag<Params2, InRQL2>): SQLTag<Params & Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
@@ -40,27 +41,22 @@ const prototype = {
   run
 };
 
-function SQLTag<Params, InRQL extends boolean = true>(nodes: ASTNode<Params>[]) {
+function SQLTag<Params, InRQL extends boolean = false>(nodes: ASTNode<Params, InRQL>[]) {
   let tag: SQLTag<Params, InRQL> = Object.create (prototype);
   tag.nodes = nodes;
 
   return tag;
 }
 
-function concat(this: SQLTag<unknown>, other: SQLTag<unknown>) {
-  if (!this.nodes.length) return other;
-
-  if (!other.nodes.length) return this;
-
-  return SQLTag (this.nodes.concat (Raw (" "), ...other.nodes));
-}
-
 function join(this: SQLTag<unknown>, delimiter: string, other: SQLTag<unknown>) {
-  if (!this.nodes.length) return other;
-
-  if (!other.nodes.length) return this;
+  if (isEmptyTag (this)) return other;
+  if (isEmptyTag (other)) return this;
 
   return SQLTag (this.nodes.concat (Raw (delimiter), ...other.nodes));
+}
+
+function concat(this: SQLTag<unknown>, other: SQLTag<unknown>) {
+  return this.join (" ", other);
 }
 
 function map(this: SQLTag<unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<unknown>[]) {
@@ -76,7 +72,7 @@ function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
   // TABLE ???
 
   for (const node of this.nodes) {
-    node.caseOf<void, false> ({
+    node.caseOf<void> ({
       Raw: run => {
         strings.push ((p, _i, t) => [`${run (p, t)}`, 0]);
       },

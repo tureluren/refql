@@ -1,19 +1,14 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Querier, RQLTagVariable, StringMap } from "../common/types";
-import RefNode from "../nodes/RefNode";
-import Parser from "../Parser";
+import { Querier, RefMakerPair, RQLTagVariable } from "../common/types";
+import Parser from "../RQLTag/Parser";
 import RQLTag from "../RQLTag";
 
-export type Refs = [
-  Table,
-  (parent: Table, tag: RQLTag<unknown>, as?: string) => RefNode<unknown>
-][];
 
 interface Table {
   <Params>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params>[]): RQLTag<Params>;
   name: string;
   schema?: string;
-  refs: Refs;
+  refs: RefMakerPair[];
   equals(other: Table): boolean;
   empty<Params>(): RQLTag<Params>;
   toString(): string;
@@ -33,7 +28,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   run
 });
 
-function Table(name: string, refs?: Refs) {
+function Table(name: string, refs?: RefMakerPair[]) {
 
   const table = (<Params>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params>[]) => {
     const parser = new Parser (strings.join ("$"), variables, table);

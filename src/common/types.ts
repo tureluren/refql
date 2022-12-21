@@ -1,4 +1,5 @@
 import { ASTNode, Raw, Ref, Value, Values, Values2D } from "../nodes";
+import RefNode from "../nodes/RefNode";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
@@ -53,22 +54,23 @@ export type TagFunctionVariable<Params, InRQL extends boolean = true, Return = V
 
 export type SQLTagVariable<Params, InRQL extends boolean = true> =
   | SQLTag<Params, InRQL>
-  | Value<Params, InRQL>
-  | Values<Params, InRQL>
-  | Values2D<Params, InRQL>
-  | Raw<Params, InRQL>
   | TagFunctionVariable<Params, InRQL>
+  | ASTNode<Params, InRQL>
   | ValueType;
 
 export type RQLTagVariable<Params> =
   | RQLTag<Params>
   | SQLTag<Params>
   | Table
-  | Raw<Params>
   | TagFunctionVariable<Params>
-  | ASTNode<Params>[]
-  | Ref;
+  | ASTNode<Params>
+  | ASTNode<Params>[];
 
 export interface RefQLRows {
   refQLRows: any[];
 }
+
+export type RefMakerPair = [
+  Table,
+  (parent: Table, tag: RQLTag<unknown>, as?: string) => RefNode<unknown>
+];

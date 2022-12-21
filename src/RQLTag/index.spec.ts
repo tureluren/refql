@@ -4,14 +4,16 @@ import pg from "pg";
 import RQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
-import { Identifier, Raw } from "../nodes";
+import { all, BelongsTo, BelongsToMany, HasMany, HasOne, Identifier, Raw, Value, Values, Values2D } from "../nodes";
 import sql from "../SQLTag/sql";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { game, goal, league, player, rating, team } from "../test/tables";
+import { dummy, dummyRefInfo, game, goal, league, player, rating, team } from "../test/tables";
 import userConfig from "../test/userConfig";
+import Parser from "./Parser";
+import { TokenType } from "./Tokenizer";
 
 describe ("RQLTag type", () => {
   let pool: any;
@@ -41,16 +43,18 @@ describe ("RQLTag type", () => {
     expect (RQLTag.isRQLTag ({})).toBe (false);
   });
 
-  test ("call", async () => {
-    const tag = player<{}>`
-      concat:full_name (first_name, " ", upper(last_name))
+  test ("Dynamic nodes", async () => {
+    const tag = player`
+      ${Identifier ("id")}
+      ${[Identifier ("first_name"), Identifier ("last_name")]}
+      ${Identifier ("birthday")}
       ${sql`limit 1`}
     `;
 
     const [query, values] = tag.compile ();
 
     expect (query).toBe (format (`
-      select concat (player.first_name, ' ', upper (player.last_name)) full_name
+      select player.id, player.first_name, player.last_name, player.birthday
       from player
       limit 1
     `));
@@ -59,7 +63,33 @@ describe ("RQLTag type", () => {
 
     const [player1] = await tag.run<any> (querier);
 
-    expect (Object.keys (player1)).toEqual (["full_name"]);
+    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "birthday"]);
+  });
+
+  test ("calls and subselects", async () => {
+    const tag = player<{}>`
+      concat:full_name (first_name, " ", upper(last_name))
+      concat:literals (true, null, false, true, 'one')
+      ${sql`select count (*) from goal where goal.player_id = ${Raw ((_p, t) => `${t.name}.id`)}`}:no_of_goals
+      ${sql`limit 1`}
+    `;
+
+    const [query, values] = tag.compile ();
+
+    expect (query).toBe (format (`
+      select
+        concat (player.first_name, ' ', upper (player.last_name)) full_name,
+        concat (true, null, false, true, 'one') literals,
+        (select count (*) from goal where goal.player_id = player.id) no_of_goals
+      from player
+      limit 1
+    `));
+
+    expect (values).toEqual ([]);
+
+    const [player1] = await tag.run<any> (querier);
+
+    expect (Object.keys (player1)).toEqual (["full_name", "literals", "no_of_goals"]);
   });
 
   test ("merge variable of same table", async () => {
@@ -117,35 +147,6 @@ describe ("RQLTag type", () => {
     expect (player1).toEqual ({ one: 1, two: "2", t: "true", f: "false", n: null });
    });
 
-   //  //  // //   // test ("parser errors", () => {
-   //  //  // //   //   expect (() => player`id, last_name`)
-   //  //  // //   //     .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
-
-   //  //  // //   //   expect (() => player`concat(*)`)
-   //  //  // //   //     .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
-
-   //  //  // //   //   expect (() => player`concat(${player})`)
-   //  //  // //   //     .toThrowError (new SyntaxError ("U can't use a Table as a function argument"));
-
-   //  //  // //   //   expect (() => player`concat(${player``})`)
-   //  //  // //   //     .toThrowError (new SyntaxError ("U can't use a RQLTag as a function argument"));
-
-   //  //  // //   //   expect (() => player`${league`*`}`)
-   //  //  // //   //     .toThrowError (new SyntaxError ("player has no ref defined for: league"));
-
-   //  //  // //   //   expect (() => player`${["name"]}`)
-   //  //  // //   //     .toThrowError (new SyntaxError ("Invalid dynamic members, expected Array of ASTNode"));
-
-   //  //  // //   //   expect (() => player`${[all]} last_name`)
-   //  //  // //   //     .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: "EOT"'));
-
-   //  //  // //   //   const parser = new Parser ("*", [], player);
-   //  //  // //   //   parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };
-
-   //  //  // //   //   expect (() => parser.Literal ())
-   //  //  // //   //     .toThrowError (new SyntaxError ('Unknown Literal: "DOUBLE"'));
-   //  //  // //   // });
-
   test ("Semigroup", () => {
     const tag = player`id`;
     const tag2 = player`first_name last_name`;
@@ -187,33 +188,6 @@ describe ("RQLTag type", () => {
     expect (res.compile ()).toEqual (res2.compile ());
   });
 
-  //  //   // // test ("errors", async () => {
-  //  //   // //   const id = Identifier ("id");
-
-  //  //   // //   expect (() => (RQLTag as any) (id))
-  //  //   // //     .toThrowError (new Error ("RQLTag should hold a Root node"));
-
-  //  //   // //   expect (() => player`id`.concat (team`id`))
-  //  //   // //     .toThrowError (new Error ("U can't concat RQLTags with a different root table"));
-
-  //  //   // //   try {
-  //  //   // //     const tag = RQLTag (Root (player, []));
-  //  //   // //     (tag as any).node = id;
-
-  //  //   // //     await tag.run (() => Promise.resolve ([]), undefined);
-  //  //   // //   } catch (err: any) {
-  //  //   // //     expect (err.message).toBe ("You can only run a RQLTag that holds a Root node");
-  //  //   // //   }
-
-  //  //   // //   try {
-  //  //   // //     const tag = RQLTag (Root (player, []));
-  //  //   // //     delete (tag as any).node.table;
-
-  //  //   // //     await tag.run (() => Promise.resolve ([]), {});
-  //  //   // //   } catch (err: any) {
-  //  //   // //     expect (err.message).toBe ("The Root node has no table");
-  //  //   // //   }
-  //  //   // // });
 
   test ("aggregate", async () => {
     const tag = player<{}>`
@@ -420,31 +394,78 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (0);
   });
 
-  // test ("REMOVE THIS", async () => {
-  //   const tag = player<{id: number; limit: number}>`
-  //     idd
-  //     ${sql<{id: number}>`
-  //       limit 1
-  //     `}
-  //     ${sql<{limit: number}>`
-  //       limit 1
-  //     `}
-  //   `;
+  test ("errors", () => {
+    expect (() => player`id last_name`.concat (team`id name`))
+      .toThrowError (new Error ("U can't concat RQLTags that come from different tables"));
+  });
 
-  //   const tag2 = player`
-  //     idd
-  //     ${sql`
-  //       limit 1
-  //     `}
-  //   `;
+  test ("parser errors", () => {
+    expect (() => player`id, last_name`)
+      .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
 
+    expect (() => player`concat(*)`)
+      .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
 
-  //   const swll = sql`
-  //     id
-  //   `;
+    expect (() => player`${league`*`}`)
+      .toThrowError (new Error ("player has no ref defined for: league"));
 
-  //   // const [player1] = await tag.run (querier);
+    expect (() => player`${["name" as any]}`)
+      .toThrowError (new Error ("Invalid dynamic members, expected Array of ASTNode"));
 
-  //   // console.log (player1);
-  // });
+    const parser = new Parser ("*", [], player);
+    parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };
+
+    expect (() => parser.Literal ())
+      .toThrowError (new SyntaxError ('Unknown Literal: "DOUBLE"'));
+
+    parser.lookahead = { type: "NUMBER", value: "1" };
+
+    expect (() => parser.eat ("STRING"))
+      .toThrowError (new SyntaxError ('Unexpected token: "1", expected: "STRING"'));
+  });
+
+  test ("unimplemented by RQLTag", async () => {
+
+    expect (() => player`id ${Raw ("last_name")}`.compile ())
+      .toThrowError (new Error ("Unimplemented by RQLTag: Raw"));
+
+    expect (() => player`id ${Value (1)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by RQLTag: Value"));
+
+    expect (() => player`id ${Values ([])}`.compile ())
+      .toThrowError (new Error ("Unimplemented by RQLTag: Values"));
+
+    expect (() => player`id ${Values2D ([[]])}`.compile ())
+      .toThrowError (new Error ("Unimplemented by RQLTag: Values2D"));
+  });
+
+  test ("unimplemented by Call", async () => {
+    expect (() => player`concat (${BelongsTo (dummyRefInfo, dummy`*`)})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: BelongsTo"));
+
+    expect (() => player`concat (${BelongsToMany (dummyRefInfo, dummy`*`)})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: BelongsToMany"));
+
+    expect (() => player`concat (${HasOne (dummyRefInfo, dummy`*`)})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: HasOne"));
+
+    expect (() => player`concat (${HasMany (dummyRefInfo, dummy`*`)})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: HasMany"));
+
+    expect (() => player`concat (${all})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: All"));
+
+    expect (() => player`concat (${dummyRefInfo.lRef})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: Ref"));
+
+    expect (() => player`concat(${Value (1)})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: Value"));
+
+    expect (() => player`concat (${Values ([])})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: Values"));
+
+    expect (() => player`concat (${Values2D ([[]])})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: Values2D"));
+
+  });
 });

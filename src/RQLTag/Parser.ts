@@ -1,12 +1,11 @@
+import RQLTag from ".";
 import {
   All, all, ASTNode, BooleanLiteral, Call,
-  Identifier, isLiteral, Literal, NullLiteral,
+  Identifier, isASTNode, isLiteral, Literal, NullLiteral,
   NumericLiteral, StringLiteral, Variable
 } from "../nodes";
-import { isASTNode } from "../nodes/ASTNode";
-import RQLTag from "../RQLTag";
 import Table from "../Table";
-import Tokenizer, { Token, TokenType } from "../Tokenizer";
+import Tokenizer, { Token, TokenType } from "./Tokenizer";
 
 class Parser {
   str: string;
@@ -58,7 +57,7 @@ class Parser {
     return ref[1] (this.table, tag, as);
   }
 
-  Variable(inCall = false) {
+  Variable() {
     this.eat ("VARIABLE");
     const value = this.values[this.idx];
     const [as, cast] = this.castAs ();
@@ -68,7 +67,7 @@ class Parser {
       if (
         !value.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && isASTNode (m), true)
       ) {
-        throw new SyntaxError ("Invalid dynamic members, expected Array of ASTNode");
+        throw new Error ("Invalid dynamic members, expected Array of ASTNode");
       }
 
       this.values.splice (this.idx, 1);
@@ -77,17 +76,11 @@ class Parser {
     }
 
     if (Table.isTable (value)) {
-      if (!inCall) {
-        return this.refer (value.empty (), as);
-      }
-      throw new Error ("U can't use a Table as a function argument");
+      return this.refer (value.empty (), as);
     }
 
     if (RQLTag.isRQLTag (value)) {
-      if (!inCall) {
-        return this.refer (value, as);
-      }
-      throw new Error ("U can't use a RQLTag as a function argument");
+      return this.refer (value, as);
     }
 
     if (isASTNode (value)) {
@@ -97,6 +90,7 @@ class Parser {
       return value;
     }
 
+    // moet sqlTag zijn, spliceVar niemeer nodig en idx ? ?
     const variable = Variable (value, as, cast);
     this.idx += 1;
 
@@ -166,8 +160,6 @@ class Parser {
     return [as, cast];
   }
 
-
-
   Member() {
     if (this.isNextLiteral ()) {
       return this.Literal ();
@@ -192,7 +184,7 @@ class Parser {
       case "IDENTIFIER":
         return this.Identifier ();
       case "VARIABLE":
-        return this.Variable (true) as Variable<unknown>;
+        return this.Variable () as Variable<unknown>;
     }
 
     throw new SyntaxError (`Unknown Argument Type: "${this.lookahead.type}"`);

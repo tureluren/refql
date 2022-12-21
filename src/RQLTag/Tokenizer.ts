@@ -19,8 +19,6 @@ const tokens: [RegExp, TokenType | null][] = [
 
   // Symbols, delimiters
   [/^:/, ":"],
-  [/^\{/, "{"],
-  [/^\}/, "}"],
   [/^\(/, "("],
   [/^\)/, ")"],
   [/^,/, ","],

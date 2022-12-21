@@ -24,8 +24,8 @@ type StructureMap<Params, Return, InRQL extends boolean = true> = {
   Values2D: (run: TagFunctionVariable<Params, InRQL, any[][]>) => Return;
 };
 
-interface ASTNode<Params> {
-  caseOf<Return, InRQL extends boolean = true>(structureMap: StructureMap<Params, Return, InRQL>): Return;
+interface ASTNode<Params, InRQL extends boolean = true> {
+  caseOf<Return>(structureMap: StructureMap<Params, Return, InRQL>): Return;
 }
 
 const astNode: symbol = Symbol ("@@ASTNode");

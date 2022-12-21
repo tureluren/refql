@@ -1,9 +1,9 @@
 import Table from ".";
-import { RefInfo, RefInfoInput } from "../common/types";
+import { RefInfo, RefInfoInput, RefMakerPair } from "../common/types";
 import { ASTNode, HasMany, Ref } from "../nodes";
 import RQLTag from "../RQLTag";
 
-const hasMany = (table: string, info?: Omit<RefInfoInput, "lxRef" | "rxRef" | "xTable">) => {
+const hasMany = (table: string, info?: Omit<RefInfoInput, "lxRef" | "rxRef" | "xTable">): RefMakerPair => {
   const hasManyInfo = info || {};
   const child = Table (table);
 

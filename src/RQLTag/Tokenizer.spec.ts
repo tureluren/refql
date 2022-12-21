@@ -1,9 +1,9 @@
-import Tokenizer from ".";
+import Tokenizer from "./Tokenizer";
 
 describe ("Tokenizer type", () => {
   test ("create Tokenizer", () => {
-    const tokenizer = new Tokenizer ("player { }");
-    expect (tokenizer.str).toBe ("player { }");
+    const tokenizer = new Tokenizer ("id first_name");
+    expect (tokenizer.str).toBe ("id first_name");
     expect (tokenizer.idx).toBe (0);
   });
 
@@ -18,10 +18,8 @@ describe ("Tokenizer type", () => {
   });
 
   test ("symbols, delimiters", () => {
-    const tokenizer = new Tokenizer (": { } ( ) ,");
+    const tokenizer = new Tokenizer (": ( ) ,");
     expect (tokenizer.getNextToken ()).toEqual ({ type: ":", value: ":" });
-    expect (tokenizer.getNextToken ()).toEqual ({ type: "{", value: "{" });
-    expect (tokenizer.getNextToken ()).toEqual ({ type: "}", value: "}" });
     expect (tokenizer.getNextToken ()).toEqual ({ type: "(", value: "(" });
     expect (tokenizer.getNextToken ()).toEqual ({ type: ")", value: ")" });
     expect (tokenizer.getNextToken ()).toEqual ({ type: ",", value: "," });

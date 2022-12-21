@@ -4,14 +4,14 @@ import pg from "pg";
 import SQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
-import { Raw, Values, Values2D } from "../nodes";
+import { all, BelongsTo, BelongsToMany, BooleanLiteral, Call, HasMany, HasOne, Identifier, NullLiteral, NumericLiteral, Raw, Ref, StringLiteral, Values, Values2D, Variable } from "../nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { player } from "../test/tables";
+import { dummy, dummyRefInfo, player } from "../test/tables";
 import userConfig from "../test/userConfig";
 import sql from "./sql";
 
@@ -108,26 +108,19 @@ describe ("SQLTag type", () => {
   test ("run", async () => {
     type Params = {
       limit: number;
-      offset: number;
     };
 
-    const limit = sql`limit ${p => p.limit}`;
-
-    const paginate = sql<Params>`offset ${p => p.offset} ${limit}`;
+    const limit = sql<Params>`limit ${p => p.limit}`;
 
     const tag = sql<Params>`
       select id, first_name, ${rawLastName}, (${sql`
       select count(*) from goal where player_id = player.id`}) number_of_goals
       from player
       ${limit}
-      ${paginate}
-      group by buh
+      offset 1
     `;
 
-    const params = {
-      limit: 5,
-      offset: 1
-    };
+    const params = { limit: 5 };
 
     const [query, values] = tag.compile (params);
 
@@ -135,17 +128,15 @@ describe ("SQLTag type", () => {
       select id, first_name, last_name, (select count(*) from goal where player_id = player.id) number_of_goals
       from player
       limit $1
-      offset $2
-      limit $3
-      group by buh
+      offset 1
     `));
 
-    // expect (values).toEqual ([5, 1]);
+    expect (values).toEqual ([5]);
 
-    // const players = await tag.run<Player> (querier, params);
+    const players = await tag.run<Player> (querier, params);
 
-    // expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name", "number_of_goals"]);
-    // expect (players.length).toBe (5);
+    expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name", "number_of_goals"]);
+    expect (players.length).toBe (5);
   });
 
 
@@ -267,14 +258,64 @@ describe ("SQLTag type", () => {
     expect (players.length).toBe (3);
   });
 
+  test ("database error", async () => {
+    const message = 'relation "playerr" does not exist';
+    try {
+      const tag = sql`
+        select * from playerr
+        where playerr.id = 1
+      `;
+      await tag.run (() => Promise.reject (message));
+    } catch (err: any) {
+      expect (err).toBe (message);
+    }
+  });
+
+  test ("parsing errors", () => {
+    expect (() => sql`select ${player`id`}`.compile ())
+      .toThrowError (new Error ("U can't use RQLTags inside SQLTags"));
+
+  });
+
+  test ("unimplemented", () => {
+
+    expect (() => sql`select ${Identifier ("id")}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Identifier"));
+
+    expect (() => sql`select ${BelongsTo (dummyRefInfo, dummy`*`)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: BelongsTo"));
+
+    expect (() => sql`select ${BelongsToMany (dummyRefInfo, dummy`*`)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: BelongsToMany"));
+
+    expect (() => sql`select ${HasOne (dummyRefInfo, dummy`*`)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: HasOne"));
+
+    expect (() => sql`select ${HasMany (dummyRefInfo, dummy`*`)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: HasMany"));
+
+    expect (() => sql`select ${all}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: All"));
+
+    expect (() => sql`select ${dummyRefInfo.lRef}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Ref"));
+
+    expect (() => sql`select ${Variable (1)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Variable"));
+
+    expect (() => sql`select ${Call ("concat", [])}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Call"));
+
+    expect (() => sql`select ${StringLiteral ("one")}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: StringLiteral"));
+
+    expect (() => sql`select ${NumericLiteral (1)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: NumericLiteral"));
+
+    expect (() => sql`select ${BooleanLiteral (true)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: BooleanLiteral"));
+
+    expect (() => sql`select ${NullLiteral (null)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: NullLiteral"));
+  });
 });
-// test ("errors", async () => {
-//   try {
-//     const tag = sql`
-//       select ${Table ("player")`id`}
-//     `;
-//     await tag.run (() => Promise.resolve ([]), undefined);
-//   } catch (err: any) {
-//     expect (err.message).toBe ("You can't use RQL Tags inside SQL Tags");
-//   }
-// });

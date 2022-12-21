@@ -1,9 +1,9 @@
 import Table from ".";
-import { RefInfo, RefInfoInput } from "../common/types";
+import { RefInfo, RefInfoInput, RefMakerPair } from "../common/types";
 import { ASTNode, BelongsToMany, Ref } from "../nodes";
 import RQLTag from "../RQLTag";
 
-const belongsToMany = (table: string, info?: RefInfoInput) => {
+const belongsToMany = (table: string, info?: RefInfoInput): RefMakerPair => {
   const belongsToManyInfo = info || {};
   const child = Table (table);
 

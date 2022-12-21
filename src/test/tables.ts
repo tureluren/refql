@@ -3,6 +3,7 @@ import belongsTo from "../Table/belongsTo";
 import hasMany from "../Table/hasMany";
 import hasOne from "../Table/hasOne";
 import belongsToMany from "../Table/belongsToMany";
+import { Ref } from "../nodes";
 
 const game = Table ("game");
 const gamePlayer = Table ("game_player");
@@ -42,7 +43,20 @@ const team = Table ("public.team", [
 
 const rating = Table ("rating");
 
+const dummy = Table ("dummy");
+
+const dummyRefInfo = {
+  as: "dummy",
+  lRef: Ref ("player.id", "dummylref"),
+  rRef: Ref ("game.id", "dummyrref"),
+  lxRef: Ref ("dummy_player.player_id", "dummylxref"),
+  rxRef: Ref ("dummy_player.dummy_id", "dummyrxref"),
+  xTable: Table ("dummy_player")
+};
+
 export {
+  dummy,
+  dummyRefInfo,
   game,
   gamePlayer,
   goal,
