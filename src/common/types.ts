@@ -54,6 +54,7 @@ export type TagFunctionVariable<Params, InRQL extends boolean = true, Return = V
 
 export type SQLTagVariable<Params, InRQL extends boolean = true> =
   | SQLTag<Params, InRQL>
+  | Table
   | TagFunctionVariable<Params, InRQL>
   | ASTNode<Params, InRQL>
   | ValueType;

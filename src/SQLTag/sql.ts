@@ -3,6 +3,7 @@ import { SQLTagVariable } from "../common/types";
 import { ASTNode, Raw, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
 import RQLTag from "../RQLTag";
+import Table from "../Table";
 
 const parse = <Params, InRQL extends boolean>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, InRQL>[]) => {
   const nodes = [] as ASTNode<Params>[];
@@ -33,6 +34,8 @@ const parse = <Params, InRQL extends boolean>(strings: TemplateStringsArray, var
       nodes.push (...variable.nodes);
     } else if (RQLTag.isRQLTag (variable)) {
       throw new Error ("U can't use RQLTags inside SQLTags");
+    } else if (Table.isTable (variable)) {
+      nodes.push (Raw (variable.name));
     } else if (isASTNode (variable)) {
       nodes.push (variable);
     } else {

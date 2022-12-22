@@ -115,7 +115,7 @@ describe ("SQLTag type", () => {
     const tag = sql<Params>`
       select id, first_name, ${rawLastName}, (${sql`
       select count(*) from goal where player_id = player.id`}) number_of_goals
-      from player
+      from ${player}
       ${limit}
       offset 1
     `;

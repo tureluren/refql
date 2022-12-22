@@ -69,8 +69,6 @@ function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
   const strings = [] as StringFunction<unknown>[];
   const values = [] as TagFunctionVariable<unknown>[];
 
-  // TABLE ???
-
   for (const node of this.nodes) {
     node.caseOf<void> ({
       Raw: run => {
