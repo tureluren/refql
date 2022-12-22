@@ -28,7 +28,6 @@ const prototype = Object.assign (Object.create (Function.prototype), {
 });
 
 function Table(name: string, refs?: RefMakerPair[]) {
-
   const table = (<Params>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params>[]) => {
     const parser = new Parser (strings.join ("$"), variables, table);
 
