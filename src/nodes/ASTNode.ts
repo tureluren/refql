@@ -4,7 +4,7 @@ import {
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 
-type StructureMap<Params, Return, InRQL extends boolean = true> = {
+type StructureMap<Params, Return> = {
   BelongsTo: (tag: RQLTag<Params>, info: RefInfo) => Return;
   BelongsToMany: (tag: RQLTag<Params>, info: Required<RefInfo>) => Return;
   HasMany: (tag: RQLTag<Params>, info: RefInfo) => Return;
@@ -18,14 +18,14 @@ type StructureMap<Params, Return, InRQL extends boolean = true> = {
   NumericLiteral: (value: number, as?: string, cast?: string) => Return;
   BooleanLiteral: (value: boolean, as?: string, cast?: string) => Return;
   NullLiteral: (value: null, as?: string, cast?: string) => Return;
-  Raw: (run: TagFunctionVariable<Params, InRQL>) => Return;
-  Value: (run: TagFunctionVariable<Params, InRQL>) => Return;
-  Values: (run: TagFunctionVariable<Params, InRQL, any[]>) => Return;
-  Values2D: (run: TagFunctionVariable<Params, InRQL, any[][]>) => Return;
+  Raw: (run: TagFunctionVariable<Params>) => Return;
+  Value: (run: TagFunctionVariable<Params>) => Return;
+  Values: (run: TagFunctionVariable<Params, any[]>) => Return;
+  Values2D: (run: TagFunctionVariable<Params, any[][]>) => Return;
 };
 
-interface ASTNode<Params, InRQL extends boolean = true> {
-  caseOf<Return>(structureMap: StructureMap<Params, Return, InRQL>): Return;
+interface ASTNode<Params> {
+  caseOf<Return>(structureMap: StructureMap<Params, Return>): Return;
 }
 
 const astNode: symbol = Symbol ("@@ASTNode");

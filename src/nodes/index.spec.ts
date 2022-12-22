@@ -87,7 +87,7 @@ describe ("Nodes", () => {
   });
 
   test ("Value", () => {
-    expect (Value (1).run ()).toBe (1);
+    expect (Value (1).run ({})).toBe (1);
   });
 
   test ("is Value", () => {
@@ -96,7 +96,7 @@ describe ("Nodes", () => {
   });
 
   test ("Values", () => {
-    expect (Values ([1]).run ()).toEqual ([1]);
+    expect (Values ([1]).run ({})).toEqual ([1]);
   });
 
   test ("is Values", () => {
@@ -105,7 +105,7 @@ describe ("Nodes", () => {
   });
 
   test ("Values2D", () => {
-    expect (Values2D ([[1]]).run ()).toEqual ([[1]]);
+    expect (Values2D ([[1]]).run ({})).toEqual ([[1]]);
   });
 
   test ("is Values2D", () => {

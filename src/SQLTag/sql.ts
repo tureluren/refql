@@ -1,11 +1,11 @@
 import SQLTag from ".";
-import { SQLTagVariable } from "../common/types";
+import { SQLTagVariable, StringMap } from "../common/types";
 import { ASTNode, Raw, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 
-const parse = <Params, InRQL extends boolean>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, InRQL>[]) => {
+const parse = <Params>(strings: TemplateStringsArray, variables: SQLTagVariable<Params>[]) => {
   const nodes = [] as ASTNode<Params>[];
 
   for (let [idx, string] of strings.entries ()) {
@@ -46,9 +46,9 @@ const parse = <Params, InRQL extends boolean>(strings: TemplateStringsArray, var
   return nodes;
 };
 
-const sql = <Params, InRQL extends boolean = false> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, InRQL>[]) => {
+const sql = <Params> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) => {
   const nodes = parse (strings, variables);
-  return SQLTag<Params, InRQL> (nodes);
+  return SQLTag<Params> (nodes);
 };
 
 export default sql;

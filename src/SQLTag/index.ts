@@ -6,20 +6,21 @@ import { ASTNode, Raw } from "../nodes";
 import Table from "../Table";
 import sql from "./sql";
 
-type StringFunction <Params> = (params: Params, idx: number, table?: Table) => [string, number];
+type StringFunction<Params> =
+  (params: Params, idx: number, table?: Table) => [string, number];
 
 interface InterpretedSQLTag<Params> {
   strings: StringFunction<Params>[];
   values: TagFunctionVariable<Params>[];
 }
 
-interface SQLTag<Params, InRQL extends boolean = false> {
-  nodes: ASTNode<Params, InRQL>[];
+interface SQLTag<Params> {
+  nodes: ASTNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
-  concat<Params2, InRQL2 extends boolean = false>(other: SQLTag<Params2, InRQL2>): SQLTag<Params & Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
-  join<Params2, InRQL2 extends boolean = false>(delimiter: string, other: SQLTag<Params2, InRQL2>): SQLTag<Params & Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
+  concat<Params2>(other: SQLTag<Params2>): SQLTag<Params & Params2>;
+  join<Params2>(delimiter: string, other: SQLTag<Params2>): SQLTag<Params & Params2>;
   [flConcat]: SQLTag<Params>["concat"];
-  map<Params2, InRQL2 extends boolean = false>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): SQLTag<Params2, InRQL extends true ? true : InRQL2 extends true ? true : false>;
+  map<Params2>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): SQLTag<Params2>;
   [flMap]: SQLTag<Params>["map"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params?: Params, table?: Table): [string, any[]];
@@ -41,8 +42,8 @@ const prototype = {
   run
 };
 
-function SQLTag<Params, InRQL extends boolean = false>(nodes: ASTNode<Params, InRQL>[]) {
-  let tag: SQLTag<Params, InRQL> = Object.create (prototype);
+function SQLTag<Params>(nodes: ASTNode<Params>[]) {
+  let tag: SQLTag<Params> = Object.create (prototype);
   tag.nodes = nodes;
 
   return tag;
@@ -152,9 +153,9 @@ async function run(this: SQLTag<unknown>, querier: Querier, params: unknown = {}
 
 SQLTag.empty = SQLTag[flEmpty] = function () {
   return sql``;
-} as <Params, InRQL extends boolean = true>() => SQLTag<Params, InRQL>;
+} as <Params>() => SQLTag<Params>;
 
-SQLTag.isSQLTag = function <Params, InRQL extends boolean = true> (value: any): value is SQLTag<Params, InRQL> {
+SQLTag.isSQLTag = function <Params> (value: any): value is SQLTag<Params> {
   return value != null && value[refqlType] === type;
 };
 

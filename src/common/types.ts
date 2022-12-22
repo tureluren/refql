@@ -1,16 +1,11 @@
-import { ASTNode, Raw, Ref, Value, Values, Values2D } from "../nodes";
+import { ASTNode, Ref } from "../nodes";
 import RefNode from "../nodes/RefNode";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
 
-export type NotAFunction =
-  | { caller?: never }
-  | { bind?: never }
-  | { apply?: never }
-  | { call?: never };
-
-export type StringMap = { [k: string]: any } & NotAFunction;
+// Array, Function, Date, ...
+export type StringMap = { [k: string]: any };
 
 export type ValueType =
   | boolean
@@ -21,8 +16,8 @@ export type ValueType =
   | string
   | StringMap;
 
-export type Querier = <T>(query: string, values: ValueType[]) =>
-  Promise<T[]>;
+export type Querier =
+  <T>(query: string, values: ValueType[]) => Promise<T[]>;
 
 export interface CastAs {
   as?: string;
@@ -47,25 +42,20 @@ export interface RefInput {
   rxRef?: string;
 }
 
-export type TagFunctionVariable<Params, InRQL extends boolean = true, Return = ValueType> =
-  InRQL extends false
-  ? (params: Params, table?: Table) => Return
-  : (params: Params, table: Table) => Return;
+export type TagFunctionVariable<Params, Return = ValueType> =
+  (params: Params, table?: Table) => Return;
 
-export type SQLTagVariable<Params, InRQL extends boolean = true> =
-  | SQLTag<Params, InRQL>
-  | Table
-  | TagFunctionVariable<Params, InRQL>
-  | ASTNode<Params, InRQL>
+export type SQLTagVariable<Params> =
+  | SQLTag<Params>
+  | ASTNode<Params>
+  | TagFunctionVariable<Params>
   | ValueType;
 
 export type RQLTagVariable<Params> =
   | RQLTag<Params>
   | SQLTag<Params>
-  | Table
   | ASTNode<Params>
   | ASTNode<Params>[]
-  | Raw<Params, true>
   | TagFunctionVariable<Params>
   | ValueType;
 

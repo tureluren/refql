@@ -4,7 +4,7 @@ import pg from "pg";
 import Table from ".";
 import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
-import { all, belongsTo, BelongsTo, belongsToMany, hasMany, HasMany, hasOne, Raw, Ref } from "../nodes";
+import { all, belongsTo, BelongsTo, BelongsToMany, belongsToMany, hasMany, HasMany, hasOne, Raw, Ref } from "../nodes";
 import HasOne from "../nodes/HasOne";
 import { Position } from "../soccer";
 import format from "../test/format";

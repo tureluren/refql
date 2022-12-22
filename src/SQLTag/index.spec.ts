@@ -4,14 +4,14 @@ import pg from "pg";
 import SQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
-import { all, BelongsTo, BelongsToMany, BooleanLiteral, Call, HasMany, HasOne, Identifier, NullLiteral, NumericLiteral, Raw, Ref, StringLiteral, Values, Values2D, Variable } from "../nodes";
+import { all, BelongsTo, BelongsToMany, BooleanLiteral, Call, HasMany, HasOne, Identifier, NullLiteral, NumericLiteral, Raw, Ref, StringLiteral, Value, Values, Values2D, Variable } from "../nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { dummy, dummyRefInfo, player } from "../test/tables";
+import { dummy, dummyRefInfo, player, team } from "../test/tables";
 import userConfig from "../test/userConfig";
 import sql from "./sql";
 

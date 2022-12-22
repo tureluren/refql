@@ -74,7 +74,7 @@ describe ("RQLTag type", () => {
       concat:literals (1, ${[NullLiteral (null), BooleanLiteral (false)]}, true, 'one')
       concat:vars (${sql`cast(${1} as text)`}, ${Raw ("' '")}, ${true}::text, ${sql`null`}::text)
 
-      ${sql`select count (*) from goal where goal.player_id = ${Raw ((_p, t) => `${t.name}.id`)}`}:no_of_goals
+      ${sql`select count (*) from goal where goal.player_id = ${Raw ((_p, t) => `${t!.name}.id`)}`}:no_of_goals
       ${sql`limit 1`}
     `;
 

@@ -51,7 +51,7 @@ function interpret<Params>(this: Call<Params>) {
         `);
       },
       Identifier: (name, _as, cast) => {
-        args.push (Raw ((_, t) => `${t.name}.${name}${castAs (cast)}`));
+        args.push (Raw ((_, t) => `${t!.name}.${name}${castAs (cast)}`));
       },
       Raw: run => {
         args.push (Raw (run));

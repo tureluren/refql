@@ -1,9 +1,9 @@
 import { refqlType } from "../common/consts";
-import { CastAs, TagFunctionVariable, StringMap, ValueType } from "../common/types";
+import { TagFunctionVariable, StringMap, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Value<Params, InRQL extends boolean = true> extends ASTNode<Params, InRQL> {
-  run: TagFunctionVariable<Params, InRQL>;
+interface Value<Params> extends ASTNode<Params> {
+  run: TagFunctionVariable<Params>;
 }
 
 const type = "refql/Value";
@@ -12,9 +12,11 @@ const prototype = Object.assign ({}, astNodePrototype, {
   constructor: Value, caseOf, [refqlType]: type
 });
 
-function Value<Params, InRQL extends boolean = true>(run: ValueType | TagFunctionVariable<Params, InRQL>): Value<Params, InRQL> {
-  let value: Value<Params, InRQL> = Object.create (prototype);
-  value.run = typeof run === "function" ? run : () => run;
+function Value<Params>(run: ValueType | TagFunctionVariable<Params>) {
+  let value: Value<Params> = Object.create (prototype);
+  value.run = (
+    typeof run === "function" ? run : () => run
+  ) as TagFunctionVariable<Params>;
 
   return value;
 }
@@ -23,7 +25,7 @@ function caseOf(this: Value<unknown>, structureMap: StringMap) {
   return structureMap.Value (this.run);
 }
 
-Value.isValue = function (value: any): value is Value {
+Value.isValue = function (value: any): value is Value<unknown> {
   return value != null && value[refqlType] === type;
 };
 
