@@ -1,6 +1,10 @@
 import { Pool } from "pg";
 
-const pgQuerier = (pool: Pool) => <T>(query: string, values: any[]) =>
-  pool.query (query, values).then (({ rows }) => rows as T[]);
+const pgQuerier = (pool: Pool) => <T>(query: string, values: any[]) => {
+  return pool.query (
+    query,
+    values
+  ).then (({ rows }) => rows as T[]);
+};
 
 export default pgQuerier;

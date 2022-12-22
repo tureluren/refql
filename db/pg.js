@@ -17,7 +17,8 @@ const query = async (sql, values = []) => {
     const { rows } = await client.query (
       sql
         .replace (/`/g, '"')
-        .replace (/integer auto_increment/g, "serial"),
+        .replace (/integer auto_increment/g, "serial")
+        .replace ('"cars" json', "cars text[]"),
       values
     );
     return rows;

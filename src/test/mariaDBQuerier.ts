@@ -4,7 +4,8 @@ const mariaDBQuerier = (pool: Pool) => async <T>(query: string, values: any[]) =
   let conn;
   try {
     conn = await pool.getConnection ();
-    const qry = query.replace (/\$\d/g, "?");
+    // mariaDB has no public scheme
+    const qry = query.replace (/\$\d+/g, "?").replace (/public\./g, "");
     const rows = await conn.query (qry, values);
     return rows as T[];
 

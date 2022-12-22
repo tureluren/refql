@@ -1,39 +1,91 @@
+import castAs from "../common/castAs";
+import { refqlType } from "../common/consts";
+import joinMembers from "../common/joinMembers";
 import { CastAs, StringMap } from "../common/types";
+import unimplemented from "../common/unimplemented";
+import SQLTag from "../SQLTag";
+import sql from "../SQLTag/sql";
 import ASTNode, { astNodePrototype } from "./ASTNode";
+import Raw from "./Raw";
 
 interface Call<Params> extends ASTNode<Params>, CastAs {
   name: string;
-  members: ASTNode<Params>[];
-  addMember<Params2>(node: ASTNode<Params2>): Call<Params & Params2>;
+  nodes: ASTNode<Params>[];
+  interpret(): SQLTag<Params>;
 }
 
-const callPrototype = {
-  constructor: Call,
-  addMember,
-  caseOf
-};
+const type = "refql/Call";
 
-function Call<Params>(name: string, members: ASTNode<Params>[], as?: string, cast?: string) {
-  let call: Call<Params> = Object.create (
-    Object.assign ({}, astNodePrototype, callPrototype)
-  );
+const prototype = Object.assign ({}, astNodePrototype, {
+  constructor: Call,
+  caseOf,
+  interpret,
+  [refqlType]: type
+});
+
+function Call<Params>(name: string, nodes: ASTNode<Params>[], as?: string, cast?: string) {
+  let call: Call<Params> = Object.create (prototype);
 
   call.name = name;
-  call.members = members;
+  call.nodes = nodes;
   call.as = as;
   call.cast = cast;
 
   return call;
 }
 
-function addMember(this: Call<unknown>, node: ASTNode<unknown>) {
-  return Call (
-    this.name, this.members.concat (node), this.as, this.cast
-  );
+const unsupported = unimplemented ("Call");
+
+function interpret<Params>(this: Call<Params>) {
+  const args = [] as (Raw<Params> | SQLTag<Params>)[];
+
+  const caseOfLiteral = (value: number | boolean | null) => {
+    args.push (Raw (`${value}`));
+  };
+
+  for (const node of this.nodes) {
+    node.caseOf<void> ({
+      Call: (call, name, _as, cast) => {
+        args.push (sql`
+          ${Raw (name)} (${call})${Raw (castAs (cast))}
+        `);
+      },
+      Identifier: (name, _as, cast) => {
+        args.push (Raw ((_, t) => `${t!.name}.${name}${castAs (cast)}`));
+      },
+      Raw: run => {
+        args.push (Raw (run));
+      },
+      StringLiteral: value => {
+        args.push (Raw (`'${value}'`));
+      },
+      Variable: (value, _as, cast) => {
+        args.push (sql`${value}${Raw (castAs (cast))}`);
+      },
+      NumericLiteral: caseOfLiteral,
+      BooleanLiteral: caseOfLiteral,
+      NullLiteral: caseOfLiteral,
+      BelongsTo: unsupported ("BelongsTo"),
+      BelongsToMany: unsupported ("BelongsToMany"),
+      HasMany: unsupported ("HasMany"),
+      HasOne: unsupported ("HasOne"),
+      All: unsupported ("All"),
+      Ref: unsupported ("Ref"),
+      Value: unsupported ("Value"),
+      Values: unsupported ("Values"),
+      Values2D: unsupported ("Values2D")
+    });
+  }
+
+  return joinMembers (args);
 }
 
 function caseOf(this: Call<unknown>, structureMap: StringMap) {
-  return structureMap.Call (this.name, this.members, this.as, this.cast);
+  return structureMap.Call (this.interpret (), this.name, this.as, this.cast);
 }
+
+Call.isCall = function <Params> (value: any): value is Call<Params> {
+  return value != null && value[refqlType] === type;
+};
 
 export default Call;

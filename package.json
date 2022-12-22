@@ -5,10 +5,10 @@
   "license": "MIT",
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "version": "2.0.6",
+  "version": "3.0.0",
   "scripts": {
     "start": "NODE_ENV=development nodemon src/workbench.ts",
-    "test": "NODE_ENV=test jest --setupFiles dotenv/config --watch --detectOpenHandles",
+    "test": "NODE_ENV=test DB_TYPE=pg jest --setupFiles dotenv/config --watch --detectOpenHandles",
     "test:mysql": "DB_TYPE=mysql yarn test",
     "test:mariadb": "DB_TYPE=mariadb yarn test",
     "migrate": "node -r dotenv/config ./db/migrateDB.js",
@@ -16,7 +16,7 @@
     "setup": "./bin/create-db.sh && yarn migrate && yarn seed",
     "setup:mysql": "DB_TYPE=mysql yarn setup",
     "setup:mariadb": "DB_TYPE=mariadb yarn setup",
-    "cover": "NODE_ENV=test jest --setupFiles dotenv/config --coverage",
+    "cover": "NODE_ENV=test DB_TYPE=pg jest --setupFiles dotenv/config --coverage",
     "build:node": "tsc --project tsconfig.build.json",
     "build:deno": "./bin/build-deno.sh",
     "build": "rm -rf build && npm run build:node && npm run build:deno",
@@ -43,7 +43,7 @@
     "npmlog": "^6.0.0",
     "pg": "^8.7.3",
     "ts-node": "^10.4.0",
-    "typescript": "^4.8.2"
+    "typescript": "^4.9.4"
   },
   "dependencies": {},
   "repository": {

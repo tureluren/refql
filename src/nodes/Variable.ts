@@ -1,18 +1,18 @@
-import { CastAs, RefQLValue, StringMap } from "../common/types";
-import Table from "../Table";
+import { CastAs, StringMap, ValueType } from "../common/types";
+import SQLTag from "../SQLTag";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
 interface Variable<Params> extends ASTNode<Params>, CastAs {
-  value: RefQLValue<Params>;
+  value: SQLTag<Params> | ValueType;
 }
 
-const variablePrototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, astNodePrototype, {
   constructor: Variable,
   caseOf
 });
 
-function Variable<Params>(value: RefQLValue<Params>, as?: string, cast?: string) {
-  let variable: Variable<Params> = Object.create (variablePrototype);
+function Variable<Params>(value: SQLTag<Params> | ValueType, as?: string, cast?: string) {
+  let variable: Variable<Params> = Object.create (prototype);
 
   variable.value = value;
   variable.as = as;
@@ -21,12 +21,8 @@ function Variable<Params>(value: RefQLValue<Params>, as?: string, cast?: string)
   return variable;
 }
 
-function caseOf(this: Variable<unknown>, structureMap: StringMap, params: unknown, table: Table) {
-  const ran = typeof this.value === "function"
-    ? this.value (params, table)
-    : this.value;
-
-  return structureMap.Variable (ran, this.as, this.cast);
+function caseOf(this: Variable<unknown>, structureMap: StringMap) {
+  return structureMap.Variable (this.value, this.as, this.cast);
 }
 
 export default Variable;

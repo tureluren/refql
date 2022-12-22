@@ -1,77 +1,115 @@
-import Table from "../Table";
-import {
-  BelongsTo, Call, HasMany,
-  Identifier, ManyToMany, Root
-} from ".";
+import { dummy, dummyRefInfo } from "../test/tables";
+import All from "./All";
+import { isASTNode } from "./ASTNode";
+import BelongsTo from "./BelongsTo";
+import BelongsToMany from "./BelongsToMany";
+import BooleanLiteral from "./BooleanLiteral";
+import Call from "./Call";
+import HasMany from "./HasMany";
+import HasOne from "./HasOne";
+import Identifier from "./Identifier";
+import { isLiteral } from "./Literal";
+import NullLiteral from "./NullLiteral";
+import NumericLiteral from "./NumericLiteral";
+import Raw from "./Raw";
+import Ref from "./Ref";
+import { isRefNode } from "./RefNode";
+import StringLiteral from "./StringLiteral";
+import Value from "./Value";
+import Values from "./Values";
+import Values2D from "./Values2D";
 
 describe ("Nodes", () => {
-  type Params = {
-    id?: number;
-    limit?: number;
-    offset?: number;
-    lref?: string;
-    rref?: string;
-    lxref?: string;
-    rxref?: string;
-    xtable?: string;
-  };
-
-  const player = Table ("player");
-  const goal = Table ("goal");
-  const game = Table ("game");
-  const team = Table ("team");
-
-  const root = Root<Params> (player, [], {
-    id: p => p.id!,
-    limit: p => p.limit!,
-    offset: p => p.offset!
+  test ("is All", () => {
+    expect (All.isAll (All ("*"))).toBe (true);
+    expect (All.isAll ("All")).toBe (false);
   });
 
-  const hasMany = HasMany<Params> (goal, [], {
-    lref: p => p.lref!,
-    rref: p => p.rref!
+  test ("is ASTNode", () => {
+    expect (isASTNode (All ("*"))).toBe (true);
+    expect (isASTNode ("All")).toBe (false);
   });
 
-  const manyToMany = ManyToMany<Params> (game, [], {
-    lref: p => p.lref!,
-    rref: p => p.rref!,
-    lxref: p => p.lxref!,
-    rxref: p => p.rxref!,
-    xtable: p => p.xtable!
+  test ("is BelongsTo", () => {
+    expect (BelongsTo.isBelongsTo (BelongsTo (dummyRefInfo, dummy``))).toBe (true);
+    expect (BelongsTo.isBelongsTo ("BelongsTo")).toBe (false);
   });
 
-  const belongsTo = BelongsTo<Params> (team, [], {
-    lref: p => p.lref!,
-    rref: p => p.rref!
+  test ("is BelongsToMany", () => {
+    expect (BelongsToMany.isBelongsToMany (BelongsToMany (dummyRefInfo, dummy``))).toBe (true);
+    expect (BelongsToMany.isBelongsToMany ("BelongsToMany")).toBe (false);
   });
 
-  test ("add member", () => {
-    const id = Identifier ("id");
-    const name = Identifier ("name");
-    const nameId = Call ("concat", [name]);
-
-    expect (root.addMember (id).members).toEqual ([id]);
-    expect (hasMany.addMember (id).members).toEqual ([id]);
-    expect (belongsTo.addMember (id).members).toEqual ([id]);
-    expect (manyToMany.addMember (id).members).toEqual ([id]);
-    expect (nameId.addMember (id).members).toEqual ([name, id]);
+  test ("is Call", () => {
+    expect (Call.isCall (Call ("concat", []))).toBe (true);
+    expect (Call.isCall ("Call")).toBe (false);
   });
 
-  test ("natural transformations", () => {
-    expect (
-      Root.isRoot (HasMany (player, [], {}).toRoot ())
-    ).toBe (true);
+  test ("is HasMany", () => {
+    expect (HasMany.isHasMany (HasMany (dummyRefInfo, dummy``))).toBe (true);
+    expect (HasMany.isHasMany ("HasMany")).toBe (false);
+  });
 
-    expect (
-      HasMany.isHasMany (Root (player, [], {}).toHasMany ())
-    ).toBe (true);
+  test ("is HasOne", () => {
+    expect (HasOne.isHasOne (HasOne (dummyRefInfo, dummy``))).toBe (true);
+    expect (HasOne.isHasOne ("All")).toBe (false);
+  });
 
-    expect (
-      BelongsTo.isBelongsTo (Root (player, [], {}).toBelongsTo ())
-    ).toBe (true);
+  test ("is Identifier", () => {
+    expect (Identifier.isIdentifier (Identifier ("id"))).toBe (true);
+    expect (Identifier.isIdentifier ("Identifier")).toBe (false);
+  });
 
-    expect (
-      ManyToMany.isManyToMany (Root (player, [], {}).toManyToMany ())
-    ).toBe (true);
+  test ("is Literal", () => {
+    expect (isLiteral (BooleanLiteral (true))).toBe (true);
+    expect (isLiteral (NullLiteral (null))).toBe (true);
+    expect (isLiteral (NumericLiteral (1))).toBe (true);
+    expect (isLiteral (StringLiteral ("one"))).toBe (true);
+    expect (isLiteral ("Literal")).toBe (false);
+  });
+
+  test ("is Raw", () => {
+    expect (Raw.isRaw (Raw ("id"))).toBe (true);
+    expect (Raw.isRaw ("Raw")).toBe (false);
+  });
+
+  test ("is Ref", () => {
+    expect (Ref.isRef (Ref ("player.id", "id"))).toBe (true);
+    expect (Ref.isRef ("Ref")).toBe (false);
+  });
+
+  test ("is RefNode", () => {
+    expect (isRefNode (BelongsTo (dummyRefInfo, dummy`*`))).toBe (true);
+    expect (isRefNode (BelongsToMany (dummyRefInfo, dummy`*`))).toBe (true);
+    expect (isRefNode (HasMany (dummyRefInfo, dummy`*`))).toBe (true);
+    expect (isRefNode (HasOne (dummyRefInfo, dummy`*`))).toBe (true);
+    expect (isRefNode ("RefNode")).toBe (false);
+  });
+
+  test ("Value", () => {
+    expect (Value (1).run ({})).toBe (1);
+  });
+
+  test ("is Value", () => {
+    expect (Value.isValue (Value (1))).toBe (true);
+    expect (Value.isValue ("Value")).toBe (false);
+  });
+
+  test ("Values", () => {
+    expect (Values ([1]).run ({})).toEqual ([1]);
+  });
+
+  test ("is Values", () => {
+    expect (Values.isValues (Values ([1]))).toBe (true);
+    expect (Values.isValues ("Values")).toBe (false);
+  });
+
+  test ("Values2D", () => {
+    expect (Values2D ([[1]]).run ({})).toEqual ([[1]]);
+  });
+
+  test ("is Values2D", () => {
+    expect (Values2D.isValues2D (Values2D ([[1]]))).toBe (true);
+    expect (Values2D.isValues2D ("Values2D")).toBe (false);
   });
 });

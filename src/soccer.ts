@@ -27,6 +27,19 @@ export interface Player {
   position: Position;
   goals: Goal[];
   games: Game[];
+  rating: Rating;
+}
+
+export interface Rating {
+  playerId: number;
+  acceleration: number;
+  finishing: number;
+  positioning: number;
+  shotPower: number;
+  freeKick: number;
+  stamina: number;
+  dribbling: number;
+  tackling: number;
 }
 
 export interface Game {

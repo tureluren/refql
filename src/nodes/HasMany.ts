@@ -1,31 +1,64 @@
 import { refqlType } from "../common/consts";
+import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
+import RQLTag from "../RQLTag";
 import Table from "../Table";
-import ASTNode from "./ASTNode";
-import TableNode, { Keywords, tableNodePrototype } from "./TableNode";
+import Ref from "./Ref";
+import RefNode, { createNextTag, refNodePrototype } from "./RefNode";
 
-interface HasMany<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode<Params2>): HasMany<Params & Params2>;
+interface HasMany<Params> extends RefNode<Params> {
+  tag: RQLTag<Params>;
+  info: RefInfo;
 }
 
-const hasManyType = "refql/HasMany";
+const type = "refql/HasMany";
 
-function HasMany<Params>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params>) {
-  let hasMany: HasMany<Params> = Object.create (
-    Object.assign ({}, tableNodePrototype, {
-      constructor: HasMany,
-      [refqlType]: hasManyType
-    })
-  );
+const prototype = Object.assign ({}, refNodePrototype, {
+  constructor: HasMany,
+  [refqlType]: type,
+  caseOf
+});
 
-  hasMany.table = table;
-  hasMany.members = members;
-  hasMany.keywords = keywords;
+function HasMany<Params>(info: RefInfo, tag: RQLTag<Params>) {
+  let hasMany: HasMany<Params> = Object.create (prototype);
+
+  hasMany.info = info;
+  hasMany.tag = tag;
 
   return hasMany;
 }
 
+function caseOf(this: HasMany<unknown>, structureMap: StringMap) {
+  return structureMap.HasMany (
+    createNextTag (this.tag, this.info),
+    this.info
+  );
+}
+
 HasMany.isHasMany = function <Params> (value: any): value is HasMany<Params> {
-  return value != null && value[refqlType] === hasManyType;
+  return value != null && value[refqlType] === type;
+};
+
+type HasManyInput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;
+
+export const hasMany = (table: string, info?: HasManyInput): RefMakerPair => {
+  const hasManyInfo = info || {};
+  const child = Table (table);
+
+  const makeHasMany = (parent: Table, tag: RQLTag<unknown>, as?: string) => {
+    as = as || hasManyInfo.as || `${child.name}s`;
+    const refOf = Ref.refOf (as);
+
+    return HasMany (
+      {
+        as,
+        lRef: refOf (parent, "lref", hasManyInfo.lRef || "id"),
+        rRef: refOf (child, "rref", hasManyInfo.rRef || `${parent.name}_id`)
+      },
+      tag
+    );
+  };
+
+  return [child, makeHasMany];
 };
 
 export default HasMany;

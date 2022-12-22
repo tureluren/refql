@@ -1,28 +1,64 @@
 import { refqlType } from "../common/consts";
+import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
+import RQLTag from "../RQLTag";
 import Table from "../Table";
-import ASTNode from "./ASTNode";
-import TableNode, { Keywords, tableNodePrototype } from "./TableNode";
+import Ref from "./Ref";
+import RefNode, { createNextTag, refNodePrototype } from "./RefNode";
 
-interface BelongsTo<Params> extends TableNode<Params> {
-  addMember<Params2>(node: ASTNode<Params2>): BelongsTo<Params & Params2>;
+interface BelongsTo<Params> extends RefNode<Params> {
+  tag: RQLTag<Params>;
+  info: RefInfo;
 }
 
-const belongsToType = "refql/BelongsTo";
+const type = "refql/BelongsTo";
 
-function BelongsTo<Params>(table: Table, members: ASTNode<Params>[], keywords: Keywords<Params>) {
-  let belongsTo: BelongsTo<Params> = Object.create (
-    Object.assign ({}, tableNodePrototype, { constructor: BelongsTo, [refqlType]: belongsToType })
-  );
+const prototype = Object.assign ({}, refNodePrototype, {
+  constructor: BelongsTo,
+  [refqlType]: type,
+  caseOf
+});
 
-  belongsTo.table = table;
-  belongsTo.members = members;
-  belongsTo.keywords = keywords;
+function BelongsTo<Params>(info: RefInfo, tag: RQLTag<Params>) {
+  let belongsTo: BelongsTo<Params> = Object.create (prototype);
+
+  belongsTo.info = info;
+  belongsTo.tag = tag;
 
   return belongsTo;
 }
 
+function caseOf(this: BelongsTo<unknown>, structureMap: StringMap) {
+  return structureMap.BelongsTo (
+    createNextTag (this.tag, this.info),
+    this.info
+  );
+}
+
 BelongsTo.isBelongsTo = function<Params> (value: any): value is BelongsTo<Params> {
-  return value != null && value[refqlType] === belongsToType;
+  return value != null && value[refqlType] === type;
+};
+
+type BelongsToInput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;
+
+export const belongsTo = (table: string, info?: BelongsToInput): RefMakerPair => {
+  const belongsToInfo = info || {};
+  const child = Table (table);
+
+  const makeBelongsTo = (parent: Table, tag: RQLTag<unknown>, as?: string) => {
+    as = as || belongsToInfo.as || child.name;
+    const refOf = Ref.refOf (as);
+
+    return BelongsTo (
+      {
+        as,
+        lRef: refOf (parent, "lref", belongsToInfo.lRef || `${child.name}_id`),
+        rRef: refOf (child, "rref", belongsToInfo.rRef || "id")
+      },
+      tag
+    );
+  };
+
+  return [child, makeBelongsTo];
 };
 
 export default BelongsTo;

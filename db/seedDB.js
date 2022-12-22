@@ -21,6 +21,7 @@ const NO_OF_LEAGUES = 6;
 const NO_OF_TEAMS_PER_LEAGUE = 10;
 const NO_OF_TEAMS = NO_OF_LEAGUES * NO_OF_TEAMS_PER_LEAGUE;
 const NO_OF_PLAYERS_PER_TEAM = 11;
+const NO_OF_PLAYERS = NO_OF_TEAMS * NO_OF_PLAYERS_PER_TEAM;
 
 const seedLeagues = async () => {
   const leagues = {};
@@ -248,7 +249,7 @@ const seedGames = async () => {
 
   const playersSQL = games.flatMap (game => game.players).reduce ((acc, player) => {
     return `${acc} (${player.playerId}, ${player.gameId}),`;
-  }, "insert into `player_game` (`player_id`, `game_id`) values").slice (0, -1);
+  }, "insert into `game_player` (`player_id`, `game_id`) values").slice (0, -1);
 
   const goalsSQL = goals.reduce ((acc, goal) => {
     return `${acc} (${goal.gameId}, ${goal.playerId}, ${goal.minute}, ${goal.ownGoal}),`;
@@ -268,10 +269,10 @@ const seedGames = async () => {
 
   log.info ("seed games", "games successfully seeded");
 
-  await db.query ("delete from `player_game`");
+  await db.query ("delete from `game_player`");
   await db.query (playersSQL);
 
-  log.info ("seed player_games", "player_games successfully seeded");
+  log.info ("seed game_players", "game_players successfully seeded");
 
   await db.query ("delete from `goal`");
   if (usingPg) {
@@ -294,12 +295,44 @@ const seedGames = async () => {
   log.info ("seed assists", "assists successfully seeded");
 };
 
+const seedPlayerRatings = async () => {
+  const ratings = [];
+  let playerId = 1;
+
+  while (playerId <= NO_OF_PLAYERS) {
+    ratings.push ({
+      playerId: playerId,
+      acceleration: Math.floor (Math.random () * 100),
+      finishing: Math.floor (Math.random () * 100),
+      positioning: Math.floor (Math.random () * 100),
+      shotPower: Math.floor (Math.random () * 100),
+      freeKick: Math.floor (Math.random () * 100),
+      stamina: Math.floor (Math.random () * 100),
+      dribbling: Math.floor (Math.random () * 100),
+      tackling: Math.floor (Math.random () * 100)
+    });
+    playerId += 1;
+  }
+
+  const sql = ratings.reduce ((acc, rating) => {
+    return `${acc} ('${rating.acceleration}', '${rating.dribbling}', ${rating.finishing}, ${rating.freeKick}, '${rating.playerId}', '${rating.positioning}', '${rating.shotPower}', '${rating.stamina}', ${rating.tackling}),`;
+  }, "insert into `rating` (`acceleration`, `dribbling`, `finishing`, `free_kick`, `player_id`, `positioning`, `shot_power`, `stamina`, `tackling`) values").slice (0, -1);
+
+  await db.query ("delete from `rating`");
+
+  await db.query (sql);
+
+  log.info ("seed rating", "player ratings successfully seeded");
+};
+
+
 const seed = async () => {
   try {
     await seedLeagues ();
     await seedTeams ();
     await seedPlayers ();
     await seedGames ();
+    await seedPlayerRatings ();
     db.pool.end ();
 
     process.exit (0);
