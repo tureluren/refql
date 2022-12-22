@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { TagFunctionVariable, StringMap, ValueType } from "../common/types";
+import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
 interface Value<Params> extends ASTNode<Params> {
@@ -14,6 +14,7 @@ const prototype = Object.assign ({}, astNodePrototype, {
 
 function Value<Params>(run: ValueType | TagFunctionVariable<Params>) {
   let value: Value<Params> = Object.create (prototype);
+
   value.run = (
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params>;

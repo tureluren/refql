@@ -1,17 +1,15 @@
 // @ts-nocheck
 import { Pool } from "pg";
-import mySql from "mysql2";
-import In from "./In";
+import { Querier } from "./common/types";
 import { rql } from "./index";
-import { All, BelongsTo, Call, HasMany, Identifier, Keywords, ManyToMany, Root, StringLiteral, Variable } from "./nodes";
+import { BelongsTo, HasMany, Identifier, Keywords, Variable } from "./nodes";
+import TableNode from "./nodes/TableNode";
 import Raw from "./Raw";
 import RQLTag from "./RQLTag";
-import { Goal, Player } from "./soccer";
+import { Player } from "./soccer";
 import SQLTag from "./SQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
-import { StringMap, Querier } from "./common/types";
-import TableNode from "./nodes/TableNode";
 
 const pool = new Pool ({
   user: "test",

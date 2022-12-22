@@ -19,30 +19,12 @@ import Values2D from "./Values2D";
 import Variable from "./Variable";
 
 export {
-  all,
-  All,
-  ASTNode,
-  belongsTo,
-  BelongsTo,
-  belongsToMany,
-  BelongsToMany,
-  BooleanLiteral,
-  Call,
-  hasMany,
-  HasMany,
-  hasOne,
-  HasOne,
-  Identifier,
-  isASTNode,
-  isLiteral,
-  Literal,
-  NullLiteral,
-  NumericLiteral,
-  Raw,
-  Ref,
-  StringLiteral,
-  Value,
-  Values,
-  Values2D,
-  Variable
+  all, All, ASTNode, belongsTo,
+  BelongsTo, belongsToMany, BelongsToMany,
+  BooleanLiteral, Call, hasMany,
+  HasMany, hasOne, HasOne, Identifier,
+  isASTNode, isLiteral, Literal,
+  NullLiteral, NumericLiteral,
+  Raw, Ref, StringLiteral, Value,
+  Values, Values2D, Variable
 };

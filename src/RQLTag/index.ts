@@ -4,7 +4,7 @@ import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
-import { all, ASTNode, Raw, Ref, Value } from "../nodes";
+import { all, ASTNode, Raw, Ref } from "../nodes";
 import { isRefNode } from "../nodes/RefNode";
 import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
@@ -178,9 +178,10 @@ async function aggregate(this: RQLTag<unknown>, querier: Querier, params: String
 
   if (!rows.length) return [];
 
-  const nextData = await Promise.all (
-    next.map (n => n.tag.aggregate (querier, { ...params, refQLRows: rows }))
-  );
+  const nextData = await Promise.all (next.map (
+    // { ...null } = {}
+    n => n.tag.aggregate (querier, { ...params, refQLRows: rows })
+  ));
 
   return rows.map (row =>
     nextData.reduce ((agg, nextRows, idx) => {

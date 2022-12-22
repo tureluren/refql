@@ -1,6 +1,4 @@
-import {
-  TagFunctionVariable, ValueType, RefInfo
-} from "../common/types";
+import { TagFunctionVariable, ValueType, RefInfo } from "../common/types";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 

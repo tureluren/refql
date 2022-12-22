@@ -27,7 +27,6 @@ function Ref(name: string, as: string) {
   return ref;
 }
 
-
 function toString(this: Ref) {
   return `${this.name} ${this.as}`;
 }

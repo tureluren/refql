@@ -1,6 +1,6 @@
 import { flConcat, flEmpty, flMap, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
-import { TagFunctionVariable, Querier } from "../common/types";
+import { Querier, TagFunctionVariable } from "../common/types";
 import unimplemented from "../common/unimplemented";
 import { ASTNode, Raw } from "../nodes";
 import Table from "../Table";
@@ -127,7 +127,7 @@ function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
   return { strings, values };
 }
 
-function compile(this: SQLTag<unknown>, params: unknown = {}, table?: Table) {
+function compile(this: SQLTag<unknown>, params: unknown, table?: Table) {
   if (!this.interpreted) {
     this.interpreted = this.interpret ();
   }
@@ -145,7 +145,7 @@ function compile(this: SQLTag<unknown>, params: unknown = {}, table?: Table) {
   ];
 }
 
-async function run(this: SQLTag<unknown>, querier: Querier, params: unknown = {}) {
+async function run(this: SQLTag<unknown>, querier: Querier, params: unknown) {
   const [query, values] = this.compile (params);
 
   return querier (query, values);

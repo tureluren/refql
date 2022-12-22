@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { TagFunctionVariable, StringMap, ValueType } from "../common/types";
+import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
 
 interface Raw<Params> extends ASTNode<Params> {

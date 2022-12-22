@@ -4,15 +4,21 @@ import pg from "pg";
 import RQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
-import { all, BelongsTo, BelongsToMany, BooleanLiteral, HasMany, HasOne, Identifier, NullLiteral, Raw, Value, Values, Values2D } from "../nodes";
-import SQLTag from "../SQLTag";
+import {
+  all, BelongsTo, BelongsToMany, BooleanLiteral,
+  HasMany, HasOne, Identifier, NullLiteral, Raw,
+  Value, Values, Values2D
+} from "../nodes";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { dummy, dummyRefInfo, game, goal, league, player, rating, team } from "../test/tables";
+import {
+  dummy, dummyRefInfo, game, goal, league,
+  player, rating, team
+} from "../test/tables";
 import userConfig from "../test/userConfig";
 import Parser from "./Parser";
 import { TokenType } from "./Tokenizer";
@@ -354,7 +360,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const players = await tag.concat (tag2).run<any> (querier, {});
+    const players = await tag.concat (tag2).run<any> (querier, null as any);
     const player1 = players[0];
     const playerTeam = player1.team;
 

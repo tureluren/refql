@@ -1,10 +1,9 @@
 import RQLTag from ".";
 import {
-  All, all, ASTNode, BooleanLiteral, Call,
-  Identifier, isASTNode, isLiteral, Literal, NullLiteral,
+  all, ASTNode, BooleanLiteral, Call,
+  Identifier, isASTNode, Literal, NullLiteral,
   NumericLiteral, StringLiteral, Variable
 } from "../nodes";
-import SQLTag from "../SQLTag";
 import Table from "../Table";
 import Tokenizer, { Token, TokenType } from "./Tokenizer";
 

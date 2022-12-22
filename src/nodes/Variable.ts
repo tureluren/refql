@@ -1,9 +1,6 @@
 import { CastAs, StringMap, ValueType } from "../common/types";
 import SQLTag from "../SQLTag";
-import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
-
-// remove ?? in use ?
 
 interface Variable<Params> extends ASTNode<Params>, CastAs {
   value: SQLTag<Params> | ValueType;

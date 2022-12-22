@@ -1,7 +1,7 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Querier, RefMakerPair, RQLTagVariable } from "../common/types";
-import Parser from "../RQLTag/Parser";
 import RQLTag from "../RQLTag";
+import Parser from "../RQLTag/Parser";
 
 interface Table {
   <Params>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params>[]): RQLTag<Params>;

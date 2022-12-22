@@ -1,5 +1,5 @@
 import SQLTag from ".";
-import { SQLTagVariable, StringMap } from "../common/types";
+import { SQLTagVariable } from "../common/types";
 import { ASTNode, Raw, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
 import RQLTag from "../RQLTag";
