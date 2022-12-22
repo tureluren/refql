@@ -43,7 +43,7 @@ export const createNextTag = <Params>(tag: RQLTag<Params>, info: RefInfo) => {
 };
 
 export const isRefNode = function <Params> (value: any): value is RefNode<Params> {
-  return value != null && value[refNode];
+  return value != null && !!value[refNode];
 };
 
 export default RefNode;

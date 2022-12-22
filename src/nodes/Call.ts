@@ -59,6 +59,9 @@ function interpret<Params>(this: Call<Params>) {
       StringLiteral: value => {
         args.push (Raw (`'${value}'`));
       },
+      Variable: (value, _as, cast) => {
+        args.push (sql`${value}${Raw (castAs (cast))}`);
+      },
       NumericLiteral: caseOfLiteral,
       BooleanLiteral: caseOfLiteral,
       NullLiteral: caseOfLiteral,
@@ -67,8 +70,6 @@ function interpret<Params>(this: Call<Params>) {
       HasMany: unsupported ("HasMany"),
       HasOne: unsupported ("HasOne"),
       All: unsupported ("All"),
-      // IMPLEMENT, sqlTAGS!!!
-      Variable: unsupported ("Variable"),
       Ref: unsupported ("Ref"),
       Value: unsupported ("Value"),
       Values: unsupported ("Values"),

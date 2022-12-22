@@ -35,7 +35,7 @@ export const astNodePrototype = {
 };
 
 export const isASTNode = function <Params> (value: any): value is ASTNode<Params> {
-  return value != null && value[astNode];
+  return value != null && !!value[astNode];
 };
 
 export default ASTNode;

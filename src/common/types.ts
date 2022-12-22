@@ -62,9 +62,11 @@ export type RQLTagVariable<Params> =
   | RQLTag<Params>
   | SQLTag<Params>
   | Table
-  | TagFunctionVariable<Params>
   | ASTNode<Params>
-  | ASTNode<Params>[];
+  | ASTNode<Params>[]
+  | Raw<Params, true>
+  | TagFunctionVariable<Params>
+  | ValueType;
 
 export interface RefQLRows {
   refQLRows: any[];

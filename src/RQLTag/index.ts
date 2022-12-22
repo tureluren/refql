@@ -126,10 +126,7 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
           }
 
         } else {
-          // throw error, gaat enkel in call
-          members.push (sql`
-            ${Value (value)}${Raw (castAs (cast, as))}
-          `);
+          throw new Error (`U can't insert "${value}" in this section of the RQLTag`);
         }
       },
       NumericLiteral: caseOfLiteral,
@@ -174,52 +171,48 @@ function compile(this: RQLTag<unknown>, params: unknown = {}) {
   return [...tag.compile (params, this.table), next];
 }
 
-function aggregate(this: RQLTag<unknown>, querier: Querier, params: unknown): Promise<any[]> {
+async function aggregate(this: RQLTag<unknown>, querier: Querier, params: StringMap = {}): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
-  return querier<any> (query, values).then (rows => {
-    if (!rows.length) return Promise.resolve ([]);
+  const rows = await querier<any> (query, values);
 
-    return Promise.all (
-      next.map (n => n.tag.aggregate (querier, { ...(params || {}), refQLRows: rows }))
-    ).then (nextData =>
-      rows.map (row =>
-        nextData.reduce ((agg, nextRows, idx) => {
-          const { single, info } = next[idx];
-          const { as, lRef, rRef, lxRef } = info;
+  if (!rows.length) return [];
 
-          const lr = lRef.as;
-          const rr = (lxRef || rRef).as;
+  const nextData = await Promise.all (
+    next.map (n => n.tag.aggregate (querier, { ...params, refQLRows: rows }))
+  );
 
-          agg[as] = nextRows
-            .filter ((r: any) =>
-              r[rr] === row[lr]
-            )
-            .map ((r: any) => {
-              const matched = { ...r };
-              delete matched[rr];
-              return matched;
-            });
+  return rows.map (row =>
+    nextData.reduce ((agg, nextRows, idx) => {
+      const { single, info } = next[idx];
+      const { as, lRef, rRef, lxRef } = info;
 
-          if (single) {
-            agg[as] = agg[as][0];
-          }
+      const lr = lRef.as;
+      const rr = (lxRef || rRef).as;
 
-          delete agg[lr];
+      agg[as] = nextRows
+        .filter ((r: any) =>
+          r[rr] === row[lr]
+        )
+        .map ((r: any) => {
+          const matched = { ...r };
+          delete matched[rr];
+          return matched;
+        });
 
-          return agg;
-        }, row)
-      )
-    );
-  });
+      if (single) {
+        agg[as] = agg[as][0];
+      }
+
+      delete agg[lr];
+
+      return agg;
+    }, row)
+  );
 }
 
-function run(this: RQLTag<unknown>, querier: Querier, params?: unknown) {
-  return new Promise ((res, rej) => {
-    this.aggregate (querier, params)
-      .then (res)
-      .catch (rej);
-  });
+async function run(this: RQLTag<unknown>, querier: Querier, params?: unknown) {
+  return this.aggregate (querier, params);
 }
 
 RQLTag.isRQLTag = function <Params> (value: any): value is RQLTag<Params> {

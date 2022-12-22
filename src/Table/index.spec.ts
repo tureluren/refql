@@ -4,7 +4,7 @@ import pg from "pg";
 import Table from ".";
 import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
-import { all, BelongsTo, BelongsToMany, HasMany, Ref } from "../nodes";
+import { all, BelongsTo, BelongsToMany, HasMany, Raw, Ref } from "../nodes";
 import HasOne from "../nodes/HasOne";
 import { Position } from "../soccer";
 import format from "../test/format";
@@ -345,6 +345,7 @@ describe ("Table type", () => {
 
   test ("Setoid", () => {
     expect (player[flEquals] (player)).toBe (true);
+    expect (player[flEquals] (Raw ("player") as any)).toBe (false);
     expect (player[flEquals] (team)).toBe (team[flEquals] (player));
     expect (player[flEquals] (player) && player[flEquals] (player)).toBe (player[flEquals] (player));
   });

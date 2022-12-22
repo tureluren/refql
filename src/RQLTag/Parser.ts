@@ -4,6 +4,7 @@ import {
   Identifier, isASTNode, isLiteral, Literal, NullLiteral,
   NumericLiteral, StringLiteral, Variable
 } from "../nodes";
+import SQLTag from "../SQLTag";
 import Table from "../Table";
 import Tokenizer, { Token, TokenType } from "./Tokenizer";
 
@@ -38,8 +39,6 @@ class Parser {
   }
 
   refer(tag: RQLTag<unknown>, as?: string) {
-    this.values.splice (this.idx, 1);
-
     if (tag.table.equals (this.table)) {
       return tag.nodes;
     }
@@ -61,38 +60,32 @@ class Parser {
     this.eat ("VARIABLE");
     const value = this.values[this.idx];
     const [as, cast] = this.castAs ();
+    this.idx += 1;
 
-    if (Array.isArray (value)) {
-
-      if (
-        !value.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && isASTNode (m), true)
-      ) {
-        throw new Error ("Invalid dynamic members, expected Array of ASTNode");
-      }
-
-      this.values.splice (this.idx, 1);
-
-      return value;
+    if (RQLTag.isRQLTag (value)) {
+      return this.refer (value, as);
     }
 
     if (Table.isTable (value)) {
       return this.refer (value.empty (), as);
     }
 
-    if (RQLTag.isRQLTag (value)) {
-      return this.refer (value, as);
-    }
-
-    if (isASTNode (value)) {
-
-      this.values.splice (this.idx, 1);
+    if (Array.isArray (value)) {
+      if (
+        !value.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && isASTNode (m), true)
+      ) {
+        throw new Error ("Invalid dynamic members, expected Array of ASTNode");
+      }
 
       return value;
     }
 
-    // moet sqlTag zijn, spliceVar niemeer nodig en idx ? ?
+    if (isASTNode (value)) {
+      return value;
+    }
+
+    // SQLTag or ValueType
     const variable = Variable (value, as, cast);
-    this.idx += 1;
 
     return variable;
   }
@@ -137,7 +130,7 @@ class Parser {
 
     this.eat (")");
 
-    return argumentList;
+    return argumentList.flat (1);
   }
 
   hasArg() {

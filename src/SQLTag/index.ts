@@ -146,18 +146,10 @@ function compile(this: SQLTag<unknown>, params: unknown = {}, table?: Table) {
   ];
 }
 
-function run(this: SQLTag<unknown>, querier: Querier, params: unknown = {}) {
-  return new Promise ((res, rej) => {
-    let query, values;
-    try {
-      [query, values] = this.compile (params);
-    } catch (err: any) {
-      rej (err);
-      return;
-    }
+async function run(this: SQLTag<unknown>, querier: Querier, params: unknown = {}) {
+  const [query, values] = this.compile (params);
 
-    querier (query, values).then (res).catch (rej);
-  });
+  return querier (query, values);
 }
 
 SQLTag.empty = SQLTag[flEmpty] = function () {

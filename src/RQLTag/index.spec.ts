@@ -4,8 +4,10 @@ import pg from "pg";
 import RQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
-import { all, BelongsTo, BelongsToMany, HasMany, HasOne, Identifier, Raw, Value, Values, Values2D } from "../nodes";
+import { all, BelongsTo, BelongsToMany, BooleanLiteral, HasMany, HasOne, Identifier, NullLiteral, Raw, Value, Values, Values2D } from "../nodes";
+import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
+import Table from "../Table";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
@@ -66,10 +68,12 @@ describe ("RQLTag type", () => {
     expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "birthday"]);
   });
 
-  test ("calls and subselects", async () => {
+  test ("calls and subselect", async () => {
     const tag = player<{}>`
-      concat:full_name (first_name, " ", upper(last_name))
-      concat:literals (true, null, false, true, 'one')
+      concat:full_name (first_name, " ", upper(${Identifier ("last_name")}))
+      concat:literals (1, ${[NullLiteral (null), BooleanLiteral (false)]}, true, 'one')
+      concat:vars (${sql`cast(${1} as text)`}, ${Raw ("' '")}, ${true}::text, ${sql`null`}::text)
+
       ${sql`select count (*) from goal where goal.player_id = ${Raw ((_p, t) => `${t.name}.id`)}`}:no_of_goals
       ${sql`limit 1`}
     `;
@@ -79,17 +83,18 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select
         concat (player.first_name, ' ', upper (player.last_name)) full_name,
-        concat (true, null, false, true, 'one') literals,
+        concat (1, null, false, true, 'one') literals,
+        concat (cast($1 as text), ' ', $2::text, null::text) vars,
         (select count (*) from goal where goal.player_id = player.id) no_of_goals
       from player
       limit 1
     `));
 
-    expect (values).toEqual ([]);
+    expect (values).toEqual ([1, true]);
 
     const [player1] = await tag.run<any> (querier);
 
-    expect (Object.keys (player1)).toEqual (["full_name", "literals", "no_of_goals"]);
+    expect (Object.keys (player1)).toEqual (["full_name", "literals", "vars", "no_of_goals"]);
   });
 
   test ("merge variable of same table", async () => {
@@ -187,7 +192,6 @@ describe ("RQLTag type", () => {
 
     expect (res.compile ()).toEqual (res2.compile ());
   });
-
 
   test ("aggregate", async () => {
     const tag = player<{}>`
@@ -397,6 +401,19 @@ describe ("RQLTag type", () => {
   test ("errors", () => {
     expect (() => player`id last_name`.concat (team`id name`))
       .toThrowError (new Error ("U can't concat RQLTags that come from different tables"));
+
+    expect (() => player`${"id"} last_name`.compile ({}))
+      .toThrowError (new Error (`U can't insert "id" in this section of the RQLTag`));
+  });
+
+  test ("database error", async () => {
+    const message = 'relation "playerr" does not exist';
+    try {
+      const tag = Table ("playerr")`*`;
+      await tag.run (() => Promise.reject (message));
+    } catch (err: any) {
+      expect (err).toBe (message);
+    }
   });
 
   test ("parser errors", () => {
@@ -424,7 +441,7 @@ describe ("RQLTag type", () => {
       .toThrowError (new SyntaxError ('Unexpected token: "1", expected: "STRING"'));
   });
 
-  test ("unimplemented by RQLTag", async () => {
+  test ("unimplemented by RQLTag", () => {
 
     expect (() => player`id ${Raw ("last_name")}`.compile ())
       .toThrowError (new Error ("Unimplemented by RQLTag: Raw"));
@@ -439,7 +456,7 @@ describe ("RQLTag type", () => {
       .toThrowError (new Error ("Unimplemented by RQLTag: Values2D"));
   });
 
-  test ("unimplemented by Call", async () => {
+  test ("unimplemented by Call", () => {
     expect (() => player`concat (${BelongsTo (dummyRefInfo, dummy`*`)})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: BelongsTo"));
 
