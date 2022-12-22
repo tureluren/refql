@@ -38,7 +38,7 @@ export interface RefInfo {
   rxRef?: Ref;
 }
 
-export interface RefInfoInput {
+export interface RefInput {
   as?: string;
   lRef?: string;
   rRef?: string;

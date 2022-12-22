@@ -14,21 +14,9 @@ export const refNodePrototype = Object.assign ({}, astNodePrototype, {
   [refNode]: true
 });
 
-const rowValues = (lRef: Ref) => Values<RefQLRows> (p =>
+export const rowValues = (lRef: Ref) => Values<RefQLRows> (p =>
   [...new Set (p.refQLRows.map (r => r[lRef.as]))]
 );
-
-export const createNextTagX = <Params>(tag: RQLTag<Params>, info: Required<RefInfo>) => {
-  const { lRef, rRef, lxRef, rxRef, xTable } = info;
-
-  return tag.table<Params>`
-    ${lxRef}
-    ${sql`
-      ${Raw (`join ${xTable.name} on ${rxRef.name} = ${rRef.name} where ${lxRef!.name}`)}
-      in ${rowValues (lRef)}
-    `}
-  `.concat (tag);
-};
 
 export const createNextTag = <Params>(tag: RQLTag<Params>, info: RefInfo) => {
   const { rRef, lRef } = info;

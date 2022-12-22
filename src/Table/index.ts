@@ -3,7 +3,6 @@ import { Querier, RefMakerPair, RQLTagVariable } from "../common/types";
 import Parser from "../RQLTag/Parser";
 import RQLTag from "../RQLTag";
 
-
 interface Table {
   <Params>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params>[]): RQLTag<Params>;
   name: string;

@@ -4,7 +4,7 @@ import pg from "pg";
 import Table from ".";
 import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
-import { all, BelongsTo, BelongsToMany, HasMany, Raw, Ref } from "../nodes";
+import { all, belongsTo, BelongsTo, belongsToMany, hasMany, HasMany, hasOne, Raw, Ref } from "../nodes";
 import HasOne from "../nodes/HasOne";
 import { Position } from "../soccer";
 import format from "../test/format";
@@ -13,10 +13,6 @@ import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import { game, gamePlayer, goal, player, position, rating, team } from "../test/tables";
 import userConfig from "../test/userConfig";
-import belongsTo from "./belongsTo";
-import belongsToMany from "./belongsToMany";
-import hasMany from "./hasMany";
-import hasOne from "./hasOne";
 
 describe ("Table type", () => {
   let pool: any;

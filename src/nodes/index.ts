@@ -1,11 +1,11 @@
 import All, { all } from "./All";
 import ASTNode, { isASTNode } from "./ASTNode";
-import BelongsTo from "./BelongsTo";
-import BelongsToMany from "./BelongsToMany";
+import BelongsTo, { belongsTo } from "./BelongsTo";
+import BelongsToMany, { belongsToMany } from "./BelongsToMany";
 import BooleanLiteral from "./BooleanLiteral";
 import Call from "./Call";
-import HasMany from "./HasMany";
-import HasOne from "./HasOne";
+import HasMany, { hasMany } from "./HasMany";
+import HasOne, { hasOne } from "./HasOne";
 import Identifier from "./Identifier";
 import Literal, { isLiteral } from "./Literal";
 import NullLiteral from "./NullLiteral";
@@ -22,11 +22,15 @@ export {
   all,
   All,
   ASTNode,
+  belongsTo,
   BelongsTo,
+  belongsToMany,
   BelongsToMany,
   BooleanLiteral,
   Call,
+  hasMany,
   HasMany,
+  hasOne,
   HasOne,
   Identifier,
   isASTNode,

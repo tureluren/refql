@@ -1,6 +1,8 @@
 import { refqlType } from "../common/consts";
-import { RefInfo, StringMap } from "../common/types";
+import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
 import RQLTag from "../RQLTag";
+import Table from "../Table";
+import Ref from "./Ref";
 import RefNode, { createNextTag, refNodePrototype } from "./RefNode";
 
 interface HasOne<Params> extends RefNode<Params> {
@@ -34,6 +36,29 @@ function caseOf(this: HasOne<unknown>, structureMap: StringMap) {
 
 HasOne.isHasOne = function <Params> (value: any): value is HasOne<Params> {
   return value != null && value[refqlType] === type;
+};
+
+type HasOneInfoIput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;
+
+export const hasOne = (table: string, info?: HasOneInfoIput): RefMakerPair => {
+  const hasOneInfo = info || {};
+  const child = Table (table);
+
+  const makeHasOne = (parent: Table, tag: RQLTag<unknown>, as?: string) => {
+    as = as || hasOneInfo.as || child.name;
+    const refOf = Ref.refOf (as);
+
+    return HasOne (
+      {
+        as,
+        lRef: refOf (parent, "lref", hasOneInfo.lRef || "id"),
+        rRef: refOf (child, "rref", hasOneInfo.rRef || `${parent.name}_id`)
+      },
+      tag
+    );
+  };
+
+  return [child, makeHasOne];
 };
 
 export default HasOne;
