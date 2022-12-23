@@ -67,8 +67,8 @@ function map(this: SQLTag<unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<un
 const unsupported = unimplemented ("SQLTag");
 
 function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
-  const strings = [] as StringFunction<unknown>[];
-  const values = [] as TagFunctionVariable<unknown>[];
+  const strings = [] as StringFunction<unknown>[],
+    values = [] as TagFunctionVariable<unknown>[];
 
   for (const node of this.nodes) {
     node.caseOf<void> ({
@@ -138,7 +138,7 @@ function compile(this: SQLTag<unknown>, params: unknown, table?: Table) {
     strings.reduce (([query, idx]: [string, number], f): [string, number] => {
       const [s, n] = f (params, idx, table);
 
-      return [`${query}${s}`, idx + n];
+      return [query.concat (s), idx + n];
     }, ["", 0])[0],
 
     values.map (f => f (params, table as Table)).flat (1)
