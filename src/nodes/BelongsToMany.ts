@@ -1,6 +1,6 @@
 import { refqlType } from "../common/consts";
 import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
-import RQLTag from "../RQLTag";
+import RQLTag, { concatExtra } from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import Raw from "./Raw";
@@ -8,7 +8,6 @@ import Ref from "./Ref";
 import RefNode, { refNodePrototype, rowValues } from "./RefNode";
 
 interface BelongsToMany<Params> extends RefNode<Params> {
-  tag: RQLTag<Params>;
   info: Required<RefInfo>;
 }
 
@@ -17,6 +16,7 @@ const type = "refql/BelongsToMany";
 const prototype = Object.assign ({}, refNodePrototype, {
   constructor: BelongsToMany,
   [refqlType]: type,
+  joinLateral,
   caseOf
 });
 
@@ -29,21 +29,37 @@ function BelongsToMany<Params>(info: Required<RefInfo>, tag: RQLTag<Params>) {
   return belongsToMany;
 }
 
-const createNextTagX = <Params>(tag: RQLTag<Params>, info: Required<RefInfo>) => {
-  const { lRef, rRef, lxRef, rxRef, xTable } = info;
+function joinLateral(this: BelongsToMany<unknown>) {
+  const { tag, next, extra } = this.tag.interpret ();
+  const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info;
 
-  return tag.table<Params>`
-    ${lxRef}
-    ${sql`
-      ${Raw (`join ${xTable.name} on ${rxRef.name} = ${rRef.name} where ${lxRef!.name}`)}
-      in ${rowValues (lRef)}
-    `}
-  `.concat (tag);
-};
+  const l1 = sql`
+    select distinct ${Raw (lRef)}
+    from ${Raw (parent)}
+    where ${Raw (lRef.name)}
+    in ${rowValues (lRef)}
+  `;
+
+  const l2 = tag
+    .concat (sql`
+      join ${Raw (`${xTable} on ${rxRef.name} = ${rRef.name}`)}
+      where ${Raw (`${lxRef.name} = refqll1.${lRef.as}`)}
+    `)
+    .concat (concatExtra (extra, true));
+
+  const joined = sql`
+    select * from (${l1}) refqll1,
+    lateral (${l2}) refqll2
+  `;
+
+  this.tag.interpreted = { tag: joined, next };
+
+  return this.tag;
+}
 
 function caseOf(this: BelongsToMany<unknown>, structureMap: StringMap) {
   return structureMap.BelongsToMany (
-    createNextTagX (this.tag, this.info),
+    this.joinLateral (),
     this.info
   );
 }
@@ -69,6 +85,7 @@ export const belongsToMany = (table: string, info?: BelongsToManyInput): RefMake
 
     return BelongsToMany (
       {
+        parent,
         as,
         xTable,
         lRef: refOf (parent, "lref", belongsToManyInfo.lRef || "id"),

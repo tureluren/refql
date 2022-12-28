@@ -12,13 +12,17 @@ import Table from "../Table";
 
 export interface Next<Params> {
   tag: RQLTag<Params & RefQLRows>;
-  info: RefInfo;
+  info: [string, string];
   single: boolean;
 }
 
 interface InterpretedRQLTag<Params> {
   tag: SQLTag<Params>;
   next: Next<Params>[];
+}
+
+interface Extra<Params> {
+  extra: SQLTag<Params>;
 }
 
 interface RQLTag<Params> {
@@ -29,7 +33,7 @@ interface RQLTag<Params> {
   [flConcat]: RQLTag<Params>["concat"];
   map<Params2>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): RQLTag<Params>;
   [flMap]: RQLTag<Params>["map"];
-  interpret(): InterpretedRQLTag<Params>;
+  interpret(): InterpretedRQLTag<Params> & Extra<Params>;
   compile(params?: Params): [string, any[], Next<Params>[]];
   aggregate<Output>(querier: Querier, params: Params): Promise<Output[]>;
   run<Output>(querier: Querier, params?: Params): Promise<Output[]>;
@@ -75,16 +79,16 @@ function map(this: RQLTag<unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<un
 
 const unsupported = unimplemented ("RQLTag");
 
-function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
+function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<StringMap> {
   const { nodes, table } = this,
     next = [] as Next<unknown>[],
     members = [] as (Raw<unknown> | SQLTag<unknown>)[];
 
-  let sqlTag = SQLTag.empty<unknown> ();
+  let extra = SQLTag.empty<unknown> ();
 
   const caseOfRef = (single: boolean) => (tag: RQLTag<unknown>, info: RefInfo) => {
     members.push (Raw (`${info.lRef}`));
-    next.push ({ tag, info, single });
+    next.push ({ tag, info: [info.as, info.lRef.as], single });
   };
 
   const caseOfLiteral = (value: number | boolean | null, as?: string, cast?: string) => {
@@ -122,7 +126,7 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
               (${value})${Raw (castAs (cast, as))} 
             `);
           } else {
-            sqlTag = sqlTag.concat (value);
+            extra = extra.concat (value);
           }
 
         } else {
@@ -152,23 +156,40 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
 
   let tag = sql<unknown>`
     select ${joinMembers (members)}
-    from ${Raw (`${table}`)}
+    from ${Raw (table)}
   `;
 
-  if (!isEmptyTag (sqlTag)) {
-    tag = tag.concat (sqlTag);
-  }
-
-  return { next, tag };
+  return { next, tag, extra };
 }
+
+export const concatExtra = (extra: SQLTag<unknown>, correctWhere: boolean) => {
+  return extra.map (nodes => {
+    let [raw, ...rest] = nodes;
+
+    if (!Raw.isRaw (raw)) return nodes;
+
+    raw = raw.map (x => {
+      if (correctWhere) {
+        return `${x}`.replace (/^\b(where)\b/i, "and");
+      }
+
+      return `${x}`.replace (/^\b(and|or)\b/i, "where");
+    });
+
+    return [raw, ...rest];
+  });
+};
 
 function compile(this: RQLTag<unknown>, params: unknown = {}) {
   if (!this.interpreted) {
-    this.interpreted = this.interpret ();
+    const { tag, extra, next } = this.interpret ();
+    this.interpreted = {
+      tag: tag.concat (concatExtra (extra, false)),
+      next
+    };
   }
-  const { tag, next } = this.interpreted;
 
-  return [...tag.compile (params, this.table), next];
+  return [...this.interpreted.tag.compile (params, this.table), this.interpreted.next];
 }
 
 async function aggregate(this: RQLTag<unknown>, querier: Querier, params: StringMap = {}): Promise<any[]> {
@@ -186,26 +207,23 @@ async function aggregate(this: RQLTag<unknown>, querier: Querier, params: String
   return rows.map (row =>
     nextData.reduce ((agg, nextRows, idx) => {
       const { single, info } = next[idx];
-      const { as, lRef, rRef, lxRef } = info;
+      const [lAs, rAs] = info;
 
-      const lr = lRef.as;
-      const rr = (lxRef || rRef).as;
-
-      agg[as] = nextRows
+      agg[lAs] = nextRows
         .filter ((r: any) =>
-          r[rr] === row[lr]
+          r[rAs] === row[rAs]
         )
         .map ((r: any) => {
-          const matched = { ...r };
-          delete matched[rr];
+          let matched = { ...r };
+          delete matched[rAs];
           return matched;
         });
 
       if (single) {
-        agg[as] = agg[as][0];
+        agg[lAs] = agg[lAs][0];
       }
 
-      delete agg[lr];
+      delete agg[rAs];
 
       return agg;
     }, row)

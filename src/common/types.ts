@@ -25,6 +25,7 @@ export interface CastAs {
 }
 
 export interface RefInfo {
+  parent: Table;
   as: string;
   lRef: Ref;
   rRef: Ref;

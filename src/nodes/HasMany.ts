@@ -3,12 +3,9 @@ import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Ref from "./Ref";
-import RefNode, { createNextTag, refNodePrototype } from "./RefNode";
+import RefNode, { refNodePrototype } from "./RefNode";
 
-interface HasMany<Params> extends RefNode<Params> {
-  tag: RQLTag<Params>;
-  info: RefInfo;
-}
+interface HasMany<Params> extends RefNode<Params> {}
 
 const type = "refql/HasMany";
 
@@ -29,7 +26,7 @@ function HasMany<Params>(info: RefInfo, tag: RQLTag<Params>) {
 
 function caseOf(this: HasMany<unknown>, structureMap: StringMap) {
   return structureMap.HasMany (
-    createNextTag (this.tag, this.info),
+    this.joinLateral (),
     this.info
   );
 }
@@ -50,6 +47,7 @@ export const hasMany = (table: string, info?: HasManyInput): RefMakerPair => {
 
     return HasMany (
       {
+        parent,
         as,
         lRef: refOf (parent, "lref", hasManyInfo.lRef || "id"),
         rRef: refOf (child, "rref", hasManyInfo.rRef || `${parent.name}_id`)

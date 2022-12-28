@@ -70,6 +70,7 @@ describe ("Table type", () => {
     ) as BelongsTo<unknown>;
 
     const expected = {
+      parent: player,
       as: "team",
       lRef: Ref ("player.team_id", "teamlref"),
       rRef: Ref ("team.id", "teamrref")
@@ -88,6 +89,7 @@ describe ("Table type", () => {
     ) as BelongsTo<unknown>;
 
     const expected = {
+      parent: player,
       as: "crew",
       lRef: Ref ("player.team_id", "crewlref"),
       rRef: Ref ("team.id", "crewrref")
@@ -105,6 +107,7 @@ describe ("Table type", () => {
     ) as BelongsTo<unknown>;
 
     const expected = {
+      parent: player,
       as: "team",
       lRef: Ref ("player.TEAM_ID", "teamlref"),
       rRef: Ref ("team.ID", "teamrref")
@@ -125,6 +128,7 @@ describe ("Table type", () => {
 
 
     const expected = {
+      parent: player,
       as: "games",
       lRef: Ref ("player.id", "gameslref"),
       rRef: Ref ("game.id", "gamesrref"),
@@ -133,6 +137,7 @@ describe ("Table type", () => {
       xTable: gamePlayer
     };
 
+    expect (belongsToManyNode.info.parent).toEqual (expected.parent);
     expect (belongsToManyNode.info.as).toEqual (expected.as);
     expect (belongsToManyNode.info.lRef).toEqual (expected.lRef);
     expect (belongsToManyNode.info.rRef).toEqual (expected.rRef);
@@ -143,13 +148,15 @@ describe ("Table type", () => {
 
   test ("BelongsToMany ref - default ref - child > parent", () => {
     const [gamesTable, refMaker] = belongsToMany ("game");
+    const athlete = Table ("athlete");
 
     const belongsToManyNode = refMaker (
-      Table ("athlete"),
+      athlete,
       gamesTable`*`
     ) as BelongsToMany<unknown>;
 
     const expected = {
+      parent: athlete,
       as: "games",
       lRef: Ref ("athlete.id", "gameslref"),
       rRef: Ref ("game.id", "gamesrref"),
@@ -158,6 +165,7 @@ describe ("Table type", () => {
       xTable: Table ("athlete_game")
     };
 
+    expect (belongsToManyNode.info.parent).toEqual (expected.parent);
     expect (belongsToManyNode.info.as).toEqual (expected.as);
     expect (belongsToManyNode.info.lRef).toEqual (expected.lRef);
     expect (belongsToManyNode.info.rRef).toEqual (expected.rRef);
@@ -178,6 +186,7 @@ describe ("Table type", () => {
 
 
     const expected = {
+      parent: player,
       as: "matches",
       lRef: Ref ("player.id", "matcheslref"),
       rRef: Ref ("game.id", "matchesrref"),
@@ -186,6 +195,7 @@ describe ("Table type", () => {
       xTable: gamePlayer
     };
 
+    expect (belongsToManyNode.info.parent).toEqual (expected.parent);
     expect (belongsToManyNode.info.as).toEqual (expected.as);
     expect (belongsToManyNode.info.lRef).toEqual (expected.lRef);
     expect (belongsToManyNode.info.rRef).toEqual (expected.rRef);
@@ -211,6 +221,7 @@ describe ("Table type", () => {
 
 
     const expected = {
+      parent: player,
       as: "fixtures",
       lRef: Ref ("player.ID", "fixtureslref"),
       rRef: Ref ("game.ID", "fixturesrref"),
@@ -219,6 +230,7 @@ describe ("Table type", () => {
       xTable: Table ("GAME_PLAYER")
     };
 
+    expect (belongsToManyNode.info.parent).toEqual (expected.parent);
     expect (belongsToManyNode.info.as).toEqual (expected.as);
     expect (belongsToManyNode.info.lRef).toEqual (expected.lRef);
     expect (belongsToManyNode.info.rRef).toEqual (expected.rRef);
@@ -238,6 +250,7 @@ describe ("Table type", () => {
     ) as HasMany<unknown>;
 
     const expected = {
+      parent: player,
       as: "goals",
       lRef: Ref ("player.id", "goalslref"),
       rRef: Ref ("goal.player_id", "goalsrref")
@@ -258,6 +271,7 @@ describe ("Table type", () => {
     ) as HasMany<unknown>;
 
     const expected = {
+      parent: player,
       as: "finishes",
       lRef: Ref ("player.id", "finisheslref"),
       rRef: Ref ("goal.player_id", "finishesrref")
@@ -279,6 +293,7 @@ describe ("Table type", () => {
     ) as HasMany<unknown>;
 
     const expected = {
+      parent: player,
       as: "points",
       lRef: Ref ("player.ID", "pointslref"),
       rRef: Ref ("goal.PLAYER_ID", "pointsrref")
@@ -298,6 +313,7 @@ describe ("Table type", () => {
     ) as HasOne<unknown>;
 
     const expected = {
+      parent: player,
       as: "rating",
       lRef: Ref ("player.id", "ratinglref"),
       rRef: Ref ("rating.player_id", "ratingrref")
@@ -316,6 +332,7 @@ describe ("Table type", () => {
     ) as HasOne<unknown>;
 
     const expected = {
+      parent: player,
       as: "score",
       lRef: Ref ("player.id", "scorelref"),
       rRef: Ref ("rating.player_id", "scorerref")
@@ -337,6 +354,7 @@ describe ("Table type", () => {
     ) as HasOne<unknown>;
 
     const expected = {
+      parent: player,
       as: "grade",
       lRef: Ref ("player.ID", "gradelref"),
       rRef: Ref ("rating.PLAYER_ID", "graderref")

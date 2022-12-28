@@ -40,7 +40,7 @@ function interpret<Params>(this: Call<Params>) {
   const args = [] as (Raw<Params> | SQLTag<Params>)[];
 
   const caseOfLiteral = (value: number | boolean | null) => {
-    args.push (Raw (`${value}`));
+    args.push (Raw (value));
   };
 
   for (const node of this.nodes) {

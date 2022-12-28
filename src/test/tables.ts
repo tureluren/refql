@@ -42,6 +42,7 @@ const rating = Table ("rating");
 const dummy = Table ("dummy");
 
 const dummyRefInfo = {
+  parent: Table ("player"),
   as: "dummy",
   lRef: Ref ("player.id", "dummylref"),
   rRef: Ref ("game.id", "dummyrref"),

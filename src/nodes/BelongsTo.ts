@@ -3,12 +3,9 @@ import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Ref from "./Ref";
-import RefNode, { createNextTag, refNodePrototype } from "./RefNode";
+import RefNode, { refNodePrototype } from "./RefNode";
 
-interface BelongsTo<Params> extends RefNode<Params> {
-  tag: RQLTag<Params>;
-  info: RefInfo;
-}
+interface BelongsTo<Params> extends RefNode<Params> {}
 
 const type = "refql/BelongsTo";
 
@@ -29,7 +26,7 @@ function BelongsTo<Params>(info: RefInfo, tag: RQLTag<Params>) {
 
 function caseOf(this: BelongsTo<unknown>, structureMap: StringMap) {
   return structureMap.BelongsTo (
-    createNextTag (this.tag, this.info),
+    this.joinLateral (),
     this.info
   );
 }
@@ -50,6 +47,7 @@ export const belongsTo = (table: string, info?: BelongsToInput): RefMakerPair =>
 
     return BelongsTo (
       {
+        parent,
         as,
         lRef: refOf (parent, "lref", belongsToInfo.lRef || `${child.name}_id`),
         rRef: refOf (child, "rref", belongsToInfo.rRef || "id")

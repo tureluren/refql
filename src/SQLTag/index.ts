@@ -73,7 +73,7 @@ function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
   for (const node of this.nodes) {
     node.caseOf<void> ({
       Raw: run => {
-        strings.push ((p, _i, t) => [`${run (p, t)}`, 0]);
+        strings.push ((p, _i, t) => [run (p, t), 0]);
       },
       Value: run => {
         values.push ((p, t) => [run (p, t)]);

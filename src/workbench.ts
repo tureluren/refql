@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { belongsTo, Raw } from "./nodes";
+import { belongsTo } from "./nodes";
 import { Player } from "./soccer";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
