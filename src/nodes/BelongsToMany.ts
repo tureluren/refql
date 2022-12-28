@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
+import { RefInfo, RefInput, RefMakerPair } from "../common/types";
 import RQLTag, { concatExtra } from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -16,8 +16,7 @@ const type = "refql/BelongsToMany";
 const prototype = Object.assign ({}, refNodePrototype, {
   constructor: BelongsToMany,
   [refqlType]: type,
-  joinLateral,
-  caseOf
+  joinLateral
 });
 
 function BelongsToMany<Params>(info: Required<RefInfo>, tag: RQLTag<Params>) {
@@ -55,13 +54,6 @@ function joinLateral(this: BelongsToMany<unknown>) {
   this.tag.interpreted = { tag: joined, next };
 
   return this.tag;
-}
-
-function caseOf(this: BelongsToMany<unknown>, structureMap: StringMap) {
-  return structureMap.BelongsToMany (
-    this.joinLateral (),
-    this.info
-  );
 }
 
 BelongsToMany.isBelongsToMany = function <Params> (value: any): value is BelongsToMany<Params> {

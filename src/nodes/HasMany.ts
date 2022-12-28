@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
+import { RefInfo, RefInput, RefMakerPair } from "../common/types";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Ref from "./Ref";
@@ -11,8 +11,7 @@ const type = "refql/HasMany";
 
 const prototype = Object.assign ({}, refNodePrototype, {
   constructor: HasMany,
-  [refqlType]: type,
-  caseOf
+  [refqlType]: type
 });
 
 function HasMany<Params>(info: RefInfo, tag: RQLTag<Params>) {
@@ -22,13 +21,6 @@ function HasMany<Params>(info: RefInfo, tag: RQLTag<Params>) {
   hasMany.tag = tag;
 
   return hasMany;
-}
-
-function caseOf(this: HasMany<unknown>, structureMap: StringMap) {
-  return structureMap.HasMany (
-    this.joinLateral (),
-    this.info
-  );
 }
 
 HasMany.isHasMany = function <Params> (value: any): value is HasMany<Params> {

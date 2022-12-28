@@ -1,4 +1,4 @@
-import { RefInfo, RefQLRows } from "../common/types";
+import { RefInfo, RefQLRows, StringMap } from "../common/types";
 import RQLTag, { concatExtra } from "../RQLTag";
 import sql from "../SQLTag/sql";
 import ASTNode, { astNodePrototype } from "./ASTNode";
@@ -16,7 +16,8 @@ const refNode: symbol = Symbol ("@@RefNode");
 
 export const refNodePrototype = Object.assign ({}, astNodePrototype, {
   [refNode]: true,
-  joinLateral
+  joinLateral,
+  caseOf
 });
 
 export const rowValues = (lRef: Ref) => Values<RefQLRows> (p =>
@@ -48,6 +49,10 @@ function joinLateral(this: RefNode<unknown>) {
   this.tag.interpreted = { tag: joined, next };
 
   return this.tag;
+}
+
+function caseOf(this: RefNode<unknown>, structureMap: StringMap) {
+  return structureMap[this.constructor.name] (this.joinLateral (), this.info);
 }
 
 export const isRefNode = function <Params> (value: any): value is RefNode<Params> {

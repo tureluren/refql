@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
+import { RefInfo, RefInput, RefMakerPair } from "../common/types";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Ref from "./Ref";
@@ -11,8 +11,7 @@ const type = "refql/BelongsTo";
 
 const prototype = Object.assign ({}, refNodePrototype, {
   constructor: BelongsTo,
-  [refqlType]: type,
-  caseOf
+  [refqlType]: type
 });
 
 function BelongsTo<Params>(info: RefInfo, tag: RQLTag<Params>) {
@@ -22,13 +21,6 @@ function BelongsTo<Params>(info: RefInfo, tag: RQLTag<Params>) {
   belongsTo.tag = tag;
 
   return belongsTo;
-}
-
-function caseOf(this: BelongsTo<unknown>, structureMap: StringMap) {
-  return structureMap.BelongsTo (
-    this.joinLateral (),
-    this.info
-  );
 }
 
 BelongsTo.isBelongsTo = function<Params> (value: any): value is BelongsTo<Params> {

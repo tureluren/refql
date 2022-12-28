@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { RefInfo, RefInput, RefMakerPair, StringMap } from "../common/types";
+import { RefInfo, RefInput, RefMakerPair } from "../common/types";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Ref from "./Ref";
@@ -11,8 +11,7 @@ const type = "refql/HasOne";
 
 const prototype = Object.assign ({}, refNodePrototype, {
   constructor: HasOne,
-  [refqlType]: type,
-  caseOf
+  [refqlType]: type
 });
 
 function HasOne<Params>(info: RefInfo, tag: RQLTag<Params>) {
@@ -22,13 +21,6 @@ function HasOne<Params>(info: RefInfo, tag: RQLTag<Params>) {
   hasOne.tag = tag;
 
   return hasOne;
-}
-
-function caseOf(this: HasOne<unknown>, structureMap: StringMap) {
-  return structureMap.HasOne (
-    this.joinLateral (),
-    this.info
-  );
 }
 
 HasOne.isHasOne = function <Params> (value: any): value is HasOne<Params> {
