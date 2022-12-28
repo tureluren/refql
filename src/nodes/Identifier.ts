@@ -9,7 +9,9 @@ interface Identifier extends ASTNode<unknown>, CastAs {
 const type = "refql/Identifier";
 
 const prototype = Object.assign ({}, astNodePrototype, {
-  constructor: Identifier, caseOf, [refqlType]: type
+  constructor: Identifier,
+  [refqlType]: type,
+  caseOf
 });
 
 function Identifier(name: string, as?: string, cast?: string) {

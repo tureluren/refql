@@ -5,8 +5,8 @@ import RQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import {
-  all, BelongsTo, BelongsToMany, BooleanLiteral,
-  HasMany, HasOne, Identifier, NullLiteral, Raw,
+  all, BelongsTo, BelongsToMany,
+  HasMany, HasOne, Identifier, Literal, Raw,
   Value, Values, Values2D
 } from "../nodes";
 import sql from "../SQLTag/sql";
@@ -77,7 +77,7 @@ describe ("RQLTag type", () => {
   test ("calls and subselect", async () => {
     const tag = player<{}>`
       concat:full_name (first_name, " ", upper(${Identifier ("last_name")}))
-      concat:literals (1, ${[NullLiteral (null), BooleanLiteral (false)]}, true, 'one')
+      concat:literals (1, ${[Literal (null), Literal (false)]}, true, 'one')
       concat:vars (${sql`cast(${1} as text)`}, ${Raw ("' '")}, ${true}::text, ${sql`null`}::text)
 
       ${sql`select count (*) from goal where goal.player_id = ${Raw ((_p, t) => `${t!.name}.id`)}`}:no_of_goals

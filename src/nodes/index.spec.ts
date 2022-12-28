@@ -3,14 +3,11 @@ import All from "./All";
 import { isASTNode } from "./ASTNode";
 import BelongsTo from "./BelongsTo";
 import BelongsToMany from "./BelongsToMany";
-import BooleanLiteral from "./BooleanLiteral";
 import Call from "./Call";
 import HasMany from "./HasMany";
 import HasOne from "./HasOne";
 import Identifier from "./Identifier";
-import { isLiteral } from "./Literal";
-import NullLiteral from "./NullLiteral";
-import NumericLiteral from "./NumericLiteral";
+import Literal from "./Literal";
 import Raw from "./Raw";
 import Ref from "./Ref";
 import { isRefNode } from "./RefNode";
@@ -61,11 +58,16 @@ describe ("Nodes", () => {
   });
 
   test ("is Literal", () => {
-    expect (isLiteral (BooleanLiteral (true))).toBe (true);
-    expect (isLiteral (NullLiteral (null))).toBe (true);
-    expect (isLiteral (NumericLiteral (1))).toBe (true);
-    expect (isLiteral (StringLiteral ("one"))).toBe (true);
-    expect (isLiteral ("Literal")).toBe (false);
+    expect (Literal.isLiteral (Literal (true))).toBe (true);
+    expect (Literal.isLiteral (Literal (null))).toBe (true);
+    expect (Literal.isLiteral (Literal (1))).toBe (true);
+    expect (Literal.isLiteral (Literal ("one"))).toBe (true);
+    expect (Literal.isLiteral ("Literal")).toBe (false);
+  });
+
+  test ("is StringLiteral", () => {
+    expect (StringLiteral.isStringLiteral (StringLiteral ("select"))).toBe (true);
+    expect (StringLiteral.isStringLiteral ("select")).toBe (false);
   });
 
   test ("is Raw", () => {

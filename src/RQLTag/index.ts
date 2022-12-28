@@ -91,10 +91,6 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
     next.push ({ tag, info: [info.as, info.lRef.as], single });
   };
 
-  const caseOfLiteral = (value: number | boolean | null, as?: string, cast?: string) => {
-    members.push (Raw (`${value}${castAs (cast, as)}`));
-  };
-
   for (const node of nodes) {
     node.caseOf<void> ({
       BelongsTo: caseOfRef (true),
@@ -133,9 +129,9 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
           throw new Error (`U can't insert "${value}" in this section of the RQLTag`);
         }
       },
-      NumericLiteral: caseOfLiteral,
-      BooleanLiteral: caseOfLiteral,
-      NullLiteral: caseOfLiteral,
+      Literal: (value, as, cast) => {
+        members.push (Raw (`${value}${castAs (cast, as)}`));
+      },
       StringLiteral: (value, as, cast) => {
         members.push (Raw (`'${value}'${castAs (cast, as)}`));
       },

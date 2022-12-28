@@ -117,10 +117,8 @@ function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
       Variable: unsupported ("Variable"),
       Ref: unsupported ("Ref"),
       Call: unsupported ("Call"),
-      StringLiteral: unsupported ("StringLiteral"),
-      NumericLiteral: unsupported ("NumericLiteral"),
-      BooleanLiteral: unsupported ("BooleanLiteral"),
-      NullLiteral: unsupported ("NullLiteral")
+      Literal: unsupported ("Literal"),
+      StringLiteral: unsupported ("StringLiteral")
     });
   }
 

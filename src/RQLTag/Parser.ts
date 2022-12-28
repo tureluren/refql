@@ -1,8 +1,7 @@
 import RQLTag from ".";
 import {
-  all, ASTNode, BooleanLiteral, Call,
-  Identifier, isASTNode, Literal, NullLiteral,
-  NumericLiteral, StringLiteral, Variable
+  all, ASTNode, Call, Identifier,
+  isASTNode, Literal, StringLiteral, Variable
 } from "../nodes";
 import Table from "../Table";
 import Tokenizer, { Token, TokenType } from "./Tokenizer";
@@ -203,14 +202,14 @@ class Parser {
     this.eat (value ? "true" : "false");
     const [as, cast] = this.castAs ();
 
-    return BooleanLiteral (value, as, cast);
+    return Literal (value, as, cast);
   }
 
   NullLiteral() {
     this.eat ("null");
     const [as, cast] = this.castAs ();
 
-    return NullLiteral (null, as, cast);
+    return Literal (null, as, cast);
   }
 
   StringLiteral() {
@@ -225,7 +224,7 @@ class Parser {
     const token = this.eat ("NUMBER");
     const [as, cast] = this.castAs ();
 
-    return NumericLiteral (Number (token.value), as, cast);
+    return Literal (Number (token.value), as, cast);
   }
 
   eat(tokenType: TokenType) {

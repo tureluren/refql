@@ -4,7 +4,7 @@ import pg from "pg";
 import SQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
-import { all, BelongsTo, BelongsToMany, BooleanLiteral, Call, HasMany, HasOne, Identifier, NullLiteral, NumericLiteral, Raw, StringLiteral, Values, Values2D, Variable } from "../nodes";
+import { all, BelongsTo, BelongsToMany, BooleanLiteral, Call, HasMany, HasOne, Identifier, Literal, NullLiteral, NumericLiteral, Raw, StringLiteral, Values, Values2D, Variable } from "../nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
 import format from "../test/format";
@@ -308,13 +308,13 @@ describe ("SQLTag type", () => {
     expect (() => sql`select ${StringLiteral ("one")}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: StringLiteral"));
 
-    expect (() => sql`select ${NumericLiteral (1)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: NumericLiteral"));
+    expect (() => sql`select ${Literal (1)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Literal"));
 
-    expect (() => sql`select ${BooleanLiteral (true)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: BooleanLiteral"));
+    expect (() => sql`select ${Literal (true)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Literal"));
 
-    expect (() => sql`select ${NullLiteral (null)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: NullLiteral"));
+    expect (() => sql`select ${Literal (null)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Literal"));
   });
 });
