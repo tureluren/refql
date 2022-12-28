@@ -1,11 +1,9 @@
 import castAs from "../common/castAs";
 import { flConcat, flMap, refqlType } from "../common/consts";
-import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
-import { all, ASTNode, Raw, Ref } from "../nodes";
-import { isRefNode } from "../nodes/RefNode";
+import { all, ASTNode, Raw, Ref, RefNode } from "../nodes";
 import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -86,17 +84,15 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
 
   let extra = SQLTag.empty<unknown> ();
 
-  const caseOfRef = (single: boolean) => (tag: RQLTag<unknown>, info: RefInfo) => {
+  const caseOfRef = (tag: RQLTag<unknown>, info: RefInfo, single: boolean) => {
     members.push (Raw (`${info.lRef}`));
     next.push ({ tag, info: [info.as, info.lRef.as], single });
   };
 
   for (const node of nodes) {
     node.caseOf<void> ({
-      BelongsTo: caseOfRef (true),
-      HasOne: caseOfRef (true),
-      HasMany: caseOfRef (false),
-      BelongsToMany: caseOfRef (false),
+      RefNode: caseOfRef,
+      BelongsToMany: caseOfRef,
       Call: (tag, name, as, cast) => {
         members.push (sql`
           ${Raw (name)} (${tag})${Raw (castAs (cast, as))}
@@ -143,7 +139,7 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
   }
 
   const refMemberLength = nodes.reduce ((n, node) =>
-    isRefNode (node) || Ref.isRef (node) ? n + 1 : n
+    RefNode.isRefNode (node) || Ref.isRef (node) ? n + 1 : n
   , 0);
 
   if (refMemberLength === members.length) {

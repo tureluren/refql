@@ -1,22 +1,20 @@
-import { refqlType } from "../common/consts";
-import { RefInfo, RefInput, RefMakerPair } from "../common/types";
+import { RefInfo, RefInput, RefMakerPair, RefQLRows, StringMap } from "../common/types";
 import RQLTag, { concatExtra } from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import Raw from "./Raw";
 import Ref from "./Ref";
-import RefNode, { refNodePrototype, rowValues } from "./RefNode";
+import RefNode, { refNodePrototype } from "./RefNode";
+import Values from "./Values";
 
 interface BelongsToMany<Params> extends RefNode<Params> {
   info: Required<RefInfo>;
 }
 
-const type = "refql/BelongsToMany";
-
 const prototype = Object.assign ({}, refNodePrototype, {
   constructor: BelongsToMany,
-  [refqlType]: type,
-  joinLateral
+  joinLateral,
+  caseOf
 });
 
 function BelongsToMany<Params>(info: Required<RefInfo>, tag: RQLTag<Params>) {
@@ -24,6 +22,7 @@ function BelongsToMany<Params>(info: Required<RefInfo>, tag: RQLTag<Params>) {
 
   belongsToMany.tag = tag;
   belongsToMany.info = info;
+  belongsToMany.single = false;
 
   return belongsToMany;
 }
@@ -36,7 +35,7 @@ function joinLateral(this: BelongsToMany<unknown>) {
     select distinct ${Raw (lRef)}
     from ${Raw (parent)}
     where ${Raw (lRef.name)}
-    in ${rowValues (lRef)}
+    in ${Values<RefQLRows> (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
   `;
 
   const l2 = tag
@@ -56,9 +55,9 @@ function joinLateral(this: BelongsToMany<unknown>) {
   return this.tag;
 }
 
-BelongsToMany.isBelongsToMany = function <Params> (value: any): value is BelongsToMany<Params> {
-  return value != null && value[refqlType] === type;
-};
+function caseOf(this: RefNode<unknown>, structureMap: StringMap) {
+  return structureMap.BelongsToMany (this.joinLateral (), this.info, this.single);
+}
 
 type BelongsToManyInput = RefInput;
 

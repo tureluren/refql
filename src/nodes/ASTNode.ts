@@ -3,10 +3,8 @@ import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 
 type StructureMap<Params, Return> = {
-  BelongsTo: (tag: RQLTag<Params>, info: RefInfo) => Return;
-  BelongsToMany: (tag: RQLTag<Params>, info: Required<RefInfo>) => Return;
-  HasMany: (tag: RQLTag<Params>, info: RefInfo) => Return;
-  HasOne: (tag: RQLTag<Params>, info: RefInfo) => Return;
+  RefNode: (tag: RQLTag<Params>, info: RefInfo, single: boolean) => Return;
+  BelongsToMany: (tag: RQLTag<Params>, info: Required<RefInfo>, single: boolean) => Return;
   All: (sign: string) => Return;
   Identifier: (name: string, as?: string, cast?: string) => Return;
   Variable: (value: SQLTag<Params> | ValueType, as?: string, cast?: string) => Return;

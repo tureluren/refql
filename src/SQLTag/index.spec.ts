@@ -4,7 +4,10 @@ import pg from "pg";
 import SQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
-import { all, BelongsTo, BelongsToMany, BooleanLiteral, Call, HasMany, HasOne, Identifier, Literal, NullLiteral, NumericLiteral, Raw, StringLiteral, Values, Values2D, Variable } from "../nodes";
+import {
+  all, BelongsToMany, Call, Identifier, Literal,
+  Raw, RefNode, StringLiteral, Values, Values2D, Variable
+} from "../nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
 import format from "../test/format";
@@ -281,17 +284,11 @@ describe ("SQLTag type", () => {
     expect (() => sql`select ${Identifier ("id")}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: Identifier"));
 
-    expect (() => sql`select ${BelongsTo (dummyRefInfo, dummy`*`)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: BelongsTo"));
+    expect (() => sql`select ${RefNode (dummyRefInfo, dummy`*`)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: RefNode"));
 
     expect (() => sql`select ${BelongsToMany (dummyRefInfo, dummy`*`)}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: BelongsToMany"));
-
-    expect (() => sql`select ${HasOne (dummyRefInfo, dummy`*`)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: HasOne"));
-
-    expect (() => sql`select ${HasMany (dummyRefInfo, dummy`*`)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: HasMany"));
 
     expect (() => sql`select ${all}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: All"));

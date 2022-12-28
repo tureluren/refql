@@ -109,10 +109,8 @@ function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
       },
 
       Identifier: unsupported ("Identifier"),
-      BelongsTo: unsupported ("BelongsTo"),
+      RefNode: unsupported ("RefNode"),
       BelongsToMany: unsupported ("BelongsToMany"),
-      HasMany: unsupported ("HasMany"),
-      HasOne: unsupported ("HasOne"),
       All: unsupported ("All"),
       Variable: unsupported ("Variable"),
       Ref: unsupported ("Ref"),

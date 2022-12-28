@@ -5,9 +5,8 @@ import RQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import {
-  all, BelongsTo, BelongsToMany,
-  HasMany, HasOne, Identifier, Literal, Raw,
-  Value, Values, Values2D
+  all, BelongsToMany, Identifier, Literal, Raw,
+  RefNode, Value, Values, Values2D
 } from "../nodes";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -517,17 +516,11 @@ describe ("RQLTag type", () => {
   });
 
   test ("unimplemented by Call", () => {
-    expect (() => player`concat (${BelongsTo (dummyRefInfo, dummy`*`)})`.compile ())
-      .toThrowError (new Error ("Unimplemented by Call: BelongsTo"));
+    expect (() => player`concat (${RefNode (dummyRefInfo, dummy`*`)})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: RefNode"));
 
     expect (() => player`concat (${BelongsToMany (dummyRefInfo, dummy`*`)})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: BelongsToMany"));
-
-    expect (() => player`concat (${HasOne (dummyRefInfo, dummy`*`)})`.compile ())
-      .toThrowError (new Error ("Unimplemented by Call: HasOne"));
-
-    expect (() => player`concat (${HasMany (dummyRefInfo, dummy`*`)})`.compile ())
-      .toThrowError (new Error ("Unimplemented by Call: HasMany"));
 
     expect (() => player`concat (${all})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: All"));

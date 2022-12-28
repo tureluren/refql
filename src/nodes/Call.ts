@@ -61,10 +61,8 @@ function interpret<Params>(this: Call<Params>) {
       Variable: (value, _as, cast) => {
         args.push (sql`${value}${Raw (castAs (cast))}`);
       },
-      BelongsTo: unsupported ("BelongsTo"),
+      RefNode: unsupported ("RefNode"),
       BelongsToMany: unsupported ("BelongsToMany"),
-      HasMany: unsupported ("HasMany"),
-      HasOne: unsupported ("HasOne"),
       All: unsupported ("All"),
       Ref: unsupported ("Ref"),
       Value: unsupported ("Value"),

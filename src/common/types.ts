@@ -65,7 +65,10 @@ export interface RefQLRows {
   refQLRows: any[];
 }
 
+export type RefMaker =
+  (parent: Table, tag: RQLTag<unknown>, as?: string) => RefNode<unknown>;
+
 export type RefMakerPair = [
   Table,
-  (parent: Table, tag: RQLTag<unknown>, as?: string) => RefNode<unknown>
+  RefMaker
 ];
