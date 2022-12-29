@@ -64,7 +64,6 @@ function interpret<Params>(this: Call<Params>) {
       RefNode: unsupported ("RefNode"),
       BelongsToMany: unsupported ("BelongsToMany"),
       All: unsupported ("All"),
-      Ref: unsupported ("Ref"),
       Value: unsupported ("Value"),
       Values: unsupported ("Values"),
       Values2D: unsupported ("Values2D")

@@ -5,7 +5,6 @@ import Call from "./Call";
 import Identifier from "./Identifier";
 import Literal from "./Literal";
 import Raw from "./Raw";
-import Ref from "./Ref";
 import RefNode, { belongsTo, hasMany, hasOne } from "./RefNode";
 import StringLiteral from "./StringLiteral";
 import Value from "./Value";
@@ -17,6 +16,7 @@ export {
   all, All, ASTNode, belongsTo,
   belongsToMany, BelongsToMany,
   Call, hasMany, hasOne, Identifier,
-  isASTNode, Literal, Raw, Ref, RefNode,
-  StringLiteral, Value, Values, Values2D, Variable
+  isASTNode, Literal, Raw, RefNode,
+  StringLiteral, Value, Values,
+  Values2D, Variable
 };

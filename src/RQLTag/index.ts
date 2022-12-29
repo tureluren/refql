@@ -3,14 +3,14 @@ import { flConcat, flMap, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
-import { all, ASTNode, Raw, Ref, RefNode } from "../nodes";
+import { all, ASTNode, Raw, RefNode } from "../nodes";
 import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 
 export interface Next<Params> {
   tag: RQLTag<Params & RefQLRows>;
-  info: [string, string];
+  link: [string, string];
   single: boolean;
 }
 
@@ -85,8 +85,8 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
   let extra = SQLTag.empty<unknown> ();
 
   const caseOfRef = (tag: RQLTag<unknown>, info: RefInfo, single: boolean) => {
-    members.push (Raw (`${info.lRef}`));
-    next.push ({ tag, info: [info.as, info.lRef.as], single });
+    members.push (Raw (info.lRef));
+    next.push ({ tag, link: [info.as, info.lRef.as], single });
   };
 
   for (const node of nodes) {
@@ -107,9 +107,6 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
         members.push (
           Raw (`${table.name}.${name}${castAs (cast, as)}`)
         );
-      },
-      Ref: (name, as) => {
-        members.push (Raw (`${name} ${as}`));
       },
       Variable: (value, as, cast) => {
         if (SQLTag.isSQLTag (value)) {
@@ -139,7 +136,7 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
   }
 
   const refMemberLength = nodes.reduce ((n, node) =>
-    RefNode.isRefNode (node) || Ref.isRef (node) ? n + 1 : n
+    RefNode.isRefNode (node) ? n + 1 : n
   , 0);
 
   if (refMemberLength === members.length) {
@@ -160,12 +157,12 @@ export const concatExtra = (extra: SQLTag<unknown>, correctWhere: boolean) => {
 
     if (!Raw.isRaw (raw)) return nodes;
 
-    raw = raw.map (x => {
+    raw = raw.map (value => {
       if (correctWhere) {
-        return `${x}`.replace (/^\b(where)\b/i, "and");
+        return `${value}`.replace (/^\b(where)\b/i, "and");
       }
 
-      return `${x}`.replace (/^\b(and|or)\b/i, "where");
+      return `${value}`.replace (/^\b(and|or)\b/i, "where");
     });
 
     return [raw, ...rest];
@@ -175,13 +172,17 @@ export const concatExtra = (extra: SQLTag<unknown>, correctWhere: boolean) => {
 function compile(this: RQLTag<unknown>, params: unknown = {}) {
   if (!this.interpreted) {
     const { tag, extra, next } = this.interpret ();
+
     this.interpreted = {
       tag: tag.concat (concatExtra (extra, false)),
       next
     };
   }
 
-  return [...this.interpreted.tag.compile (params, this.table), this.interpreted.next];
+  return [
+    ...this.interpreted.tag.compile (params, this.table),
+    this.interpreted.next
+  ];
 }
 
 async function aggregate(this: RQLTag<unknown>, querier: Querier, params: StringMap = {}): Promise<any[]> {
@@ -198,8 +199,7 @@ async function aggregate(this: RQLTag<unknown>, querier: Querier, params: String
 
   return rows.map (row =>
     nextData.reduce ((agg, nextRows, idx) => {
-      const { single, info } = next[idx];
-      const [lAs, rAs] = info;
+      const { single, link: [lAs, rAs] } = next[idx];
 
       agg[lAs] = nextRows
         .filter ((r: any) =>

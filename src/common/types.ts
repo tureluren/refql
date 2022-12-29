@@ -1,5 +1,6 @@
-import { ASTNode, Ref } from "../nodes";
+import { ASTNode } from "../nodes";
 import RefNode from "../nodes/RefNode";
+import Ref from "../Ref";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import Table from "../Table";

@@ -1,5 +1,6 @@
 import Table from "../Table";
-import { belongsTo, belongsToMany, hasMany, hasOne, Ref } from "../nodes";
+import { belongsTo, belongsToMany, hasMany, hasOne } from "../nodes";
+import Ref from "../Ref";
 
 const game = Table ("game");
 const gamePlayer = Table ("game_player");

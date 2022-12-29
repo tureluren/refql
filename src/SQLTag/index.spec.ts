@@ -150,6 +150,8 @@ describe ("SQLTag type", () => {
       where id in ${Values (p => p.ids)}
     `;
 
+    const spy = jest.spyOn (tag, "interpret");
+
     const [query, values] = tag.compile ({ ids: [3, 4] });
 
     expect (query).toBe (format (`
@@ -159,6 +161,19 @@ describe ("SQLTag type", () => {
     `));
 
     expect (values).toEqual ([3, 4]);
+
+    const [query2, values2] = tag.compile ({ ids: [3, 4, 5] });
+
+    // using cache
+    expect (spy).toBeCalledTimes (1);
+
+    expect (query2).toBe (format (`
+      select id, first_name, last_name
+      from player
+      where id in ($1, $2, $3)
+    `));
+
+    expect (values2).toEqual ([3, 4, 5]);
 
     const players = await tag.run<Player> (querier, { ids: [3, 4] });
 
@@ -224,7 +239,7 @@ describe ("SQLTag type", () => {
   test ("insert multiple", async () => {
     const insert = sql<{fields: string[]; table: Table; data: StringMap[]}>`
       insert into ${Raw (p => `${p.table} (${p.fields.join (", ")})`)}
-      values ${Values2D (p => p.data.map (x => p.fields.map (f => x[f])))}
+      values ${Values2D (p => p.data.map (value => p.fields.map (f => value[f])))}
     `;
 
     const params = {
@@ -284,7 +299,7 @@ describe ("SQLTag type", () => {
     expect (() => sql`select ${Identifier ("id")}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: Identifier"));
 
-    expect (() => sql`select ${RefNode (dummyRefInfo, dummy`*`)}`.compile ())
+    expect (() => sql`select ${RefNode (dummyRefInfo, dummy`*`, true)}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: RefNode"));
 
     expect (() => sql`select ${BelongsToMany (dummyRefInfo, dummy`*`)}`.compile ())
@@ -292,9 +307,6 @@ describe ("SQLTag type", () => {
 
     expect (() => sql`select ${all}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: All"));
-
-    expect (() => sql`select ${dummyRefInfo.lRef}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: Ref"));
 
     expect (() => sql`select ${Variable (1)}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: Variable"));

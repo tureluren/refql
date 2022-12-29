@@ -1,9 +1,7 @@
 export type TokenType =
-  | "::" | ":" | "{" | "}"
-  | "(" | ")" | "," | "VARIABLE"
+  | "::" | ":" | "(" | ")" | "," | "VARIABLE"
   | "true" | "false" | "null" | "NUMBER"
-  | "<" | "-" | "x" | "*" | "SCHEMA"
-  | "IDENTIFIER" | "STRING" | "EOT";
+  | "*" | "IDENTIFIER" | "STRING" | "EOT";
 
 export type Token = {
   type: TokenType | null;
@@ -38,7 +36,6 @@ const tokens: [RegExp, TokenType | null][] = [
 
   // Identifiers
   [/^\*/, "*"],
-  [/^\w+\./, "SCHEMA"],
   [/^\w+/, "IDENTIFIER"],
 
   // Strings

@@ -1,11 +1,11 @@
 import { refqlType } from "../common/consts";
 import { RefInfo, RefInput, RefMaker, RefMakerPair, RefQLRows, StringMap } from "../common/types";
+import Ref from "../Ref";
 import RQLTag, { concatExtra } from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 import Raw from "./Raw";
-import Ref from "./Ref";
 import Values from "./Values";
 
 interface RefNode<Params> extends ASTNode<Params> {
@@ -118,11 +118,11 @@ const makeHasOne = (child: Table, info: RefNodeInput) => (parent: Table, tag: RQ
   );
 };
 
-const makeRefNode = (maker: (child: Table, info: RefNodeInput) => RefMaker) => (table: string, info?: RefNodeInput): RefMakerPair => {
+const makeRefNode = (f: (child: Table, info: RefNodeInput) => RefMaker) => (table: string, info?: RefNodeInput): RefMakerPair => {
   const hasOneInfo = info || {};
   const child = Table (table);
 
-  return [child, maker (child, hasOneInfo)];
+  return [child, f (child, hasOneInfo)];
 };
 
 export const belongsTo = makeRefNode (makeBelongsTo);

@@ -1,9 +1,9 @@
 import { RefInfo, RefInput, RefMakerPair, RefQLRows, StringMap } from "../common/types";
+import Ref from "../Ref";
 import RQLTag, { concatExtra } from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import Raw from "./Raw";
-import Ref from "./Ref";
 import RefNode, { refNodePrototype } from "./RefNode";
 import Values from "./Values";
 
@@ -55,7 +55,7 @@ function joinLateral(this: BelongsToMany<unknown>) {
   return this.tag;
 }
 
-function caseOf(this: RefNode<unknown>, structureMap: StringMap) {
+function caseOf(this: BelongsToMany<unknown>, structureMap: StringMap) {
   return structureMap.BelongsToMany (this.joinLateral (), this.info, this.single);
 }
 

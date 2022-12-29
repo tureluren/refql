@@ -5,7 +5,7 @@ import Table from "../Table";
 
 interface Raw<Params> extends ASTNode<Params> {
   run: TagFunctionVariable<Params, string>;
-  map(f: (x: ValueType) => ValueType): Raw<Params>;
+  map(f: (value: ValueType) => ValueType): Raw<Params>;
   [flMap]: Raw<Params>["map"];
 }
 

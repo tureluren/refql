@@ -113,7 +113,6 @@ function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
       BelongsToMany: unsupported ("BelongsToMany"),
       All: unsupported ("All"),
       Variable: unsupported ("Variable"),
-      Ref: unsupported ("Ref"),
       Call: unsupported ("Call"),
       Literal: unsupported ("Literal"),
       StringLiteral: unsupported ("StringLiteral")

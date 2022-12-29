@@ -9,7 +9,6 @@ type StructureMap<Params, Return> = {
   Identifier: (name: string, as?: string, cast?: string) => Return;
   Variable: (value: SQLTag<Params> | ValueType, as?: string, cast?: string) => Return;
   Call: (tag: SQLTag<Params>, name: string, as?: string, cast?: string) => Return;
-  Ref: (name: string, as: string) => Return;
   Literal: (value: string | number | boolean | null, as?: string, cast?: string) => Return;
   StringLiteral: (value: string, as?: string, cast?: string) => Return;
   Raw: (run: TagFunctionVariable<Params, string>) => Return;

@@ -6,7 +6,6 @@ import Call from "./Call";
 import Identifier from "./Identifier";
 import Literal from "./Literal";
 import Raw from "./Raw";
-import Ref from "./Ref";
 import RefNode from "./RefNode";
 import StringLiteral from "./StringLiteral";
 import Value from "./Value";
@@ -45,11 +44,6 @@ describe ("Nodes", () => {
   test ("is Raw", () => {
     expect (Raw.isRaw (Raw ("id"))).toBe (true);
     expect (Raw.isRaw ("Raw")).toBe (false);
-  });
-
-  test ("is Ref", () => {
-    expect (Ref.isRef (Ref ("player.id", "id"))).toBe (true);
-    expect (Ref.isRef ("Ref")).toBe (false);
   });
 
   test ("is RefNode", () => {

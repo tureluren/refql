@@ -422,6 +422,36 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (30);
   });
 
+  test ("Nested limit and cache", async () => {
+    const tag = team<{limit: number}>`
+      ${player`
+        ${sql`
+          limit 4
+        `} 
+      `} 
+      ${sql`
+        limit ${p => p.limit} 
+      `}
+    `;
+
+    const spy = jest.spyOn (tag, "interpret");
+
+    const teams = await tag.run<any> (querier, { limit: 2 });
+
+    expect (teams.length).toBe (2);
+    expect (teams[0].players.length).toBe (4);
+    expect (teams[1].players.length).toBe (4);
+
+    const teams2 = await tag.run<any> (querier, { limit: 3 });
+
+    expect (teams2.length).toBe (3);
+    expect (teams2[0].players.length).toBe (4);
+    expect (teams2[1].players.length).toBe (4);
+    expect (teams2[2].players.length).toBe (4);
+
+    expect (spy).toBeCalledTimes (1);
+  });
+
   test ("By id", async () => {
     const tag = player<{}>`
       *
@@ -516,7 +546,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("unimplemented by Call", () => {
-    expect (() => player`concat (${RefNode (dummyRefInfo, dummy`*`)})`.compile ())
+    expect (() => player`concat (${RefNode (dummyRefInfo, dummy`*`, true)})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: RefNode"));
 
     expect (() => player`concat (${BelongsToMany (dummyRefInfo, dummy`*`)})`.compile ())
@@ -524,9 +554,6 @@ describe ("RQLTag type", () => {
 
     expect (() => player`concat (${all})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: All"));
-
-    expect (() => player`concat (${dummyRefInfo.lRef})`.compile ())
-      .toThrowError (new Error ("Unimplemented by Call: Ref"));
 
     expect (() => player`concat(${Value (1)})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: Value"));

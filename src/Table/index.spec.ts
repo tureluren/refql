@@ -5,11 +5,11 @@ import Table from ".";
 import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
 import {
-  belongsTo, BelongsTo, BelongsToMany,
-  belongsToMany, hasMany, HasMany,
-  hasOne, Raw, Ref
+  belongsTo, BelongsToMany,
+  belongsToMany, hasMany,
+  hasOne, Raw, RefNode
 } from "../nodes";
-import HasOne from "../nodes/HasOne";
+import Ref from "../Ref";
 import { Position } from "../soccer";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
@@ -67,7 +67,7 @@ describe ("Table type", () => {
     const belongsToNode = refMaker (
       player,
       teamTable`*`
-    ) as BelongsTo<unknown>;
+    ) as RefNode<unknown>;
 
     const expected = {
       parent: player,
@@ -86,7 +86,7 @@ describe ("Table type", () => {
       player,
       teamTable`*`,
       "crew"
-    ) as BelongsTo<unknown>;
+    ) as RefNode<unknown>;
 
     const expected = {
       parent: player,
@@ -104,7 +104,7 @@ describe ("Table type", () => {
     const belongsToNode = refMaker (
       player,
       teamTable`*`
-    ) as BelongsTo<unknown>;
+    ) as RefNode<unknown>;
 
     const expected = {
       parent: player,
@@ -247,7 +247,7 @@ describe ("Table type", () => {
     const hasManyNode = refMaker (
       player,
       goalTable`*`
-    ) as HasMany<unknown>;
+    ) as RefNode<unknown>;
 
     const expected = {
       parent: player,
@@ -268,7 +268,7 @@ describe ("Table type", () => {
       player,
       goalTable`*`,
       "finishes"
-    ) as HasMany<unknown>;
+    ) as RefNode<unknown>;
 
     const expected = {
       parent: player,
@@ -290,7 +290,7 @@ describe ("Table type", () => {
     const hasManyNode = refMaker (
       player,
       goalTable`*`
-    ) as HasMany<unknown>;
+    ) as RefNode<unknown>;
 
     const expected = {
       parent: player,
@@ -310,7 +310,7 @@ describe ("Table type", () => {
     const hasOneNode = refMaker (
       player,
       ratingTable`*`
-    ) as HasOne<unknown>;
+    ) as RefNode<unknown>;
 
     const expected = {
       parent: player,
@@ -329,7 +329,7 @@ describe ("Table type", () => {
       player,
       ratingTable`*`,
       "score"
-    ) as HasOne<unknown>;
+    ) as RefNode<unknown>;
 
     const expected = {
       parent: player,
@@ -351,7 +351,7 @@ describe ("Table type", () => {
     const hasOneNode = refMaker (
       player,
       ratingTable`*`
-    ) as HasOne<unknown>;
+    ) as RefNode<unknown>;
 
     const expected = {
       parent: player,
