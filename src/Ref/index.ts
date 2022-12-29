@@ -1,9 +1,7 @@
-import { refqlType } from "../common/consts.ts";
-import { StringMap } from "../common/types.ts";
-import ASTNode, { astNodePrototype } from "../nodes/ASTNode.ts";
-import Table from "../Table/index.ts";
+import { refqlType } from "../common/consts";
+import Table from "../Table";
 
-interface Ref extends ASTNode<unknown> {
+interface Ref {
   name: string;
   as: string;
   toString(): string;
@@ -11,12 +9,11 @@ interface Ref extends ASTNode<unknown> {
 
 const type = "refql/Ref";
 
-const prototype = Object.assign ({}, astNodePrototype, {
+const prototype = {
   [refqlType]: type,
   constructor: Ref,
-  toString,
-  caseOf
-});
+  toString
+};
 
 function Ref(name: string, as: string) {
   let ref: Ref = Object.create (prototype);
@@ -29,10 +26,6 @@ function Ref(name: string, as: string) {
 
 function toString(this: Ref) {
   return `${this.name} ${this.as}`;
-}
-
-function caseOf(this: Ref, structureMap: StringMap) {
-  return structureMap.Ref (this.name, this.as);
 }
 
 Ref.isRef = function (value: any): value is Ref {

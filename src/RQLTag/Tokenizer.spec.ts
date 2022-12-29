@@ -37,16 +37,27 @@ describe ("Tokenizer type", () => {
   });
 
   test ("identifiers", () => {
-    const tokenizer = new Tokenizer ("* public.player");
+    const tokenizer = new Tokenizer ("* id first_name");
     expect (tokenizer.getNextToken ()).toEqual ({ type: "*", value: "*" });
-    expect (tokenizer.getNextToken ()).toEqual ({ type: "SCHEMA", value: "public." });
-    expect (tokenizer.getNextToken ()).toEqual ({ type: "IDENTIFIER", value: "player" });
+    expect (tokenizer.getNextToken ()).toEqual ({ type: "IDENTIFIER", value: "id" });
+    expect (tokenizer.getNextToken ()).toEqual ({ type: "IDENTIFIER", value: "first_name" });
   });
 
   test ("strings", () => {
     const tokenizer = new Tokenizer (`"foo" 'bar'`);
     expect (tokenizer.getNextToken ()).toEqual ({ type: "STRING", value: '"foo"' });
     expect (tokenizer.getNextToken ()).toEqual ({ type: "STRING", value: "'bar'" });
+  });
+
+  test ("comments", () => {
+    const tokenizer = new Tokenizer (`
+      //
+      // $
+      // $ $
+    `);
+    expect (tokenizer.getNextToken ()).toEqual ({ type: "COMMENT", value: "//", skipCount: 0 });
+    expect (tokenizer.getNextToken ()).toEqual ({ type: "COMMENT", value: "//", skipCount: 1 });
+    expect (tokenizer.getNextToken ()).toEqual ({ type: "COMMENT", value: "//", skipCount: 2 });
   });
 
   test ("unexpected token", () => {

@@ -39,10 +39,6 @@ const unsupported = unimplemented ("Call");
 function interpret<Params>(this: Call<Params>) {
   const args = [] as (Raw<Params> | SQLTag<Params>)[];
 
-  const caseOfLiteral = (value: number | boolean | null) => {
-    args.push (Raw (`${value}`));
-  };
-
   for (const node of this.nodes) {
     node.caseOf<void> ({
       Call: (call, name, _as, cast) => {
@@ -56,21 +52,18 @@ function interpret<Params>(this: Call<Params>) {
       Raw: run => {
         args.push (Raw (run));
       },
+      Literal: value => {
+        args.push (Raw (value));
+      },
       StringLiteral: value => {
         args.push (Raw (`'${value}'`));
       },
       Variable: (value, _as, cast) => {
         args.push (sql`${value}${Raw (castAs (cast))}`);
       },
-      NumericLiteral: caseOfLiteral,
-      BooleanLiteral: caseOfLiteral,
-      NullLiteral: caseOfLiteral,
-      BelongsTo: unsupported ("BelongsTo"),
+      RefNode: unsupported ("RefNode"),
       BelongsToMany: unsupported ("BelongsToMany"),
-      HasMany: unsupported ("HasMany"),
-      HasOne: unsupported ("HasOne"),
       All: unsupported ("All"),
-      Ref: unsupported ("Ref"),
       Value: unsupported ("Value"),
       Values: unsupported ("Values"),
       Values2D: unsupported ("Values2D")

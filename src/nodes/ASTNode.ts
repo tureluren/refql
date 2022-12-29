@@ -3,20 +3,15 @@ import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 
 type StructureMap<Params, Return> = {
-  BelongsTo: (tag: RQLTag<Params>, info: RefInfo) => Return;
-  BelongsToMany: (tag: RQLTag<Params>, info: Required<RefInfo>) => Return;
-  HasMany: (tag: RQLTag<Params>, info: RefInfo) => Return;
-  HasOne: (tag: RQLTag<Params>, info: RefInfo) => Return;
+  RefNode: (tag: RQLTag<Params>, info: RefInfo, single: boolean) => Return;
+  BelongsToMany: (tag: RQLTag<Params>, info: Required<RefInfo>, single: boolean) => Return;
   All: (sign: string) => Return;
   Identifier: (name: string, as?: string, cast?: string) => Return;
   Variable: (value: SQLTag<Params> | ValueType, as?: string, cast?: string) => Return;
   Call: (tag: SQLTag<Params>, name: string, as?: string, cast?: string) => Return;
-  Ref: (name: string, as: string) => Return;
+  Literal: (value: string | number | boolean | null, as?: string, cast?: string) => Return;
   StringLiteral: (value: string, as?: string, cast?: string) => Return;
-  NumericLiteral: (value: number, as?: string, cast?: string) => Return;
-  BooleanLiteral: (value: boolean, as?: string, cast?: string) => Return;
-  NullLiteral: (value: null, as?: string, cast?: string) => Return;
-  Raw: (run: TagFunctionVariable<Params>) => Return;
+  Raw: (run: TagFunctionVariable<Params, string>) => Return;
   Value: (run: TagFunctionVariable<Params>) => Return;
   Values: (run: TagFunctionVariable<Params, any[]>) => Return;
   Values2D: (run: TagFunctionVariable<Params, any[][]>) => Return;

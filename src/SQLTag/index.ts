@@ -73,7 +73,7 @@ function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
   for (const node of this.nodes) {
     node.caseOf<void> ({
       Raw: run => {
-        strings.push ((p, _i, t) => [`${run (p, t)}`, 0]);
+        strings.push ((p, _i, t) => [run (p, t), 0]);
       },
       Value: run => {
         values.push ((p, t) => [run (p, t)]);
@@ -109,18 +109,13 @@ function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
       },
 
       Identifier: unsupported ("Identifier"),
-      BelongsTo: unsupported ("BelongsTo"),
+      RefNode: unsupported ("RefNode"),
       BelongsToMany: unsupported ("BelongsToMany"),
-      HasMany: unsupported ("HasMany"),
-      HasOne: unsupported ("HasOne"),
       All: unsupported ("All"),
       Variable: unsupported ("Variable"),
-      Ref: unsupported ("Ref"),
       Call: unsupported ("Call"),
-      StringLiteral: unsupported ("StringLiteral"),
-      NumericLiteral: unsupported ("NumericLiteral"),
-      BooleanLiteral: unsupported ("BooleanLiteral"),
-      NullLiteral: unsupported ("NullLiteral")
+      Literal: unsupported ("Literal"),
+      StringLiteral: unsupported ("StringLiteral")
     });
   }
 

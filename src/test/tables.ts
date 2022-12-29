@@ -1,5 +1,6 @@
 import Table from "../Table";
-import { belongsTo, belongsToMany, hasMany, hasOne, Ref } from "../nodes";
+import { belongsTo, belongsToMany, hasMany, hasOne } from "../nodes";
+import Ref from "../Ref";
 
 const game = Table ("game");
 const gamePlayer = Table ("game_player");
@@ -42,6 +43,7 @@ const rating = Table ("rating");
 const dummy = Table ("dummy");
 
 const dummyRefInfo = {
+  parent: Table ("player"),
   as: "dummy",
   lRef: Ref ("player.id", "dummylref"),
   rRef: Ref ("game.id", "dummyrref"),

@@ -1,24 +1,26 @@
 import castAs from "../common/castAs";
 import { flConcat, flMap, refqlType } from "../common/consts";
-import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
-import { all, ASTNode, Raw, Ref } from "../nodes";
-import { isRefNode } from "../nodes/RefNode";
+import { all, ASTNode, Raw, RefNode } from "../nodes";
 import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 
 export interface Next<Params> {
   tag: RQLTag<Params & RefQLRows>;
-  info: RefInfo;
+  link: [string, string];
   single: boolean;
 }
 
 interface InterpretedRQLTag<Params> {
   tag: SQLTag<Params>;
   next: Next<Params>[];
+}
+
+interface Extra<Params> {
+  extra: SQLTag<Params>;
 }
 
 interface RQLTag<Params> {
@@ -29,7 +31,7 @@ interface RQLTag<Params> {
   [flConcat]: RQLTag<Params>["concat"];
   map<Params2>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): RQLTag<Params>;
   [flMap]: RQLTag<Params>["map"];
-  interpret(): InterpretedRQLTag<Params>;
+  interpret(): InterpretedRQLTag<Params> & Extra<Params>;
   compile(params?: Params): [string, any[], Next<Params>[]];
   aggregate<Output>(querier: Querier, params: Params): Promise<Output[]>;
   run<Output>(querier: Querier, params?: Params): Promise<Output[]>;
@@ -75,28 +77,22 @@ function map(this: RQLTag<unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<un
 
 const unsupported = unimplemented ("RQLTag");
 
-function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
+function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<StringMap> {
   const { nodes, table } = this,
     next = [] as Next<unknown>[],
     members = [] as (Raw<unknown> | SQLTag<unknown>)[];
 
-  let sqlTag = SQLTag.empty<unknown> ();
+  let extra = SQLTag.empty<unknown> ();
 
-  const caseOfRef = (single: boolean) => (tag: RQLTag<unknown>, info: RefInfo) => {
-    members.push (Raw (`${info.lRef}`));
-    next.push ({ tag, info, single });
-  };
-
-  const caseOfLiteral = (value: number | boolean | null, as?: string, cast?: string) => {
-    members.push (Raw (`${value}${castAs (cast, as)}`));
+  const caseOfRef = (tag: RQLTag<unknown>, info: RefInfo, single: boolean) => {
+    members.push (Raw (info.lRef));
+    next.push ({ tag, link: [info.as, info.lRef.as], single });
   };
 
   for (const node of nodes) {
     node.caseOf<void> ({
-      BelongsTo: caseOfRef (true),
-      HasOne: caseOfRef (true),
-      HasMany: caseOfRef (false),
-      BelongsToMany: caseOfRef (false),
+      RefNode: caseOfRef,
+      BelongsToMany: caseOfRef,
       Call: (tag, name, as, cast) => {
         members.push (sql`
           ${Raw (name)} (${tag})${Raw (castAs (cast, as))}
@@ -112,9 +108,6 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
           Raw (`${table.name}.${name}${castAs (cast, as)}`)
         );
       },
-      Ref: (name, as) => {
-        members.push (Raw (`${name} ${as}`));
-      },
       Variable: (value, as, cast) => {
         if (SQLTag.isSQLTag (value)) {
           if (as) {
@@ -122,16 +115,16 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
               (${value})${Raw (castAs (cast, as))} 
             `);
           } else {
-            sqlTag = sqlTag.concat (value);
+            extra = extra.concat (value);
           }
 
         } else {
           throw new Error (`U can't insert "${value}" in this section of the RQLTag`);
         }
       },
-      NumericLiteral: caseOfLiteral,
-      BooleanLiteral: caseOfLiteral,
-      NullLiteral: caseOfLiteral,
+      Literal: (value, as, cast) => {
+        members.push (Raw (`${value}${castAs (cast, as)}`));
+      },
       StringLiteral: (value, as, cast) => {
         members.push (Raw (`'${value}'${castAs (cast, as)}`));
       },
@@ -143,7 +136,7 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
   }
 
   const refMemberLength = nodes.reduce ((n, node) =>
-    isRefNode (node) || Ref.isRef (node) ? n + 1 : n
+    RefNode.isRefNode (node) ? n + 1 : n
   , 0);
 
   if (refMemberLength === members.length) {
@@ -152,23 +145,44 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> {
 
   let tag = sql<unknown>`
     select ${joinMembers (members)}
-    from ${Raw (`${table}`)}
+    from ${Raw (table)}
   `;
 
-  if (!isEmptyTag (sqlTag)) {
-    tag = tag.concat (sqlTag);
-  }
-
-  return { next, tag };
+  return { next, tag, extra };
 }
+
+export const concatExtra = (extra: SQLTag<unknown>, correctWhere: boolean) => {
+  return extra.map (nodes => {
+    let [raw, ...rest] = nodes;
+
+    if (!Raw.isRaw (raw)) return nodes;
+
+    raw = raw.map (value => {
+      if (correctWhere) {
+        return `${value}`.replace (/^\b(where)\b/i, "and");
+      }
+
+      return `${value}`.replace (/^\b(and|or)\b/i, "where");
+    });
+
+    return [raw, ...rest];
+  });
+};
 
 function compile(this: RQLTag<unknown>, params: unknown = {}) {
   if (!this.interpreted) {
-    this.interpreted = this.interpret ();
-  }
-  const { tag, next } = this.interpreted;
+    const { tag, extra, next } = this.interpret ();
 
-  return [...tag.compile (params, this.table), next];
+    this.interpreted = {
+      tag: tag.concat (concatExtra (extra, false)),
+      next
+    };
+  }
+
+  return [
+    ...this.interpreted.tag.compile (params, this.table),
+    this.interpreted.next
+  ];
 }
 
 async function aggregate(this: RQLTag<unknown>, querier: Querier, params: StringMap = {}): Promise<any[]> {
@@ -185,27 +199,23 @@ async function aggregate(this: RQLTag<unknown>, querier: Querier, params: String
 
   return rows.map (row =>
     nextData.reduce ((agg, nextRows, idx) => {
-      const { single, info } = next[idx];
-      const { as, lRef, rRef, lxRef } = info;
+      const { single, link: [lAs, rAs] } = next[idx];
 
-      const lr = lRef.as;
-      const rr = (lxRef || rRef).as;
-
-      agg[as] = nextRows
+      agg[lAs] = nextRows
         .filter ((r: any) =>
-          r[rr] === row[lr]
+          r[rAs] === row[rAs]
         )
         .map ((r: any) => {
-          const matched = { ...r };
-          delete matched[rr];
+          let matched = { ...r };
+          delete matched[rAs];
           return matched;
         });
 
       if (single) {
-        agg[as] = agg[as][0];
+        agg[lAs] = agg[lAs][0];
       }
 
-      delete agg[lr];
+      delete agg[rAs];
 
       return agg;
     }, row)

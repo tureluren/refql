@@ -1,19 +1,12 @@
 import { dummy, dummyRefInfo } from "../test/tables";
 import All from "./All";
 import { isASTNode } from "./ASTNode";
-import BelongsTo from "./BelongsTo";
 import BelongsToMany from "./BelongsToMany";
-import BooleanLiteral from "./BooleanLiteral";
 import Call from "./Call";
-import HasMany from "./HasMany";
-import HasOne from "./HasOne";
 import Identifier from "./Identifier";
-import { isLiteral } from "./Literal";
-import NullLiteral from "./NullLiteral";
-import NumericLiteral from "./NumericLiteral";
+import Literal from "./Literal";
 import Raw from "./Raw";
-import Ref from "./Ref";
-import { isRefNode } from "./RefNode";
+import RefNode from "./RefNode";
 import StringLiteral from "./StringLiteral";
 import Value from "./Value";
 import Values from "./Values";
@@ -30,29 +23,9 @@ describe ("Nodes", () => {
     expect (isASTNode ("All")).toBe (false);
   });
 
-  test ("is BelongsTo", () => {
-    expect (BelongsTo.isBelongsTo (BelongsTo (dummyRefInfo, dummy``))).toBe (true);
-    expect (BelongsTo.isBelongsTo ("BelongsTo")).toBe (false);
-  });
-
-  test ("is BelongsToMany", () => {
-    expect (BelongsToMany.isBelongsToMany (BelongsToMany (dummyRefInfo, dummy``))).toBe (true);
-    expect (BelongsToMany.isBelongsToMany ("BelongsToMany")).toBe (false);
-  });
-
   test ("is Call", () => {
     expect (Call.isCall (Call ("concat", []))).toBe (true);
     expect (Call.isCall ("Call")).toBe (false);
-  });
-
-  test ("is HasMany", () => {
-    expect (HasMany.isHasMany (HasMany (dummyRefInfo, dummy``))).toBe (true);
-    expect (HasMany.isHasMany ("HasMany")).toBe (false);
-  });
-
-  test ("is HasOne", () => {
-    expect (HasOne.isHasOne (HasOne (dummyRefInfo, dummy``))).toBe (true);
-    expect (HasOne.isHasOne ("All")).toBe (false);
   });
 
   test ("is Identifier", () => {
@@ -61,11 +34,11 @@ describe ("Nodes", () => {
   });
 
   test ("is Literal", () => {
-    expect (isLiteral (BooleanLiteral (true))).toBe (true);
-    expect (isLiteral (NullLiteral (null))).toBe (true);
-    expect (isLiteral (NumericLiteral (1))).toBe (true);
-    expect (isLiteral (StringLiteral ("one"))).toBe (true);
-    expect (isLiteral ("Literal")).toBe (false);
+    expect (Literal.isLiteral (Literal (true))).toBe (true);
+    expect (Literal.isLiteral (Literal (null))).toBe (true);
+    expect (Literal.isLiteral (Literal (1))).toBe (true);
+    expect (Literal.isLiteral (StringLiteral ("one"))).toBe (true);
+    expect (Literal.isLiteral ("Literal")).toBe (false);
   });
 
   test ("is Raw", () => {
@@ -73,17 +46,10 @@ describe ("Nodes", () => {
     expect (Raw.isRaw ("Raw")).toBe (false);
   });
 
-  test ("is Ref", () => {
-    expect (Ref.isRef (Ref ("player.id", "id"))).toBe (true);
-    expect (Ref.isRef ("Ref")).toBe (false);
-  });
-
   test ("is RefNode", () => {
-    expect (isRefNode (BelongsTo (dummyRefInfo, dummy`*`))).toBe (true);
-    expect (isRefNode (BelongsToMany (dummyRefInfo, dummy`*`))).toBe (true);
-    expect (isRefNode (HasMany (dummyRefInfo, dummy`*`))).toBe (true);
-    expect (isRefNode (HasOne (dummyRefInfo, dummy`*`))).toBe (true);
-    expect (isRefNode ("RefNode")).toBe (false);
+    expect (RefNode.isRefNode (RefNode (dummyRefInfo, dummy`*`, true))).toBe (true);
+    expect (RefNode.isRefNode (BelongsToMany (dummyRefInfo, dummy`*`))).toBe (true);
+    expect (RefNode.isRefNode ("RefNode")).toBe (false);
   });
 
   test ("Value", () => {

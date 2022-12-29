@@ -4,7 +4,10 @@ import pg from "pg";
 import SQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
-import { all, BelongsTo, BelongsToMany, BooleanLiteral, Call, HasMany, HasOne, Identifier, NullLiteral, NumericLiteral, Raw, StringLiteral, Values, Values2D, Variable } from "../nodes";
+import {
+  all, BelongsToMany, Call, Identifier, Literal,
+  Raw, RefNode, StringLiteral, Values, Values2D, Variable
+} from "../nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
 import format from "../test/format";
@@ -147,6 +150,8 @@ describe ("SQLTag type", () => {
       where id in ${Values (p => p.ids)}
     `;
 
+    const spy = jest.spyOn (tag, "interpret");
+
     const [query, values] = tag.compile ({ ids: [3, 4] });
 
     expect (query).toBe (format (`
@@ -156,6 +161,19 @@ describe ("SQLTag type", () => {
     `));
 
     expect (values).toEqual ([3, 4]);
+
+    const [query2, values2] = tag.compile ({ ids: [3, 4, 5] });
+
+    // using cache
+    expect (spy).toBeCalledTimes (1);
+
+    expect (query2).toBe (format (`
+      select id, first_name, last_name
+      from player
+      where id in ($1, $2, $3)
+    `));
+
+    expect (values2).toEqual ([3, 4, 5]);
 
     const players = await tag.run<Player> (querier, { ids: [3, 4] });
 
@@ -221,7 +239,7 @@ describe ("SQLTag type", () => {
   test ("insert multiple", async () => {
     const insert = sql<{fields: string[]; table: Table; data: StringMap[]}>`
       insert into ${Raw (p => `${p.table} (${p.fields.join (", ")})`)}
-      values ${Values2D (p => p.data.map (x => p.fields.map (f => x[f])))}
+      values ${Values2D (p => p.data.map (value => p.fields.map (f => value[f])))}
     `;
 
     const params = {
@@ -281,23 +299,14 @@ describe ("SQLTag type", () => {
     expect (() => sql`select ${Identifier ("id")}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: Identifier"));
 
-    expect (() => sql`select ${BelongsTo (dummyRefInfo, dummy`*`)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: BelongsTo"));
+    expect (() => sql`select ${RefNode (dummyRefInfo, dummy`*`, true)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: RefNode"));
 
     expect (() => sql`select ${BelongsToMany (dummyRefInfo, dummy`*`)}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: BelongsToMany"));
 
-    expect (() => sql`select ${HasOne (dummyRefInfo, dummy`*`)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: HasOne"));
-
-    expect (() => sql`select ${HasMany (dummyRefInfo, dummy`*`)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: HasMany"));
-
     expect (() => sql`select ${all}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: All"));
-
-    expect (() => sql`select ${dummyRefInfo.lRef}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: Ref"));
 
     expect (() => sql`select ${Variable (1)}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: Variable"));
@@ -308,13 +317,13 @@ describe ("SQLTag type", () => {
     expect (() => sql`select ${StringLiteral ("one")}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: StringLiteral"));
 
-    expect (() => sql`select ${NumericLiteral (1)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: NumericLiteral"));
+    expect (() => sql`select ${Literal (1)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Literal"));
 
-    expect (() => sql`select ${BooleanLiteral (true)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: BooleanLiteral"));
+    expect (() => sql`select ${Literal (true)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Literal"));
 
-    expect (() => sql`select ${NullLiteral (null)}`.compile ())
-      .toThrowError (new Error ("Unimplemented by SQLTag: NullLiteral"));
+    expect (() => sql`select ${Literal (null)}`.compile ())
+      .toThrowError (new Error ("Unimplemented by SQLTag: Literal"));
   });
 });

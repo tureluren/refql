@@ -1,13 +1,12 @@
 export type TokenType =
-  | "::" | ":" | "{" | "}"
-  | "(" | ")" | "," | "VARIABLE"
+  | "::" | ":" | "(" | ")" | "," | "COMMENT" | "VARIABLE"
   | "true" | "false" | "null" | "NUMBER"
-  | "<" | "-" | "x" | "*" | "SCHEMA"
-  | "IDENTIFIER" | "STRING" | "EOT";
+  | "*" | "IDENTIFIER" | "STRING" | "EOT";
 
 export type Token = {
   type: TokenType | null;
   value: string;
+  skipCount?: number;
 };
 
 const tokens: [RegExp, TokenType | null][] = [
@@ -22,6 +21,9 @@ const tokens: [RegExp, TokenType | null][] = [
   [/^\(/, "("],
   [/^\)/, ")"],
   [/^,/, ","],
+
+  // Comment
+  [/^\/\//, "COMMENT"],
 
   // Variables
   [/^\$/, "VARIABLE"],
@@ -38,7 +40,6 @@ const tokens: [RegExp, TokenType | null][] = [
 
   // Identifiers
   [/^\*/, "*"],
-  [/^\w+\./, "SCHEMA"],
   [/^\w+/, "IDENTIFIER"],
 
   // Strings
@@ -68,6 +69,7 @@ class Tokenizer {
 
     for (const [regexp, tokenType] of tokens) {
       const tokenValue = this.match (regexp, str);
+      let skipCount;
 
       // no match
       if (tokenValue == null) {
@@ -79,9 +81,17 @@ class Tokenizer {
         return this.getNextToken ();
       }
 
+      // comment out line
+      if (tokenType === "COMMENT") {
+        const newlineIdx = str.indexOf ("\n");
+        skipCount = (str.slice (0, newlineIdx).match (/\$/g) || []).length;
+        this.idx += newlineIdx - 1;
+      }
+
       return {
         type: tokenType,
-        value: tokenValue
+        value: tokenValue,
+        skipCount
       };
     }
 

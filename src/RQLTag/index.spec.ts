@@ -5,9 +5,8 @@ import RQLTag from ".";
 import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import {
-  all, BelongsTo, BelongsToMany, BooleanLiteral,
-  HasMany, HasOne, Identifier, NullLiteral, Raw,
-  Value, Values, Values2D
+  all, BelongsToMany, Identifier, Literal, Raw,
+  RefNode, Value, Values, Values2D
 } from "../nodes";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -17,7 +16,7 @@ import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import {
   dummy, dummyRefInfo, game, goal, league,
-  player, rating, team
+  player, position, rating, team
 } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Parser from "./Parser";
@@ -77,7 +76,7 @@ describe ("RQLTag type", () => {
   test ("calls and subselect", async () => {
     const tag = player<{}>`
       concat:full_name (first_name, " ", upper(${Identifier ("last_name")}))
-      concat:literals (1, ${[NullLiteral (null), BooleanLiteral (false)]}, true, 'one')
+      concat:literals (1, ${[Literal (null), Literal (false)]}, true, 'one')
       concat:vars (${sql`cast(${1} as text)`}, ${Raw ("' '")}, ${true}::text, ${sql`null`}::text)
 
       ${sql`select count (*) from goal where goal.player_id = ${Raw ((_p, t) => `${t!.name}.id`)}`}:no_of_goals
@@ -213,7 +212,10 @@ describe ("RQLTag type", () => {
         `}
         ${player`
           last_name
-        `}: players
+          ${sql`
+            limit 5 
+          `}
+        `}: defenders
       `}
       ${game`
         result
@@ -244,9 +246,14 @@ describe ("RQLTag type", () => {
     const [teamQuery, teamValues, teamNext] = teamTag.compile ({ refQLRows: [{ teamlref: 1 }, { teamlref: 1 }, { teamlref: 2 }] });
 
     expect (teamQuery).toBe (format (`
-      select team.id teamrref, team.name, team.league_id leaguelref, team.id playerslref
-      from public.team
-      where team.id in ($1, $2)
+      select * from (
+        select distinct player.team_id teamlref from player where player.team_id in ($1, $2)
+      ) refqll1, 
+      lateral (
+        select team.name, team.league_id leaguelref, team.id defenderslref
+        from public.team
+        where team.id = refqll1.teamlref
+      ) refqll2
     `));
 
     expect (teamValues).toEqual ([1, 2]);
@@ -257,27 +264,34 @@ describe ("RQLTag type", () => {
     const [leagueQuery, leagueValues, leagueNext] = leagueTag.compile ({ refQLRows: [{ leaguelref: 1 }, { leaguelref: 2 }] });
 
     expect (leagueQuery).toBe (format (`
-      select league.id leaguerref, league.name
-      from league
-      where league.id in ($1, $2)
+      select * from (
+        select distinct team.league_id leaguelref from public.team where team.league_id in ($1, $2)
+      ) refqll1,
+      lateral (
+        select league.name from league where league.id = refqll1.leaguelref
+      ) refqll2
     `));
 
     expect (leagueValues).toEqual ([1, 2]);
     expect (leagueNext).toEqual ([]);
 
-    // players
-    const playersTag = teamNext[1].tag;
+    // defenders
+    const defendersTag = teamNext[1].tag;
 
-    const [playersQuery, playersValues, playersNext] = playersTag.compile ({ refQLRows: [{ playerslref: 1 }, { playerslref: 2 }] });
+    const [defendersQuery, defendersValues, defendersNext] = defendersTag.compile ({ refQLRows: [{ defenderslref: 1 }, { defenderslref: 2 }] });
 
-    expect (playersQuery).toBe (format (`
-      select player.team_id playersrref, player.last_name
-      from player
-      where player.team_id in ($1, $2)
+    expect (defendersQuery).toBe (format (`
+      select * from (
+        select distinct team.id defenderslref from public.team where team.id in ($1, $2)
+      ) refqll1,
+      lateral (
+        select player.last_name from player where player.team_id = refqll1.defenderslref
+        limit 5
+      ) refqll2
     `));
 
-    expect (playersValues).toEqual ([1, 2]);
-    expect (playersNext).toEqual ([]);
+    expect (defendersValues).toEqual ([1, 2]);
+    expect (defendersNext).toEqual ([]);
 
     // game
     const gamesTag = next[1].tag;
@@ -285,9 +299,12 @@ describe ("RQLTag type", () => {
     const [gamesQuery, gamesValues, gamesNext] = gamesTag.compile ({ refQLRows: [{ gameslref: 1 }, { gameslref: 2 }] });
 
     expect (gamesQuery).toBe (format (`
-      select game_player.player_id gameslxref, game.result from game 
-      join game_player on game_player.game_id = game.id
-      where game_player.player_id in ($1, $2)
+      select * from (
+        select distinct player.id gameslref from player where player.id in ($1, $2)
+      ) refqll1,
+      lateral (
+        select game.result from game join game_player on game_player.game_id = game.id where game_player.player_id = refqll1.gameslref
+      ) refqll2
     `));
 
     expect (gamesValues).toEqual ([1, 2]);
@@ -299,9 +316,12 @@ describe ("RQLTag type", () => {
     const [ratingQuery, ratingValues, ratingNext] = ratingTag.compile ({ refQLRows: [{ ratinglref: 1 }, { ratinglref: 2 }] });
 
     expect (ratingQuery).toBe (format (`
-      select rating.player_id ratingrref, rating.acceleration, rating.stamina
-      from rating
-      where rating.player_id in ($1, $2)
+      select * from (
+        select distinct player.id ratinglref from player where player.id in ($1, $2)
+      ) refqll1,
+      lateral (
+        select rating.acceleration, rating.stamina from rating where rating.player_id = refqll1.ratinglref
+      ) refqll2
     `));
 
     expect (ratingValues).toEqual ([1, 2]);
@@ -311,15 +331,15 @@ describe ("RQLTag type", () => {
     const players = await tag.run<any> (querier, {});
     const player1 = players[0];
     const playerTeam = player1.team;
-    const teammate = playerTeam.players[0];
+    const defender = playerTeam.defenders[0];
     const teamLeague = player1.team.league;
     const playerGame = player1.games[0];
     const playerRating = player1.rating;
 
     expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team", "games", "rating"]);
-    expect (Object.keys (playerTeam)).toEqual (["name", "league", "players"]);
+    expect (Object.keys (playerTeam)).toEqual (["name", "league", "defenders"]);
     expect (Object.keys (teamLeague)).toEqual (["name"]);
-    expect (Object.keys (teammate)).toEqual (["last_name"]);
+    expect (Object.keys (defender)).toEqual (["last_name"]);
     expect (Object.keys (playerGame)).toEqual (["result"]);
     expect (Object.keys (playerRating)).toEqual (["acceleration", "stamina"]);
     expect (players.length).toBe (30);
@@ -342,6 +362,39 @@ describe ("RQLTag type", () => {
     expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "cars", "birthday", "team_id", "position_id", "team", "games"]);
     expect (Object.keys (playerTeam)).toEqual (["id", "name", "league_id"]);
     expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
+  });
+
+  test ("Correct where", async () => {
+    const tag = player`
+      id
+      ${sql`
+        and id = 1
+      `}
+      ${team`
+        ${sql`
+          where id = 1 
+        `} 
+      `}
+    `;
+
+    const [query, _values, next] = tag.compile ();
+
+    // player
+    expect (query).toBe (format (`
+      select player.id, player.team_id teamlref from player
+      where id = 1
+    `));
+
+    const [teamQuery] = next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }, { teamlref: 2 }] });
+
+    expect (teamQuery).toBe (format (`
+      select * from (
+        select distinct player.team_id teamlref from player where player.team_id in ($1, $2)
+      ) refqll1,
+      lateral (
+        select team.* from public.team where team.id = refqll1.teamlref and id = 1
+      ) refqll2
+    `));
   });
 
   test ("concat", async () => {
@@ -369,6 +422,36 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (30);
   });
 
+  test ("Nested limit and cache", async () => {
+    const tag = team<{limit: number}>`
+      ${player`
+        ${sql`
+          limit 4
+        `} 
+      `} 
+      ${sql`
+        limit ${p => p.limit} 
+      `}
+    `;
+
+    const spy = jest.spyOn (tag, "interpret");
+
+    const teams = await tag.run<any> (querier, { limit: 2 });
+
+    expect (teams.length).toBe (2);
+    expect (teams[0].players.length).toBe (4);
+    expect (teams[1].players.length).toBe (4);
+
+    const teams2 = await tag.run<any> (querier, { limit: 3 });
+
+    expect (teams2.length).toBe (3);
+    expect (teams2[0].players.length).toBe (4);
+    expect (teams2[1].players.length).toBe (4);
+    expect (teams2[2].players.length).toBe (4);
+
+    expect (spy).toBeCalledTimes (1);
+  });
+
   test ("By id", async () => {
     const tag = player<{}>`
       *
@@ -390,9 +473,6 @@ describe ("RQLTag type", () => {
     `;
 
     const tag = player`
-      ${team`
-        *
-      `}
       ${goals}
       ${sql`
         where player.id = 999999999
@@ -422,12 +502,39 @@ describe ("RQLTag type", () => {
     }
   });
 
+  test ("comments", () => {
+    const tag = player<{}>`
+      // birthday //id // first_name
+      // ${team} ${team} buh
+      id
+      ${game}
+      concat //: full_name
+      (first_name, ' '
+        // , last_name
+      )
+      // ${position}
+    `;
+
+    const [query] = tag.compile ({});
+
+    expect (query).toBe (format (`
+      select player.id, player.id gameslref, concat (player.first_name, ' ')
+      from player
+    `));
+  });
+
   test ("parser errors", () => {
     expect (() => player`id, last_name`)
       .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
 
     expect (() => player`concat(*)`)
       .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
+
+    expect (() => player`concat(first_name, ' ' last_name`)
+      .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: ","'));
+
+    expect (() => player`concat(first_name, ' ', last_name`)
+      .toThrowError (new SyntaxError ('Unexpected token: "EOT", expected: ","'));
 
     expect (() => player`${league`*`}`)
       .toThrowError (new Error ("player has no ref defined for: league"));
@@ -463,23 +570,14 @@ describe ("RQLTag type", () => {
   });
 
   test ("unimplemented by Call", () => {
-    expect (() => player`concat (${BelongsTo (dummyRefInfo, dummy`*`)})`.compile ())
-      .toThrowError (new Error ("Unimplemented by Call: BelongsTo"));
+    expect (() => player`concat (${RefNode (dummyRefInfo, dummy`*`, true)})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: RefNode"));
 
     expect (() => player`concat (${BelongsToMany (dummyRefInfo, dummy`*`)})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: BelongsToMany"));
 
-    expect (() => player`concat (${HasOne (dummyRefInfo, dummy`*`)})`.compile ())
-      .toThrowError (new Error ("Unimplemented by Call: HasOne"));
-
-    expect (() => player`concat (${HasMany (dummyRefInfo, dummy`*`)})`.compile ())
-      .toThrowError (new Error ("Unimplemented by Call: HasMany"));
-
     expect (() => player`concat (${all})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: All"));
-
-    expect (() => player`concat (${dummyRefInfo.lRef})`.compile ())
-      .toThrowError (new Error ("Unimplemented by Call: Ref"));
 
     expect (() => player`concat(${Value (1)})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: Value"));
