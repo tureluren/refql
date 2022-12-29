@@ -19,8 +19,8 @@ class Parser {
     this.values = values;
     this.idx = 0;
     this.tokenizer = new Tokenizer (str);
-    this.lookahead = this.tokenizer.getNextToken ();
     this.table = table;
+    this.lookahead = this.getNextToken ();
   }
 
   Identifier() {
@@ -132,7 +132,7 @@ class Parser {
   }
 
   hasArg() {
-    return this.isNext (",") && this.eat (",") && !this.isNext (")");
+    return !this.isNext (")") && this.eat (",");
   }
 
   castAs() {
@@ -227,6 +227,16 @@ class Parser {
     return Literal (Number (token.value), as, cast);
   }
 
+  getNextToken(): any {
+    let lookahead = this.tokenizer.getNextToken ();
+    // ignore comments
+    while (lookahead.type === "COMMENT") {
+      this.values.splice (this.idx, lookahead.skipCount);
+      lookahead = this.tokenizer.getNextToken ();
+    }
+    return lookahead;
+  }
+
   eat(tokenType: TokenType) {
     const token = this.lookahead;
 
@@ -236,7 +246,7 @@ class Parser {
       );
     }
 
-    this.lookahead = this.tokenizer.getNextToken ();
+    this.lookahead = this.getNextToken ();
 
     return token;
   }

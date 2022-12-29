@@ -58,7 +58,6 @@ export type RQLTagVariable<Params> =
   | SQLTag<Params>
   | ASTNode<Params>
   | ASTNode<Params>[]
-  | Table
   | TagFunctionVariable<Params>
   | ValueType;
 

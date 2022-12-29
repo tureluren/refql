@@ -16,7 +16,7 @@ import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import {
   dummy, dummyRefInfo, game, goal, league,
-  player, rating, team
+  player, position, rating, team
 } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Parser from "./Parser";
@@ -473,9 +473,6 @@ describe ("RQLTag type", () => {
     `;
 
     const tag = player`
-      ${team`
-        *
-      `}
       ${goals}
       ${sql`
         where player.id = 999999999
@@ -505,12 +502,39 @@ describe ("RQLTag type", () => {
     }
   });
 
+  test ("comments", () => {
+    const tag = player<{}>`
+      // birthday //id // first_name
+      // ${team} ${team} buh
+      id
+      ${game}
+      concat //: full_name
+      (first_name, ' '
+        // , last_name
+      )
+      // ${position}
+    `;
+
+    const [query] = tag.compile ({});
+
+    expect (query).toBe (format (`
+      select player.id, player.id gameslref, concat (player.first_name, ' ')
+      from player
+    `));
+  });
+
   test ("parser errors", () => {
     expect (() => player`id, last_name`)
       .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
 
     expect (() => player`concat(*)`)
       .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
+
+    expect (() => player`concat(first_name, ' ' last_name`)
+      .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: ","'));
+
+    expect (() => player`concat(first_name, ' ', last_name`)
+      .toThrowError (new SyntaxError ('Unexpected token: "EOT", expected: ","'));
 
     expect (() => player`${league`*`}`)
       .toThrowError (new Error ("player has no ref defined for: league"));

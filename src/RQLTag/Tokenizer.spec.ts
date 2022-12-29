@@ -49,6 +49,17 @@ describe ("Tokenizer type", () => {
     expect (tokenizer.getNextToken ()).toEqual ({ type: "STRING", value: "'bar'" });
   });
 
+  test ("comments", () => {
+    const tokenizer = new Tokenizer (`
+      //
+      // $
+      // $ $
+    `);
+    expect (tokenizer.getNextToken ()).toEqual ({ type: "COMMENT", value: "//", skipCount: 0 });
+    expect (tokenizer.getNextToken ()).toEqual ({ type: "COMMENT", value: "//", skipCount: 1 });
+    expect (tokenizer.getNextToken ()).toEqual ({ type: "COMMENT", value: "//", skipCount: 2 });
+  });
+
   test ("unexpected token", () => {
     const tokenizer = new Tokenizer ("&");
     expect (() => tokenizer.getNextToken ())
