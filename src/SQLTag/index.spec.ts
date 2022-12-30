@@ -6,7 +6,7 @@ import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier, StringMap } from "../common/types";
 import {
   all, BelongsToMany, Call, Identifier, Literal,
-  Raw, RefNode, StringLiteral, Values, Values2D, Variable
+  Raw, RefNode, StringLiteral, Values, Values2D, Variable, When
 } from "../nodes";
 import { Player } from "../soccer";
 import Table from "../Table";
@@ -287,6 +287,109 @@ describe ("SQLTag type", () => {
     } catch (err: any) {
       expect (err).toBe (message);
     }
+  });
+
+  test ("when", () => {
+    const tag = sql<{limit?: number; offset?: number}>`
+      select id from player
+      ${When (p => !!p.limit, sql`
+        limit ${p => p.limit}
+      `)} 
+      ${When (p => !!p.offset, sql`
+        offset ${p => p.offset}
+      `)} 
+    `;
+
+    const [query, values] = tag.compile ({ limit: 5 });
+
+    expect (query).toBe (format (`
+      select id from player
+      limit $1 
+    `));
+
+    expect (values).toEqual ([5]);
+
+    const [query2, values2] = tag.compile ({ offset: 10 });
+
+    expect (query2).toBe (format (`
+      select id from player
+      offset $1 
+    `));
+
+    expect (values2).toEqual ([10]);
+
+    const [query3, values3] = tag.compile ({ limit: 5, offset: 10 });
+
+    expect (query3).toBe (format (`
+      select id from player
+      limit $1 
+      offset $2 
+    `));
+
+    expect (values3).toEqual ([5, 10]);
+  });
+
+  test ("nested when", () => {
+    const tag = sql<{id?: number; limit?: number; offset?: number; orderBy?: string}>`
+      select id from player
+      ${When (p => !!p.id, sql`
+        where id = ${p => p.id}
+      `)}
+      and 1 = 1
+      ${When (p => !!p.orderBy, sql`
+        order by ${Raw (p => p.orderBy)}
+        ${When (p => !!p.limit, sql`
+          limit ${p => p.limit}
+          ${When (p => !!p.offset, sql`
+            offset ${p => p.offset}
+          `)} 
+        `)}
+      `)}
+    `;
+
+    const [query, values] = tag.compile ({ id: 1, orderBy: "last_name" });
+
+    expect (query).toBe (format (`
+      select id from player
+      where id = $1
+      and 1 = 1
+      order by last_name
+    `));
+
+    expect (values).toEqual ([1]);
+
+    const [query2, values2] = tag.compile ({ limit: 5 });
+
+    expect (query2).toBe (format (`
+      select id from player
+      and 1 = 1
+    `));
+
+    expect (values2).toEqual ([]);
+
+    const [query3, values3] = tag.compile ({ id: 1, orderBy: "last_name", limit: 5 });
+
+    expect (query3).toBe (format (`
+      select id from player
+      where id = $1
+      and 1 = 1
+      order by last_name
+      limit $2 
+    `));
+
+    expect (values3).toEqual ([1, 5]);
+
+    const [query4, values4] = tag.compile ({ orderBy: "last_name", limit: 5, offset: 10 });
+
+    expect (query4).toBe (format (`
+      select id from player
+      and 1 = 1
+      order by last_name
+      limit $1 
+      offset $2
+    `));
+
+    expect (values4).toEqual ([5, 10]);
   });
 
   test ("compile errors", () => {

@@ -1,12 +1,12 @@
-import castAs from "../common/castAs";
-import { refqlType } from "../common/consts";
-import joinMembers from "../common/joinMembers";
-import { CastAs, StringMap } from "../common/types";
-import unimplemented from "../common/unimplemented";
-import SQLTag from "../SQLTag";
-import sql from "../SQLTag/sql";
-import ASTNode, { astNodePrototype } from "./ASTNode";
-import Raw from "./Raw";
+import castAs from "../common/castAs.ts";
+import { refqlType } from "../common/consts.ts";
+import joinMembers from "../common/joinMembers.ts";
+import { CastAs, StringMap } from "../common/types.ts";
+import unimplemented from "../common/unimplemented.ts";
+import SQLTag from "../SQLTag/index.ts";
+import sql from "../SQLTag/sql.ts";
+import ASTNode, { astNodePrototype } from "./ASTNode.ts";
+import Raw from "./Raw.ts";
 
 interface Call<Params> extends ASTNode<Params>, CastAs {
   name: string;
@@ -61,7 +61,6 @@ function interpret<Params>(this: Call<Params>) {
       Variable: (value, _as, cast) => {
         args.push (sql`${value}${Raw (castAs (cast))}`);
       },
-      When: unsupported ("When"),
       RefNode: unsupported ("RefNode"),
       BelongsToMany: unsupported ("BelongsToMany"),
       All: unsupported ("All"),

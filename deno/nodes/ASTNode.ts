@@ -1,6 +1,6 @@
-import { TagFunctionVariable, ValueType, RefInfo } from "../common/types";
-import RQLTag from "../RQLTag";
-import SQLTag from "../SQLTag";
+import { TagFunctionVariable, ValueType, RefInfo } from "../common/types.ts";
+import RQLTag from "../RQLTag/index.ts";
+import SQLTag from "../SQLTag/index.ts";
 
 type StructureMap<Params, Return> = {
   RefNode: (tag: RQLTag<Params>, info: RefInfo, single: boolean) => Return;
@@ -15,7 +15,6 @@ type StructureMap<Params, Return> = {
   Value: (run: TagFunctionVariable<Params>) => Return;
   Values: (run: TagFunctionVariable<Params, any[]>) => Return;
   Values2D: (run: TagFunctionVariable<Params, any[][]>) => Return;
-  When: (pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params>) => Return;
 };
 
 interface ASTNode<Params> {

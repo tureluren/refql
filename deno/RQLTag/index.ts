@@ -1,12 +1,12 @@
-import castAs from "../common/castAs";
-import { flConcat, flMap, refqlType } from "../common/consts";
-import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
-import unimplemented from "../common/unimplemented";
-import { all, ASTNode, Raw, RefNode, When } from "../nodes";
-import SQLTag from "../SQLTag";
-import sql from "../SQLTag/sql";
-import Table from "../Table";
+import castAs from "../common/castAs.ts";
+import { flConcat, flMap, refqlType } from "../common/consts.ts";
+import joinMembers from "../common/joinMembers.ts";
+import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types.ts";
+import unimplemented from "../common/unimplemented.ts";
+import { all, ASTNode, Raw, RefNode } from "../nodes/index.ts";
+import SQLTag from "../SQLTag/index.ts";
+import sql from "../SQLTag/sql.ts";
+import Table from "../Table/index.ts";
 
 export interface Next<Params> {
   tag: RQLTag<Params & RefQLRows>;
@@ -127,9 +127,6 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
       },
       StringLiteral: (value, as, cast) => {
         members.push (Raw (`'${value}'${castAs (cast, as)}`));
-      },
-      When: (pred, tag) => {
-        extra = extra.concat (sql`${When (pred, tag)}`);
       },
       Raw: unsupported ("Raw"),
       Value: unsupported ("Value"),

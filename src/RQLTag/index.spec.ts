@@ -6,7 +6,7 @@ import { flConcat, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import {
   all, BelongsToMany, Identifier, Literal, Raw,
-  RefNode, Value, Values, Values2D
+  RefNode, Value, Values, Values2D, When
 } from "../nodes";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -523,6 +523,45 @@ describe ("RQLTag type", () => {
     `));
   });
 
+  test ("when", () => {
+    const tag = player<{limit?: number; offset?: number}>`
+      id
+      ${When (p => !!p.limit, sql`
+        limit ${p => p.limit}
+      `)} 
+      ${When (p => !!p.offset, sql`
+        offset ${p => p.offset}
+      `)} 
+    `;
+
+    const [query, values] = tag.compile ({ limit: 5 });
+
+    expect (query).toBe (format (`
+      select player.id from player
+      limit $1 
+    `));
+
+    expect (values).toEqual ([5]);
+
+    const [query2, values2] = tag.compile ({ offset: 10 });
+
+    expect (query2).toBe (format (`
+      select player.id from player
+      offset $1 
+    `));
+
+    expect (values2).toEqual ([10]);
+
+    const [query3, values3] = tag.compile ({ limit: 5, offset: 10 });
+
+    expect (query3).toBe (format (`
+      select player.id from player
+      limit $1 
+      offset $2 
+    `));
+
+    expect (values3).toEqual ([5, 10]);
+  });
   test ("parser errors", () => {
     expect (() => player`id, last_name`)
       .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
@@ -570,6 +609,9 @@ describe ("RQLTag type", () => {
   });
 
   test ("unimplemented by Call", () => {
+    expect (() => player`concat (${When (() => true, sql``)})`.compile ())
+      .toThrowError (new Error ("Unimplemented by Call: When"));
+
     expect (() => player`concat (${RefNode (dummyRefInfo, dummy`*`, true)})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: RefNode"));
 

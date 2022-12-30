@@ -11,6 +11,7 @@ import Value from "./Value";
 import Values from "./Values";
 import Values2D from "./Values2D";
 import Variable from "./Variable";
+import When from "./When";
 
 export {
   all, All, ASTNode, belongsTo,
@@ -18,5 +19,5 @@ export {
   Call, hasMany, hasOne, Identifier,
   isASTNode, Literal, Raw, RefNode,
   StringLiteral, Value, Values,
-  Values2D, Variable
+  Values2D, Variable, When
 };
