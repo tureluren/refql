@@ -215,7 +215,7 @@ async function aggregate(this: RQLTag<unknown>, querier: Querier, params: String
         });
 
       if (single) {
-        agg[lAs] = agg[lAs][0];
+        agg[lAs] = agg[lAs][0] || null;
       }
 
       delete agg[rAs];

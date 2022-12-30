@@ -1,12 +1,14 @@
 import { Pool } from "pg";
-import { belongsTo } from "./nodes";
+import { belongsTo, hasOne } from "./nodes";
 import { Player } from "./soccer";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
+import { rating } from "./test/tables";
 
 // models
 const player = Table ("player", [
-  belongsTo ("team")
+  belongsTo ("team"),
+  hasOne ("rating")
 ]);
 
 const team = Table ("team");
@@ -17,11 +19,12 @@ const byId = sql<{id: number}>`
 `;
 
 // composition
-const playerById = player`
+const playerById = player<{}>`
   id
   first_name
   last_name
   ${team}
+  ${rating}
   ${byId}
 `;
 
