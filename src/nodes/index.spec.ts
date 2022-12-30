@@ -1,3 +1,4 @@
+import sql from "../SQLTag/sql";
 import { dummy, dummyRefInfo } from "../test/tables";
 import All from "./All";
 import { isASTNode } from "./ASTNode";
@@ -11,6 +12,7 @@ import StringLiteral from "./StringLiteral";
 import Value from "./Value";
 import Values from "./Values";
 import Values2D from "./Values2D";
+import When from "./When";
 
 describe ("Nodes", () => {
   test ("is All", () => {
@@ -77,5 +79,10 @@ describe ("Nodes", () => {
   test ("is Values2D", () => {
     expect (Values2D.isValues2D (Values2D ([[1]]))).toBe (true);
     expect (Values2D.isValues2D ("Values2D")).toBe (false);
+  });
+
+  test ("is When", () => {
+    expect (When.isWhen (When (() => true, sql``))).toBe (true);
+    expect (When.isWhen ("When")).toBe (false);
   });
 });

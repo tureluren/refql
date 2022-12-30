@@ -15,6 +15,7 @@ type StructureMap<Params, Return> = {
   Value: (run: TagFunctionVariable<Params>) => Return;
   Values: (run: TagFunctionVariable<Params, any[]>) => Return;
   Values2D: (run: TagFunctionVariable<Params, any[][]>) => Return;
+  When: (pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params>) => Return;
 };
 
 interface ASTNode<Params> {
