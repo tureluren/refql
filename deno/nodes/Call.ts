@@ -61,6 +61,7 @@ function interpret<Params>(this: Call<Params>) {
       Variable: (value, _as, cast) => {
         args.push (sql`${value}${Raw (castAs (cast))}`);
       },
+      When: unsupported ("When"),
       RefNode: unsupported ("RefNode"),
       BelongsToMany: unsupported ("BelongsToMany"),
       All: unsupported ("All"),

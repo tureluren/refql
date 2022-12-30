@@ -11,6 +11,7 @@ import Value from "./Value.ts";
 import Values from "./Values.ts";
 import Values2D from "./Values2D.ts";
 import Variable from "./Variable.ts";
+import When from "./When.ts";
 
 export {
   all, All, ASTNode, belongsTo,
@@ -18,5 +19,5 @@ export {
   Call, hasMany, hasOne, Identifier,
   isASTNode, Literal, Raw, RefNode,
   StringLiteral, Value, Values,
-  Values2D, Variable
+  Values2D, Variable, When
 };

@@ -2,16 +2,23 @@ import { flConcat, flEmpty, flMap, refqlType } from "../common/consts.ts";
 import isEmptyTag from "../common/isEmptyTag.ts";
 import { Querier, TagFunctionVariable } from "../common/types.ts";
 import unimplemented from "../common/unimplemented.ts";
-import { ASTNode, Raw } from "../nodes/index.ts";
+import { ASTNode, Raw, When } from "../nodes/index.ts";
 import Table from "../Table/index.ts";
 import sql from "./sql.ts";
 
-type StringFunction<Params> =
-  (params: Params, idx: number, table?: Table) => [string, number];
+type InterpretedString<Params> = {
+  pred: TagFunctionVariable<Params, boolean>;
+  run: (params: Params, idx: number, table?: Table) => [string, number];
+};
+
+type InterpretedValue<Params> = {
+  pred: TagFunctionVariable<Params, boolean>;
+  run: TagFunctionVariable<Params>;
+};
 
 interface InterpretedSQLTag<Params> {
-  strings: StringFunction<Params>[];
-  values: TagFunctionVariable<Params>[];
+  strings: InterpretedString<Params>[];
+  values: InterpretedValue<Params>[];
 }
 
 interface SQLTag<Params> {
@@ -66,48 +73,91 @@ function map(this: SQLTag<unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<un
 
 const unsupported = unimplemented ("SQLTag");
 
-function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
-  const strings = [] as StringFunction<unknown>[],
-    values = [] as TagFunctionVariable<unknown>[];
+const truePred = () => true;
 
-  for (const node of this.nodes) {
+function interpret(this: SQLTag<unknown>): InterpretedSQLTag<unknown> {
+  const strings = [] as InterpretedString<unknown>[],
+    values = [] as InterpretedValue<unknown>[];
+
+  for (const [idx, node] of this.nodes.entries ()) {
     node.caseOf<void> ({
       Raw: run => {
-        strings.push ((p, _i, t) => [run (p, t), 0]);
+        const nextNode = this.nodes[idx + 1];
+        strings.push ({
+          pred: truePred,
+          run: (p, _i, t) => {
+            let s = run (p, t);
+            if (When.isWhen (nextNode) && !nextNode.pred (p, t)) {
+              s = s.trimEnd ();
+            }
+            return [s, 0];
+          }
+        });
       },
       Value: run => {
-        values.push ((p, t) => [run (p, t)]);
-        strings.push ((_p, i) => [`$${i + 1}`, 1]);
+        values.push ({
+          pred: truePred,
+          run: (p, t) => [run (p, t)]
+        });
+        strings.push ({
+          pred: truePred,
+          run: (_p, i) => [`$${i + 1}`, 1]
+        });
       },
       Values: run => {
-        values.push (run);
+        values.push ({
+          pred: truePred,
+          run
+        });
 
-        strings.push ((p, i) => {
-          const xs = run (p);
-          return [
-            `(${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
-            xs.length
-          ];
+        strings.push ({
+          pred: truePred,
+          run: (p, i) => {
+            const xs = run (p);
+            return [
+              `(${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
+              xs.length
+            ];
+          }
         });
       },
       Values2D: run => {
-        values.push (p => run (p).flat (1));
+        values.push ({
+          pred: truePred,
+          run: p => run (p).flat (1)
+        });
 
-        strings.push ((p, i) => {
-          const values2D = run (p);
-          let n = 0;
-          const s = [];
+        strings.push ({
+          pred: truePred,
+          run: (p, i) => {
+            const values2D = run (p),
+              s = [];
 
-          for (const values of values2D) {
-            s.push (
-              `(${values.map (() => { n += 1; return `$${i + n}`; }).join (", ")})`
-            );
+            let n = 0;
+
+            for (const values of values2D) {
+              s.push (
+                `(${values.map (() => { n += 1; return `$${i + n}`; }).join (", ")})`
+              );
+            }
+
+            return [s.join (", "), n];
           }
-
-          return [s.join (", "), n];
         });
       },
+      When: (pred2, tag) => {
+        const { strings: strings2, values: values2 } = tag.interpret ();
 
+        strings.push (...strings2.map (({ run, pred }) => ({
+          pred: (p: unknown, t?: Table) => pred2 (p, t) && pred (p, t),
+          run
+        })));
+
+        values.push (...values2.map (({ run, pred }) => ({
+          pred: (p: unknown, t?: Table) => pred2 (p, t) && pred (p, t),
+          run
+        })));
+      },
       Identifier: unsupported ("Identifier"),
       RefNode: unsupported ("RefNode"),
       BelongsToMany: unsupported ("BelongsToMany"),
@@ -130,13 +180,17 @@ function compile(this: SQLTag<unknown>, params: unknown, table?: Table) {
   const { strings, values } = this.interpreted;
 
   return [
-    strings.reduce (([query, idx]: [string, number], f): [string, number] => {
-      const [s, n] = f (params, idx, table);
+    strings
+      .filter (({ pred }) => pred (params, table))
+      .reduce (([query, idx]: [string, number], { run }): [string, number] => {
+        const [s, n] = run (params, idx, table);
 
-      return [query.concat (s), idx + n];
-    }, ["", 0])[0],
+        return [query.concat (s), idx + n];
+      }, ["", 0])[0],
 
-    values.map (f => f (params, table as Table)).flat (1)
+    values
+      .filter (({ pred }) => pred (params, table))
+      .map (({ run }) => run (params, table as Table)).flat (1)
   ];
 }
 
