@@ -60,14 +60,36 @@ function RQLTag<Params>(table: Table, nodes: ASTNode<Params>[]) {
   return tag;
 }
 
+type Deep = { [tableId: string]: RefNode<unknown>} & { nodes: ASTNode<unknown>[]};
+
+const concatDeep = (nodes: ASTNode<unknown>[]): Deep => {
+  return nodes.reduce ((acc, node) => {
+    if (RefNode.isRefNode (node)) {
+      const { table } = node.tag;
+      const id = table.toString ();
+
+      if (acc[id]) {
+        acc[id].tag = acc[id].tag.concat (node.tag);
+      } else {
+        acc[id] = node;
+      }
+    } else {
+      acc.nodes.push (node);
+    }
+    return acc;
+  }, { nodes: [] as ASTNode<unknown>[] } as Deep);
+};
+
 function concat(this: RQLTag<unknown>, other: RQLTag<unknown>) {
   if (!this.table.equals (other.table)) {
     throw new Error ("U can't concat RQLTags that come from different tables");
   }
 
+  const { nodes, ...refs } = concatDeep (this.nodes.concat (other.nodes));
+
   return RQLTag (
     this.table,
-    this.nodes.concat (other.nodes)
+    [...nodes, ...Object.values (refs)]
   );
 }
 

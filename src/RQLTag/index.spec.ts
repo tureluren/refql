@@ -422,6 +422,42 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (30);
   });
 
+  test ("deep concat", async () => {
+    const tag = player<{}>`
+      id
+      first_name
+      ${team`
+        id
+        ${league`
+          id 
+        `}
+      `}
+    `;
+
+    const tag2 = player<{}>`
+      last_name
+      ${team`
+        name
+        ${league`
+          name
+        `}
+      `}
+      ${sql`
+        limit 30
+      `}
+    `;
+
+    const players = await tag.concat (tag2).run<any> (querier, null as any);
+    const player1 = players[0];
+    const playerTeam = player1.team;
+    const teamLeague = player1.team.league;
+
+    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team"]);
+    expect (Object.keys (playerTeam)).toEqual (["id", "name", "league"]);
+    expect (Object.keys (teamLeague)).toEqual (["id", "name"]);
+    expect (players.length).toBe (30);
+  });
+
   test ("Nested limit and cache", async () => {
     const tag = team<{limit: number}>`
       ${player`

@@ -3,7 +3,7 @@ import { belongsTo, hasOne } from "./nodes";
 import { Player } from "./soccer";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
-import { rating } from "./test/tables";
+import { league, rating } from "./test/tables";
 
 // models
 const player = Table ("player", [
@@ -11,7 +11,9 @@ const player = Table ("player", [
   hasOne ("rating")
 ]);
 
-const team = Table ("team");
+const team = Table ("team", [
+  belongsTo ("league")
+]);
 
 // sql snippets
 const byId = sql<{id: number}>`
@@ -43,7 +45,7 @@ const pgQuerier = async (query: string, values: any[]) => {
 };
 
 
-playerById.run<Player> (pgQuerier, { id: 1 }).then (console.log);
+// playerById.run<Player> (pgQuerier, { id: 1 }).then (console.log);
 
 // [
 //   {
@@ -53,3 +55,35 @@ playerById.run<Player> (pgQuerier, { id: 1 }).then (console.log);
 //     team: { id: 1, name: 'FC Wezivduk', league_id: 1 }
 //   }
 // ]
+
+
+// deep concat
+
+
+const tag = player<{}>`
+  id
+  first_name
+  ${team`
+    id 
+    ${league`
+      id 
+    `}
+  `}
+`;
+
+const tag2 = player<{}>`
+  last_name
+  ${team`
+    name 
+    ${league`
+      name
+    `}
+  `}
+  ${sql`
+    limit 2
+  `}
+`;
+
+const tag3 = tag.concat (tag2);
+
+tag3.run (pgQuerier, {}).then (res => console.log (res[0]));
