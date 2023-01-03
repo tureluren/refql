@@ -83,7 +83,10 @@ class Tokenizer {
 
       // comment out line
       if (tokenType === "COMMENT") {
-        const newlineIdx = str.indexOf ("\n");
+        let newlineIdx = str.indexOf ("\n");
+        if (newlineIdx < 0) {
+          newlineIdx = str.length;
+        }
         skipCount = (str.slice (0, newlineIdx).match (/\$/g) || []).length;
         this.idx += newlineIdx - 1;
       }
