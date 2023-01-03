@@ -544,10 +544,23 @@ describe ("RQLTag type", () => {
       // ${team} ${team} buh
       id
       ${game}
+      // ${game`
+      //   ${league`
+      //     ${sql`
+      //       limit 5
+      //     `}
+      //   `} 
+      // `}
       concat //: full_name
       (first_name, ' '
         // , last_name
       )
+      // ${sql`
+      //   limit 5
+      // `}
+      // ${When (() => true, sql`
+      // order by 
+      // `)}
       // ${position}
     `;
 
@@ -556,6 +569,13 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select player.id, player.id gameslref, concat (player.first_name, ' ')
       from player
+    `));
+
+    const tag2 = player<{}>`// id ${sql`limit 5`}`;
+    const [query2] = tag2.compile ({});
+
+    expect (query2).toBe (format (`
+      select player.* from player
     `));
   });
 
