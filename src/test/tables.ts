@@ -2,7 +2,9 @@ import Table from "../Table";
 import { belongsTo, belongsToMany, hasMany, hasOne } from "../nodes";
 import Ref from "../Ref";
 
-const game = Table ("game");
+const game = Table ("game", [
+  belongsTo ("league")
+]);
 const gamePlayer = Table ("game_player");
 const goal = Table ("goal");
 const league = Table ("league");

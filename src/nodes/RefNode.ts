@@ -119,10 +119,10 @@ const makeHasOne = (child: Table, info: RefNodeInput) => (parent: Table, tag: RQ
 };
 
 const makeRefNode = (f: (child: Table, info: RefNodeInput) => RefMaker) => (table: string, info?: RefNodeInput): RefMakerPair => {
-  const hasOneInfo = info || {};
+  const refInfo = info || {};
   const child = Table (table);
 
-  return [child, f (child, hasOneInfo)];
+  return [child, f (child, refInfo)];
 };
 
 export const belongsTo = makeRefNode (makeBelongsTo);
