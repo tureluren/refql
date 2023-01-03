@@ -55,8 +55,11 @@ class Parser {
   }
 
   Variable() {
-    this.eat ("VARIABLE");
+    // this assignment must preceed `eat`
+    // because it might get skipped `by getNextToken`
     const value = this.values[this.idx];
+    this.eat ("VARIABLE");
+
     const [as, cast] = this.castAs ();
     this.idx += 1;
 

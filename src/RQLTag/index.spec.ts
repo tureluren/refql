@@ -544,6 +544,9 @@ describe ("RQLTag type", () => {
       // ${team} ${team} buh
       id
       ${game}
+      // ${When (() => true, sql`
+      //  order by first_name 
+      // `)}
       // ${game`
       //   ${league`
       //     ${sql`
@@ -551,6 +554,9 @@ describe ("RQLTag type", () => {
       //     `}
       //   `} 
       // `}
+      // ${When (() => true, sql`
+      //  order by last_name
+      // `)}
       concat //: full_name
       (first_name, ' '
         // , last_name
@@ -558,9 +564,6 @@ describe ("RQLTag type", () => {
       // ${sql`
       //   limit 5
       // `}
-      // ${When (() => true, sql`
-      // order by 
-      // `)}
       // ${position}
     `;
 
