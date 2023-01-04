@@ -63,6 +63,7 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select player.id, player.first_name, player.last_name, player.birthday
       from player
+      where 1 = 1
       limit 1
     `));
 
@@ -92,6 +93,7 @@ describe ("RQLTag type", () => {
         concat (cast($1 as text), ' ', $2::text, null::text) vars,
         (select count (*) from goal where goal.player_id = player.id) no_of_goals
       from player
+      where 1 = 1
       limit 1
     `));
 
@@ -109,7 +111,7 @@ describe ("RQLTag type", () => {
       ${player`
         last_name
       `}
-      ${sql`where player.id = 1`}
+      ${sql`and player.id = 1`}
       ${player`
         team_id
         ${sql`order by ${Raw ((_p, t) => `${t}`)}.last_name`}
@@ -121,7 +123,8 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select player.id, player.first_name, player.last_name, player.team_id
       from player
-      where player.id = 1
+      where 1 = 1
+      and player.id = 1
       order by player.last_name
     `));
 
@@ -147,6 +150,7 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select '1'::int one, 2::text two, true::text t, false::text f, null::text n
       from player
+      where 1 = 1
       limit 1
     `));
 
@@ -235,6 +239,7 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select player.id, player.first_name, player.last_name, player.team_id teamlref, player.id gameslref, player.id ratinglref
       from player
+      where 1 = 1
       limit 30
     `));
 
@@ -364,39 +369,6 @@ describe ("RQLTag type", () => {
     expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
   });
 
-  test ("Correct where", async () => {
-    const tag = player`
-      id
-      ${sql`
-        and id = 1
-      `}
-      ${team`
-        ${sql`
-          where id = 1 
-        `} 
-      `}
-    `;
-
-    const [query, _values, next] = tag.compile ();
-
-    // player
-    expect (query).toBe (format (`
-      select player.id, player.team_id teamlref from player
-      where id = 1
-    `));
-
-    const [teamQuery] = next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }, { teamlref: 2 }] });
-
-    expect (teamQuery).toBe (format (`
-      select * from (
-        select distinct player.team_id teamlref from player where player.team_id in ($1, $2)
-      ) refqll1,
-      lateral (
-        select team.* from public.team where team.id = refqll1.teamlref and id = 1
-      ) refqll2
-    `));
-  });
-
   test ("concat", async () => {
     const tag = player<{}>`
       id
@@ -492,7 +464,7 @@ describe ("RQLTag type", () => {
     const tag = player<{}>`
       *
       ${sql`
-        where ${Raw ((_p, t) => t!.name)}.id = 1
+        and ${Raw ((_p, t) => t!.name)}.id = 1
       `}
     `;
 
@@ -511,7 +483,7 @@ describe ("RQLTag type", () => {
     const tag = player`
       ${goals}
       ${sql`
-        where player.id = 999999999
+        and player.id = 999999999
       `}
     `;
 
@@ -572,13 +544,14 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select player.id, player.id gameslref, concat (player.first_name, ' ')
       from player
+      where 1 = 1
     `));
 
     const tag2 = player<{}>`// id ${sql`limit 5`}`;
     const [query2] = tag2.compile ({});
 
     expect (query2).toBe (format (`
-      select player.* from player
+      select player.* from player where 1 = 1
     `));
   });
 
@@ -597,6 +570,7 @@ describe ("RQLTag type", () => {
 
     expect (query).toBe (format (`
       select player.id from player
+      where 1 = 1
       limit $1 
     `));
 
@@ -606,6 +580,7 @@ describe ("RQLTag type", () => {
 
     expect (query2).toBe (format (`
       select player.id from player
+      where 1 = 1
       offset $1 
     `));
 
@@ -615,6 +590,7 @@ describe ("RQLTag type", () => {
 
     expect (query3).toBe (format (`
       select player.id from player
+      where 1 = 1
       limit $1 
       offset $2 
     `));

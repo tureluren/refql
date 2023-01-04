@@ -1,6 +1,6 @@
 import { RefInfo, RefInput, RefMakerPair, RefQLRows, StringMap } from "../common/types";
 import Ref from "../Ref";
-import RQLTag, { concatExtra } from "../RQLTag";
+import RQLTag from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import Raw from "./Raw";
@@ -43,7 +43,7 @@ function joinLateral(this: BelongsToMany<unknown>) {
       join ${Raw (`${xTable} on ${rxRef.name} = ${rRef.name}`)}
       where ${Raw (`${lxRef.name} = refqll1.${lRef.as}`)}
     `)
-    .concat (concatExtra (extra, true));
+    .concat (extra);
 
   const joined = sql`
     select * from (${l1}) refqll1,

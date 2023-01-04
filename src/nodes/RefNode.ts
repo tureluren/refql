@@ -1,7 +1,7 @@
 import { refqlType } from "../common/consts";
 import { RefInfo, RefInput, RefMaker, RefMakerPair, RefQLRows, StringMap } from "../common/types";
 import Ref from "../Ref";
-import RQLTag, { concatExtra } from "../RQLTag";
+import RQLTag from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
@@ -48,7 +48,7 @@ function joinLateral(this: RefNode<unknown>) {
     .concat (sql`
       where ${Raw (`${rRef.name} = refqll1.${lRef.as}`)}
     `)
-    .concat (concatExtra (extra, true));
+    .concat (extra);
 
   const joined = sql`
     select * from (${l1}) refqll1,
