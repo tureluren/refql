@@ -1,5 +1,6 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Querier, RefMakerPair, RQLTagVariable } from "../common/types";
+import validateTable from "../common/validateTable";
 import RQLTag from "../RQLTag";
 import Parser from "../RQLTag/Parser";
 
@@ -27,7 +28,13 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   run
 });
 
-function Table(name: string, refs?: RefMakerPair[]) {
+function Table(name: string, refs: RefMakerPair[] = []) {
+  validateTable (name);
+
+  if (!Array.isArray (refs)) {
+    throw new Error ("Invalid refs: not an Array");
+  }
+
   const table = (<Params>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params>[]) => {
     const parser = new Parser (strings.join ("$"), variables, table);
 
@@ -45,7 +52,7 @@ function Table(name: string, refs?: RefMakerPair[]) {
   });
 
   table.schema = schema;
-  table.refs = refs || [];
+  table.refs = refs;
 
   return table;
 }

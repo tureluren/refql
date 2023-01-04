@@ -59,6 +59,11 @@ describe ("Table type", () => {
     expect (positions.length).toBe (11);
   });
 
+  test ("invalid table creation", () => {
+    expect (() => Table (["player"] as any)).toThrow ("Invalid table: not a string");
+    expect (() => Table ("player", {} as any)).toThrow ("Invalid refs: not an Array");
+  });
+
   test ("BelongsTo ref - default ref info", () => {
     const [teamTable, refMaker] = belongsTo ("public.team");
 
