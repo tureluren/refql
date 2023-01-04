@@ -1,13 +1,14 @@
+import { flMap } from "../common/consts";
 import sql from "../SQLTag/sql";
 import { dummy, dummyRefInfo } from "../test/tables";
 import All from "./All";
 import { isASTNode } from "./ASTNode";
-import BelongsToMany from "./BelongsToMany";
+import BelongsToMany, { belongsToMany } from "./BelongsToMany";
 import Call from "./Call";
 import Identifier from "./Identifier";
 import Literal from "./Literal";
 import Raw from "./Raw";
-import RefNode from "./RefNode";
+import RefNode, { belongsTo } from "./RefNode";
 import StringLiteral from "./StringLiteral";
 import Value from "./Value";
 import Values from "./Values";
@@ -84,5 +85,25 @@ describe ("Nodes", () => {
   test ("is When", () => {
     expect (When.isWhen (When (() => true, sql``))).toBe (true);
     expect (When.isWhen ("When")).toBe (false);
+  });
+
+  test ("Raw is functor", () => {
+    const raw = Raw ("select * from player");
+
+    const limit = (value: any) => `${value} limit 10`;
+    const offset = (value: any) => `${value} offset 10`;
+
+    const raw2 = raw[flMap] (v => v);
+    expect (raw2.run ({})).toEqual (raw.run ({}));
+
+    const raw3 = raw[flMap] (v => offset (limit (v)));
+    const raw4 = raw[flMap] (limit)[flMap] (offset);
+
+    expect (raw3.run ({})).toEqual (raw4.run ({}));
+  });
+
+  test ("Invalid RefNode creation", () => {
+    expect (() => belongsTo (["goal"] as any)).toThrow ("Invalid table: not a string");
+    expect (() => belongsToMany (["games"] as any)).toThrow ("Invalid table: not a string");
   });
 });

@@ -1,7 +1,8 @@
 import { refqlType } from "../common/consts";
 import { RefInfo, RefInput, RefMaker, RefMakerPair, RefQLRows, StringMap } from "../common/types";
+import validateTable from "../common/validateTable";
 import Ref from "../Ref";
-import RQLTag, { concatExtra } from "../RQLTag";
+import RQLTag from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
@@ -38,7 +39,7 @@ function joinLateral(this: RefNode<unknown>) {
   const { rRef, lRef, parent } = this.info;
 
   const l1 = sql`
-    select distinct ${Raw (lRef)}
+    select ${Raw (lRef)}
     from ${Raw (parent)}
     where ${Raw (lRef.name)}
     in ${Values<RefQLRows> (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
@@ -48,10 +49,10 @@ function joinLateral(this: RefNode<unknown>) {
     .concat (sql`
       where ${Raw (`${rRef.name} = refqll1.${lRef.as}`)}
     `)
-    .concat (concatExtra (extra, true));
+    .concat (extra);
 
   const joined = sql`
-    select * from (${l1}) refqll1,
+    select distinct * from (${l1}) refqll1,
     lateral (${l2}) refqll2
   `;
 
@@ -70,59 +71,92 @@ RefNode.isRefNode = function <Params> (value: any): value is RefNode<Params> {
 
 type RefNodeInput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;
 
-const makeBelongsTo = (child: Table, info: RefNodeInput) => (parent: Table, tag: RQLTag<unknown>, as?: string) => {
-  as = as || info.as || child.name;
+export const validateRefInput = (input: RefInput) => {
+  if (!(toString.call (input) === "[object Object]")) {
+    throw new Error ("Invalid input: input is not an object");
+  }
+
+  if ("as" in input && typeof input.as !== "string") {
+    throw new Error ("Invalid input: as is not a string");
+  }
+
+  if ("lRef" in input && typeof input.lRef !== "string") {
+    throw new Error ("Invalid input: lRef is not a string");
+  }
+
+  if ("rRef" in input && typeof input.rRef !== "string") {
+    throw new Error ("Invalid input: rRef is not a string");
+  }
+
+  if ("xTable" in input && typeof input.xTable !== "string") {
+    throw new Error ("Invalid input: xTable is not a string");
+  }
+
+  if ("lxRef" in input && typeof input.lxRef !== "string") {
+    throw new Error ("Invalid input: lxRef is not a string");
+  }
+
+  if ("rxRef" in input && typeof input.rxRef !== "string") {
+    throw new Error ("Invalid input: rxRef is not a string");
+  }
+};
+
+const makeBelongsTo = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag<unknown>, as?: string) => {
+  as = as || input.as || child.name;
   const refOf = Ref.refOf (as);
 
   return RefNode (
     {
       parent,
       as,
-      lRef: refOf (parent, "lref", info.lRef || `${child.name}_id`),
-      rRef: refOf (child, "rref", info.rRef || "id")
+      lRef: refOf (parent, "lref", input.lRef || `${child.name}_id`),
+      rRef: refOf (child, "rref", input.rRef || "id")
     },
     tag,
     true
   );
 };
 
-const makeHasMany = (child: Table, info: RefNodeInput) => (parent: Table, tag: RQLTag<unknown>, as?: string) => {
-  as = as || info.as || `${child.name}s`;
+const makeHasMany = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag<unknown>, as?: string) => {
+  as = as || input.as || `${child.name}s`;
   const refOf = Ref.refOf (as);
 
   return RefNode (
     {
       parent,
       as,
-      lRef: refOf (parent, "lref", info.lRef || "id"),
-      rRef: refOf (child, "rref", info.rRef || `${parent.name}_id`)
+      lRef: refOf (parent, "lref", input.lRef || "id"),
+      rRef: refOf (child, "rref", input.rRef || `${parent.name}_id`)
     },
     tag,
     false
   );
 };
 
-const makeHasOne = (child: Table, info: RefNodeInput) => (parent: Table, tag: RQLTag<unknown>, as?: string) => {
-  as = as || info.as || child.name;
+const makeHasOne = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag<unknown>, as?: string) => {
+  as = as || input.as || child.name;
   const refOf = Ref.refOf (as);
 
   return RefNode (
     {
       parent,
       as,
-      lRef: refOf (parent, "lref", info.lRef || "id"),
-      rRef: refOf (child, "rref", info.rRef || `${parent.name}_id`)
+      lRef: refOf (parent, "lref", input.lRef || "id"),
+      rRef: refOf (child, "rref", input.rRef || `${parent.name}_id`)
     },
     tag,
     true
   );
 };
 
-const makeRefNode = (f: (child: Table, info: RefNodeInput) => RefMaker) => (table: string, info?: RefNodeInput): RefMakerPair => {
-  const refInfo = info || {};
+const makeRefNode = (f: (child: Table, input: RefNodeInput) => RefMaker) => (table: string, input: RefNodeInput = {}): RefMakerPair => {
+  validateTable (table);
+
+  validateRefInput (input);
+
   const child = Table (table);
 
-  return [child, f (child, refInfo)];
+  return [child, f (child, input)];
 };
 
 export const belongsTo = makeRefNode (makeBelongsTo);

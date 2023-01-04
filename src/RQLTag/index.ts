@@ -176,30 +176,12 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
   return { next, tag, extra };
 }
 
-export const concatExtra = (extra: SQLTag<unknown>, correctWhere: boolean) => {
-  return extra.map (nodes => {
-    let [raw, ...rest] = nodes;
-
-    if (!Raw.isRaw (raw)) return nodes;
-
-    raw = raw.map (value => {
-      if (correctWhere) {
-        return `${value}`.replace (/^\b(where)\b/i, "and");
-      }
-
-      return `${value}`.replace (/^\b(and|or)\b/i, "where");
-    });
-
-    return [raw, ...rest];
-  });
-};
-
 function compile(this: RQLTag<unknown>, params: unknown = {}) {
   if (!this.interpreted) {
     const { tag, extra, next } = this.interpret ();
 
     this.interpreted = {
-      tag: tag.concat (concatExtra (extra, false)),
+      tag: tag.concat (sql`where 1 = 1`).concat (extra),
       next
     };
   }
