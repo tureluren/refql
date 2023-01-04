@@ -169,7 +169,7 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
   }
 
   let tag = sql<unknown>`
-    select distinct ${joinMembers (members)}
+    select ${joinMembers (members)}
     from ${Raw (table)}
   `;
 
@@ -192,6 +192,28 @@ function compile(this: RQLTag<unknown>, params: unknown = {}) {
   ];
 }
 
+// To keep the original order of the result set from the right-side subselect and ensure that all rows are unique,
+// we use a programmatic approach rather than the DISTINCT keyword in the outer part of the query.
+// Using DISTINCT on the right side of the LATERAL keyword is not a viable option as it would require
+// the selection of fields that are used in the ORDER BY clause.
+const distinct = (props: string[], rows: any[]) => {
+  const distinctRows = [] as any[];
+
+  rows.reduce ((acc, row) => {
+    const match = acc.find (
+      (t: any) => props.every (prop => t[prop] === row[prop])
+    );
+
+    if (!match) {
+      distinctRows.push (row);
+      acc.push (row);
+    }
+    return acc;
+  }, []);
+
+  return distinctRows;
+};
+
 async function aggregate(this: RQLTag<unknown>, querier: Querier, params: StringMap = {}): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
@@ -199,12 +221,14 @@ async function aggregate(this: RQLTag<unknown>, querier: Querier, params: String
 
   if (!rows.length) return [];
 
+  const refQLRows = distinct (Object.keys (rows[0]), rows);
+
   const nextData = await Promise.all (next.map (
     // { ...null } = {}
-    n => n.tag.aggregate (querier, { ...params, refQLRows: rows })
+    n => n.tag.aggregate (querier, { ...params, refQLRows })
   ));
 
-  return rows.map (row =>
+  return refQLRows.map (row =>
     nextData.reduce ((agg, nextRows, idx) => {
       const { single, link: [lAs, rAs] } = next[idx];
 
