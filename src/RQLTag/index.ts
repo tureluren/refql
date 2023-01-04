@@ -169,7 +169,7 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
   }
 
   let tag = sql<unknown>`
-    select ${joinMembers (members)}
+    select distinct ${joinMembers (members)}
     from ${Raw (table)}
   `;
 

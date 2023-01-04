@@ -47,7 +47,7 @@ function joinLateral(this: BelongsToMany<unknown>) {
     .concat (extra);
 
   const joined = sql`
-    select distinct * from (${l1}) refqll1,
+    select * from (${l1}) refqll1,
     lateral (${l2}) refqll2
   `;
 
