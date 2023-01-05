@@ -39,7 +39,7 @@ function joinLateral(this: RefNode<unknown>) {
   const { rRef, lRef, parent } = this.info;
 
   const l1 = sql`
-    select ${Raw (lRef)}
+    select distinct ${Raw (lRef)}
     from ${Raw (parent)}
     where ${Raw (lRef.name)}
     in ${Values<RefQLRows> (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}

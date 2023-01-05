@@ -252,7 +252,7 @@ describe ("RQLTag type", () => {
 
     expect (teamQuery).toBe (format (`
       select * from (
-        select player.team_id teamlref from player where player.team_id in ($1, $2)
+        select distinct player.team_id teamlref from player where player.team_id in ($1, $2)
       ) refqll1, 
       lateral (
         select team.name, team.league_id leaguelref, team.id defenderslref
@@ -270,7 +270,7 @@ describe ("RQLTag type", () => {
 
     expect (leagueQuery).toBe (format (`
       select * from (
-        select team.league_id leaguelref from public.team where team.league_id in ($1, $2)
+        select distinct team.league_id leaguelref from public.team where team.league_id in ($1, $2)
       ) refqll1,
       lateral (
         select league.name from league where league.id = refqll1.leaguelref
@@ -287,7 +287,7 @@ describe ("RQLTag type", () => {
 
     expect (defendersQuery).toBe (format (`
       select * from (
-        select team.id defenderslref from public.team where team.id in ($1, $2)
+        select distinct team.id defenderslref from public.team where team.id in ($1, $2)
       ) refqll1,
       lateral (
         select player.last_name from player where player.team_id = refqll1.defenderslref
@@ -305,7 +305,7 @@ describe ("RQLTag type", () => {
 
     expect (gamesQuery).toBe (format (`
       select * from (
-        select player.id gameslref from player where player.id in ($1, $2)
+        select distinct player.id gameslref from player where player.id in ($1, $2)
       ) refqll1,
       lateral (
         select game.result from game join game_player on game_player.game_id = game.id where game_player.player_id = refqll1.gameslref
@@ -322,7 +322,7 @@ describe ("RQLTag type", () => {
 
     expect (ratingQuery).toBe (format (`
       select * from (
-        select player.id ratinglref from player where player.id in ($1, $2)
+        select distinct player.id ratinglref from player where player.id in ($1, $2)
       ) refqll1,
       lateral (
         select rating.acceleration, rating.stamina from rating where rating.player_id = refqll1.ratinglref

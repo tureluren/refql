@@ -39,6 +39,7 @@ const pool = new Pool ({
 });
 
 const pgQuerier = async (query: string, values: any[]) => {
+  console.log (query);
   const { rows } = await pool.query (query, values);
 
   return rows;
