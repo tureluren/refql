@@ -192,38 +192,12 @@ function compile(this: RQLTag<unknown>, params: unknown = {}) {
   ];
 }
 
-// To keep the original order of the result set from the right-side subselect and ensure that all rows are unique,
-// we use a programmatic approach rather than the DISTINCT keyword in the outer part of the query.
-// Using DISTINCT on the right side of the LATERAL keyword is not a viable option as it would require
-// the selection of fields that are used in the ORDER BY clause.
-const distinct = (rows: any[]) => {
-  const distinctRows = [] as any[];
-
-  rows.reduce ((acc, row) => {
-    const match = acc.find (
-      // Using JSON.stringify because it's fast and efficient and
-      // we don't care about the object's prototype chain or the property order.
-      (t: any) => JSON.stringify (t) === JSON.stringify (row)
-    );
-
-    if (!match) {
-      distinctRows.push (row);
-      acc.push (row);
-    }
-    return acc;
-  }, []);
-
-  return distinctRows;
-};
-
 async function aggregate(this: RQLTag<unknown>, querier: Querier, params: StringMap = {}): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
-  const rows = await querier<any> (query, values);
+  const refQLRows = await querier<any> (query, values);
 
-  if (!rows.length) return [];
-
-  const refQLRows = distinct (rows);
+  if (!refQLRows.length) return [];
 
   const nextData = await Promise.all (next.map (
     // { ...null } = {}
