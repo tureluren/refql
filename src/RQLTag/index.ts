@@ -1,6 +1,5 @@
 import castAs from "../common/castAs";
 import { flConcat, flMap, refqlType } from "../common/consts";
-import equals from "../common/equals";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
@@ -202,7 +201,9 @@ const distinct = (rows: any[]) => {
 
   rows.reduce ((acc, row) => {
     const match = acc.find (
-      (t: any) => equals (t, row)
+      // Using JSON.stringify because it's fast and efficient and
+      // we don't care about the object's prototype chain or the property order.
+      (t: any) => JSON.stringify (t) === JSON.stringify (row)
     );
 
     if (!match) {
