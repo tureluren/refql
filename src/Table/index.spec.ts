@@ -3,6 +3,7 @@ import mySQL from "mysql2";
 import pg from "pg";
 import Table from ".";
 import { flEquals } from "../common/consts";
+import equals from "../common/equals";
 import { Querier } from "../common/types";
 import {
   belongsTo, BelongsToMany,
@@ -373,5 +374,10 @@ describe ("Table type", () => {
     expect (player[flEquals] (Raw ("player") as any)).toBe (false);
     expect (player[flEquals] (team)).toBe (team[flEquals] (player));
     expect (player[flEquals] (player) && player[flEquals] (player)).toBe (player[flEquals] (player));
+
+    expect (equals (Table ("player"), Table ("player"))).toBe (true);
+    expect (equals (Table ("player"), Table ("public.player"))).toBe (false);
+    expect (equals (Table ("player"), Table ("player", [belongsTo ("team")]))).toBe (true);
+    expect (equals (Table ("player"), Table ("team"))).toBe (false);
   });
 });

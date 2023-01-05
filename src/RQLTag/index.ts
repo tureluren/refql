@@ -1,5 +1,6 @@
 import castAs from "../common/castAs";
 import { flConcat, flMap, refqlType } from "../common/consts";
+import equals from "../common/equals";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
@@ -196,12 +197,12 @@ function compile(this: RQLTag<unknown>, params: unknown = {}) {
 // we use a programmatic approach rather than the DISTINCT keyword in the outer part of the query.
 // Using DISTINCT on the right side of the LATERAL keyword is not a viable option as it would require
 // the selection of fields that are used in the ORDER BY clause.
-const distinct = (props: string[], rows: any[]) => {
+const distinct = (rows: any[]) => {
   const distinctRows = [] as any[];
 
   rows.reduce ((acc, row) => {
     const match = acc.find (
-      (t: any) => props.every (prop => t[prop] === row[prop])
+      (t: any) => equals (t, row)
     );
 
     if (!match) {
@@ -221,7 +222,7 @@ async function aggregate(this: RQLTag<unknown>, querier: Querier, params: String
 
   if (!rows.length) return [];
 
-  const refQLRows = distinct (Object.keys (rows[0]), rows);
+  const refQLRows = distinct (rows);
 
   const nextData = await Promise.all (next.map (
     // { ...null } = {}
