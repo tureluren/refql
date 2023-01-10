@@ -3,8 +3,11 @@ import { belongsTo, belongsToMany, hasMany, hasOne } from "../nodes";
 import Ref from "../Ref";
 
 const game = Table ("game", [
-  belongsTo ("league")
+  belongsTo ("league"),
+  belongsTo ("public.team", { as: "home_team", lRef: "home_team_id" }),
+  belongsTo ("public.team", { as: "away_team", lRef: "away_team_id" })
 ]);
+
 const gamePlayer = Table ("game_player");
 const goal = Table ("goal");
 const league = Table ("league");

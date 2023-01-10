@@ -3,32 +3,8 @@ import { belongsTo, hasOne } from "./nodes";
 import { Player } from "./soccer";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
-import { league, rating } from "./test/tables";
+import { game, league, player, rating, team } from "./test/tables";
 
-// models
-const player = Table ("player", [
-  belongsTo ("team"),
-  hasOne ("rating")
-]);
-
-const team = Table ("team", [
-  belongsTo ("league")
-]);
-
-// sql snippets
-const byId = sql<{id: number}>`
-  where id = ${p => p.id}
-`;
-
-// composition
-const playerById = player<{}>`
-  id
-  first_name
-  last_name
-  ${team}
-  ${rating}
-  ${byId}
-`;
 
 const pool = new Pool ({
   user: "test",
@@ -61,30 +37,12 @@ const pgQuerier = async (query: string, values: any[]) => {
 // deep concat
 
 
-const tag = player<{}>`
-  id
-  first_name
-  ${team`
-    id 
-    ${league`
-      id 
-    `}
-  `}
-`;
 
-const tag2 = player<{}>`
-  last_name
-  ${team`
-    name 
-    ${league`
-      name
-    `}
-  `}
+const tag = game<{}>`
+  ${team}
   ${sql`
-    limit 2
+    limit 1
   `}
 `;
 
-const tag3 = tag.concat (tag2);
-
-tag3.run (pgQuerier, {}).then (res => console.log (res[0]));
+tag.run<any> (pgQuerier, {}).then (([game]) => console.log (game));
