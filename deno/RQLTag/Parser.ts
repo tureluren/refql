@@ -8,15 +8,15 @@ import Tokenizer, { Token, TokenType } from "./Tokenizer.ts";
 
 class Parser {
   str: string;
-  values: any[];
+  variables: any[];
   idx: number;
   tokenizer: Tokenizer;
   lookahead: Token;
   table: Table;
 
-  constructor(str: string, values: any[], table: Table) {
+  constructor(str: string, variables: any[], table: Table) {
     this.str = str;
-    this.values = values;
+    this.variables = variables;
     this.idx = 0;
     this.tokenizer = new Tokenizer (str);
     this.table = table;
@@ -24,14 +24,14 @@ class Parser {
   }
 
   Identifier() {
-    const name = this.eat ("IDENTIFIER").value;
+    const name = this.eat ("IDENTIFIER").x;
     const [as, cast] = this.castAs ();
 
     return Identifier (name, as, cast);
   }
 
   All() {
-    this.eat ("*").value;
+    this.eat ("*").x;
 
     return all;
   }
@@ -56,36 +56,36 @@ class Parser {
   Variable() {
     // this assignment must preceed `eat`
     // because it might get skipped `by getNextToken`
-    const value = this.values[this.idx];
+    const x = this.variables[this.idx];
     this.eat ("VARIABLE");
 
     const [as, cast] = this.castAs ();
     this.idx += 1;
 
-    if (RQLTag.isRQLTag (value)) {
-      return this.refer (value, as);
+    if (RQLTag.isRQLTag (x)) {
+      return this.refer (x, as);
     }
 
-    if (Table.isTable (value)) {
-      return this.refer (value.empty (), as);
+    if (Table.isTable (x)) {
+      return this.refer (x.empty (), as);
     }
 
-    if (Array.isArray (value)) {
+    if (Array.isArray (x)) {
       if (
-        !value.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && isASTNode (m), true)
+        !x.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && isASTNode (m), true)
       ) {
         throw new Error ("Invalid dynamic members, expected Array of ASTNode");
       }
 
-      return value;
+      return x;
     }
 
-    if (isASTNode (value)) {
-      return value;
+    if (isASTNode (x)) {
+      return x;
     }
 
     // SQLTag or ValueType
-    const variable = Variable (value, as, cast);
+    const variable = Variable (x, as, cast);
 
     return variable;
   }
@@ -142,12 +142,12 @@ class Parser {
 
     if (this.isNext (":")) {
       this.eat (":");
-      as = this.eat ("IDENTIFIER").value;
+      as = this.eat ("IDENTIFIER").x;
     }
 
     if (this.isNext ("::")) {
       this.eat ("::");
-      cast = this.eat ("IDENTIFIER").value;
+      cast = this.eat ("IDENTIFIER").x;
     }
 
     return [as, cast];
@@ -200,11 +200,11 @@ class Parser {
     throw new SyntaxError (`Unknown Literal: "${this.lookahead.type}"`);
   }
 
-  BooleanLiteral(value: boolean) {
-    this.eat (value ? "true" : "false");
+  BooleanLiteral(x: boolean) {
+    this.eat (x ? "true" : "false");
     const [as, cast] = this.castAs ();
 
-    return Literal (value, as, cast);
+    return Literal (x, as, cast);
   }
 
   NullLiteral() {
@@ -216,24 +216,24 @@ class Parser {
 
   StringLiteral() {
     const token = this.eat ("STRING");
-    const value = token.value.slice (1, -1);
+    const x = token.x.slice (1, -1);
     const [as, cast] = this.castAs ();
 
-    return StringLiteral (value, as, cast);
+    return StringLiteral (x, as, cast);
   }
 
   NumericLiteral() {
     const token = this.eat ("NUMBER");
     const [as, cast] = this.castAs ();
 
-    return Literal (Number (token.value), as, cast);
+    return Literal (Number (token.x), as, cast);
   }
 
   getNextToken(): any {
     let lookahead = this.tokenizer.getNextToken ();
     // ignore comments
     while (lookahead.type === "COMMENT") {
-      this.values.splice (this.idx, lookahead.skipCount);
+      this.variables.splice (this.idx, lookahead.skipCount);
       lookahead = this.tokenizer.getNextToken ();
     }
     return lookahead;
@@ -244,7 +244,7 @@ class Parser {
 
     if (token.type !== tokenType) {
       throw new SyntaxError (
-        `Unexpected token: "${token.value}", expected: "${tokenType}"`
+        `Unexpected token: "${token.x}", expected: "${tokenType}"`
       );
     }
 

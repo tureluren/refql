@@ -5,7 +5,7 @@ import Table from "../Table";
 
 interface Raw<Params> extends ASTNode<Params> {
   run: TagFunctionVariable<Params, string>;
-  map(f: (value: ValueType) => ValueType): Raw<Params>;
+  map(f: (x: ValueType) => ValueType): Raw<Params>;
   [flMap]: Raw<Params>["map"];
 }
 
@@ -29,7 +29,7 @@ function Raw<Params>(run: ValueType | TagFunctionVariable<Params>) {
   return raw;
 }
 
-function map(this: Raw<unknown>, f: (value: ValueType) => ValueType) {
+function map(this: Raw<unknown>, f: (x: ValueType) => ValueType) {
   return Raw ((p, t) => {
     return f (this.run (p, t));
   });
@@ -39,8 +39,8 @@ function caseOf(this: Raw<unknown>, structureMap: StringMap) {
   return structureMap.Raw (this.run);
 }
 
-Raw.isRaw = function<Params> (value: any): value is Raw<Params> {
-  return value != null && value[refqlType] === type;
+Raw.isRaw = function<Params> (x: any): x is Raw<Params> {
+  return x != null && x[refqlType] === type;
 };
 
 export default Raw;

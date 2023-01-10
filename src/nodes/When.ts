@@ -29,8 +29,8 @@ function caseOf(this: When<unknown>, structureMap: StringMap) {
   return structureMap.When (this.pred, this.tag);
 }
 
-When.isWhen = function <Params> (value: any): value is When<Params> {
-  return value != null && value[refqlType] === type;
+When.isWhen = function <Params> (x: any): x is When<Params> {
+  return x != null && x[refqlType] === type;
 };
 
 export default When;

@@ -26,8 +26,8 @@ function caseOf(this: Values<unknown>, structureMap: StringMap) {
   return structureMap.Values (this.run);
 }
 
-Values.isValues = function <Params> (value: any): value is Values<Params> {
-  return value != null && value[refqlType] === type;
+Values.isValues = function <Params> (x: any): x is Values<Params> {
+  return x != null && x[refqlType] === type;
 };
 
 export default Values;

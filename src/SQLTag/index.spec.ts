@@ -239,7 +239,7 @@ describe ("SQLTag type", () => {
   test ("insert multiple", async () => {
     const insert = sql<{fields: string[]; table: Table; data: StringMap[]}>`
       insert into ${Raw (p => `${p.table} (${p.fields.join (", ")})`)}
-      values ${Values2D (p => p.data.map (value => p.fields.map (f => value[f])))}
+      values ${Values2D (p => p.data.map (x => p.fields.map (f => x[f])))}
     `;
 
     const params = {

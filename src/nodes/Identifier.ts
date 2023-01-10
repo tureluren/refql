@@ -28,8 +28,8 @@ function caseOf(this: Identifier, structureMap: StringMap) {
   return structureMap.Identifier (this.name, this.as, this.cast);
 }
 
-Identifier.isIdentifier = function (value: any): value is Identifier {
-  return value != null && value[refqlType] === type;
+Identifier.isIdentifier = function (x: any): x is Identifier {
+  return x != null && x[refqlType] === type;
 };
 
 export default Identifier;

@@ -78,8 +78,8 @@ function equals(this: Table, other: Table) {
   );
 }
 
-Table.isTable = function (value: any): value is Table {
-  return value != null && value[refqlType] === type;
+Table.isTable = function (x: any): x is Table {
+  return x != null && x[refqlType] === type;
 };
 
 export default Table;

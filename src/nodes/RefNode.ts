@@ -65,8 +65,8 @@ function caseOf(this: RefNode<unknown>, structureMap: StringMap) {
   return structureMap.RefNode (this.joinLateral (), this.info, this.single);
 }
 
-RefNode.isRefNode = function <Params> (value: any): value is RefNode<Params> {
-  return value != null && value[refqlType] === type;
+RefNode.isRefNode = function <Params> (x: any): x is RefNode<Params> {
+  return x != null && x[refqlType] === type;
 };
 
 type RefNodeInput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;

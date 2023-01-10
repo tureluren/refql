@@ -204,8 +204,8 @@ SQLTag.empty = SQLTag[flEmpty] = function () {
   return sql``;
 } as <Params>() => SQLTag<Params>;
 
-SQLTag.isSQLTag = function <Params> (value: any): value is SQLTag<Params> {
-  return value != null && value[refqlType] === type;
+SQLTag.isSQLTag = function <Params> (x: any): x is SQLTag<Params> {
+  return x != null && x[refqlType] === type;
 };
 
 export default SQLTag;

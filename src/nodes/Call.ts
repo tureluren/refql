@@ -52,14 +52,14 @@ function interpret<Params>(this: Call<Params>) {
       Raw: run => {
         args.push (Raw (run));
       },
-      Literal: value => {
-        args.push (Raw (value));
+      Literal: x => {
+        args.push (Raw (x));
       },
-      StringLiteral: value => {
-        args.push (Raw (`'${value}'`));
+      StringLiteral: x => {
+        args.push (Raw (`'${x}'`));
       },
-      Variable: (value, _as, cast) => {
-        args.push (sql`${value}${Raw (castAs (cast))}`);
+      Variable: (x, _as, cast) => {
+        args.push (sql`${x}${Raw (castAs (cast))}`);
       },
       When: unsupported ("When"),
       RefNode: unsupported ("RefNode"),
@@ -78,8 +78,8 @@ function caseOf(this: Call<unknown>, structureMap: StringMap) {
   return structureMap.Call (this.interpret (), this.name, this.as, this.cast);
 }
 
-Call.isCall = function <Params> (value: any): value is Call<Params> {
-  return value != null && value[refqlType] === type;
+Call.isCall = function <Params> (x: any): x is Call<Params> {
+  return x != null && x[refqlType] === type;
 };
 
 export default Call;

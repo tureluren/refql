@@ -3,7 +3,7 @@ import { CastAs, StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
 interface Literal extends ASTNode<unknown>, CastAs {
-  value: string | number | boolean | null;
+  x: string | number | boolean | null;
 }
 
 const type = "refql/Literal";
@@ -13,10 +13,10 @@ export const literalPrototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Literal(value: string | number | boolean | null, as?: string, cast?: string) {
+function Literal(x: string | number | boolean | null, as?: string, cast?: string) {
   let literal: Literal = Object.create (literalPrototype);
 
-  literal.value = value;
+  literal.x = x;
   literal.as = as;
   literal.cast = cast;
 
@@ -24,11 +24,11 @@ function Literal(value: string | number | boolean | null, as?: string, cast?: st
 }
 
 function caseOf(this: Literal, structureMap: StringMap) {
-  return structureMap.Literal (this.value, this.as, this.cast);
+  return structureMap.Literal (this.x, this.as, this.cast);
 }
 
-Literal.isLiteral = function (value: any): value is Literal {
-  return value != null && value[refqlType] === type;
+Literal.isLiteral = function (x: any): x is Literal {
+  return x != null && x[refqlType] === type;
 };
 
 export default Literal;

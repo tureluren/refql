@@ -9,7 +9,7 @@ const parse = <Params>(strings: TemplateStringsArray, variables: SQLTagVariable<
   const nodes = [] as ASTNode<Params>[];
 
   for (let [idx, string] of strings.entries ()) {
-    const variable = variables[idx];
+    const x = variables[idx];
 
     if (string) {
       string = string
@@ -29,17 +29,17 @@ const parse = <Params>(strings: TemplateStringsArray, variables: SQLTagVariable<
       }
     }
 
-    if (!variable) {
-    } else if (SQLTag.isSQLTag (variable)) {
-      nodes.push (...variable.nodes);
-    } else if (RQLTag.isRQLTag (variable)) {
+    if (!x) {
+    } else if (SQLTag.isSQLTag (x)) {
+      nodes.push (...x.nodes);
+    } else if (RQLTag.isRQLTag (x)) {
       throw new Error ("U can't use RQLTags inside SQLTags");
-    } else if (Table.isTable (variable)) {
-      nodes.push (Raw (variable.name));
-    } else if (isASTNode (variable)) {
-      nodes.push (variable);
+    } else if (Table.isTable (x)) {
+      nodes.push (Raw (x.name));
+    } else if (isASTNode (x)) {
+      nodes.push (x);
     } else {
-      nodes.push (Value (variable));
+      nodes.push (Value (x));
     }
   }
 

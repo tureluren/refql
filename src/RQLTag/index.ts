@@ -130,25 +130,25 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
           Raw (`${table.name}.${name}${castAs (cast, as)}`)
         );
       },
-      Variable: (value, as, cast) => {
-        if (SQLTag.isSQLTag (value)) {
+      Variable: (x, as, cast) => {
+        if (SQLTag.isSQLTag (x)) {
           if (as) {
             members.push (sql`
-              (${value})${Raw (castAs (cast, as))} 
+              (${x})${Raw (castAs (cast, as))} 
             `);
           } else {
-            extra = extra.concat (value);
+            extra = extra.concat (x);
           }
 
         } else {
-          throw new Error (`U can't insert "${value}" in this section of the RQLTag`);
+          throw new Error (`U can't insert "${x}" in this section of the RQLTag`);
         }
       },
-      Literal: (value, as, cast) => {
-        members.push (Raw (`${value}${castAs (cast, as)}`));
+      Literal: (x, as, cast) => {
+        members.push (Raw (`${x}${castAs (cast, as)}`));
       },
-      StringLiteral: (value, as, cast) => {
-        members.push (Raw (`'${value}'${castAs (cast, as)}`));
+      StringLiteral: (x, as, cast) => {
+        members.push (Raw (`'${x}'${castAs (cast, as)}`));
       },
       When: (pred, tag) => {
         extra = extra.concat (sql`${When (pred, tag)}`);
@@ -233,8 +233,8 @@ async function run(this: RQLTag<unknown>, querier: Querier, params?: unknown) {
   return this.aggregate (querier, params);
 }
 
-RQLTag.isRQLTag = function <Params> (value: any): value is RQLTag<Params> {
-  return value != null && value[refqlType] === type;
+RQLTag.isRQLTag = function <Params> (x: any): x is RQLTag<Params> {
+  return x != null && x[refqlType] === type;
 };
 
 export default RQLTag;

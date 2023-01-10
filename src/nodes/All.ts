@@ -24,8 +24,8 @@ function caseOf(this: All, structureMap: StringMap) {
   return structureMap.All (this.sign);
 }
 
-All.isAll = function (value: any): value is All {
-  return value != null && value[refqlType] === type;
+All.isAll = function (x: any): x is All {
+  return x != null && x[refqlType] === type;
 };
 
 export const all = All ("*");

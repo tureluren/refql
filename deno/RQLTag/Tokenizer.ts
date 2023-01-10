@@ -5,7 +5,7 @@ export type TokenType =
 
 export type Token = {
   type: TokenType | null;
-  value: string;
+  x: string;
   skipCount?: number;
 };
 
@@ -62,7 +62,7 @@ class Tokenizer {
 
   getNextToken(): Token {
     if (!this.hasMoreTokens ()) {
-      return { type: "EOT", value: "EOT" };
+      return { type: "EOT", x: "EOT" };
     }
 
     const str = this.str.slice (this.idx);
@@ -93,7 +93,7 @@ class Tokenizer {
 
       return {
         type: tokenType,
-        value: tokenValue,
+        x: tokenValue,
         skipCount
       };
     }

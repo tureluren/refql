@@ -90,8 +90,8 @@ describe ("Nodes", () => {
   test ("Raw is functor", () => {
     const raw = Raw ("select * from player");
 
-    const limit = (value: any) => `${value} limit 10`;
-    const offset = (value: any) => `${value} offset 10`;
+    const limit = (x: any) => `${x} limit 10`;
+    const offset = (x: any) => `${x} offset 10`;
 
     const raw2 = raw[flMap] (v => v);
     expect (raw2.run ({})).toEqual (raw.run ({}));

@@ -2,7 +2,7 @@ import { StringMap } from "../common/types";
 import Literal, { literalPrototype } from "./Literal";
 
 interface StringLiteral extends Literal {
-  value: string;
+  x: string;
 }
 
 const prototype = Object.assign ({}, literalPrototype, {
@@ -10,10 +10,10 @@ const prototype = Object.assign ({}, literalPrototype, {
   caseOf
 });
 
-function StringLiteral(value: string, as?: string, cast?: string) {
+function StringLiteral(x: string, as?: string, cast?: string) {
   let stringLiteral: StringLiteral = Object.create (prototype);
 
-  stringLiteral.value = value;
+  stringLiteral.x = x;
   stringLiteral.as = as;
   stringLiteral.cast = cast;
 
@@ -21,7 +21,7 @@ function StringLiteral(value: string, as?: string, cast?: string) {
 }
 
 function caseOf(this: StringLiteral, structureMap: StringMap) {
-  return structureMap.StringLiteral (this.value, this.as, this.cast);
+  return structureMap.StringLiteral (this.x, this.as, this.cast);
 }
 
 export default StringLiteral;

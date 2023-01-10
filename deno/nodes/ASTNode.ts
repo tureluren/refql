@@ -7,10 +7,10 @@ type StructureMap<Params, Return> = {
   BelongsToMany: (tag: RQLTag<Params>, info: Required<RefInfo>, single: boolean) => Return;
   All: (sign: string) => Return;
   Identifier: (name: string, as?: string, cast?: string) => Return;
-  Variable: (value: SQLTag<Params> | ValueType, as?: string, cast?: string) => Return;
+  Variable: (x: SQLTag<Params> | ValueType, as?: string, cast?: string) => Return;
   Call: (tag: SQLTag<Params>, name: string, as?: string, cast?: string) => Return;
-  Literal: (value: string | number | boolean | null, as?: string, cast?: string) => Return;
-  StringLiteral: (value: string, as?: string, cast?: string) => Return;
+  Literal: (x: string | number | boolean | null, as?: string, cast?: string) => Return;
+  StringLiteral: (x: string, as?: string, cast?: string) => Return;
   Raw: (run: TagFunctionVariable<Params, string>) => Return;
   Value: (run: TagFunctionVariable<Params>) => Return;
   Values: (run: TagFunctionVariable<Params, any[]>) => Return;
@@ -28,8 +28,8 @@ export const astNodePrototype = {
   [astNode]: true
 };
 
-export const isASTNode = function <Params> (value: any): value is ASTNode<Params> {
-  return value != null && !!value[astNode];
+export const isASTNode = function <Params> (x: any): x is ASTNode<Params> {
+  return x != null && !!x[astNode];
 };
 
 export default ASTNode;

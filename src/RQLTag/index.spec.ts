@@ -645,12 +645,12 @@ describe ("RQLTag type", () => {
       .toThrowError (new Error ("Invalid dynamic members, expected Array of ASTNode"));
 
     const parser = new Parser ("*", [], player);
-    parser.lookahead = { type: "DOUBLE" as TokenType, value: "3.14" };
+    parser.lookahead = { type: "DOUBLE" as TokenType, x: "3.14" };
 
     expect (() => parser.Literal ())
       .toThrowError (new SyntaxError ('Unknown Literal: "DOUBLE"'));
 
-    parser.lookahead = { type: "NUMBER", value: "1" };
+    parser.lookahead = { type: "NUMBER", x: "1" };
 
     expect (() => parser.eat ("STRING"))
       .toThrowError (new SyntaxError ('Unexpected token: "1", expected: "STRING"'));

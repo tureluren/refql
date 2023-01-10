@@ -28,8 +28,8 @@ function toString(this: Ref) {
   return `${this.name} ${this.as}`;
 }
 
-Ref.isRef = function (value: any): value is Ref {
-  return value != null && value[refqlType] === type;
+Ref.isRef = function (x: any): x is Ref {
+  return x != null && x[refqlType] === type;
 };
 
 Ref.refOf = function (as: string) {
