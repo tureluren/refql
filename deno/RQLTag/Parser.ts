@@ -41,17 +41,16 @@ class Parser {
       return tag.nodes;
     }
 
-    const ref = this.table.refs.find (([t]) => {
+    const refs = this.table.refs.filter (([t]) => {
       return t.equals (tag.table);
     });
 
-    if (!ref) {
+    if (!refs.length) {
       throw new Error (
         `${this.table.name} has no ref defined for: ${tag.table.name}`
       );
     }
-
-    return ref[1] (this.table, tag, as);
+    return refs.map (ref => ref[1] (this.table, tag.map (x => x), as));
   }
 
   Variable() {
