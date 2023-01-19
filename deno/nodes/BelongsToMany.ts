@@ -18,12 +18,12 @@ const prototype = Object.assign ({}, refNodePrototype, {
   caseOf
 });
 
-function BelongsToMany<Params>(info: Required<RefInfo>, tag: RQLTag<Params>) {
+function BelongsToMany<Params>(info: Required<RefInfo>, tag: RQLTag<Params>, single: boolean) {
   let belongsToMany: BelongsToMany<Params> = Object.create (prototype);
 
   belongsToMany.tag = tag;
   belongsToMany.info = info;
-  belongsToMany.single = false;
+  belongsToMany.single = single;
 
   return belongsToMany;
 }
@@ -69,7 +69,7 @@ export const belongsToMany = (table: string, input: BelongsToManyInput = {}): Re
 
   const child = Table (table);
 
-  const makeBelongsToMany = (parent: Table, tag: RQLTag<unknown>, as?: string) => {
+  const makeBelongsToMany = (parent: Table, tag: RQLTag<unknown>, as?: string, single?: boolean) => {
     as = as || input.as || `${child.name}s`;
     const refOf = Ref.refOf (as);
 
@@ -88,7 +88,8 @@ export const belongsToMany = (table: string, input: BelongsToManyInput = {}): Re
         lxRef: refOf (xTable, "lxref", input.lxRef || `${parent.name}_id`),
         rxRef: refOf (xTable, "rxref", input.rxRef || `${child.name}_id`)
       },
-      tag
+      tag,
+      typeof single === "undefined" ? false : true
     );
   };
 

@@ -1,5 +1,5 @@
 export type TokenType =
-  | "::" | ":" | "(" | ")" | "," | "COMMENT" | "VARIABLE"
+  | "::" | ":1" | ":" | "(" | ")" | "," | "COMMENT" | "VARIABLE"
   | "true" | "false" | "null" | "NUMBER"
   | "*" | "IDENTIFIER" | "STRING" | "EOT";
 
@@ -17,6 +17,7 @@ const tokens: [RegExp, TokenType | null][] = [
   [/^::/, "::"],
 
   // Symbols, delimiters
+  [/^:1/, ":1"],
   [/^:/, ":"],
   [/^\(/, "("],
   [/^\)/, ")"],

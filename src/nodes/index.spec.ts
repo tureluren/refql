@@ -51,7 +51,7 @@ describe ("Nodes", () => {
 
   test ("is RefNode", () => {
     expect (RefNode.isRefNode (RefNode (dummyRefInfo, dummy`*`, true))).toBe (true);
-    expect (RefNode.isRefNode (BelongsToMany (dummyRefInfo, dummy`*`))).toBe (true);
+    expect (RefNode.isRefNode (BelongsToMany (dummyRefInfo, dummy`*`, true))).toBe (true);
     expect (RefNode.isRefNode ("RefNode")).toBe (false);
   });
 

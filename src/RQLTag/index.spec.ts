@@ -369,6 +369,27 @@ describe ("RQLTag type", () => {
     expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
   });
 
+  test ("request single", async () => {
+    const tag = player<{}>`
+      ${game}:1 first_game
+      ${goal`
+        id
+        minute
+      `}:1 first_goal
+      ${sql`
+        and id = 9
+      `}
+    `;
+
+    const players = await tag.run<any> (querier, {});
+    const player1 = players[0];
+    const playerGame = player1.first_game;
+    const playerGoal = player1.first_goal;
+
+    expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
+    expect (Object.keys (playerGoal)).toEqual (["id", "minute"]);
+  });
+
   test ("concat", async () => {
     const tag = player<{}>`
       id
@@ -678,7 +699,7 @@ describe ("RQLTag type", () => {
     expect (() => player`concat (${RefNode (dummyRefInfo, dummy`*`, true)})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: RefNode"));
 
-    expect (() => player`concat (${BelongsToMany (dummyRefInfo, dummy`*`)})`.compile ())
+    expect (() => player`concat (${BelongsToMany (dummyRefInfo, dummy`*`, true)})`.compile ())
       .toThrowError (new Error ("Unimplemented by Call: BelongsToMany"));
 
     expect (() => player`concat (${all})`.compile ())

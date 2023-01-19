@@ -405,7 +405,7 @@ describe ("SQLTag type", () => {
     expect (() => sql`select ${RefNode (dummyRefInfo, dummy`*`, true)}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: RefNode"));
 
-    expect (() => sql`select ${BelongsToMany (dummyRefInfo, dummy`*`)}`.compile ())
+    expect (() => sql`select ${BelongsToMany (dummyRefInfo, dummy`*`, true)}`.compile ())
       .toThrowError (new Error ("Unimplemented by SQLTag: BelongsToMany"));
 
     expect (() => sql`select ${all}`.compile ())

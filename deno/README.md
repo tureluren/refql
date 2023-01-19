@@ -13,7 +13,7 @@ npm install refql
 import postgres from "https://deno.land/x/postgresjs/mod.js";
 import { rql, sql } from "https://deno.land/x/refql/mod.ts";
 
-// models
+// Table
 const player = Table ("player", [
   belongsTo ("team")
 ]);
@@ -22,7 +22,7 @@ const team = Table ("team");
 
 // sql snippets
 const byId = sql<{id: number}>`
-  where id = ${p => p.id}
+  and id = ${p => p.id}
 `;
 
 // composition
@@ -55,3 +55,9 @@ playerById.run<Player> (querier, { id: 1 });
 //   }
 // ]
 ```
+
+## Table of contents
+* [Table](#querier)
+* [Querier](#querier)
+
+## Table

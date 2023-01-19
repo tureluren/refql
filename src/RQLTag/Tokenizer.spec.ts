@@ -18,7 +18,8 @@ describe ("Tokenizer type", () => {
   });
 
   test ("symbols, delimiters", () => {
-    const tokenizer = new Tokenizer (": ( ) ,");
+    const tokenizer = new Tokenizer (":1 : ( ) ,");
+    expect (tokenizer.getNextToken ()).toEqual ({ type: ":1", x: ":1" });
     expect (tokenizer.getNextToken ()).toEqual ({ type: ":", x: ":" });
     expect (tokenizer.getNextToken ()).toEqual ({ type: "(", x: "(" });
     expect (tokenizer.getNextToken ()).toEqual ({ type: ")", x: ")" });

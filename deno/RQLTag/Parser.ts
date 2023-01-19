@@ -36,7 +36,7 @@ class Parser {
     return all;
   }
 
-  refer(tag: RQLTag<unknown>, as?: string) {
+  refer(tag: RQLTag<unknown>, as?: string, single?: boolean) {
     if (tag.table.equals (this.table)) {
       return tag.nodes;
     }
@@ -50,7 +50,7 @@ class Parser {
         `${this.table.name} has no ref defined for: ${tag.table.name}`
       );
     }
-    return refs.map (ref => ref[1] (this.table, tag.map (x => x), as));
+    return refs.map (ref => ref[1] (this.table, tag.map (x => x), as, single));
   }
 
   Variable() {
@@ -59,15 +59,15 @@ class Parser {
     const x = this.variables[this.idx];
     this.eat ("VARIABLE");
 
-    const [as, cast] = this.castAs ();
+    const [as, cast, single] = this.castAs ();
     this.idx += 1;
 
     if (RQLTag.isRQLTag (x)) {
-      return this.refer (x, as);
+      return this.refer (x, as, single);
     }
 
     if (Table.isTable (x)) {
-      return this.refer (x.empty (), as);
+      return this.refer (x.empty (), as, single);
     }
 
     if (Array.isArray (x)) {
@@ -137,8 +137,14 @@ class Parser {
     return !this.isNext (")") && this.eat (",");
   }
 
-  castAs() {
-    let as, cast;
+  castAs(): [string | undefined, string | undefined, boolean | undefined] {
+    let as, cast, single;
+
+    if (this.isNext (":1")) {
+      this.eat (":1");
+      as = this.eat ("IDENTIFIER").x;
+      single = true;
+    }
 
     if (this.isNext (":")) {
       this.eat (":");
@@ -150,7 +156,7 @@ class Parser {
       cast = this.eat ("IDENTIFIER").x;
     }
 
-    return [as, cast];
+    return [as, cast, single];
   }
 
   Member() {

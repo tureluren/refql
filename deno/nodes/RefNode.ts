@@ -117,7 +117,7 @@ const makeBelongsTo = (child: Table, input: RefNodeInput) => (parent: Table, tag
   );
 };
 
-const makeHasMany = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag<unknown>, as?: string) => {
+const makeHasMany = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag<unknown>, as?: string, single?: boolean) => {
   as = as || input.as || `${child.name}s`;
   const refOf = Ref.refOf (as);
 
@@ -129,7 +129,7 @@ const makeHasMany = (child: Table, input: RefNodeInput) => (parent: Table, tag: 
       rRef: refOf (child, "rref", input.rRef || `${parent.name}_id`)
     },
     tag,
-    false
+    typeof single === "undefined" ? false : true
   );
 };
 
