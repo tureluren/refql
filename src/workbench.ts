@@ -1,9 +1,11 @@
 import { Pool } from "pg";
-import { belongsTo, belongsToMany, hasMany, hasOne } from "./nodes";
+import { belongsTo, belongsToMany, hasMany, hasOne, When } from "./nodes";
+import RQLTag from "./RQLTag";
+import { Player, Team } from "./soccer";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
 
-const team = Table ("team");
+const team = Table ("team", [hasMany ("player")]);
 const goal = Table ("goal");
 const rating = Table ("rating");
 const game = Table ("game");
@@ -15,17 +17,23 @@ const player = Table ("player", [
   belongsToMany ("game")
 ]);
 
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
+const orderr = sql<{id: number}, any>`
+  ${player}
+  ${p => p.id}
+  order by id
 `;
 
-const tag = player<{}>`
-  ${team}
-  ${goal}
-  ${rating}
-  ${game}
-  ${byId}
+const byId = sql`
+  ${orderr}
 `;
+
+// const tag = player<{}>`
+//   ${team}
+//   ${goal}
+//   ${rating}
+//   ${game}
+//   ${byId}
+// `;
 
 const pool = new Pool ({
   user: "test",
@@ -42,4 +50,38 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
-tag.run (querier, { id: 1 }).then (console.log);
+// tag.run (querier, { id: 1 }).then (console.log);
+
+// contramap
+const taggie = player<{id: number}, Player[]>`
+  id
+  last_name
+  // ${team}
+  ${byId}
+  ${When (p => p.id === 400, sql<{id: number}, any>`
+    order by id
+  `)}
+`;
+
+// const buh = taggie.concat (player`first_name`).map (res => res[0]).map (res => {
+//   console.log (res);
+//   return res.id;
+// });
+
+const buh = taggie.concat (player`first_name`).map (res => res[0]).map (res => {
+  console.log (res);
+  return res;
+}).contramap (p => ({ id: p.id * 2 })).contramap (p => ({ id: p.id * 2 }));
+
+
+taggie.nodes = [];
+
+// console.log (buh == taggie);
+console.log (buh.nodes);
+
+
+
+// map(x => x) in parser
+// object.assign((qurier), {})
+// unknown weghalen ? defaults ?
+// querier en params omwisselen

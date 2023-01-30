@@ -93,29 +93,29 @@ describe ("SQLTag type", () => {
     expect (values).toEqual (values2);
   });
 
-  test ("Functor", () => {
-    const tag = sql`select * from player where id = ${1}`;
+  // test ("Functor", () => {
+  //   const tag = sql`select * from player where id = ${1}`;
 
-    const limit = (nodes: any[]) => nodes.concat (Raw ("limit 10"));
-    const offset = (nodes: any[]) => nodes.concat (Raw ("offset 0"));
+  //   const limit = (nodes: any[]) => nodes.concat (Raw ("limit 10"));
+  //   const offset = (nodes: any[]) => nodes.concat (Raw ("offset 0"));
 
-    const tag2 = tag[flMap] (v => v);
-    expect (tag2.compile ()).toEqual (tag.compile ());
+  //   const tag2 = tag[flMap] (v => v);
+  //   expect (tag2.compile ()).toEqual (tag.compile ());
 
-    const tag3 = tag[flMap] (v => offset (limit (v)));
-    const tag4 = tag[flMap] (limit)[flMap] (offset);
+  //   const tag3 = tag[flMap] (v => offset (limit (v)));
+  //   const tag4 = tag[flMap] (limit)[flMap] (offset);
 
-    expect (tag3.compile ()).toEqual (tag4.compile ());
-  });
+  //   expect (tag3.compile ()).toEqual (tag4.compile ());
+  // });
 
   test ("run", async () => {
     type Params = {
       limit: number;
     };
 
-    const limit = sql<Params>`limit ${p => p.limit}`;
+    const limit = sql<Params, any>`limit ${p => p.limit}`;
 
-    const tag = sql<Params>`
+    const tag = sql<Params, any>`
       select id, first_name, ${rawLastName}, (${sql`
       select count(*) from goal where player_id = player.id`}) number_of_goals
       from ${player}
@@ -136,7 +136,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual ([5]);
 
-    const players = await tag.run<Player> (querier, params);
+    const players = await tag (querier, params);
 
     expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name", "number_of_goals"]);
     expect (players.length).toBe (5);
@@ -144,7 +144,7 @@ describe ("SQLTag type", () => {
 
 
   test ("Values", async () => {
-    const tag = sql<{ids: number[]}>`
+    const tag = sql<{ids: number[]}, Player[]>`
       select id, first_name, ${rawLastName}
       from player
       where id in ${Values (p => p.ids)}
@@ -175,7 +175,7 @@ describe ("SQLTag type", () => {
 
     expect (values2).toEqual ([3, 4, 5]);
 
-    const players = await tag.run<Player> (querier, { ids: [3, 4] });
+    const players = await tag (querier, { ids: [3, 4] });
 
     expect (players[0].id).toBe (3);
     expect (players[1].id).toBe (4);
@@ -190,7 +190,7 @@ describe ("SQLTag type", () => {
       cars = JSON.parse (cars);
     }
 
-    const insert = sql<{fields: string[]; table: Table; data: StringMap}>`
+    const insert = sql<{fields: string[]; table: Table; data: StringMap}, any>`
       insert into ${Raw (p => `${p.table} (${p.fields.join (", ")})`)}
       values ${Values (p => p.fields.map (f => p.data[f]))}
     `;
@@ -210,9 +210,9 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", cars]);
 
-    await insert.run (querier, params);
+    await insert (querier, params);
 
-    let returning = sql<{}>`
+    let returning = sql<{}, any>`
       select * from player
       where cars = CAST(${cars} as json)
       order by id desc
@@ -220,7 +220,7 @@ describe ("SQLTag type", () => {
     `;
 
     if (isPG) {
-      returning = sql<{}>`
+      returning = sql<{}, any>`
         select * from player
         where cars = ${cars}
         order by id desc
@@ -228,7 +228,7 @@ describe ("SQLTag type", () => {
       `;
     }
 
-    const players = await returning.run<any> (querier);
+    const players = await returning (querier);
 
     expect (players[0].first_name).toBe ("John");
     expect (players[0].last_name).toBe ("Doe");
@@ -237,7 +237,7 @@ describe ("SQLTag type", () => {
   });
 
   test ("insert multiple", async () => {
-    const insert = sql<{fields: string[]; table: Table; data: StringMap[]}>`
+    const insert = sql<{fields: string[]; table: Table; data: StringMap[]}, any>`
       insert into ${Raw (p => `${p.table} (${p.fields.join (", ")})`)}
       values ${Values2D (p => p.data.map (x => p.fields.map (f => x[f])))}
     `;
@@ -260,15 +260,15 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", "Jane", "Doe", "Jimmy", "Doe"]);
 
-    await insert.run (querier, params);
+    await insert (querier, params);
 
-    const returning = sql<{}>`
+    const returning = sql<{}, any>`
       select * from player
       order by id desc
       limit 3
     `;
 
-    const players = await returning.run<any> (querier);
+    const players = await returning (querier);
 
     expect (players[0].first_name).toBe ("Jimmy");
     expect (players[1].first_name).toBe ("Jane");
@@ -283,14 +283,14 @@ describe ("SQLTag type", () => {
         select * from playerr
         where playerr.id = 1
       `;
-      await tag.run (() => Promise.reject (message));
+      await tag (() => Promise.reject (message));
     } catch (err: any) {
       expect (err).toBe (message);
     }
   });
 
   test ("when", () => {
-    const tag = sql<{limit?: number; offset?: number}>`
+    const tag = sql<{limit?: number; offset?: number}, any>`
       select id from player
       ${When (p => !!p.limit, sql`
         limit ${p => p.limit}
@@ -330,7 +330,7 @@ describe ("SQLTag type", () => {
   });
 
   test ("nested when", () => {
-    const tag = sql<{id?: number; limit?: number; offset?: number; orderBy?: string}>`
+    const tag = sql<{id?: number; limit?: number; offset?: number; orderBy?: string}, any>`
       select id from player
       ${When (p => !!p.id, sql`
         where id = ${p => p.id}

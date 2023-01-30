@@ -1,16 +1,19 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Querier, RefMakerPair, RQLTagVariable } from "../common/types";
+import { Querier, RefMakerPair, RQLTagVariable, Runnable } from "../common/types";
 import validateTable from "../common/validateTable";
+import { ASTNode } from "../nodes";
 import RQLTag from "../RQLTag";
 import Parser from "../RQLTag/Parser";
 
+type RQLTagMaker =
+  <Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => RQLTag<Params, Output> & Runnable<Params, Output>;
+
 interface Table {
-  <Params>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params>[]): RQLTag<Params>;
   name: string;
   schema?: string;
   refs: RefMakerPair[];
   equals(other: Table): boolean;
-  empty<Params>(): RQLTag<Params>;
+  empty<Params, Output>(): RQLTag<Params, Output> & Runnable<Params, Output>;
   toString(): string;
   run<Return>(querier: Querier): Promise<Return[]>;
   [flEmpty]: Table["empty"];
@@ -28,18 +31,18 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   run
 });
 
-function Table(name: string, refs: RefMakerPair[] = []) {
+function Table(name: string, refs: RefMakerPair[] = []): Table & RQLTagMaker {
   validateTable (name);
 
   if (!Array.isArray (refs)) {
     throw new Error ("Invalid refs: not an Array");
   }
 
-  const table = (<Params>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params>[]) => {
+  const table = (<Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => {
     const parser = new Parser (strings.join ("$"), variables, table);
 
-    return RQLTag<Params> (table, parser.nodes ());
-  }) as Table;
+    return RQLTag<Params, Output> (table, parser.nodes () as ASTNode<Params, Output>[]);
+  }) as Table & RQLTagMaker;
 
   Object.setPrototypeOf (table, prototype);
 
@@ -57,12 +60,12 @@ function Table(name: string, refs: RefMakerPair[] = []) {
   return table;
 }
 
-function empty(this: Table) {
+function empty(this: Table & RQLTagMaker) {
   return this``;
 }
 
-function run(this: Table, querier: Querier) {
-  return this.empty ().run (querier);
+function run(this: Table & RQLTagMaker, querier: Querier) {
+  return this.empty () (querier);
 }
 
 function toString(this: Table) {

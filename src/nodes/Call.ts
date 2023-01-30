@@ -8,10 +8,10 @@ import sql from "../SQLTag/sql";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 import Raw from "./Raw";
 
-interface Call<Params> extends ASTNode<Params>, CastAs {
+interface Call<Params> extends ASTNode<Params, unknown>, CastAs {
   name: string;
-  nodes: ASTNode<Params>[];
-  interpret(): SQLTag<Params>;
+  nodes: ASTNode<Params, unknown>[];
+  interpret(): SQLTag<Params, unknown>;
 }
 
 const type = "refql/Call";
@@ -23,7 +23,7 @@ const prototype = Object.assign ({}, astNodePrototype, {
   [refqlType]: type
 });
 
-function Call<Params>(name: string, nodes: ASTNode<Params>[], as?: string, cast?: string) {
+function Call<Params>(name: string, nodes: ASTNode<Params, unknown>[], as?: string, cast?: string) {
   let call: Call<Params> = Object.create (prototype);
 
   call.name = name;
@@ -37,7 +37,7 @@ function Call<Params>(name: string, nodes: ASTNode<Params>[], as?: string, cast?
 const unsupported = unimplemented ("Call");
 
 function interpret<Params>(this: Call<Params>) {
-  const args = [] as (Raw<Params> | SQLTag<Params>)[];
+  const args = [] as (Raw<Params> | SQLTag<Params, unknown>)[];
 
   for (const node of this.nodes) {
     node.caseOf<void> ({

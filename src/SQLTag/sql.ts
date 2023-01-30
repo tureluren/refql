@@ -5,8 +5,8 @@ import { isASTNode } from "../nodes/ASTNode";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 
-const parse = <Params>(strings: TemplateStringsArray, variables: SQLTagVariable<Params>[]) => {
-  const nodes = [] as ASTNode<Params>[];
+const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output>[]) => {
+  const nodes = [] as ASTNode<Params, Output>[];
 
   for (let [idx, string] of strings.entries ()) {
     const x = variables[idx];
@@ -30,13 +30,13 @@ const parse = <Params>(strings: TemplateStringsArray, variables: SQLTagVariable<
     }
 
     if (!x) {
-    } else if (SQLTag.isSQLTag (x)) {
+    } else if (SQLTag.isSQLTag<Params, Output> (x)) {
       nodes.push (...x.nodes);
     } else if (RQLTag.isRQLTag (x)) {
       throw new Error ("U can't use RQLTags inside SQLTags");
     } else if (Table.isTable (x)) {
       nodes.push (Raw (x.name));
-    } else if (isASTNode (x)) {
+    } else if (isASTNode<Params, Output> (x)) {
       nodes.push (x);
     } else {
       nodes.push (Value (x));
@@ -46,9 +46,9 @@ const parse = <Params>(strings: TemplateStringsArray, variables: SQLTagVariable<
   return nodes;
 };
 
-const sql = <Params> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) => {
+const sql = <Params, Output> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
   const nodes = parse (strings, variables);
-  return SQLTag<Params> (nodes);
+  return SQLTag<Params, Output> (nodes);
 };
 
 export default sql;

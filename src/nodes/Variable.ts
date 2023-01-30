@@ -2,8 +2,8 @@ import { CastAs, StringMap, ValueType } from "../common/types";
 import SQLTag from "../SQLTag";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Variable<Params> extends ASTNode<Params>, CastAs {
-  x: SQLTag<Params> | ValueType;
+interface Variable<Params, Output> extends ASTNode<Params, Output>, CastAs {
+  x: SQLTag<Params, Output> | ValueType;
 }
 
 const prototype = Object.assign ({}, astNodePrototype, {
@@ -11,8 +11,8 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Variable<Params>(x: SQLTag<Params> | ValueType, as?: string, cast?: string) {
-  let variable: Variable<Params> = Object.create (prototype);
+function Variable<Params, Output>(x: SQLTag<Params, Output> | ValueType, as?: string, cast?: string) {
+  let variable: Variable<Params, Output> = Object.create (prototype);
 
   variable.x = x;
   variable.as = as;
@@ -21,7 +21,7 @@ function Variable<Params>(x: SQLTag<Params> | ValueType, as?: string, cast?: str
   return variable;
 }
 
-function caseOf(this: Variable<unknown>, structureMap: StringMap) {
+function caseOf(this: Variable<unknown, unknown>, structureMap: StringMap) {
   return structureMap.Variable (this.x, this.as, this.cast);
 }
 

@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Value<Params> extends ASTNode<Params> {
+interface Value<Params> extends ASTNode<Params, unknown> {
   run: TagFunctionVariable<Params>;
 }
 

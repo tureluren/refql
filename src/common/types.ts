@@ -47,17 +47,19 @@ export interface RefInput {
 export type TagFunctionVariable<Params, Return = ValueType> =
   (params: Params, table?: Table) => Return;
 
-export type SQLTagVariable<Params> =
-  | SQLTag<Params>
-  | ASTNode<Params>
+export type SQLTagVariable<Params, Output> =
+  | SQLTag<Params, Output>
+  | ASTNode<Params, Output>
+  | Table
   | TagFunctionVariable<Params>
   | ValueType;
 
-export type RQLTagVariable<Params> =
-  | RQLTag<Params>
-  | SQLTag<Params>
-  | ASTNode<Params>
-  | ASTNode<Params>[]
+export type RQLTagVariable<Params, Output> =
+  | RQLTag<Params, Output>
+  | SQLTag<Params, Output>
+  | ASTNode<Params, Output>
+  | ASTNode<Params, Output>[]
+  | Table
   | TagFunctionVariable<Params>
   | ValueType;
 
@@ -66,9 +68,12 @@ export interface RefQLRows {
 }
 
 export type RefMaker =
-  (parent: Table, tag: RQLTag<unknown>, as?: string, single?: boolean) => RefNode<unknown>;
+  (parent: Table, tag: RQLTag<unknown, unknown>, as?: string, single?: boolean) => RefNode<unknown, unknown>;
 
 export type RefMakerPair = [
   Table,
   RefMaker
 ];
+
+export type Runnable <Params, Output> =
+  (querier: Querier, params?: Params) => Promise<Output>;
