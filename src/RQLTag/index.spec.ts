@@ -463,9 +463,11 @@ describe ("RQLTag type", () => {
       `}
     `;
 
+
     const spy = jest.spyOn (tag, "interpret");
 
     const teams = await tag (querier, { limit: 2 });
+    tag.nodes = [];
 
     expect (teams.length).toBe (2);
     expect (teams[0].players.length).toBe (4);

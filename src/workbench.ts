@@ -74,10 +74,7 @@ const buh = taggie.concat (player`first_name`).map (res => res[0]).map (res => {
 }).contramap (p => ({ id: p.id * 2 })).contramap (p => ({ id: p.id * 2 }));
 
 
-taggie.nodes = [];
-
-// console.log (buh == taggie);
-console.log (buh.nodes);
+player<{}, Player[]>`id`.concat (player`first_name`) (querier, {}).then (([first]) => { console.log (first); });
 
 
 

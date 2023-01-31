@@ -55,13 +55,16 @@ const prototype = {
 };
 
 function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[]): RQLTag<Params, Output> & Runnable<Params, Output> {
-  const tag = (function (this: RQLTag<Params, Output>, querier: Querier, params?: Params) {
-    return this.aggregate (querier, params);
+  const tag = ((querier: Querier, params?: Params) => {
+    return tag.aggregate (querier, params);
   }) as RQLTag<Params, Output> & Runnable<Params, Output>;
 
-  Object.setPrototypeOf (tag, Object.assign (Object.create (Function.prototype), prototype, { table, nodes }));
+  Object.setPrototypeOf (
+    tag,
+    Object.assign (Object.create (Function.prototype), prototype, { table, nodes })
+  );
 
-  return tag.bind (tag);
+  return tag;
 }
 
 type Deep = { [tableId: string]: RefNode<unknown, unknown>} & { nodes: ASTNode<unknown, unknown>[]};
