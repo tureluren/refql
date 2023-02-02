@@ -70,10 +70,14 @@ export interface RefQLRows {
 export type RefMaker =
   (parent: Table, tag: RQLTag<unknown, unknown>, as?: string, single?: boolean) => RefNode<unknown, unknown>;
 
+
+export type RQLTagMaker =
+  <Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => RQLTag<Params, Output> & Runnable<Params, Output>;
+
 export type RefMakerPair = [
-  Table,
+  Table & RQLTagMaker,
   RefMaker
 ];
 
-export type Runnable <Params, Output> =
-  (querier: Querier, params?: Params) => Promise<Output>;
+export type Runnable<Params, Output> =
+  (params?: Params, querier?: Querier) => Promise<Output>;

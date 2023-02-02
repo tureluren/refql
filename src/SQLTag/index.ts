@@ -32,7 +32,7 @@ interface SQLTag<Params, Output> {
   map<Output2>(f: (rows: Output) => Output2): SQLTag<Params, Output2> & Runnable<Params, Output2>;
   [flMap]: SQLTag<Params, Output>["map"];
   interpret(): InterpretedSQLTag<Params>;
-  compile(params?: Params, table?: Table): [string, any[]];
+  compile(params: Params, table?: Table): [string, any[]];
 }
 
 const type = "refql/SQLTag";
@@ -52,7 +52,11 @@ const prototype = {
 };
 
 function SQLTag<Params, Output>(nodes: ASTNode<Params, Output>[]): SQLTag<Params, Output> & Runnable<Params, Output> {
-  const tag = ((querier: Querier, params?: Params) => {
+  const tag = ((params: Params = {} as Params, querier?: Querier) => {
+    if (!querier) {
+      throw new Error ("There was no Querier provided");
+    }
+
     const [query, values] = tag.compile (params);
 
     return querier (query, values);
@@ -80,7 +84,7 @@ function concat(this: SQLTag<unknown, unknown>, other: SQLTag<unknown, unknown>)
 function map(this: SQLTag<unknown, unknown> & Runnable<unknown, unknown>, f: (rows: unknown) => unknown) {
   let newTag = SQLTag (this.nodes);
 
-  const tag = (querier: Querier, params: unknown) => this (querier, params).then (f);
+  const tag = (params?: unknown, querier?: Querier) => this (params, querier).then (f);
 
   Object.setPrototypeOf (tag, newTag);
 
@@ -90,7 +94,7 @@ function map(this: SQLTag<unknown, unknown> & Runnable<unknown, unknown>, f: (ro
 function contramap(this: SQLTag<unknown, unknown> & Runnable<unknown, unknown>, f: (p: unknown) => unknown) {
   let newTag = SQLTag (this.nodes);
 
-  const tag = (querier: Querier, params: unknown) => this (querier, f (params));
+  const tag = (params?: unknown, querier?: Querier) => this (f (params), querier);
 
   Object.setPrototypeOf (tag, newTag);
 

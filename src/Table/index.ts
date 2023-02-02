@@ -1,12 +1,9 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Querier, RefMakerPair, RQLTagVariable, Runnable } from "../common/types";
+import { Querier, RefMakerPair, RQLTagMaker, RQLTagVariable, Runnable } from "../common/types";
 import validateTable from "../common/validateTable";
 import { ASTNode } from "../nodes";
 import RQLTag from "../RQLTag";
 import Parser from "../RQLTag/Parser";
-
-type RQLTagMaker =
-  <Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => RQLTag<Params, Output> & Runnable<Params, Output>;
 
 interface Table {
   name: string;
@@ -31,7 +28,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   run
 });
 
-function Table(name: string, refs: RefMakerPair[] = []): Table & RQLTagMaker {
+function Table(name: string, refs: RefMakerPair[] = [], querier?: Querier): Table & RQLTagMaker {
   validateTable (name);
 
   if (!Array.isArray (refs)) {
@@ -41,7 +38,7 @@ function Table(name: string, refs: RefMakerPair[] = []): Table & RQLTagMaker {
   const table = (<Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => {
     const parser = new Parser (strings.join ("$"), variables, table);
 
-    return RQLTag<Params, Output> (table, parser.nodes () as ASTNode<Params, Output>[]);
+    return RQLTag<Params, Output> (table, parser.nodes () as ASTNode<Params, Output>[], querier);
   }) as Table & RQLTagMaker;
 
   Object.setPrototypeOf (table, prototype);
@@ -65,7 +62,7 @@ function empty(this: Table & RQLTagMaker) {
 }
 
 function run(this: Table & RQLTagMaker, querier: Querier) {
-  return this.empty () (querier);
+  return this.empty () ({}, querier);
 }
 
 function toString(this: Table) {

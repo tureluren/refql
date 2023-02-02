@@ -58,7 +58,7 @@ describe ("RQLTag type", () => {
       ${sql`limit 1`}
     `;
 
-    const [query, values] = tag.compile ();
+    const [query, values] = tag.compile ({});
 
     expect (query).toBe (format (`
       select player.id, player.first_name, player.last_name, player.birthday
@@ -69,7 +69,7 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([]);
 
-    const [player1] = await tag (querier);
+    const [player1] = await tag ({}, querier);
 
     expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "birthday"]);
   });
@@ -84,7 +84,7 @@ describe ("RQLTag type", () => {
       ${sql`limit 1`}
     `;
 
-    const [query, values] = tag.compile ();
+    const [query, values] = tag.compile ({});
 
     expect (query).toBe (format (`
       select
@@ -99,7 +99,7 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([1, true]);
 
-    const [player1] = await tag (querier);
+    const [player1] = await tag ({}, querier);
 
     expect (Object.keys (player1)).toEqual (["full_name", "literals", "vars", "no_of_goals"]);
   });
@@ -118,7 +118,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const [query, values] = tag.compile ();
+    const [query, values] = tag.compile ({});
 
     expect (query).toBe (format (`
       select player.id, player.first_name, player.last_name, player.team_id
@@ -130,7 +130,7 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([]);
 
-    const [player1] = await tag (querier);
+    const [player1] = await tag ({}, querier);
 
     expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team_id"]);
   });
@@ -145,7 +145,7 @@ describe ("RQLTag type", () => {
       ${sql`limit 1`}
     `;
 
-     const [query, values] = tag.compile ();
+     const [query, values] = tag.compile ({});
 
     expect (query).toBe (format (`
       select '1'::int one, 2::text two, true::text t, false::text f, null::text n
@@ -156,7 +156,7 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([]);
 
-    const [player1] = await tag (querier);
+    const [player1] = await tag ({}, querier);
 
     expect (player1).toEqual ({ one: 1, two: "2", t: "true", f: "false", n: null });
    });
@@ -169,7 +169,7 @@ describe ("RQLTag type", () => {
     const res = tag[flConcat] (tag2)[flConcat] (tag3);
     const res2 = tag[flConcat] (tag2[flConcat] (tag3));
 
-    expect (res.compile ()).toEqual (res2.compile ());
+    expect (res.compile ({})).toEqual (res2.compile ({}));
   });
 
   test ("Monoid", () => {
@@ -178,8 +178,8 @@ describe ("RQLTag type", () => {
     const res = tag[flConcat] (player.empty ());
     const res2 = player[flEmpty] ()[flConcat] (tag);
 
-    expect (res.compile ()).toEqual (tag.compile ());
-    expect (res2.compile ()).toEqual (tag.compile ());
+    expect (res.compile ({})).toEqual (tag.compile ({}));
+    expect (res2.compile ({})).toEqual (tag.compile ({}));
   });
 
   test ("Functor", async () => {
@@ -199,8 +199,8 @@ describe ("RQLTag type", () => {
       prefix: "player"
     };
 
-    const [player1] = await tag (querier, params);
-    const [player2] = await tag[flMap] (x => x) (querier, params);
+    const [player1] = await tag (params, querier);
+    const [player2] = await tag[flMap] (x => x) (params, querier);
 
     expect (player1).toEqual (player2);
 
@@ -212,8 +212,8 @@ describe ("RQLTag type", () => {
       prefixed_name: row.prefixed_name.toUpperCase ()
     });
 
-    const player3 = await tag[flMap] (rows => toUpperPrefix (first (rows))) (querier, params);
-    const player4 = await tag[flMap] (first)[flMap] (toUpperPrefix) (querier, params);
+    const player3 = await tag[flMap] (rows => toUpperPrefix (first (rows))) (params, querier);
+    const player4 = await tag[flMap] (first)[flMap] (toUpperPrefix) (params, querier);
 
     expect (player3).toEqual (player4);
 
@@ -237,8 +237,8 @@ describe ("RQLTag type", () => {
       prefix: " player "
     };
 
-    const [player1] = await tag (querier, params);
-    const [player2] = await tag[flContramap] (x => x) (querier, params);
+    const [player1] = await tag (params, querier);
+    const [player2] = await tag[flContramap] (x => x) (params, querier);
 
     expect (player1).toEqual (player2);
 
@@ -252,8 +252,8 @@ describe ("RQLTag type", () => {
       prefix: p.prefix.toUpperCase ()
     });
 
-    const [player3] = await tag[flContramap] (p => toUpper (trim (p))) (querier, params);
-    const [player4] = await tag[flContramap] (trim)[flContramap] (toUpper) (querier, params);
+    const [player3] = await tag[flContramap] (p => toUpper (trim (p))) (params, querier);
+    const [player4] = await tag[flContramap] (trim)[flContramap] (toUpper) (params, querier);
 
     expect (player3).toEqual (player4);
 
@@ -291,7 +291,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const [query, values, next] = tag.compile ();
+    const [query, values, next] = tag.compile ({});
 
     // player
     expect (query).toBe (format (`
@@ -391,7 +391,7 @@ describe ("RQLTag type", () => {
     expect (ratingNext).toEqual ([]);
 
     // db results
-    const players = await tag (querier, {});
+    const players = await tag ({}, querier);
     const player1 = players[0];
     const playerTeam = player1.team;
     const defender = playerTeam.defenders[0];
@@ -417,7 +417,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const players = await tag (querier, {});
+    const players = await tag ({}, querier);
     const player1 = players[0];
     const playerTeam = player1.team;
     const playerGame = player1.games[0];
@@ -439,7 +439,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const players = await tag (querier, {});
+    const players = await tag ({}, querier);
     const player1 = players[0];
     const playerGame = player1.first_game;
     const playerGoal = player1.first_goal;
@@ -464,7 +464,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const players = await tag.concat (tag2) (querier, null as any);
+    const players = await tag.concat (tag2) (null as any, querier);
     const player1 = players[0];
     const playerTeam = player1.team;
 
@@ -498,7 +498,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const players = await tag.concat (tag2) (querier, null as any);
+    const players = await tag.concat (tag2) (null as any, querier);
     const player1 = players[0];
     const playerTeam = player1.team;
     const teamLeague = player1.team.league;
@@ -524,14 +524,14 @@ describe ("RQLTag type", () => {
 
     const spy = jest.spyOn (tag, "interpret");
 
-    const teams = await tag (querier, { limit: 2 });
+    const teams = await tag ({ limit: 2 }, querier);
     tag.nodes = [];
 
     expect (teams.length).toBe (2);
     expect (teams[0].players.length).toBe (4);
     expect (teams[1].players.length).toBe (4);
 
-    const teams2 = await tag (querier, { limit: 3 });
+    const teams2 = await tag ({ limit: 3 }, querier);
 
     expect (teams2.length).toBe (3);
     expect (teams2[0].players.length).toBe (4);
@@ -549,7 +549,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const players = await tag (querier, {});
+    const players = await tag ({}, querier);
     const player1 = players[0];
 
     expect (player1.id).toBe (1);
@@ -568,7 +568,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const players = await tag (querier);
+    const players = await tag ({}, querier);
 
     expect (players.length).toBe (0);
   });
@@ -585,9 +585,19 @@ describe ("RQLTag type", () => {
     const message = 'relation "playerr" does not exist';
     try {
       const tag = Table ("playerr")`*`;
-      await tag (() => Promise.reject (message));
+      await tag ({}, () => Promise.reject (message));
     } catch (err: any) {
       expect (err).toBe (message);
+    }
+  });
+
+  test ("no querier provided error", async () => {
+    const message = "There was no Querier provided";
+    try {
+      const tag = player`*`;
+      await tag ();
+    } catch (err: any) {
+      expect (err.message).toBe (message);
     }
   });
 
@@ -646,7 +656,7 @@ describe ("RQLTag type", () => {
       `}
     `;
 
-    const [query] = tag.compile ();
+    const [query] = tag.compile ({});
 
     expect (query).toBe (format (`
       select game.home_team_id hometeamlref,
@@ -657,7 +667,7 @@ describe ("RQLTag type", () => {
       limit 1
     `));
 
-    const games = await tag (querier, {});
+    const games = await tag ({}, querier);
     const game1 = games[0];
 
     expect (game1.home_team.id).toBe (1);
@@ -739,39 +749,39 @@ describe ("RQLTag type", () => {
 
   test ("unimplemented by RQLTag", () => {
 
-    expect (() => player`id ${Raw ("last_name")}`.compile ())
+    expect (() => player`id ${Raw ("last_name")}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by RQLTag: Raw"));
 
-    expect (() => player`id ${Value (1)}`.compile ())
+    expect (() => player`id ${Value (1)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by RQLTag: Value"));
 
-    expect (() => player`id ${Values ([])}`.compile ())
+    expect (() => player`id ${Values ([])}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by RQLTag: Values"));
 
-    expect (() => player`id ${Values2D ([[]])}`.compile ())
+    expect (() => player`id ${Values2D ([[]])}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by RQLTag: Values2D"));
   });
 
   test ("unimplemented by Call", () => {
-    expect (() => player`concat (${When (() => true, sql``)})`.compile ())
+    expect (() => player`concat (${When (() => true, sql``)})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: When"));
 
-    expect (() => player`concat (${RefNode (dummyRefInfo, dummy`*`, true)})`.compile ())
+    expect (() => player`concat (${RefNode (dummyRefInfo, dummy`*`, true)})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: RefNode"));
 
-    expect (() => player`concat (${BelongsToMany (dummyRefInfo, dummy`*`, true)})`.compile ())
+    expect (() => player`concat (${BelongsToMany (dummyRefInfo, dummy`*`, true)})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: BelongsToMany"));
 
-    expect (() => player`concat (${all})`.compile ())
+    expect (() => player`concat (${all})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: All"));
 
-    expect (() => player`concat(${Value (1)})`.compile ())
+    expect (() => player`concat(${Value (1)})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: Value"));
 
-    expect (() => player`concat (${Values ([])})`.compile ())
+    expect (() => player`concat (${Values ([])})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: Values"));
 
-    expect (() => player`concat (${Values2D ([[]])})`.compile ())
+    expect (() => player`concat (${Values2D ([[]])})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: Values2D"));
 
   });

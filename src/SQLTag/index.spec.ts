@@ -65,8 +65,8 @@ describe ("SQLTag type", () => {
     const tag4 = tag[flConcat] (tag2)[flConcat] (tag3);
     const tag5 = tag[flConcat] (tag2[flConcat] (tag3));
 
-    const [query, values] = tag4.compile ();
-    const [query2, values2] = tag5.compile ();
+    const [query, values] = tag4.compile ({});
+    const [query2, values2] = tag5.compile ({});
 
     expect (query).toBe ("select id, last_name from player where id = $1");
 
@@ -82,8 +82,8 @@ describe ("SQLTag type", () => {
     const tag2 = tag[flConcat] (SQLTag[flEmpty] ());
     const tag3 = SQLTag[flEmpty] ()[flConcat] (tag);
 
-    const [query, values] = tag2.compile ();
-    const [query2, values2] = tag3.compile ();
+    const [query, values] = tag2.compile ({});
+    const [query2, values2] = tag3.compile ({});
 
     expect (query).toBe ("select id from player");
 
@@ -110,8 +110,8 @@ describe ("SQLTag type", () => {
       prefix: "player"
     };
 
-    const [player1] = await tag (querier, params);
-    const [player2] = await tag[flMap] (x => x) (querier, params);
+    const [player1] = await tag (params, querier);
+    const [player2] = await tag[flMap] (x => x) (params, querier);
 
     expect (player1).toEqual (player2);
 
@@ -123,8 +123,8 @@ describe ("SQLTag type", () => {
       prefixed_name: row.prefixed_name.toUpperCase ()
     });
 
-    const player3 = await tag[flMap] (rows => toUpperPrefix (first (rows))) (querier, params);
-    const player4 = await tag[flMap] (first)[flMap] (toUpperPrefix) (querier, params);
+    const player3 = await tag[flMap] (rows => toUpperPrefix (first (rows))) (params, querier);
+    const player4 = await tag[flMap] (first)[flMap] (toUpperPrefix) (params, querier);
 
     expect (player3).toEqual (player4);
 
@@ -148,8 +148,8 @@ describe ("SQLTag type", () => {
       prefix: " player "
     };
 
-    const [player1] = await tag (querier, params);
-    const [player2] = await tag[flContramap] (x => x) (querier, params);
+    const [player1] = await tag (params, querier);
+    const [player2] = await tag[flContramap] (x => x) (params, querier);
 
     expect (player1).toEqual (player2);
 
@@ -163,8 +163,8 @@ describe ("SQLTag type", () => {
       prefix: p.prefix.toUpperCase ()
     });
 
-    const [player3] = await tag[flContramap] (p => toUpper (trim (p))) (querier, params);
-    const [player4] = await tag[flContramap] (trim)[flContramap] (toUpper) (querier, params);
+    const [player3] = await tag[flContramap] (p => toUpper (trim (p))) (params, querier);
+    const [player4] = await tag[flContramap] (trim)[flContramap] (toUpper) (params, querier);
 
     expect (player3).toEqual (player4);
 
@@ -200,7 +200,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual ([5]);
 
-    const players = await tag (querier, params);
+    const players = await tag (params, querier);
 
     expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name", "number_of_goals"]);
     expect (players.length).toBe (5);
@@ -239,7 +239,7 @@ describe ("SQLTag type", () => {
 
     expect (values2).toEqual ([3, 4, 5]);
 
-    const players = await tag (querier, { ids: [3, 4] });
+    const players = await tag ({ ids: [3, 4] }, querier);
 
     expect (players[0].id).toBe (3);
     expect (players[1].id).toBe (4);
@@ -274,7 +274,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", cars]);
 
-    await insert (querier, params);
+    await insert (params, querier);
 
     let returning = sql<{}, any>`
       select * from player
@@ -292,7 +292,7 @@ describe ("SQLTag type", () => {
       `;
     }
 
-    const players = await returning (querier);
+    const players = await returning ({}, querier);
 
     expect (players[0].first_name).toBe ("John");
     expect (players[0].last_name).toBe ("Doe");
@@ -324,7 +324,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", "Jane", "Doe", "Jimmy", "Doe"]);
 
-    await insert (querier, params);
+    await insert (params, querier);
 
     const returning = sql<{}, any>`
       select * from player
@@ -332,7 +332,7 @@ describe ("SQLTag type", () => {
       limit 3
     `;
 
-    const players = await returning (querier);
+    const players = await returning ({}, querier);
 
     expect (players[0].first_name).toBe ("Jimmy");
     expect (players[1].first_name).toBe ("Jane");
@@ -347,7 +347,7 @@ describe ("SQLTag type", () => {
         select * from playerr
         where playerr.id = 1
       `;
-      await tag (() => Promise.reject (message));
+      await tag ({}, () => Promise.reject (message));
     } catch (err: any) {
       expect (err).toBe (message);
     }
@@ -456,41 +456,51 @@ describe ("SQLTag type", () => {
     expect (values4).toEqual ([5, 10]);
   });
 
+  test ("no querier provided error", async () => {
+    const message = "There was no Querier provided";
+    try {
+      const tag = sql`select * from player`;
+      await tag ();
+    } catch (err: any) {
+      expect (err.message).toBe (message);
+    }
+  });
+
   test ("compile errors", () => {
-    expect (() => sql`select ${player`id`}`.compile ())
+    expect (() => sql`select ${player`id`}`.compile ({}))
       .toThrowError (new Error ("U can't use RQLTags inside SQLTags"));
   });
 
   test ("unimplemented", () => {
 
-    expect (() => sql`select ${Identifier ("id")}`.compile ())
+    expect (() => sql`select ${Identifier ("id")}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: Identifier"));
 
-    expect (() => sql`select ${RefNode (dummyRefInfo, dummy`*`, true)}`.compile ())
+    expect (() => sql`select ${RefNode (dummyRefInfo, dummy`*`, true)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: RefNode"));
 
-    expect (() => sql`select ${BelongsToMany (dummyRefInfo, dummy`*`, true)}`.compile ())
+    expect (() => sql`select ${BelongsToMany (dummyRefInfo, dummy`*`, true)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: BelongsToMany"));
 
-    expect (() => sql`select ${all}`.compile ())
+    expect (() => sql`select ${all}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: All"));
 
-    expect (() => sql`select ${Variable (1)}`.compile ())
+    expect (() => sql`select ${Variable (1)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: Variable"));
 
-    expect (() => sql`select ${Call ("concat", [])}`.compile ())
+    expect (() => sql`select ${Call ("concat", [])}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: Call"));
 
-    expect (() => sql`select ${StringLiteral ("one")}`.compile ())
+    expect (() => sql`select ${StringLiteral ("one")}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: StringLiteral"));
 
-    expect (() => sql`select ${Literal (1)}`.compile ())
+    expect (() => sql`select ${Literal (1)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: Literal"));
 
-    expect (() => sql`select ${Literal (true)}`.compile ())
+    expect (() => sql`select ${Literal (true)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: Literal"));
 
-    expect (() => sql`select ${Literal (null)}`.compile ())
+    expect (() => sql`select ${Literal (null)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: Literal"));
   });
 });

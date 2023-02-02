@@ -34,8 +34,8 @@ interface RQLTag<Params, Output> {
   map<Output2>(f: (rows: Output) => Output2): RQLTag<Params, Output2> & Runnable<Params, Output2>;
   [flMap]: RQLTag<Params, Output>["map"];
   interpret(): InterpretedRQLTag<Params, Output> & Extra<Params, Output>;
-  compile(params?: Params): [string, any[], Next<Params, Output>[]];
-  aggregate(querier: Querier, params?: Params): Promise<Output>;
+  compile(params: Params): [string, any[], Next<Params, Output>[]];
+  aggregate(params: Params, querier: Querier): Promise<Output>;
 }
 
 const type = "refql/RQLTag";
@@ -54,9 +54,12 @@ const prototype = {
   aggregate
 };
 
-function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[]): RQLTag<Params, Output> & Runnable<Params, Output> {
-  const tag = ((querier: Querier, params?: Params) => {
-    return tag.aggregate (querier, params);
+function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier): RQLTag<Params, Output> & Runnable<Params, Output> {
+  const tag = ((params: Params = {} as Params, querier?: Querier) => {
+    if (!querier && !defaultQuerier) {
+      throw new Error ("There was no Querier provided");
+    }
+    return tag.aggregate (params, (querier || defaultQuerier) as Querier);
   }) as RQLTag<Params, Output> & Runnable<Params, Output>;
 
   Object.setPrototypeOf (
@@ -103,7 +106,7 @@ function concat(this: RQLTag<unknown, unknown>, other: RQLTag<unknown, unknown>)
 function map(this: RQLTag<unknown, unknown> & Runnable<unknown, unknown>, f: (rows: unknown) => unknown) {
   let newTag = RQLTag (this.table, this.nodes);
 
-  const tag = (querier: Querier, params: unknown) => this (querier, params).then (f);
+  const tag = (params?: unknown, querier?: Querier) => this (params, querier).then (f);
 
   Object.setPrototypeOf (tag, newTag);
 
@@ -113,7 +116,7 @@ function map(this: RQLTag<unknown, unknown> & Runnable<unknown, unknown>, f: (ro
 function contramap(this: RQLTag<unknown, unknown> & Runnable<unknown, unknown>, f: (p: unknown) => unknown) {
   let newTag = RQLTag (this.table, this.nodes);
 
-  const tag = (querier: Querier, params: unknown) => this (querier, f (params));
+  const tag = (params?: unknown, querier?: Querier) => this (f (params), querier);
 
   Object.setPrototypeOf (tag, newTag);
 
@@ -200,7 +203,7 @@ function interpret(this: RQLTag<unknown, unknown>): InterpretedRQLTag<unknown, u
   return { next, tag, extra };
 }
 
-function compile(this: RQLTag<unknown, unknown>, params: unknown = {}) {
+function compile(this: RQLTag<unknown, unknown>, params: unknown) {
   if (!this.interpreted) {
     const { tag, extra, next } = this.interpret ();
 
@@ -216,7 +219,7 @@ function compile(this: RQLTag<unknown, unknown>, params: unknown = {}) {
   ];
 }
 
-async function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, params: StringMap = {}): Promise<any[]> {
+async function aggregate(this: RQLTag<unknown, unknown>, params: StringMap, querier: Querier): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
   const refQLRows = await querier<any> (query, values);
@@ -225,7 +228,7 @@ async function aggregate(this: RQLTag<unknown, unknown>, querier: Querier, param
 
   const nextData = await Promise.all (next.map (
     // { ...null } = {}
-    n => n.tag.aggregate (querier, { ...params, refQLRows })
+    n => n.tag.aggregate ({ ...params, refQLRows }, querier)
   )) as unknown[][];
 
   return refQLRows.map (row =>

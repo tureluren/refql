@@ -59,19 +59,15 @@ const player1 = player<{id: number}, { id: string; first_name: string}[]>`
   first_name
 `;
 
-const player2 = player<{limit: number}, { last_name: string}[]>`
-  last_name
-`;
+// const player2 = player`
+//   last_name
+// `;
 
-const player3 = player1.contramap (p => ({
-  limit: p.id
-}));
+// const player3 = player1.contramap (p => ({
+//   limit: p.id
+// }));
 
-player3 (querier, { id: 1 }).then (p => {
-  console.log (p);
-});
-
-
+player1 ({ id: 1 }, querier);
 // object.assign((qurier), {})
 // unknown weghalen ? defaults ?
 // querier en params omwisselen
