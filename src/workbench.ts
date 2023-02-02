@@ -53,32 +53,27 @@ const querier = async (query: string, values: any[]) => {
 // tag.run (querier, { id: 1 }).then (console.log);
 
 // contramap
-const taggie = player<{id: number}, Player[]>`
+
+const player1 = player<{id: number}, { id: string; first_name: string}[]>`
   id
-  last_name
-  // ${team}
-  ${byId}
-  ${When (p => p.id === 400, sql<{id: number}, any>`
-    order by id
-  `)}
+  first_name
 `;
 
-// const buh = taggie.concat (player`first_name`).map (res => res[0]).map (res => {
-//   console.log (res);
-//   return res.id;
-// });
+const player2 = player<{limit: number}, { last_name: string}[]>`
+  last_name
+`;
 
-const buh = taggie.concat (player`first_name`).map (res => res[0]).map (res => {
-  console.log (res);
-  return res;
-}).contramap (p => ({ id: p.id * 2 })).contramap (p => ({ id: p.id * 2 }));
+const player3 = player1.contramap (p => ({
+  limit: p.id
+}));
 
-
-player<{}, Player[]>`id`.concat (player`first_name`) (querier, {}).then (([first]) => { console.log (first); });
-
+player3 (querier, { id: 1 }).then (p => {
+  console.log (p);
+});
 
 
-// map(x => x) in parser
 // object.assign((qurier), {})
 // unknown weghalen ? defaults ?
 // querier en params omwisselen
+
+// player3 (querier) moet zagen dat er geen params zijn indien er zoude moeten zijn;

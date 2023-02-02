@@ -27,11 +27,11 @@ interface RQLTag<Params, Output> {
   table: Table;
   nodes: ASTNode<Params, Output>[];
   interpreted: InterpretedRQLTag<Params, Output>;
-  concat<Params2, Output2>(other: RQLTag<Params2, Output2>): RQLTag<Params & Params2, Output & Output2> & Runnable<Params, Output>;
+  concat<Params2, Output2>(other: RQLTag<Params2, Output2>): RQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<Params, Output>["concat"];
   contramap<Params2>(f: (p: Params) => Params2): RQLTag<Params2, Output> & Runnable<Params, Output>;
   [flContramap]: RQLTag<Params, Output>["contramap"];
-  map<Output2>(f: (rows: Output) => Output2): RQLTag<Params, Output2> & Runnable<Params, Output>;
+  map<Output2>(f: (rows: Output) => Output2): RQLTag<Params, Output2> & Runnable<Params, Output2>;
   [flMap]: RQLTag<Params, Output>["map"];
   interpret(): InterpretedRQLTag<Params, Output> & Extra<Params, Output>;
   compile(params?: Params): [string, any[], Next<Params, Output>[]];

@@ -2,7 +2,7 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import RQLTag from ".";
-import { flConcat, flEmpty, flMap } from "../common/consts";
+import { flConcat, flContramap, flEmpty, flMap } from "../common/consts";
 import { Querier } from "../common/types";
 import {
   all, BelongsToMany, Identifier, Literal, Raw,
@@ -182,25 +182,83 @@ describe ("RQLTag type", () => {
     expect (res2.compile ()).toEqual (tag.compile ());
   });
 
-  // test ("Functor", () => {
-  //   const tag = player`
-  //     first_name last_name
-  //   `;
+  test ("Functor", async () => {
+    type Params = {id: number; prefix: string};
 
-  //   expect (tag[flMap] (n => n).compile ()).toEqual (tag.compile ());
+    const tag = player<Params, any>`
+      first_name
+      last_name
+      concat:prefixed_name (${p => p.prefix}::text, '-', last_name)
+      ${sql<{id: number}, any>`
+        and id = ${p => p.id} 
+      `}
+    `;
 
-  //   const prefix = (identifiers: any[]) =>
-  //     identifiers.map ((id: Identifier) => Identifier (`player_${id.name}`));
+    const params: Params = {
+      id: 1,
+      prefix: "player"
+    };
 
+    const [player1] = await tag (querier, params);
+    const [player2] = await tag[flMap] (x => x) (querier, params);
 
-  //   const toUpper = (identifiers: any[]) =>
-  //     identifiers.map ((id: Identifier) => Identifier (id.name.toUpperCase ()));
+    expect (player1).toEqual (player2);
 
-  //   const res = tag[flMap] (n => toUpper (prefix (n)));
-  //   const res2 = tag[flMap] (prefix)[flMap] (toUpper);
+    const first = (rows: any[]) =>
+      rows[0];
 
-  //   expect (res.compile ()).toEqual (res2.compile ());
-  // });
+    const toUpperPrefix = (row: any) => ({
+      ...row,
+      prefixed_name: row.prefixed_name.toUpperCase ()
+    });
+
+    const player3 = await tag[flMap] (rows => toUpperPrefix (first (rows))) (querier, params);
+    const player4 = await tag[flMap] (first)[flMap] (toUpperPrefix) (querier, params);
+
+    expect (player3).toEqual (player4);
+
+    expect (player3.prefixed_name.startsWith ("PLAYER-")).toBe (true);
+  });
+
+  test ("Contravariant", async () => {
+    type Params = {id: number; prefix: string};
+
+    const tag = player<Params, any>`
+      first_name
+      last_name
+      concat:prefixed_name (${p => p.prefix}::text, '-', last_name)
+      ${sql<{id: number}, any>`
+        and id = ${p => p.id} 
+      `}
+    `;
+
+    const params: Params = {
+      id: 1,
+      prefix: " player "
+    };
+
+    const [player1] = await tag (querier, params);
+    const [player2] = await tag[flContramap] (x => x) (querier, params);
+
+    expect (player1).toEqual (player2);
+
+    const trim = (p: Params): Params => ({
+      id: p.id,
+      prefix: p.prefix.trim ()
+    });
+
+    const toUpper = (p: Params): Params => ({
+      id: p.id,
+      prefix: p.prefix.toUpperCase ()
+    });
+
+    const [player3] = await tag[flContramap] (p => toUpper (trim (p))) (querier, params);
+    const [player4] = await tag[flContramap] (trim)[flContramap] (toUpper) (querier, params);
+
+    expect (player3).toEqual (player4);
+
+    expect (player3.prefixed_name.startsWith ("PLAYER-")).toBe (true);
+  });
 
   test ("aggregate", async () => {
     const tag = player<{}, any>`

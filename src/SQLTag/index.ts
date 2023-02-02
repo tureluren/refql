@@ -24,12 +24,12 @@ interface InterpretedSQLTag<Params> {
 interface SQLTag<Params, Output> {
   nodes: ASTNode<Params, Output>[];
   interpreted?: InterpretedSQLTag<Params>;
-  concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
-  join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
+  concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
+  join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
   [flConcat]: SQLTag<Params, Output>["concat"];
-  contramap<Params2>(f: (p: Params) => Params2): SQLTag<Params2, Output>;
+  contramap<Params2>(f: (p: Params) => Params2): SQLTag<Params2, Output> & Runnable<Params, Output>;
   [flContramap]: SQLTag<Params, Output>["contramap"];
-  map<Output2>(f: (rows: Output) => Output2): SQLTag<Params, Output2>;
+  map<Output2>(f: (rows: Output) => Output2): SQLTag<Params, Output2> & Runnable<Params, Output2>;
   [flMap]: SQLTag<Params, Output>["map"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params?: Params, table?: Table): [string, any[]];
@@ -52,15 +52,18 @@ const prototype = {
 };
 
 function SQLTag<Params, Output>(nodes: ASTNode<Params, Output>[]): SQLTag<Params, Output> & Runnable<Params, Output> {
-  const tag = (function (this: SQLTag<Params, Output>, querier: Querier, params?: Params) {
-    const [query, values] = this.compile (params);
+  const tag = ((querier: Querier, params?: Params) => {
+    const [query, values] = tag.compile (params);
 
     return querier (query, values);
   }) as SQLTag<Params, Output> & Runnable<Params, Output>;
 
-  Object.setPrototypeOf (tag, Object.assign (Object.create (Function.prototype), prototype, { nodes }));
+  Object.setPrototypeOf (
+    tag,
+    Object.assign (Object.create (Function.prototype), prototype, { nodes })
+  );
 
-  return tag.bind (tag);
+  return tag;
 }
 
 function join(this: SQLTag<unknown, unknown>, delimiter: string, other: SQLTag<unknown, unknown>) {
