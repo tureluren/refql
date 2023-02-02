@@ -25,7 +25,7 @@ interface Extra<Params, Output> {
 
 interface RQLTag<Params, Output> {
   table: Table;
-  nodes: ASTNode<Params, Output>[];
+  nodes: ASTNode[];
   interpreted: InterpretedRQLTag<Params, Output>;
   concat<Params2, Output2>(other: RQLTag<Params2, Output2>): RQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<Params, Output>["concat"];
@@ -54,7 +54,7 @@ const prototype = {
   aggregate
 };
 
-function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier): RQLTag<Params, Output> & Runnable<Params, Output> {
+function RQLTag<Params, Output>(table: Table, nodes: ASTNode[], defaultQuerier?: Querier): RQLTag<Params, Output> & Runnable<Params, Output> {
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
@@ -70,9 +70,9 @@ function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[], 
   return tag;
 }
 
-type Deep = { [tableId: string]: RefNode<unknown, unknown>} & { nodes: ASTNode<unknown, unknown>[]};
+type Deep = { [tableId: string]: RefNode<unknown, unknown>} & { nodes: ASTNode[]};
 
-const concatDeep = (nodes: ASTNode<unknown, unknown>[]): Deep => {
+const concatDeep = (nodes: ASTNode[]): Deep => {
   return nodes.reduce ((acc, node) => {
     if (RefNode.isRefNode (node)) {
       const { table } = node.tag;
@@ -87,7 +87,7 @@ const concatDeep = (nodes: ASTNode<unknown, unknown>[]): Deep => {
       acc.nodes.push (node);
     }
     return acc;
-  }, { nodes: [] as ASTNode<unknown, unknown>[] } as Deep);
+  }, { nodes: [] as ASTNode[] } as Deep);
 };
 
 function concat(this: RQLTag<unknown, unknown>, other: RQLTag<unknown, unknown>) {

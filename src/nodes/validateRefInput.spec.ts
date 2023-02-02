@@ -6,7 +6,7 @@ describe ("validateRefInput", () => {
     const input = {
       as: "goals",
       lRef: "id"
-    } as unknown as RefInput;
+    };
 
     expect (() => validateRefInput (input)).not.toThrow ();
   });
@@ -21,18 +21,18 @@ describe ("validateRefInput", () => {
     const input = {
       as: ["goals"],
       lRef: "id"
-    } as unknown as RefInput;
+    };
 
-    expect (() => validateRefInput (input)).toThrow ("Invalid input: as is not a string");
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: as is not a string");
   });
 
   test ("lRef is not a string", () => {
     const input = {
       as: "goals",
       lRef: ["id"]
-    } as unknown as RefInput;
+    };
 
-    expect (() => validateRefInput (input)).toThrow ("Invalid input: lRef is not a string");
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: lRef is not a string");
   });
 
   test ("rRef is not a string", () => {
@@ -40,9 +40,9 @@ describe ("validateRefInput", () => {
       as: "goals",
       lRef: "id",
       rRef: 123
-    } as unknown as RefInput;
+    };
 
-    expect (() => validateRefInput (input)).toThrow ("Invalid input: rRef is not a string");
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: rRef is not a string");
   });
 
   test ("xTable is not a string", () => {
@@ -51,9 +51,9 @@ describe ("validateRefInput", () => {
       lRef: "id",
       rRef: "id",
       xTable: {}
-    } as unknown as RefInput;
+    };
 
-    expect (() => validateRefInput (input)).toThrow ("Invalid input: xTable is not a string");
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: xTable is not a string");
   });
 
   test ("lxRef is not a string", () => {
@@ -63,9 +63,9 @@ describe ("validateRefInput", () => {
       rRef: "id",
       xTable: "game_player",
       lxRef: false
-    } as unknown as RefInput;
+    };
 
-    expect (() => validateRefInput (input)).toThrow ("Invalid input: lxRef is not a string");
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: lxRef is not a string");
   });
 
   test ("rxRef is not a string", () => {
@@ -76,8 +76,8 @@ describe ("validateRefInput", () => {
       xTable: "game_player",
       lxRef: "player_id",
       rxRef: null
-    } as unknown as RefInput;
+    };
 
-    expect (() => validateRefInput (input)).toThrow ("Invalid input: rxRef is not a string");
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: rxRef is not a string");
   });
 });

@@ -9,8 +9,8 @@ import ASTNode, { astNodePrototype } from "./ASTNode";
 import Raw from "./Raw";
 import Values from "./Values";
 
-interface RefNode<Params, Output> extends ASTNode<Params, Output> {
-  joinLateral(): RQLTag<Params, unknown>;
+interface RefNode<Params, Output> extends ASTNode {
+  joinLateral(): RQLTag<Params, Output>;
   tag: RQLTag<Params, Output>;
   info: RefInfo;
   single: boolean;

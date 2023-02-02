@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { belongsTo, belongsToMany, hasMany, hasOne, When } from "./nodes";
+import { belongsTo, belongsToMany, hasMany, hasOne, Value, When } from "./nodes";
 import RQLTag from "./RQLTag";
 import { Player, Team } from "./soccer";
 import sql from "./SQLTag/sql";
@@ -68,8 +68,12 @@ const player1 = player<{id: number}, { id: string; first_name: string}[]>`
 // }));
 
 player1 ({ id: 1 }, querier);
-// object.assign((qurier), {})
 // unknown weghalen ? defaults ?
-// querier en params omwisselen
 
 // player3 (querier) moet zagen dat er geen params zijn indien er zoude moeten zijn;
+
+const tagWithVal = sql<{id: number}, any>`
+  ${Value (p => p.id)}
+`;
+
+// specify welke astnodes value moge zijn

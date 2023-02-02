@@ -73,7 +73,7 @@ class Parser {
 
     if (Array.isArray (x)) {
       if (
-        !x.reduce ((acc: Boolean, m: ASTNode<unknown, unknown>) => acc && isASTNode (m), true)
+        !x.reduce ((acc: Boolean, m: ASTNode) => acc && isASTNode (m), true)
       ) {
         throw new Error ("Invalid dynamic members, expected Array of ASTNode");
       }
@@ -95,7 +95,7 @@ class Parser {
     return Call (identifier.name, this.arguments (), identifier.as, identifier.cast);
   }
 
-  nodes(): ASTNode<unknown, unknown>[] {
+  nodes(): ASTNode[] {
     const members = [];
 
     while (!this.isNext ("EOT")) {
@@ -115,7 +115,7 @@ class Parser {
 
   arguments() {
     this.eat ("(");
-    const argumentList: ASTNode<unknown, unknown>[] = [];
+    const argumentList: ASTNode[] = [];
 
     if (!this.isNext (")")) {
       do {
@@ -124,7 +124,7 @@ class Parser {
         if (this.isNext ("(")) {
           argumentList.push (this.Call (argument as Identifier));
         } else {
-          argumentList.push (argument);
+          argumentList.push (argument as ASTNode);
         }
       } while (this.hasArg ());
     }
@@ -184,7 +184,7 @@ class Parser {
       case "IDENTIFIER":
         return this.Identifier ();
       case "VARIABLE":
-        return this.Variable () as Variable<unknown, unknown>;
+        return this.Variable ();
     }
 
     throw new SyntaxError (`Unknown Argument Type: "${this.lookahead.type}"`);

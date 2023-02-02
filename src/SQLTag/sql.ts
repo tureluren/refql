@@ -6,7 +6,7 @@ import RQLTag from "../RQLTag";
 import Table from "../Table";
 
 const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output>[]) => {
-  const nodes = [] as ASTNode<Params, Output>[];
+  const nodes = [] as ASTNode[];
 
   for (let [idx, string] of strings.entries ()) {
     const x = variables[idx];
@@ -36,7 +36,7 @@ const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagV
       throw new Error ("U can't use RQLTags inside SQLTags");
     } else if (Table.isTable (x)) {
       nodes.push (Raw (x.name));
-    } else if (isASTNode<Params, Output> (x)) {
+    } else if (isASTNode (x)) {
       nodes.push (x);
     } else {
       nodes.push (Value (x));

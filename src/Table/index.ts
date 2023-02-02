@@ -38,7 +38,7 @@ function Table(name: string, refs: RefMakerPair[] = [], querier?: Querier): Tabl
   const table = (<Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => {
     const parser = new Parser (strings.join ("$"), variables, table);
 
-    return RQLTag<Params, Output> (table, parser.nodes () as ASTNode<Params, Output>[], querier);
+    return RQLTag<Params, Output> (table, parser.nodes () as ASTNode[], querier);
   }) as Table & RQLTagMaker;
 
   Object.setPrototypeOf (table, prototype);

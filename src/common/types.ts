@@ -1,4 +1,4 @@
-import { ASTNode } from "../nodes";
+import { ASTNode, Value } from "../nodes";
 import RefNode from "../nodes/RefNode";
 import Ref from "../Ref";
 import RQLTag from "../RQLTag";
@@ -49,7 +49,7 @@ export type TagFunctionVariable<Params, Return = ValueType> =
 
 export type SQLTagVariable<Params, Output> =
   | SQLTag<Params, Output>
-  | ASTNode<Params, Output>
+  | ASTNode
   | Table
   | TagFunctionVariable<Params>
   | ValueType;
@@ -57,8 +57,8 @@ export type SQLTagVariable<Params, Output> =
 export type RQLTagVariable<Params, Output> =
   | RQLTag<Params, Output>
   | SQLTag<Params, Output>
-  | ASTNode<Params, Output>
-  | ASTNode<Params, Output>[]
+  | ASTNode
+  | ASTNode[]
   | Table
   | TagFunctionVariable<Params>
   | ValueType;

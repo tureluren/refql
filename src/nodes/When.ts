@@ -3,7 +3,7 @@ import { StringMap, TagFunctionVariable } from "../common/types";
 import SQLTag from "../SQLTag";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface When<Params, Output> extends ASTNode<Params, Output> {
+interface When<Params, Output> extends ASTNode {
   pred: TagFunctionVariable<Params, boolean>;
   tag: SQLTag<Params, Output>;
 }

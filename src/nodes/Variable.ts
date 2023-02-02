@@ -2,7 +2,7 @@ import { CastAs, StringMap, ValueType } from "../common/types";
 import SQLTag from "../SQLTag";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Variable<Params, Output> extends ASTNode<Params, Output>, CastAs {
+interface Variable<Params, Output> extends ASTNode, CastAs {
   x: SQLTag<Params, Output> | ValueType;
 }
 

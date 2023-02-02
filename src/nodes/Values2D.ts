@@ -3,7 +3,7 @@ import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import { ASTNode } from "../nodes";
 import { astNodePrototype } from "../nodes/ASTNode";
 
-interface Values2D<Params> extends ASTNode<Params, unknown> {
+interface Values2D<Params> extends ASTNode {
   run: TagFunctionVariable<Params, ValueType[][]>;
 }
 

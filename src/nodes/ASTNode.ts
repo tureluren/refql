@@ -18,8 +18,8 @@ type StructureMap<Params, Output, Return> = {
   When: (pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params, Output>) => Return;
 };
 
-interface ASTNode<Params, Output> {
-  caseOf<Return>(structureMap: StructureMap<Params, Output, Return>): Return;
+interface ASTNode {
+  caseOf<Return>(structureMap: StructureMap<unknown, unknown, Return>): Return;
 }
 
 const astNode: symbol = Symbol ("@@ASTNode");
@@ -28,7 +28,7 @@ export const astNodePrototype = {
   [astNode]: true
 };
 
-export const isASTNode = function <Params, Output> (x: any): x is ASTNode<Params, Output> {
+export const isASTNode = function (x: any): x is ASTNode {
   return x != null && !!x[astNode];
 };
 

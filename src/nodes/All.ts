@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface All extends ASTNode<unknown, unknown> {
+interface All extends ASTNode {
   sign: string;
 }
 

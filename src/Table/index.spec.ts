@@ -90,7 +90,7 @@ describe ("Table type", () => {
     const belongsToNode = refMaker (
       player,
       teamTable`*`
-    ) as RefNode<unknown, unknown>;
+    );
 
     const expected = {
       parent: player,

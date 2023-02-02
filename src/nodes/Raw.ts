@@ -3,7 +3,7 @@ import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
 import Table from "../Table";
 
-interface Raw<Params> extends ASTNode<Params, unknown> {
+interface Raw<Params> extends ASTNode {
   run: TagFunctionVariable<Params, string>;
   map(f: (x: ValueType) => ValueType): Raw<Params>;
   [flMap]: Raw<Params>["map"];
