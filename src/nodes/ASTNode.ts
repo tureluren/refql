@@ -28,7 +28,7 @@ export const astNodePrototype = {
   [astNode]: true
 };
 
-export const isASTNode = function (x: any): x is ASTNode {
+export const isASTNode = function<Params, Output> (x: any): x is ASTNode<Params, Output> {
   return x != null && !!x[astNode];
 };
 

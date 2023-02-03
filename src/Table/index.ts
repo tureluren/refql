@@ -28,7 +28,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   run
 });
 
-function Table(name: string, refs: RefMakerPair[] = [], querier?: Querier): Table & RQLTagMaker {
+function Table(name: string, refs: RefMakerPair[] = [], defaultQuerier?: Querier): Table & RQLTagMaker {
   validateTable (name);
 
   if (!Array.isArray (refs)) {
@@ -38,7 +38,7 @@ function Table(name: string, refs: RefMakerPair[] = [], querier?: Querier): Tabl
   const table = (<Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => {
     const parser = new Parser (strings.join ("$"), variables, table);
 
-    return RQLTag<Params, Output> (table, parser.nodes () as ASTNode[], querier);
+    return RQLTag<Params, Output> (table, parser.nodes () as ASTNode<Params, Output>[], defaultQuerier);
   }) as Table & RQLTagMaker;
 
   Object.setPrototypeOf (table, prototype);

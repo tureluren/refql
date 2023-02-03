@@ -25,7 +25,7 @@ interface Extra<Params = unknown, Output = unknown> {
 
 interface RQLTag<Params = unknown, Output = unknown> {
   table: Table;
-  nodes: ASTNode[];
+  nodes: ASTNode<Params, Output>[];
   interpreted: InterpretedRQLTag<Params, Output>;
   concat<Params2, Output2>(other: RQLTag<Params2, Output2>): RQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<Params, Output>["concat"];
@@ -54,7 +54,7 @@ const prototype = {
   aggregate
 };
 
-function RQLTag<Params, Output>(table: Table, nodes: ASTNode[], defaultQuerier?: Querier): RQLTag<Params, Output> & Runnable<Params, Output> {
+function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier): RQLTag<Params, Output> & Runnable<Params, Output> {
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");

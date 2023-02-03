@@ -22,7 +22,7 @@ interface InterpretedSQLTag<Params = unknown> {
 }
 
 interface SQLTag<Params = unknown, Output = unknown> {
-  nodes: ASTNode[];
+  nodes: ASTNode<Params, Output>[];
   interpreted?: InterpretedSQLTag<Params>;
   concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
   join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
@@ -51,15 +51,15 @@ const prototype = {
   compile
 };
 
-function SQLTag<Params, Output>(nodes: ASTNode[]): SQLTag<Params, Output> & Runnable<Params, Output> {
+function SQLTag<Params, Output>(nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier): SQLTag<Params, Output> & Runnable<Params, Output> {
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
-    if (!querier) {
+    if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
     }
 
     const [query, values] = tag.compile (params);
 
-    return querier (query, values);
+    return (querier || defaultQuerier as Querier) (query, values);
   }) as SQLTag<Params, Output> & Runnable<Params, Output>;
 
   Object.setPrototypeOf (
