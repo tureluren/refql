@@ -16,7 +16,7 @@ import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import { dummy, dummyRefInfo, player } from "../test/tables";
 import userConfig from "../test/userConfig";
-import sql from "./sql";
+import sql, { createSQLWithDefaultQuerier } from "./sql";
 
 describe ("SQLTag type", () => {
   let pool: any;
@@ -47,6 +47,22 @@ describe ("SQLTag type", () => {
     expect (tag.interpreted).toBe (undefined);
     expect (SQLTag.isSQLTag (tag)).toBe (true);
     expect (SQLTag.isSQLTag ({})).toBe (false);
+  });
+
+  test ("create sql with default querier", async () => {
+    const sql = createSQLWithDefaultQuerier (querier);
+
+    const firstPlayer = sql<{}, any[]>`
+      select id, last_name
+      from player
+      limit 1
+    `;
+
+    const players = await firstPlayer ();
+
+    expect (players.length).toBe (1);
+
+    expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
   });
 
   test ("Semigroup", () => {

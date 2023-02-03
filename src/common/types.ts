@@ -79,7 +79,6 @@ export type RefMakerPair = [
   RefMaker
 ];
 
-
 export type Runnable<Params = unknown, Output = unknown> =
   Params extends Record<string, never>
     ? (params?: Params, querier?: Querier) => Promise<Output>

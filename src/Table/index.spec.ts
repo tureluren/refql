@@ -1,7 +1,7 @@
 import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
-import Table from ".";
+import Table, { createTableWithDefaultQuerier } from ".";
 import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
 import {
@@ -69,6 +69,23 @@ describe ("Table type", () => {
     expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
   });
 
+  test ("create Table with default querier", async () => {
+    const player2 = createTableWithDefaultQuerier (querier) ("player");
+
+    const firstPlayer = player2<{}, any[]>`
+      id last_name
+      ${sql`
+        limit 1 
+      `} 
+    `;
+
+    const players = await firstPlayer ();
+
+    expect (players.length).toBe (1);
+
+    expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
+  });
+
   test ("run", async () => {
     const positions = await position.run<Position> (querier);
     const position1 = positions[0];
@@ -78,7 +95,7 @@ describe ("Table type", () => {
   });
 
   test ("invalid table creation", () => {
-    expect (() => Table (["player"] as any)).toThrow ("Invalid table: not a string");
+    expect (() => Table (["player"] as any)).toThrow ("Invalid table: player, expected a string");
     expect (() => Table ("player", {} as any)).toThrow ("Invalid refs: not an Array");
   });
 
@@ -169,6 +186,27 @@ describe ("Table type", () => {
     expect (belongsToManyNode.info.xTable.equals (expected.xTable)).toBe (true);
   });
 
+  test ("BelongsTo ref - with Table", () => {
+    // prone for circular dependency problems
+    const [teamTable, refMaker] = belongsTo (Table ("public.team"));
+
+    expect (teamTable.equals (team)).toBe (true);
+
+    const belongsToNode = refMaker (
+      player,
+      teamTable`*`
+    );
+
+    const expected = {
+      parent: player,
+      as: "team",
+      lRef: Ref ("player.team_id", "teamlref"),
+      rRef: Ref ("team.id", "teamrref")
+    };
+
+    expect (belongsToNode.info).toEqual (expected);
+  });
+
   test ("BelongsToMany ref - default ref - child > parent", () => {
     const [gamesTable, refMaker] = belongsToMany ("game");
     const athlete = Table ("athlete");
@@ -197,7 +235,6 @@ describe ("Table type", () => {
     expect (belongsToManyNode.info.xTable.equals (expected.xTable)).toBe (true);
   });
 
-
   test ("BelongsToMany ref - alias through RQLTag", () => {
     const [gamesTable, refMaker] = belongsToMany ("game", { as: "fixtures" });
 
@@ -206,7 +243,6 @@ describe ("Table type", () => {
       gamesTable`*`,
       "matches"
     ) as BelongsToMany;
-
 
     const expected = {
       parent: player,
@@ -251,6 +287,35 @@ describe ("Table type", () => {
       lxRef: Ref ("GAME_PLAYER.PLAYER_ID", "fixtureslxref"),
       rxRef: Ref ("GAME_PLAYER.GAME_ID", "fixturesrxref"),
       xTable: Table ("GAME_PLAYER")
+    };
+
+    expect (belongsToManyNode.info.parent).toEqual (expected.parent);
+    expect (belongsToManyNode.info.as).toEqual (expected.as);
+    expect (belongsToManyNode.info.lRef).toEqual (expected.lRef);
+    expect (belongsToManyNode.info.rRef).toEqual (expected.rRef);
+    expect (belongsToManyNode.info.lxRef).toEqual (expected.lxRef);
+    expect (belongsToManyNode.info.rxRef).toEqual (expected.rxRef);
+    expect (belongsToManyNode.info.xTable.equals (expected.xTable)).toBe (true);
+  });
+
+  test ("BelongsToMany ref - with Table", () => {
+    // prone for circular dependency problems
+    const [gamesTable, refMaker] = belongsToMany (Table ("game"));
+    const athlete = Table ("athlete");
+
+    const belongsToManyNode = refMaker (
+      athlete,
+      gamesTable`*`
+    ) as BelongsToMany;
+
+    const expected = {
+      parent: athlete,
+      as: "games",
+      lRef: Ref ("athlete.id", "gameslref"),
+      rRef: Ref ("game.id", "gamesrref"),
+      lxRef: Ref ("athlete_game.athlete_id", "gameslxref"),
+      rxRef: Ref ("athlete_game.game_id", "gamesrxref"),
+      xTable: Table ("athlete_game")
     };
 
     expect (belongsToManyNode.info.parent).toEqual (expected.parent);

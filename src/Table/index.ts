@@ -82,4 +82,8 @@ Table.isTable = function (x: any): x is Table {
   return x != null && x[refqlType] === type;
 };
 
+export const createTableWithDefaultQuerier = (defaultQuerier: Querier) => (name: string, refs: RefMakerPair[] = []) => {
+  return Table (name, refs, defaultQuerier);
+};
+
 export default Table;
