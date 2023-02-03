@@ -59,15 +59,14 @@ const player1 = player<{id: number}, { id: string; first_name: string}[]>`
   first_name
 `;
 
-// const player2 = player`
-//   last_name
-// `;
+const player2 = player`
+  last_name
+`;
 
 // const player3 = player1.contramap (p => ({
 //   limit: p.id
 // }));
 
-player1 ({ id: 1 }, querier);
 
 // player3 (querier) moet zagen dat er geen params zijn indien er zoude moeten zijn;
 

@@ -1,4 +1,4 @@
-import { ASTNode, Value } from "../nodes";
+import { ASTNode } from "../nodes";
 import RefNode from "../nodes/RefNode";
 import Ref from "../Ref";
 import RQLTag from "../RQLTag";
@@ -6,7 +6,7 @@ import SQLTag from "../SQLTag";
 import Table from "../Table";
 
 // Array, Function, Date, ...
-export type StringMap = { [k: string]: any };
+export type StringMap = Record<string, any>;
 
 export type ValueType =
   | boolean
@@ -49,7 +49,7 @@ export type TagFunctionVariable<Params, Return = ValueType> =
 
 export type SQLTagVariable<Params, Output> =
   | SQLTag<Params, Output>
-  | ASTNode
+  | ASTNode<Params, Output>
   | Table
   | TagFunctionVariable<Params>
   | ValueType;
@@ -57,8 +57,8 @@ export type SQLTagVariable<Params, Output> =
 export type RQLTagVariable<Params, Output> =
   | RQLTag<Params, Output>
   | SQLTag<Params, Output>
-  | ASTNode
-  | ASTNode[]
+  | ASTNode<Params, Output>
+  | ASTNode<Params, Output>[]
   | Table
   | TagFunctionVariable<Params>
   | ValueType;
@@ -79,5 +79,10 @@ export type RefMakerPair = [
   RefMaker
 ];
 
+
 export type Runnable<Params = unknown, Output = unknown> =
-  (params?: Params, querier?: Querier) => Promise<Output>;
+  Params extends Record<string, never>
+    ? (params?: Params, querier?: Querier) => Promise<Output>
+    : Params extends StringMap
+      ? (params: Params, querier?: Querier) => Promise<Output>
+      : (params?: Params, querier?: Querier) => Promise<Output>;
