@@ -3,7 +3,7 @@ import { StringMap, TagFunctionVariable } from "../common/types";
 import SQLTag from "../SQLTag";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface When<Params, Output> extends ASTNode {
+interface When<Params = unknown, Output = unknown> extends ASTNode<Params, Output> {
   pred: TagFunctionVariable<Params, boolean>;
   tag: SQLTag<Params, Output>;
 }
@@ -25,7 +25,7 @@ function When<Params, Output>(pred: TagFunctionVariable<Params, boolean>, tag: S
   return when;
 }
 
-function caseOf(this: When<unknown, unknown>, structureMap: StringMap) {
+function caseOf(this: When, structureMap: StringMap) {
   return structureMap.When (this.pred, this.tag);
 }
 

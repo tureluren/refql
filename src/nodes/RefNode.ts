@@ -9,7 +9,7 @@ import ASTNode, { astNodePrototype } from "./ASTNode";
 import Raw from "./Raw";
 import Values from "./Values";
 
-interface RefNode<Params, Output> extends ASTNode {
+interface RefNode<Params= unknown, Output = unknown> extends ASTNode<Params, Output> {
   joinLateral(): RQLTag<Params, Output>;
   tag: RQLTag<Params, Output>;
   info: RefInfo;
@@ -34,7 +34,7 @@ function RefNode<Params, Output>(info: RefInfo, tag: RQLTag<Params, Output>, sin
   return refNode;
 }
 
-function joinLateral(this: RefNode<unknown, unknown>) {
+function joinLateral(this: RefNode) {
   const { tag, next, extra } = this.tag.interpret ();
   const { rRef, lRef, parent } = this.info;
 
@@ -61,7 +61,7 @@ function joinLateral(this: RefNode<unknown, unknown>) {
   return this.tag;
 }
 
-function caseOf(this: RefNode<unknown, unknown>, structureMap: StringMap) {
+function caseOf(this: RefNode, structureMap: StringMap) {
   return structureMap.RefNode (this.joinLateral (), this.info, this.single);
 }
 
@@ -101,7 +101,7 @@ export const validateRefInput = (input: RefInput) => {
   }
 };
 
-const makeBelongsTo = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag<unknown, unknown>, as?: string) => {
+const makeBelongsTo = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag, as?: string) => {
   as = as || input.as || child.name;
   const refOf = Ref.refOf (as);
 
@@ -117,7 +117,7 @@ const makeBelongsTo = (child: Table, input: RefNodeInput) => (parent: Table, tag
   );
 };
 
-const makeHasMany = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag<unknown, unknown>, as?: string, single?: boolean) => {
+const makeHasMany = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag, as?: string, single?: boolean) => {
   as = as || input.as || `${child.name}s`;
   const refOf = Ref.refOf (as);
 
@@ -133,7 +133,7 @@ const makeHasMany = (child: Table, input: RefNodeInput) => (parent: Table, tag: 
   );
 };
 
-const makeHasOne = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag<unknown, unknown>, as?: string) => {
+const makeHasOne = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag, as?: string) => {
   as = as || input.as || child.name;
   const refOf = Ref.refOf (as);
 

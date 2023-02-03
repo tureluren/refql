@@ -8,7 +8,7 @@ import sql from "../SQLTag/sql";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 import Raw from "./Raw";
 
-interface Call<Params, Output> extends ASTNode, CastAs {
+interface Call<Params = unknown, Output = unknown> extends ASTNode<Params, Output>, CastAs {
   name: string;
   nodes: ASTNode[];
   interpret(): SQLTag<Params, Output>;
@@ -36,8 +36,8 @@ function Call<Params, Output>(name: string, nodes: ASTNode[], as?: string, cast?
 
 const unsupported = unimplemented ("Call");
 
-function interpret(this: Call<unknown, unknown>) {
-  const args = [] as (Raw<unknown, unknown> | SQLTag<unknown, unknown>)[];
+function interpret(this: Call) {
+  const args = [] as (Raw | SQLTag)[];
 
   for (const node of this.nodes) {
     node.caseOf<void> ({
@@ -74,7 +74,7 @@ function interpret(this: Call<unknown, unknown>) {
   return joinMembers (args);
 }
 
-function caseOf(this: Call<unknown, unknown>, structureMap: StringMap) {
+function caseOf(this: Call, structureMap: StringMap) {
   return structureMap.Call (this.interpret (), this.name, this.as, this.cast);
 }
 

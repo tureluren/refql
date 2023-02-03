@@ -2,7 +2,7 @@ import { TagFunctionVariable, ValueType, RefInfo, RefQLRows } from "../common/ty
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 
-type StructureMap<Params, Output, Return> = {
+export type StructureMap<Params, Output, Return> = {
   RefNode: (tag: RQLTag<Params & RefQLRows, Output>, info: RefInfo, single: boolean) => Return;
   BelongsToMany: (tag: RQLTag<Params & RefQLRows, Output>, info: Required<RefInfo>, single: boolean) => Return;
   All: (sign: string) => Return;
@@ -18,8 +18,8 @@ type StructureMap<Params, Output, Return> = {
   When: (pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params, Output>) => Return;
 };
 
-interface ASTNode {
-  caseOf<Return>(structureMap: StructureMap<unknown, unknown, Return>): Return;
+interface ASTNode<Params = unknown, Output = unknown> {
+  caseOf<Return>(structureMap: StructureMap<Params, Output, Return>): Return;
 }
 
 const astNode: symbol = Symbol ("@@ASTNode");

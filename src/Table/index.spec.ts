@@ -109,7 +109,7 @@ describe ("Table type", () => {
       player,
       teamTable`*`,
       "crew"
-    ) as RefNode<unknown, unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -127,7 +127,7 @@ describe ("Table type", () => {
     const belongsToNode = refMaker (
       player,
       teamTable`*`
-    ) as RefNode<unknown, unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -147,7 +147,7 @@ describe ("Table type", () => {
     const belongsToManyNode = refMaker (
       player,
       gamesTable`*`
-    ) as BelongsToMany<unknown, unknown>;
+    ) as BelongsToMany;
 
 
     const expected = {
@@ -176,7 +176,7 @@ describe ("Table type", () => {
     const belongsToManyNode = refMaker (
       athlete,
       gamesTable`*`
-    ) as BelongsToMany<unknown, unknown>;
+    ) as BelongsToMany;
 
     const expected = {
       parent: athlete,
@@ -205,7 +205,7 @@ describe ("Table type", () => {
       player,
       gamesTable`*`,
       "matches"
-    ) as BelongsToMany<unknown, unknown>;
+    ) as BelongsToMany;
 
 
     const expected = {
@@ -240,7 +240,7 @@ describe ("Table type", () => {
     const belongsToManyNode = refMaker (
       player,
       gamesTable`*`
-    ) as BelongsToMany<unknown, unknown>;
+    ) as BelongsToMany;
 
 
     const expected = {
@@ -270,7 +270,7 @@ describe ("Table type", () => {
     const hasManyNode = refMaker (
       player,
       goalTable`*`
-    ) as RefNode<unknown, unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -291,7 +291,7 @@ describe ("Table type", () => {
       player,
       goalTable`*`,
       "finishes"
-    ) as RefNode<unknown, unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -313,7 +313,7 @@ describe ("Table type", () => {
     const hasManyNode = refMaker (
       player,
       goalTable`*`
-    ) as RefNode<unknown, unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -333,7 +333,7 @@ describe ("Table type", () => {
     const hasOneNode = refMaker (
       player,
       ratingTable`*`
-    ) as RefNode<unknown, unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -352,7 +352,7 @@ describe ("Table type", () => {
       player,
       ratingTable`*`,
       "score"
-    ) as RefNode<unknown, unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -374,7 +374,7 @@ describe ("Table type", () => {
     const hasOneNode = refMaker (
       player,
       ratingTable`*`
-    ) as RefNode<unknown, unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,

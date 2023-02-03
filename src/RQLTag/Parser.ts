@@ -36,7 +36,7 @@ class Parser {
     return all;
   }
 
-  refer(tag: RQLTag<unknown, unknown>, as?: string, single?: boolean) {
+  refer(tag: RQLTag, as?: string, single?: boolean) {
     if (tag.table.equals (this.table)) {
       return tag.nodes;
     }

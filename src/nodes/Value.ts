@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Value<Params> extends ASTNode {
+interface Value<Params = unknown> extends ASTNode<Params> {
   run: TagFunctionVariable<Params>;
 }
 
@@ -22,7 +22,7 @@ function Value<Params>(run: ValueType | TagFunctionVariable<Params>) {
   return value;
 }
 
-function caseOf(this: Value<unknown>, structureMap: StringMap) {
+function caseOf(this: Value, structureMap: StringMap) {
   return structureMap.Value (this.run);
 }
 

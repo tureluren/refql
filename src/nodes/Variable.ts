@@ -2,7 +2,7 @@ import { CastAs, StringMap, ValueType } from "../common/types";
 import SQLTag from "../SQLTag";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Variable<Params, Output> extends ASTNode, CastAs {
+interface Variable<Params = unknown, Output = unknown> extends ASTNode<Params, Output>, CastAs {
   x: SQLTag<Params, Output> | ValueType;
 }
 
@@ -21,7 +21,7 @@ function Variable<Params, Output>(x: SQLTag<Params, Output> | ValueType, as?: st
   return variable;
 }
 
-function caseOf(this: Variable<unknown, unknown>, structureMap: StringMap) {
+function caseOf(this: Variable, structureMap: StringMap) {
   return structureMap.Variable (this.x, this.as, this.cast);
 }
 

@@ -3,7 +3,7 @@ import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
 import Table from "../Table";
 
-interface Raw<Params> extends ASTNode {
+interface Raw<Params = unknown> extends ASTNode<Params> {
   run: TagFunctionVariable<Params, string>;
   map(f: (x: ValueType) => ValueType): Raw<Params>;
   [flMap]: Raw<Params>["map"];
@@ -29,13 +29,13 @@ function Raw<Params>(run: ValueType | TagFunctionVariable<Params>) {
   return raw;
 }
 
-function map(this: Raw<unknown>, f: (x: ValueType) => ValueType) {
+function map(this: Raw, f: (x: ValueType) => ValueType) {
   return Raw ((p, t) => {
     return f (this.run (p, t));
   });
 }
 
-function caseOf(this: Raw<unknown>, structureMap: StringMap) {
+function caseOf(this: Raw, structureMap: StringMap) {
   return structureMap.Raw (this.run);
 }
 
