@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { RefInfo, RefInput, RefMaker, RefMakerPair, RefQLRows, RQLTagMaker, Runnable, StringMap } from "../common/types";
+import { RefInfo, RefInput, RefMaker, RefMakerPair, RefQLRows, StringMap } from "../common/types";
 import validateTable from "../common/validateTable";
 import Ref from "../Ref";
 import RQLTag from "../RQLTag";
@@ -149,12 +149,12 @@ const makeHasOne = (child: Table, input: RefNodeInput) => (parent: Table, tag: R
   );
 };
 
-const makeRefNode = (f: (child: Table, input: RefNodeInput) => RefMaker) => (table: string | Table & RQLTagMaker, input: RefNodeInput = {}): RefMakerPair => {
+const makeRefNode = (f: (child: Table, input: RefNodeInput) => RefMaker) => (table: string, input: RefNodeInput = {}): RefMakerPair => {
   validateTable (table);
 
   validateRefInput (input);
 
-  const child = Table.isTable (table) ? table : Table (table);
+  const child = Table (table);
 
   return [child, f (child, input)];
 };

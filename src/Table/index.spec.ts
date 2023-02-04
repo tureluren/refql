@@ -186,27 +186,6 @@ describe ("Table type", () => {
     expect (belongsToManyNode.info.xTable.equals (expected.xTable)).toBe (true);
   });
 
-  test ("BelongsTo ref - with Table", () => {
-    // prone for circular dependency problems
-    const [teamTable, refMaker] = belongsTo (Table ("public.team"));
-
-    expect (teamTable.equals (team)).toBe (true);
-
-    const belongsToNode = refMaker (
-      player,
-      teamTable`*`
-    );
-
-    const expected = {
-      parent: player,
-      as: "team",
-      lRef: Ref ("player.team_id", "teamlref"),
-      rRef: Ref ("team.id", "teamrref")
-    };
-
-    expect (belongsToNode.info).toEqual (expected);
-  });
-
   test ("BelongsToMany ref - default ref - child > parent", () => {
     const [gamesTable, refMaker] = belongsToMany ("game");
     const athlete = Table ("athlete");
@@ -287,35 +266,6 @@ describe ("Table type", () => {
       lxRef: Ref ("GAME_PLAYER.PLAYER_ID", "fixtureslxref"),
       rxRef: Ref ("GAME_PLAYER.GAME_ID", "fixturesrxref"),
       xTable: Table ("GAME_PLAYER")
-    };
-
-    expect (belongsToManyNode.info.parent).toEqual (expected.parent);
-    expect (belongsToManyNode.info.as).toEqual (expected.as);
-    expect (belongsToManyNode.info.lRef).toEqual (expected.lRef);
-    expect (belongsToManyNode.info.rRef).toEqual (expected.rRef);
-    expect (belongsToManyNode.info.lxRef).toEqual (expected.lxRef);
-    expect (belongsToManyNode.info.rxRef).toEqual (expected.rxRef);
-    expect (belongsToManyNode.info.xTable.equals (expected.xTable)).toBe (true);
-  });
-
-  test ("BelongsToMany ref - with Table", () => {
-    // prone for circular dependency problems
-    const [gamesTable, refMaker] = belongsToMany (Table ("game"));
-    const athlete = Table ("athlete");
-
-    const belongsToManyNode = refMaker (
-      athlete,
-      gamesTable`*`
-    ) as BelongsToMany;
-
-    const expected = {
-      parent: athlete,
-      as: "games",
-      lRef: Ref ("athlete.id", "gameslref"),
-      rRef: Ref ("game.id", "gamesrref"),
-      lxRef: Ref ("athlete_game.athlete_id", "gameslxref"),
-      rxRef: Ref ("athlete_game.game_id", "gamesrxref"),
-      xTable: Table ("athlete_game")
     };
 
     expect (belongsToManyNode.info.parent).toEqual (expected.parent);
