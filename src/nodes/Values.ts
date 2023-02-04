@@ -3,7 +3,7 @@ import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import { ASTNode } from "../nodes";
 import { astNodePrototype } from "../nodes/ASTNode";
 
-interface Values<Params> extends ASTNode<Params> {
+interface Values<Params = unknown> extends ASTNode<Params> {
   run: TagFunctionVariable<Params, ValueType[]>;
 }
 
@@ -22,7 +22,7 @@ function Values<Params>(run: ValueType[] | TagFunctionVariable<Params, any[]>) {
   return values;
 }
 
-function caseOf(this: Values<unknown>, structureMap: StringMap) {
+function caseOf(this: Values, structureMap: StringMap) {
   return structureMap.Values (this.run);
 }
 

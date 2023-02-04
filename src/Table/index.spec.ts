@@ -1,7 +1,7 @@
 import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
-import Table from ".";
+import Table, { createTableWithDefaultQuerier } from ".";
 import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
 import {
@@ -11,6 +11,7 @@ import {
 } from "../nodes";
 import Ref from "../Ref";
 import { Position } from "../soccer";
+import sql from "../SQLTag/sql";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
@@ -51,6 +52,40 @@ describe ("Table type", () => {
     expect (Table.isTable ({})).toBe (false);
   });
 
+  test ("default querier", async () => {
+    const player2 = Table ("player", [], querier);
+
+    const firstPlayer = player2<{}, any[]>`
+      id last_name
+      ${sql`
+        limit 1 
+      `} 
+    `;
+
+    const players = await firstPlayer ();
+
+    expect (players.length).toBe (1);
+
+    expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
+  });
+
+  test ("create Table with default querier", async () => {
+    const player2 = createTableWithDefaultQuerier (querier) ("player");
+
+    const firstPlayer = player2<{}, any[]>`
+      id last_name
+      ${sql`
+        limit 1 
+      `} 
+    `;
+
+    const players = await firstPlayer ();
+
+    expect (players.length).toBe (1);
+
+    expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
+  });
+
   test ("run", async () => {
     const positions = await position.run<Position> (querier);
     const position1 = positions[0];
@@ -60,7 +95,7 @@ describe ("Table type", () => {
   });
 
   test ("invalid table creation", () => {
-    expect (() => Table (["player"] as any)).toThrow ("Invalid table: not a string");
+    expect (() => Table (["player"] as any)).toThrow ("Invalid table: player, expected a string");
     expect (() => Table ("player", {} as any)).toThrow ("Invalid refs: not an Array");
   });
 
@@ -72,7 +107,7 @@ describe ("Table type", () => {
     const belongsToNode = refMaker (
       player,
       teamTable`*`
-    ) as RefNode<unknown>;
+    );
 
     const expected = {
       parent: player,
@@ -91,7 +126,7 @@ describe ("Table type", () => {
       player,
       teamTable`*`,
       "crew"
-    ) as RefNode<unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -109,7 +144,7 @@ describe ("Table type", () => {
     const belongsToNode = refMaker (
       player,
       teamTable`*`
-    ) as RefNode<unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -129,7 +164,7 @@ describe ("Table type", () => {
     const belongsToManyNode = refMaker (
       player,
       gamesTable`*`
-    ) as BelongsToMany<unknown>;
+    ) as BelongsToMany;
 
 
     const expected = {
@@ -158,7 +193,7 @@ describe ("Table type", () => {
     const belongsToManyNode = refMaker (
       athlete,
       gamesTable`*`
-    ) as BelongsToMany<unknown>;
+    ) as BelongsToMany;
 
     const expected = {
       parent: athlete,
@@ -179,7 +214,6 @@ describe ("Table type", () => {
     expect (belongsToManyNode.info.xTable.equals (expected.xTable)).toBe (true);
   });
 
-
   test ("BelongsToMany ref - alias through RQLTag", () => {
     const [gamesTable, refMaker] = belongsToMany ("game", { as: "fixtures" });
 
@@ -187,8 +221,7 @@ describe ("Table type", () => {
       player,
       gamesTable`*`,
       "matches"
-    ) as BelongsToMany<unknown>;
-
+    ) as BelongsToMany;
 
     const expected = {
       parent: player,
@@ -222,7 +255,7 @@ describe ("Table type", () => {
     const belongsToManyNode = refMaker (
       player,
       gamesTable`*`
-    ) as BelongsToMany<unknown>;
+    ) as BelongsToMany;
 
 
     const expected = {
@@ -252,7 +285,7 @@ describe ("Table type", () => {
     const hasManyNode = refMaker (
       player,
       goalTable`*`
-    ) as RefNode<unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -273,7 +306,7 @@ describe ("Table type", () => {
       player,
       goalTable`*`,
       "finishes"
-    ) as RefNode<unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -295,7 +328,7 @@ describe ("Table type", () => {
     const hasManyNode = refMaker (
       player,
       goalTable`*`
-    ) as RefNode<unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -315,7 +348,7 @@ describe ("Table type", () => {
     const hasOneNode = refMaker (
       player,
       ratingTable`*`
-    ) as RefNode<unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -334,7 +367,7 @@ describe ("Table type", () => {
       player,
       ratingTable`*`,
       "score"
-    ) as RefNode<unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,
@@ -356,7 +389,7 @@ describe ("Table type", () => {
     const hasOneNode = refMaker (
       player,
       ratingTable`*`
-    ) as RefNode<unknown>;
+    ) as RefNode;
 
     const expected = {
       parent: player,

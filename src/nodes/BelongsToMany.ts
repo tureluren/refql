@@ -8,7 +8,7 @@ import Raw from "./Raw";
 import RefNode, { refNodePrototype, validateRefInput } from "./RefNode";
 import Values from "./Values";
 
-interface BelongsToMany<Params> extends RefNode<Params> {
+interface BelongsToMany<Params = unknown, Output = unknown> extends RefNode<Params, Output> {
   info: Required<RefInfo>;
 }
 
@@ -18,8 +18,8 @@ const prototype = Object.assign ({}, refNodePrototype, {
   caseOf
 });
 
-function BelongsToMany<Params>(info: Required<RefInfo>, tag: RQLTag<Params>, single: boolean) {
-  let belongsToMany: BelongsToMany<Params> = Object.create (prototype);
+function BelongsToMany<Params, Output>(info: Required<RefInfo>, tag: RQLTag<Params, Output>, single: boolean) {
+  let belongsToMany: BelongsToMany<Params, Output> = Object.create (prototype);
 
   belongsToMany.tag = tag;
   belongsToMany.info = info;
@@ -28,7 +28,7 @@ function BelongsToMany<Params>(info: Required<RefInfo>, tag: RQLTag<Params>, sin
   return belongsToMany;
 }
 
-function joinLateral(this: BelongsToMany<unknown>) {
+function joinLateral(this: BelongsToMany) {
   const { tag, next, extra } = this.tag.interpret ();
   const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info;
 
@@ -56,7 +56,7 @@ function joinLateral(this: BelongsToMany<unknown>) {
   return this.tag;
 }
 
-function caseOf(this: BelongsToMany<unknown>, structureMap: StringMap) {
+function caseOf(this: BelongsToMany, structureMap: StringMap) {
   return structureMap.BelongsToMany (this.joinLateral (), this.info, this.single);
 }
 
@@ -69,7 +69,7 @@ export const belongsToMany = (table: string, input: BelongsToManyInput = {}): Re
 
   const child = Table (table);
 
-  const makeBelongsToMany = (parent: Table, tag: RQLTag<unknown>, as?: string, single?: boolean) => {
+  const makeBelongsToMany = (parent: Table, tag: RQLTag, as?: string, single?: boolean) => {
     as = as || input.as || `${child.name}s`;
     const refOf = Ref.refOf (as);
 

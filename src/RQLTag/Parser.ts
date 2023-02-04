@@ -36,7 +36,7 @@ class Parser {
     return all;
   }
 
-  refer(tag: RQLTag<unknown>, as?: string, single?: boolean) {
+  refer(tag: RQLTag, as?: string, single?: boolean) {
     if (tag.table.equals (this.table)) {
       return tag.nodes;
     }
@@ -50,7 +50,8 @@ class Parser {
         `${this.table.name} has no ref defined for: ${tag.table.name}`
       );
     }
-    return refs.map (ref => ref[1] (this.table, tag.map (x => x), as, single));
+
+    return refs.map (ref => ref[1] (this.table, RQLTag (tag.table, tag.nodes), as, single));
   }
 
   Variable() {
@@ -72,7 +73,7 @@ class Parser {
 
     if (Array.isArray (x)) {
       if (
-        !x.reduce ((acc: Boolean, m: ASTNode<unknown>) => acc && isASTNode (m), true)
+        !x.reduce ((acc: Boolean, m: ASTNode) => acc && isASTNode (m), true)
       ) {
         throw new Error ("Invalid dynamic members, expected Array of ASTNode");
       }
@@ -94,7 +95,7 @@ class Parser {
     return Call (identifier.name, this.arguments (), identifier.as, identifier.cast);
   }
 
-  nodes(): ASTNode<unknown>[] {
+  nodes(): ASTNode[] {
     const members = [];
 
     while (!this.isNext ("EOT")) {
@@ -114,7 +115,7 @@ class Parser {
 
   arguments() {
     this.eat ("(");
-    const argumentList: ASTNode<unknown>[] = [];
+    const argumentList: ASTNode[] = [];
 
     if (!this.isNext (")")) {
       do {
@@ -123,7 +124,7 @@ class Parser {
         if (this.isNext ("(")) {
           argumentList.push (this.Call (argument as Identifier));
         } else {
-          argumentList.push (argument);
+          argumentList.push (argument as ASTNode);
         }
       } while (this.hasArg ());
     }
@@ -183,7 +184,7 @@ class Parser {
       case "IDENTIFIER":
         return this.Identifier ();
       case "VARIABLE":
-        return this.Variable () as Variable<unknown>;
+        return this.Variable ();
     }
 
     throw new SyntaxError (`Unknown Argument Type: "${this.lookahead.type}"`);

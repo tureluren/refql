@@ -103,7 +103,7 @@ describe ("Nodes", () => {
   });
 
   test ("Invalid RefNode creation", () => {
-    expect (() => belongsTo (["goal"] as any)).toThrow ("Invalid table: not a string");
-    expect (() => belongsToMany (["games"] as any)).toThrow ("Invalid table: not a string");
+    expect (() => belongsTo (["goal"] as any)).toThrow ("Invalid table: goal, expected a string");
+    expect (() => belongsToMany (["games"] as any)).toThrow ("Invalid table: games, expected a string");
   });
 });

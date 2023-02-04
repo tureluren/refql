@@ -1,68 +1,78 @@
 import castAs from "../common/castAs";
-import { flConcat, flMap, refqlType } from "../common/consts";
+import { flConcat, flContramap, flMap, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
+import { Querier, RefInfo, RefQLRows, Runnable, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
 import { all, ASTNode, Raw, RefNode, When } from "../nodes";
 import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 
-export interface Next<Params> {
-  tag: RQLTag<Params & RefQLRows>;
+export interface Next<Params = unknown, Output = unknown> {
+  tag: RQLTag<Params & RefQLRows, Output>;
   link: [string, string];
   single: boolean;
 }
 
-interface InterpretedRQLTag<Params> {
-  tag: SQLTag<Params>;
-  next: Next<Params>[];
+interface InterpretedRQLTag<Params = unknown, Output = unknown> {
+  tag: SQLTag<Params, Output>;
+  next: Next<Params, Output>[];
 }
 
-interface Extra<Params> {
-  extra: SQLTag<Params>;
+interface Extra<Params = unknown, Output = unknown> {
+  extra: SQLTag<Params, Output>;
 }
 
-interface RQLTag<Params> {
+interface RQLTag<Params = unknown, Output = unknown> {
   table: Table;
-  nodes: ASTNode<Params>[];
-  interpreted: InterpretedRQLTag<Params>;
-  concat<Params2>(other: RQLTag<Params2>): RQLTag<Params & Params2>;
-  [flConcat]: RQLTag<Params>["concat"];
-  map<Params2>(f: (nodes: ASTNode<Params>[]) => ASTNode<Params2>[]): RQLTag<Params>;
-  [flMap]: RQLTag<Params>["map"];
-  interpret(): InterpretedRQLTag<Params> & Extra<Params>;
-  compile(params?: Params): [string, any[], Next<Params>[]];
-  aggregate<Output>(querier: Querier, params: Params): Promise<Output[]>;
-  run<Output>(querier: Querier, params?: Params): Promise<Output[]>;
+  nodes: ASTNode<Params, Output>[];
+  interpreted: InterpretedRQLTag<Params, Output>;
+  concat<Params2, Output2>(other: RQLTag<Params2, Output2>): RQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
+  [flConcat]: RQLTag<Params, Output>["concat"];
+  contramap<Params2>(f: (p: Params) => Params2): RQLTag<Params2, Output> & Runnable<Params, Output>;
+  [flContramap]: RQLTag<Params, Output>["contramap"];
+  map<Output2>(f: (rows: Output) => Output2): RQLTag<Params, Output2> & Runnable<Params, Output2>;
+  [flMap]: RQLTag<Params, Output>["map"];
+  interpret(): InterpretedRQLTag<Params, Output> & Extra<Params, Output>;
+  compile(params: Params): [string, any[], Next<Params, Output>[]];
+  aggregate(params: Params, querier: Querier): Promise<Output>;
 }
 
 const type = "refql/RQLTag";
 
 const prototype = {
-  [refqlType]: type,
   constructor: RQLTag,
+  [refqlType]: type,
   concat,
   [flConcat]: concat,
+  contramap: contramap,
+  [flContramap]: contramap,
   map,
   [flMap]: map,
   interpret,
   compile,
-  aggregate,
-  run
+  aggregate
 };
 
-function RQLTag<Params>(table: Table, nodes: ASTNode<Params>[]) {
-  let tag: RQLTag<Params> = Object.create (prototype);
-  tag.table = table;
-  tag.nodes = nodes;
+function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier): RQLTag<Params, Output> & Runnable<Params, Output> {
+  const tag = ((params: Params = {} as Params, querier?: Querier) => {
+    if (!querier && !defaultQuerier) {
+      throw new Error ("There was no Querier provided");
+    }
+    return tag.aggregate (params, (querier || defaultQuerier) as Querier);
+  }) as RQLTag<Params, Output> & Runnable<Params, Output>;
+
+  Object.setPrototypeOf (
+    tag,
+    Object.assign (Object.create (Function.prototype), prototype, { table, nodes })
+  );
 
   return tag;
 }
 
-type Deep = { [tableId: string]: RefNode<unknown>} & { nodes: ASTNode<unknown>[]};
+type Deep = { [tableId: string]: RefNode} & { nodes: ASTNode[]};
 
-const concatDeep = (nodes: ASTNode<unknown>[]): Deep => {
+const concatDeep = (nodes: ASTNode[]): Deep => {
   return nodes.reduce ((acc, node) => {
     if (RefNode.isRefNode (node)) {
       const { table } = node.tag;
@@ -77,10 +87,10 @@ const concatDeep = (nodes: ASTNode<unknown>[]): Deep => {
       acc.nodes.push (node);
     }
     return acc;
-  }, { nodes: [] as ASTNode<unknown>[] } as Deep);
+  }, { nodes: [] as ASTNode[] } as Deep);
 };
 
-function concat(this: RQLTag<unknown>, other: RQLTag<unknown>) {
+function concat(this: RQLTag, other: RQLTag) {
   if (!this.table.equals (other.table)) {
     throw new Error ("U can't concat RQLTags that come from different tables");
   }
@@ -93,21 +103,38 @@ function concat(this: RQLTag<unknown>, other: RQLTag<unknown>) {
   );
 }
 
-function map(this: RQLTag<unknown>, f: (nodes: ASTNode<unknown>[]) => ASTNode<unknown>[]) {
-  return RQLTag (this.table, f (this.nodes));
+function map(this: RQLTag & Runnable, f: (rows: unknown) => unknown) {
+  let newTag = RQLTag (this.table, this.nodes);
+
+  const tag = (params?: unknown, querier?: Querier) => this (params, querier).then (f);
+
+  Object.setPrototypeOf (tag, newTag);
+
+  return tag;
+}
+
+function contramap(this: RQLTag & Runnable, f: (p: unknown) => unknown) {
+  let newTag = RQLTag (this.table, this.nodes);
+
+  const tag = (params?: unknown, querier?: Querier) => this (f (params), querier);
+
+  Object.setPrototypeOf (tag, newTag);
+
+  return tag;
 }
 
 const unsupported = unimplemented ("RQLTag");
 
-function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<StringMap> {
+function interpret(this: RQLTag): InterpretedRQLTag & Extra {
   const { nodes, table } = this,
-    next = [] as Next<unknown>[],
-    members = [] as (Raw<unknown> | SQLTag<unknown>)[];
+    next = [] as Next[],
+    members = [] as (Raw | SQLTag)[];
 
-  let extra = SQLTag.empty<unknown> ();
+  let extra = SQLTag.empty ();
 
-  const caseOfRef = (tag: RQLTag<unknown>, info: RefInfo, single: boolean) => {
+  const caseOfRef = (tag: RQLTag<RefQLRows>, info: RefInfo, single: boolean) => {
     members.push (Raw (info.lRef));
+
     next.push ({ tag, link: [info.as, info.lRef.as], single });
   };
 
@@ -168,7 +195,7 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
     members.push (Raw (`${table.name}.${all.sign}`));
   }
 
-  let tag = sql<unknown>`
+  let tag = sql`
     select ${joinMembers (members)}
     from ${Raw (table)}
   `;
@@ -176,7 +203,7 @@ function interpret(this: RQLTag<unknown>): InterpretedRQLTag<StringMap> & Extra<
   return { next, tag, extra };
 }
 
-function compile(this: RQLTag<unknown>, params: unknown = {}) {
+function compile(this: RQLTag, params: unknown) {
   if (!this.interpreted) {
     const { tag, extra, next } = this.interpret ();
 
@@ -192,7 +219,7 @@ function compile(this: RQLTag<unknown>, params: unknown = {}) {
   ];
 }
 
-async function aggregate(this: RQLTag<unknown>, querier: Querier, params: StringMap = {}): Promise<any[]> {
+async function aggregate(this: RQLTag, params: StringMap, querier: Querier): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
   const refQLRows = await querier<any> (query, values);
@@ -201,8 +228,8 @@ async function aggregate(this: RQLTag<unknown>, querier: Querier, params: String
 
   const nextData = await Promise.all (next.map (
     // { ...null } = {}
-    n => n.tag.aggregate (querier, { ...params, refQLRows })
-  ));
+    n => n.tag.aggregate ({ ...params, refQLRows }, querier)
+  )) as any[][];
 
   return refQLRows.map (row =>
     nextData.reduce ((agg, nextRows, idx) => {
@@ -229,11 +256,7 @@ async function aggregate(this: RQLTag<unknown>, querier: Querier, params: String
   );
 }
 
-async function run(this: RQLTag<unknown>, querier: Querier, params?: unknown) {
-  return this.aggregate (querier, params);
-}
-
-RQLTag.isRQLTag = function <Params> (x: any): x is RQLTag<Params> {
+RQLTag.isRQLTag = function <Params, Output> (x: any): x is RQLTag<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 

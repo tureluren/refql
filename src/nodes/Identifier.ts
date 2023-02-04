@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { CastAs, StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Identifier extends ASTNode<unknown>, CastAs {
+interface Identifier extends ASTNode, CastAs {
   name: string;
 }
 
@@ -14,7 +14,7 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Identifier(name: string, as?: string, cast?: string) {
+function Identifier<Params, Output>(name: string, as?: string, cast?: string) {
   let identifier: Identifier = Object.create (prototype);
 
   identifier.name = name;
@@ -28,7 +28,7 @@ function caseOf(this: Identifier, structureMap: StringMap) {
   return structureMap.Identifier (this.name, this.as, this.cast);
 }
 
-Identifier.isIdentifier = function (x: any): x is Identifier {
+Identifier.isIdentifier = function<Params, Output> (x: any): x is Identifier {
   return x != null && x[refqlType] === type;
 };
 

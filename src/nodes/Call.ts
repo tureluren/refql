@@ -8,10 +8,10 @@ import sql from "../SQLTag/sql";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 import Raw from "./Raw";
 
-interface Call<Params> extends ASTNode<Params>, CastAs {
+interface Call<Params = unknown, Output = unknown> extends ASTNode<Params, Output>, CastAs {
   name: string;
-  nodes: ASTNode<Params>[];
-  interpret(): SQLTag<Params>;
+  nodes: ASTNode[];
+  interpret(): SQLTag<Params, Output>;
 }
 
 const type = "refql/Call";
@@ -23,8 +23,8 @@ const prototype = Object.assign ({}, astNodePrototype, {
   [refqlType]: type
 });
 
-function Call<Params>(name: string, nodes: ASTNode<Params>[], as?: string, cast?: string) {
-  let call: Call<Params> = Object.create (prototype);
+function Call<Params, Output>(name: string, nodes: ASTNode[], as?: string, cast?: string) {
+  let call: Call<Params, Output> = Object.create (prototype);
 
   call.name = name;
   call.nodes = nodes;
@@ -36,8 +36,8 @@ function Call<Params>(name: string, nodes: ASTNode<Params>[], as?: string, cast?
 
 const unsupported = unimplemented ("Call");
 
-function interpret<Params>(this: Call<Params>) {
-  const args = [] as (Raw<Params> | SQLTag<Params>)[];
+function interpret(this: Call) {
+  const args = [] as (Raw | SQLTag)[];
 
   for (const node of this.nodes) {
     node.caseOf<void> ({
@@ -74,11 +74,11 @@ function interpret<Params>(this: Call<Params>) {
   return joinMembers (args);
 }
 
-function caseOf(this: Call<unknown>, structureMap: StringMap) {
+function caseOf(this: Call, structureMap: StringMap) {
   return structureMap.Call (this.interpret (), this.name, this.as, this.cast);
 }
 
-Call.isCall = function <Params> (x: any): x is Call<Params> {
+Call.isCall = function <Params, Output> (x: any): x is Call<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 

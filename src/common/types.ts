@@ -6,7 +6,7 @@ import SQLTag from "../SQLTag";
 import Table from "../Table";
 
 // Array, Function, Date, ...
-export type StringMap = { [k: string]: any };
+export type StringMap = Record<string, any>;
 
 export type ValueType =
   | boolean
@@ -47,17 +47,19 @@ export interface RefInput {
 export type TagFunctionVariable<Params, Return = ValueType> =
   (params: Params, table?: Table) => Return;
 
-export type SQLTagVariable<Params> =
-  | SQLTag<Params>
-  | ASTNode<Params>
+export type SQLTagVariable<Params, Output> =
+  | SQLTag<Params, Output>
+  | ASTNode<Params, Output>
+  | Table
   | TagFunctionVariable<Params>
   | ValueType;
 
-export type RQLTagVariable<Params> =
-  | RQLTag<Params>
-  | SQLTag<Params>
-  | ASTNode<Params>
-  | ASTNode<Params>[]
+export type RQLTagVariable<Params, Output> =
+  | RQLTag<Params, Output>
+  | SQLTag<Params, Output>
+  | ASTNode<Params, Output>
+  | ASTNode<Params, Output>[]
+  | Table
   | TagFunctionVariable<Params>
   | ValueType;
 
@@ -66,9 +68,20 @@ export interface RefQLRows {
 }
 
 export type RefMaker =
-  (parent: Table, tag: RQLTag<unknown>, as?: string, single?: boolean) => RefNode<unknown>;
+  (parent: Table, tag: RQLTag, as?: string, single?: boolean) => RefNode;
+
+
+export type RQLTagMaker =
+  <Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => RQLTag<Params, Output> & Runnable<Params, Output>;
 
 export type RefMakerPair = [
-  Table,
+  Table & RQLTagMaker,
   RefMaker
 ];
+
+export type Runnable<Params = unknown, Output = unknown> =
+  Params extends Record<string, never>
+    ? (params?: Params, querier?: Querier) => Promise<Output>
+    : Params extends StringMap
+      ? (params: Params, querier?: Querier) => Promise<Output>
+      : (params?: Params, querier?: Querier) => Promise<Output>;

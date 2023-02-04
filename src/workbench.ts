@@ -3,7 +3,7 @@ import { belongsTo, belongsToMany, hasMany, hasOne } from "./nodes";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
 
-const team = Table ("team");
+const team = Table ("team", [hasMany ("player")]);
 const goal = Table ("goal");
 const rating = Table ("rating");
 const game = Table ("game");
@@ -15,17 +15,23 @@ const player = Table ("player", [
   belongsToMany ("game")
 ]);
 
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
+const orderr = sql<{id: number}, any>`
+  ${player}
+  ${p => p.id}
+  order by id
 `;
 
-const tag = player<{}>`
-  ${team}
-  ${goal}
-  ${rating}
-  ${game}
-  ${byId}
+const byId = sql`
+  ${orderr}
 `;
+
+// const tag = player<{}>`
+//   ${team}
+//   ${goal}
+//   ${rating}
+//   ${game}
+//   ${byId}
+// `;
 
 const pool = new Pool ({
   user: "test",
@@ -41,5 +47,3 @@ const querier = async (query: string, values: any[]) => {
 
   return rows;
 };
-
-tag.run (querier, { id: 1 }).then (console.log);

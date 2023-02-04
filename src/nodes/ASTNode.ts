@@ -1,25 +1,25 @@
-import { TagFunctionVariable, ValueType, RefInfo } from "../common/types";
+import { TagFunctionVariable, ValueType, RefInfo, RefQLRows } from "../common/types";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 
-type StructureMap<Params, Return> = {
-  RefNode: (tag: RQLTag<Params>, info: RefInfo, single: boolean) => Return;
-  BelongsToMany: (tag: RQLTag<Params>, info: Required<RefInfo>, single: boolean) => Return;
+export type StructureMap<Params, Output, Return> = {
+  RefNode: (tag: RQLTag<Params & RefQLRows, Output>, info: RefInfo, single: boolean) => Return;
+  BelongsToMany: (tag: RQLTag<Params & RefQLRows, Output>, info: Required<RefInfo>, single: boolean) => Return;
   All: (sign: string) => Return;
   Identifier: (name: string, as?: string, cast?: string) => Return;
-  Variable: (x: SQLTag<Params> | ValueType, as?: string, cast?: string) => Return;
-  Call: (tag: SQLTag<Params>, name: string, as?: string, cast?: string) => Return;
+  Variable: (x: SQLTag<Params, Output> | ValueType, as?: string, cast?: string) => Return;
+  Call: (tag: SQLTag<Params, Output>, name: string, as?: string, cast?: string) => Return;
   Literal: (x: string | number | boolean | null, as?: string, cast?: string) => Return;
   StringLiteral: (x: string, as?: string, cast?: string) => Return;
   Raw: (run: TagFunctionVariable<Params, string>) => Return;
   Value: (run: TagFunctionVariable<Params>) => Return;
   Values: (run: TagFunctionVariable<Params, any[]>) => Return;
   Values2D: (run: TagFunctionVariable<Params, any[][]>) => Return;
-  When: (pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params>) => Return;
+  When: (pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params, Output>) => Return;
 };
 
-interface ASTNode<Params> {
-  caseOf<Return>(structureMap: StructureMap<Params, Return>): Return;
+interface ASTNode<Params = unknown, Output = unknown> {
+  caseOf<Return>(structureMap: StructureMap<Params, Output, Return>): Return;
 }
 
 const astNode: symbol = Symbol ("@@ASTNode");
@@ -28,7 +28,7 @@ export const astNodePrototype = {
   [astNode]: true
 };
 
-export const isASTNode = function <Params> (x: any): x is ASTNode<Params> {
+export const isASTNode = function<Params, Output> (x: any): x is ASTNode<Params, Output> {
   return x != null && !!x[astNode];
 };
 
