@@ -44,7 +44,7 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
-await playerById ({ id: 1 }, querier);
+playerById ({ id: 1 }, querier);
 
 //  [
 //    {
