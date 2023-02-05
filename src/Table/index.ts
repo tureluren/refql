@@ -12,7 +12,7 @@ interface Table {
   equals(other: Table): boolean;
   empty<Params, Output>(): RQLTag<Params, Output> & Runnable<Params, Output>;
   toString(): string;
-  run<Return>(querier: Querier): Promise<Return[]>;
+  run<Output>(querier: Querier): Promise<Output>;
   [flEmpty]: Table["empty"];
   [flEquals]: Table["equals"];
 }

@@ -8,13 +8,12 @@ import {
   all, BelongsToMany, Call, Identifier, Literal,
   Raw, RefNode, StringLiteral, Values, Values2D, Variable, When
 } from "../nodes";
-import { Player } from "../soccer";
 import Table from "../Table";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { dummy, dummyRefInfo, player } from "../test/tables";
+import { Dummy, dummyRefInfo, Player } from "../test/tables";
 import userConfig from "../test/userConfig";
 import sql, { createSQLWithDefaultQuerier } from "./sql";
 
@@ -195,10 +194,10 @@ describe ("SQLTag type", () => {
 
     const limit = sql<Params, any>`limit ${p => p.limit}`;
 
-    const tag = sql<Params, any>`
+    const tag = sql<Params, Player[]>`
       select id, first_name, ${rawLastName}, (${sql`
       select count(*) from goal where player_id = player.id`}) number_of_goals
-      from ${player}
+      from ${Player}
       ${limit}
       offset 1
     `;
@@ -276,7 +275,7 @@ describe ("SQLTag type", () => {
     `;
 
     const params = {
-      table: player,
+      table: Player,
       fields: ["first_name", "last_name", "cars"],
       data: { first_name: "John", last_name: "Doe", cars }
     };
@@ -323,7 +322,7 @@ describe ("SQLTag type", () => {
     `;
 
     const params = {
-      table: player, fields: ["first_name", "last_name"],
+      table: Player, fields: ["first_name", "last_name"],
       data: [
         { first_name: "John", last_name: "Doe" },
         { first_name: "Jane", last_name: "Doe" },
@@ -483,7 +482,7 @@ describe ("SQLTag type", () => {
   });
 
   test ("compile errors", () => {
-    expect (() => sql`select ${player`id`}`.compile ({}))
+    expect (() => sql`select ${Player`id`}`.compile ({}))
       .toThrowError (new Error ("U can't use RQLTags inside SQLTags"));
   });
 
@@ -492,10 +491,10 @@ describe ("SQLTag type", () => {
     expect (() => sql`select ${Identifier ("id")}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: Identifier"));
 
-    expect (() => sql`select ${RefNode (dummyRefInfo, dummy`*`, true)}`.compile ({}))
+    expect (() => sql`select ${RefNode (dummyRefInfo, Dummy`*`, true)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: RefNode"));
 
-    expect (() => sql`select ${BelongsToMany (dummyRefInfo, dummy`*`, true)}`.compile ({}))
+    expect (() => sql`select ${BelongsToMany (dummyRefInfo, Dummy`*`, true)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by SQLTag: BelongsToMany"));
 
     expect (() => sql`select ${all}`.compile ({}))

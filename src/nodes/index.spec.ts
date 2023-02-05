@@ -1,6 +1,6 @@
 import { flMap } from "../common/consts";
 import sql from "../SQLTag/sql";
-import { dummy, dummyRefInfo } from "../test/tables";
+import { Dummy, dummyRefInfo } from "../test/tables";
 import All from "./All";
 import { isASTNode } from "./ASTNode";
 import BelongsToMany, { belongsToMany } from "./BelongsToMany";
@@ -50,8 +50,8 @@ describe ("Nodes", () => {
   });
 
   test ("is RefNode", () => {
-    expect (RefNode.isRefNode (RefNode (dummyRefInfo, dummy`*`, true))).toBe (true);
-    expect (RefNode.isRefNode (BelongsToMany (dummyRefInfo, dummy`*`, true))).toBe (true);
+    expect (RefNode.isRefNode (RefNode (dummyRefInfo, Dummy`*`, true))).toBe (true);
+    expect (RefNode.isRefNode (BelongsToMany (dummyRefInfo, Dummy`*`, true))).toBe (true);
     expect (RefNode.isRefNode ("RefNode")).toBe (false);
   });
 

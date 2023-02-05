@@ -15,8 +15,8 @@ import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import {
-  dummy, dummyRefInfo, game, goal, league,
-  player, position, rating, team
+  Dummy, dummyRefInfo, Game, Goal, League,
+  Player, Position, Rating, Team
 } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Parser from "./Parser";
@@ -42,16 +42,16 @@ describe ("RQLTag type", () => {
   });
 
   test ("create RQLTag", () => {
-    const tag = RQLTag (player, []);
+    const tag = RQLTag (Player, []);
 
     expect (tag.nodes).toEqual ([]);
-    expect (tag.table.equals (player)).toBe (true);
+    expect (tag.table.equals (Player)).toBe (true);
     expect (RQLTag.isRQLTag (tag)).toBe (true);
     expect (RQLTag.isRQLTag ({})).toBe (false);
   });
 
   test ("Dynamic nodes", async () => {
-    const tag = player<{}, any>`
+    const tag = Player<{}, any>`
       ${Identifier ("id")}
       ${[Identifier ("first_name"), Identifier ("last_name")]}
       ${Identifier ("birthday")}
@@ -75,7 +75,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("calls and subselect", async () => {
-    const tag = player<{}, any>`
+    const tag = Player<{}, any>`
       concat:full_name (first_name, " ", upper(${Identifier ("last_name")}))
       concat:literals (1, ${[Literal (null), Literal (false)]}, true, 'one')
       concat:vars (${sql`cast(${1} as text)`}, ${Raw ("' '")}, ${true}::text, ${sql`null`}::text)
@@ -105,14 +105,14 @@ describe ("RQLTag type", () => {
   });
 
   test ("merge variable of same table", async () => {
-    const tag = player<{}, any>`
+    const tag = Player<{}, any>`
       id
       first_name
-      ${player`
+      ${Player`
         last_name
       `}
       ${sql`and player.id = 1`}
-      ${player`
+      ${Player`
         team_id
         ${sql`order by ${Raw ((_p, t) => `${t}`)}.last_name`}
       `}
@@ -136,7 +136,7 @@ describe ("RQLTag type", () => {
   });
 
    test ("literals", async () => {
-     const tag = player<{}, any>`
+     const tag = Player<{}, any>`
       "1":one::int
       2:two::text
       true:t::text
@@ -162,9 +162,9 @@ describe ("RQLTag type", () => {
    });
 
   test ("Semigroup", () => {
-    const tag = player`id`;
-    const tag2 = player`first_name last_name`;
-    const tag3 = player`team_id position_id`;
+    const tag = Player`id`;
+    const tag2 = Player`first_name last_name`;
+    const tag3 = Player`team_id position_id`;
 
     const res = tag[flConcat] (tag2)[flConcat] (tag3);
     const res2 = tag[flConcat] (tag2[flConcat] (tag3));
@@ -173,10 +173,10 @@ describe ("RQLTag type", () => {
   });
 
   test ("Monoid", () => {
-    const tag = player`id last_name`;
+    const tag = Player`id last_name`;
 
-    const res = tag[flConcat] (player.empty ());
-    const res2 = player[flEmpty] ()[flConcat] (tag);
+    const res = tag[flConcat] (Player.empty ());
+    const res2 = Player[flEmpty] ()[flConcat] (tag);
 
     expect (res.compile ({})).toEqual (tag.compile ({}));
     expect (res2.compile ({})).toEqual (tag.compile ({}));
@@ -185,7 +185,7 @@ describe ("RQLTag type", () => {
   test ("Functor", async () => {
     type Params = {id: number; prefix: string};
 
-    const tag = player<Params, any>`
+    const tag = Player<Params, Player[]>`
       first_name
       last_name
       concat:prefixed_name (${p => p.prefix}::text, '-', last_name)
@@ -223,7 +223,7 @@ describe ("RQLTag type", () => {
   test ("Contravariant", async () => {
     type Params = {id: number; prefix: string};
 
-    const tag = player<Params, any>`
+    const tag = Player<Params, any>`
       first_name
       last_name
       concat:prefixed_name (${p => p.prefix}::text, '-', last_name)
@@ -261,28 +261,28 @@ describe ("RQLTag type", () => {
   });
 
   test ("aggregate", async () => {
-    const tag = player<{}, any>`
+    const tag = Player<{}, any>`
       id
       first_name
-      ${player`
+      ${Player`
         last_name
       `}
-      ${team`
+      ${Team`
         name
-        ${league`
+        ${League`
           name
         `}
-        ${player`
+        ${Player`
           last_name
           ${sql`
             limit 5 
           `}
         `}: defenders
       `}
-      ${game`
+      ${Game`
         result
       `}: games
-      ${rating`
+      ${Rating`
         acceleration
         stamina
       `}
@@ -409,9 +409,9 @@ describe ("RQLTag type", () => {
   });
 
   test ("simplistic", async () => {
-    const tag = player<{}, any>`
-      ${team}
-      ${game}
+    const tag = Player<{}, Player[]>`
+      ${Team}
+      ${Game}
       ${sql`
         limit 30
       `}
@@ -428,9 +428,9 @@ describe ("RQLTag type", () => {
   });
 
   test ("request single", async () => {
-    const tag = player<{}, any>`
-      ${game}:1 first_game
-      ${goal`
+    const tag = Player<{}, any>`
+      ${Game}:1 first_game
+      ${Goal`
         id
         minute
       `}:1 first_goal
@@ -449,14 +449,14 @@ describe ("RQLTag type", () => {
   });
 
   test ("concat", async () => {
-    const tag = player<{}, any>`
+    const tag = Player<{}, any>`
       id
       first_name
     `;
 
-    const tag2 = player<{}, any>`
+    const tag2 = Player<{}, any>`
       last_name
-      ${team`
+      ${Team`
         name
       `}
       ${sql`
@@ -474,22 +474,22 @@ describe ("RQLTag type", () => {
   });
 
   test ("deep concat", async () => {
-    const tag = player<{}, any>`
+    const tag = Player<{}, any>`
       id
       first_name
-      ${team`
+      ${Team`
         id
-        ${league`
+        ${League`
           id 
         `}
       `}
     `;
 
-    const tag2 = player<{}, any>`
+    const tag2 = Player<{}, any>`
       last_name
-      ${team`
+      ${Team`
         name
-        ${league`
+        ${League`
           name
         `}
       `}
@@ -510,8 +510,8 @@ describe ("RQLTag type", () => {
   });
 
   test ("Nested limit and cache", async () => {
-    const tag = team<{limit: number}, any>`
-      ${player`
+    const tag = Team<{limit: number}, Team[]>`
+      ${Player`
         ${sql`
           limit 4
         `} 
@@ -542,7 +542,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("By id", async () => {
-    const tag = player<{}, any>`
+    const tag = Player<{}, any>`
       *
       ${sql`
         and ${Raw ((_p, t) => t!.name)}.id = 1
@@ -557,11 +557,11 @@ describe ("RQLTag type", () => {
   });
 
   test ("No record found", async () => {
-    const goals = goal`
+    const goals = Goal`
       *
     `;
 
-    const tag = player<{}, any>`
+    const tag = Player<{}, any>`
       ${goals}
       ${sql`
         and player.id = 999999999
@@ -574,10 +574,10 @@ describe ("RQLTag type", () => {
   });
 
   test ("errors", () => {
-    expect (() => player`id last_name`.concat (team`id name`))
+    expect (() => Player`id last_name`.concat (Team`id name`))
       .toThrowError (new Error ("U can't concat RQLTags that come from different tables"));
 
-    expect (() => player`${"id"} last_name`.compile ({}))
+    expect (() => Player`${"id"} last_name`.compile ({}))
       .toThrowError (new Error (`U can't insert "id" in this section of the RQLTag`));
   });
 
@@ -594,7 +594,7 @@ describe ("RQLTag type", () => {
   test ("no querier provided error", async () => {
     const message = "There was no Querier provided";
     try {
-      const tag = player`*`;
+      const tag = Player`*`;
       await tag ();
     } catch (err: any) {
       expect (err.message).toBe (message);
@@ -602,16 +602,16 @@ describe ("RQLTag type", () => {
   });
 
   test ("comments", () => {
-    const tag = player<{}, any>`
+    const tag = Player<{}, any>`
       // birthday //id // first_name
-      // ${team} ${team} buh
+      // ${Team} ${Team}
       id
-      ${game}
+      ${Game}
       // ${When (() => true, sql`
       //  order by first_name 
       // `)}
-      // ${game`
-      //   ${league`
+      // ${Game`
+      //   ${League`
       //     ${sql`
       //       limit 5
       //     `}
@@ -627,7 +627,7 @@ describe ("RQLTag type", () => {
       // ${sql`
       //   limit 5
       // `}
-      // ${position}
+      // ${Position}
     `;
 
     const [query] = tag.compile ({});
@@ -638,7 +638,7 @@ describe ("RQLTag type", () => {
       where 1 = 1
     `));
 
-    const tag2 = player<{}, any>`// id ${sql`limit 5`}`;
+    const tag2 = Player<{}, any>`// id ${sql`limit 5`}`;
     const [query2] = tag2.compile ({});
 
     expect (query2).toBe (format (`
@@ -647,8 +647,8 @@ describe ("RQLTag type", () => {
   });
 
   test ("multiple refs to same table", async () => {
-    const tag = game<{}, any>`
-      ${team}
+    const tag = Game<{}, any>`
+      ${Team}
       ${sql`
         and home_team_id = 1
         and away_team_id = 2
@@ -675,7 +675,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("when", () => {
-    const tag = player<{limit?: number; offset?: number}, any>`
+    const tag = Player<{limit?: number; offset?: number}, any>`
       id
       ${When (p => !!p.limit, sql`
         limit ${p => p.limit}
@@ -717,25 +717,25 @@ describe ("RQLTag type", () => {
     expect (values3).toEqual ([5, 10]);
   });
   test ("parser errors", () => {
-    expect (() => player`id, last_name`)
+    expect (() => Player`id, last_name`)
       .toThrowError (new SyntaxError ('Unknown Member Type: ","'));
 
-    expect (() => player`concat(*)`)
+    expect (() => Player`concat(*)`)
       .toThrowError (new SyntaxError ('Unknown Argument Type: "*"'));
 
-    expect (() => player`concat(first_name, ' ' last_name`)
+    expect (() => Player`concat(first_name, ' ' last_name`)
       .toThrowError (new SyntaxError ('Unexpected token: "last_name", expected: ","'));
 
-    expect (() => player`concat(first_name, ' ', last_name`)
+    expect (() => Player`concat(first_name, ' ', last_name`)
       .toThrowError (new SyntaxError ('Unexpected token: "EOT", expected: ","'));
 
-    expect (() => player`${league`*`}`)
+    expect (() => Player`${League`*`}`)
       .toThrowError (new Error ("player has no ref defined for: league"));
 
-    expect (() => player`${["name" as any]}`)
+    expect (() => Player`${["name" as any]}`)
       .toThrowError (new Error ("Invalid dynamic members, expected Array of ASTNode"));
 
-    const parser = new Parser ("*", [], player);
+    const parser = new Parser ("*", [], Player);
     parser.lookahead = { type: "DOUBLE" as TokenType, x: "3.14" };
 
     expect (() => parser.Literal ())
@@ -749,39 +749,39 @@ describe ("RQLTag type", () => {
 
   test ("unimplemented by RQLTag", () => {
 
-    expect (() => player`id ${Raw ("last_name")}`.compile ({}))
+    expect (() => Player`id ${Raw ("last_name")}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by RQLTag: Raw"));
 
-    expect (() => player`id ${Value (1)}`.compile ({}))
+    expect (() => Player`id ${Value (1)}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by RQLTag: Value"));
 
-    expect (() => player`id ${Values ([])}`.compile ({}))
+    expect (() => Player`id ${Values ([])}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by RQLTag: Values"));
 
-    expect (() => player`id ${Values2D ([[]])}`.compile ({}))
+    expect (() => Player`id ${Values2D ([[]])}`.compile ({}))
       .toThrowError (new Error ("Unimplemented by RQLTag: Values2D"));
   });
 
   test ("unimplemented by Call", () => {
-    expect (() => player`concat (${When (() => true, sql``)})`.compile ({}))
+    expect (() => Player`concat (${When (() => true, sql``)})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: When"));
 
-    expect (() => player`concat (${RefNode (dummyRefInfo, dummy`*`, true)})`.compile ({}))
+    expect (() => Player`concat (${RefNode (dummyRefInfo, Dummy`*`, true)})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: RefNode"));
 
-    expect (() => player`concat (${BelongsToMany (dummyRefInfo, dummy`*`, true)})`.compile ({}))
+    expect (() => Player`concat (${BelongsToMany (dummyRefInfo, Dummy`*`, true)})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: BelongsToMany"));
 
-    expect (() => player`concat (${all})`.compile ({}))
+    expect (() => Player`concat (${all})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: All"));
 
-    expect (() => player`concat(${Value (1)})`.compile ({}))
+    expect (() => Player`concat(${Value (1)})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: Value"));
 
-    expect (() => player`concat (${Values ([])})`.compile ({}))
+    expect (() => Player`concat (${Values ([])})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: Values"));
 
-    expect (() => player`concat (${Values2D ([[]])})`.compile ({}))
+    expect (() => Player`concat (${Values2D ([[]])})`.compile ({}))
       .toThrowError (new Error ("Unimplemented by Call: Values2D"));
 
   });

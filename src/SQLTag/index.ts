@@ -1,6 +1,6 @@
 import { flConcat, flContramap, flEmpty, flMap, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
-import { Querier, Runnable, StringMap, TagFunctionVariable } from "../common/types";
+import { Querier, Runnable, TagFunctionVariable } from "../common/types";
 import unimplemented from "../common/unimplemented";
 import { ASTNode, Raw, When } from "../nodes";
 import Table from "../Table";

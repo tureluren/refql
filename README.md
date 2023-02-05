@@ -1,5 +1,5 @@
 # RefQL
-A Node.js and Deno library for composing and running SQL queries.
+A Node.js and Deno ORM-like library for composing and running SQL queries.
 
 ## Installation
 ```bash
@@ -14,11 +14,11 @@ import { Pool } from "pg";
 import { rql, sql } from "refql";
 
 // Table
-const player = Table ("player", [
+const Player = Table ("player", [
   belongsTo ("team")
 ]);
 
-const team = Table ("team");
+const Team = Table ("team");
 
 // sql snippets
 const byId = sql<{id: number}>`
@@ -26,11 +26,11 @@ const byId = sql<{id: number}>`
 `;
 
 // composition
-const playerById = player`
+const playerById = Player<{id: number}, Player>`
   id
   first_name
   last_name
-  ${team}
+  ${Team}
   ${byId}
 `;
 
@@ -44,7 +44,7 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
-playerById.run<Player> (querier, { id: 1 });
+playerById (querier, { id: 1 });
 
 // [
 //   {
@@ -57,7 +57,16 @@ playerById.run<Player> (querier, { id: 1 });
 ```
 
 ## Table of contents
-* [Table](#querier)
+* [Tables and Relationships](#querier)
 * [Querier](#querier)
 
-## Table
+## Tables and Relationships
+strings because of circular references
+```ts
+const Player = Table ("player", [
+  belongsTo ("team"),
+  hasMany ("goal"),
+  hasOne ("rating"),
+  belongsToMany ("game")
+]);
+```

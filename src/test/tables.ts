@@ -2,17 +2,93 @@ import Table from "../Table";
 import { belongsTo, belongsToMany, hasMany, hasOne } from "../nodes";
 import Ref from "../Ref";
 
-const game = Table ("game", [
+interface League {
+  id: number;
+  name: string;
+  teams: Team[];
+}
+
+interface Team {
+  id: number;
+  name: string;
+  league: League;
+  players: Player[];
+}
+
+interface Position {
+  id: number;
+  name: string;
+}
+
+interface Player {
+  id: number;
+  firstName: string;
+  lastName: string;
+  birthday: string;
+  teamId: number;
+  team: Team;
+  positionId: number;
+  position: Position;
+  goals: Goal[];
+  games: Game[];
+  rating: Rating;
+}
+
+interface Rating {
+  playerId: number;
+  acceleration: number;
+  finishing: number;
+  positioning: number;
+  shotPower: number;
+  freeKick: number;
+  stamina: number;
+  dribbling: number;
+  tackling: number;
+}
+
+interface Game {
+  id: number;
+  homeTeamId: number;
+  homeTeam: Team;
+  awayTeamId: number;
+  awayTeam: Team;
+  leagueId: number;
+  league: League;
+  result: string;
+}
+
+interface Goal {
+  id: number;
+  gameId: number;
+  game: Game;
+  playerId: number;
+  player: Player;
+  ownGoal: boolean;
+  minute: number;
+}
+
+interface Assist {
+  id: number;
+  gameId: number;
+  game: Game;
+  goalId: number;
+  goal: Goal;
+  playerId: number;
+  player: Player;
+}
+
+const Game = Table ("game", [
   belongsTo ("league"),
   belongsTo ("public.team", { as: "home_team", lRef: "home_team_id" }),
   belongsTo ("public.team", { as: "away_team", lRef: "away_team_id" })
 ]);
 
-const gamePlayer = Table ("game_player");
-const goal = Table ("goal");
-const league = Table ("league");
+const GamePlayer = Table ("game_player");
+const Goal = Table ("goal");
+const League = Table ("league");
 
-const player = Table ("player", [
+
+const Player = Table ("player", [
   belongsTo ("public.team", {
     as: "team",
     lRef: "team_id",
@@ -32,9 +108,9 @@ const player = Table ("player", [
   belongsToMany ("game", { as: "games" })
 ]);
 
-const position = Table ("position");
+const Position = Table ("position");
 
-const team = Table ("public.team", [
+const Team = Table ("public.team", [
   hasMany ("player", { as: "players" }),
   belongsTo ("league", {
     as: "league",
@@ -43,9 +119,11 @@ const team = Table ("public.team", [
   })
 ]);
 
-const rating = Table ("rating");
+const Rating = Table ("rating");
 
-const dummy = Table ("dummy");
+const Assist = Table ("assist");
+
+const Dummy = Table ("dummy");
 
 const dummyRefInfo = {
   parent: Table ("player"),
@@ -58,14 +136,15 @@ const dummyRefInfo = {
 };
 
 export {
-  dummy,
+  Assist,
+  Dummy,
   dummyRefInfo,
-  game,
-  gamePlayer,
-  goal,
-  league,
-  position,
-  player,
-  rating,
-  team
+  Game,
+  GamePlayer,
+  Goal,
+  League,
+  Position,
+  Player,
+  Rating,
+  Team
 };
