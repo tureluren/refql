@@ -35,7 +35,7 @@ function Table(name: string, refs: RefMakerPair[] = [], defaultQuerier?: Querier
     throw new Error ("Invalid refs: not an Array");
   }
 
-  const table = (<Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => {
+  const table = (<Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => {
     const parser = new Parser (strings.join ("$"), variables, table);
 
     return RQLTag<Params, Output> (table, parser.nodes () as ASTNode<Params, Output>[], defaultQuerier);

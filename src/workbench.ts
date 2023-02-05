@@ -1,38 +1,8 @@
 import { Pool } from "pg";
 import { belongsTo, belongsToMany, hasMany, hasOne } from "./nodes";
-import { Player } from "./test/tables";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
 
-const Team = Table ("team", [hasMany ("player")]);
-const Goal = Table ("goal");
-const Rating = Table ("rating");
-const Game = Table ("game");
-
-// const Player = Table ("player", [
-//   belongsTo ("team"),
-//   hasMany ("goal"),
-//   hasOne ("rating"),
-//   belongsToMany ("game")
-// ]);
-
-const orderr = Player<{id: number}, Player>`
-  id
-`;
-
-orderr ({ id: 3 }).then (p => p.birthday);
-
-const byId = sql`
-  ${orderr}
-`;
-
-// const tag = player<{}>`
-//   ${team}
-//   ${goal}
-//   ${rating}
-//   ${game}
-//   ${byId}
-// `;
 
 const pool = new Pool ({
   user: "test",
@@ -42,9 +12,31 @@ const pool = new Pool ({
   port: 5432
 });
 
-
 const querier = async (query: string, values: any[]) => {
   const { rows } = await pool.query (query, values);
 
   return rows;
 };
+
+const Player = Table ("player", [
+  belongsTo ("team")
+]);
+
+const Team = Table ("team");
+
+// sql snippets
+const byId = sql<{id: number}>`
+  and id = ${p => p.id}
+`;
+
+// composition
+const playerById = Player`
+  id
+  first_name
+  last_name
+  ${Team}
+  ${byId}
+`;
+
+
+playerById ({ id: 1 }, querier);

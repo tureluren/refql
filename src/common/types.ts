@@ -72,7 +72,7 @@ export type RefMaker =
 
 
 export type RQLTagMaker =
-  <Params, Output>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => RQLTag<Params, Output> & Runnable<Params, Output>;
+  <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => RQLTag<Params, Output> & Runnable<Params, Output>;
 
 export type RefMakerPair = [
   Table & RQLTagMaker,

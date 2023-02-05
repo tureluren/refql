@@ -1,5 +1,5 @@
 # RefQL
-A Node.js and Deno ORM-like library for composing and running SQL queries.
+A typesafe Node.js and Deno ORM-like library for composing and running SQL queries.
 
 ## Installation
 ```bash
@@ -26,7 +26,7 @@ const byId = sql<{id: number}>`
 `;
 
 // composition
-const playerById = Player<{id: number}, Player>`
+const playerById = Player`
   id
   first_name
   last_name
@@ -44,16 +44,16 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
-playerById (querier, { id: 1 });
+await playerById ({ id: 1 }, querier);
 
-// [
-//   {
-//     id: 1,
-//     first_name: 'David',
-//     last_name: 'Roche',
-//     team: { id: 1, name: 'FC Wezivduk', league_id: 1 }
-//   }
-// ]
+//  [
+//    {
+//      id: 1,
+//      first_name: 'David',
+//      last_name: 'Roche',
+//      team: { id: 1, name: 'FC Wezivduk', league_id: 1 }
+//    }
+//  ]
 ```
 
 ## Table of contents

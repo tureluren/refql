@@ -46,13 +46,13 @@ const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagV
   return nodes;
 };
 
-const sql = <Params, Output> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
+const sql = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
   const nodes = parse (strings, variables);
   return SQLTag<Params, Output> (nodes);
 };
 
 export const createSQLWithDefaultQuerier = (defaultQuerier: Querier) => {
-  return <Params, Output> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
+  return <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
     const nodes = parse (strings, variables);
     return SQLTag<Params, Output> (nodes, defaultQuerier);
   };
