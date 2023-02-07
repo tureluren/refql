@@ -63,7 +63,7 @@ playerById ({ id: 1 }, querier).then(console.log);
 * [Other Features](#other-features)
 
 ## Tables and Relationships
-The example below shows how to define tables and their relationships with other tables. From then on, these relationships can be referenced in a `RQLTag`. Relationships are created by passing the table name as a string instead of passing a table object. This is to avoid circular dependency problems. Tables are uniquely identifiable by the combination schema and table (<schema>.<tableName>).
+The example below shows how to define tables and their relationships with other tables. From then on, these relationships can be referenced in a `RQLTag`. Relationships are created by passing the table name as a string instead of passing a table object. This is to avoid circular dependency problems. Tables are uniquely identifiable by the combination schema and table `(<schema>.<tableName>)`.
 
 ```ts
 import { Pool } from "pg";
@@ -215,20 +215,27 @@ secondPlayer ({ id: 1 }).then (console.log);
 ### Values
 ### Values2D
 ### When
-`When` takes a predicate and a `SQLTag`. If the predicate returns true, the tag is added to `playerPage`.
+`When` takes a predicate and a `SQLTag`. If the predicate returns true, the tag is added to `searchPlayer`.
 ```ts
-const playerPage = Player<{ limit?: number; offset?: number }>`
+const searchPlayer = Player<{ q?: string; limit?: number }>`
   id
-  first_name
+  last_name
+  ${When (p => p.q != null, sql`
+    and last_name like ${p => `%${p.q}%`}
+  `)}
   ${When (p => p.limit != null, sql`
     limit ${p => p.limit} 
   `)}
-  ${When (p => p.offset != null, sql`
-    offset ${p => p.offset} 
-  `)}
 `;
 
-playerPage ({ limit: 5, offset: 5 }).then (console.log);
+searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
+
+// [
+//   { id: 25, last_name: 'Ibanez' },
+//   { id: 355, last_name: 'Lombardi' },
+//   { id: 409, last_name: 'Gambacciani' },
+//   { id: 546, last_name: 'Caballero' }
+// ]
 ```
 
 ### Comments

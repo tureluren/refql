@@ -21,15 +21,15 @@ const Player = Table ("player", [
   belongsTo ("team")
 ], querier);
 
-const playerPage = Player<{ limit?: number; offset?: number }>`
+const searchPlayer = Player<{ q?: string; limit?: number }>`
   id
-  first_name
+  last_name
+  ${When (p => p.q != null, sql`
+    and last_name like ${p => `%${p.q}%`}
+  `)}
   ${When (p => p.limit != null, sql`
     limit ${p => p.limit} 
   `)}
-  ${When (p => p.offset != null, sql`
-    offset ${p => p.offset} 
-  `)}
 `;
 
-playerPage ({ limit: 5, offset: 5 }).then (console.log);
+searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
