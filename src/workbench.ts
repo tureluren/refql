@@ -21,25 +21,15 @@ const Player = Table ("player", [
   belongsTo ("team")
 ], querier);
 
-const Team = Table ("team");
-
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
-`;
-
-const idAndFirstName = Player<{}, { id: number; first_name: string }[]>`
+const playerById = Player`
   id
-  first_name
+  // first_name
+  // last_name
+  concat: full_name(first_name, ' ', last_name)
+  ${sql`
+    and id = 1 
+  `}
 `;
 
-const lastNameAndTeam = Player<{ id: number }, { last_name: string; team: { name: string } }[]>`
-  last_name
-  ${Team`name`}
-  ${byId}
-`;
 
-// Semigroup & Monoid
-const playerById = idAndFirstName
-  .concat (lastNameAndTeam);
-
-playerById.contramap (p => ({ id: p.id + 1 })).map (res => res[0]) ({ id: 1 }).then (res => console.log (res));
+playerById ({ id: 1 }).then (console.log);

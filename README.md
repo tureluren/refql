@@ -216,5 +216,21 @@ secondPlayer ({ id: 1 }).then (console.log);
 ### Values2D
 ### When
 ### Comments
+Just use `//` to comment out a line.
+```ts
+const playerById = Player`
+  id
+  // first_name
+  // last_name
+  concat: full_name(first_name, ' ', last_name)
+  ${sql`
+    and id = 1 
+  `}
+`;
+
+playerById ({ id: 1 }).then (console.log);
+
+// [ { id: 1, full_name: 'Steve Short' } ]
+```
 ### createSQLWithDefaultQuerier
 ### createTableWithDefaultQuerier
