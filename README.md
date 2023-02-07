@@ -58,8 +58,8 @@ playerById ({ id: 1 }, querier).then(console.log);
 
 ## Table of contents
 * [Tables and Relationships](#tables-and-relationship)
-* [Fantasy Land Interoperability](#fantasy-land-Interoperability)
 * [Querier](#querier)
+* [Fantasy Land Interoperability](#fantasy-land-Interoperability)
 * [Other Features](#other-features)
 
 ## Tables and Relationships
@@ -160,6 +160,12 @@ fullPlayer ({ limit: 1 }).then(console.log);
 //   }
 // ];
 ```
+## Querier
+The Querier should have the type signature <T>(query: string, values: any[]) => Promise<T[]>. This function is a necessary in-between piece to make RefQL independent from database clients. This allows you to choose your own client.
+
+
+### createSQLWithDefaultQuerier
+### createTableWithDefaultQuerier
 
 ## Fantasy Land Interoperability
 <a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
@@ -208,9 +214,30 @@ secondPlayer ({ id: 1 }).then (console.log);
 ```
 
 ## functions, subselects, alias, converts, :1, *
+gebruik raw in call
+
 ## Other Features
 
 ### Raw
+With the Raw data type it's possible to inject values as raw text into the query.
+```ts
+// dynamic properties
+const idField = "id";
+const bdField = "birthday";
+
+const playerById = sql<{ id: number }>`
+  select id, last_name, age (${Raw (bdField)})::text
+  from player where ${Raw (idField)} = ${p => p.id}
+`;
+
+// query: select id, last_name, age (birthday)::text from player where id = $1
+// values: [1]
+
+playerById ({ id: 1 }).then (console.log);
+
+// [ { id: 1, last_name: 'Short', age: '27 years 9 mons 1 day' } ]
+```
+
 ### Value
 ### Values
 ### Values2D
@@ -256,5 +283,3 @@ playerById ({ id: 1 }).then (console.log);
 
 // [ { id: 1, full_name: 'Steve Short' } ]
 ```
-### createSQLWithDefaultQuerier
-### createTableWithDefaultQuerier

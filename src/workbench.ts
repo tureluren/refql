@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { belongsTo, belongsToMany, hasMany, hasOne, When } from "./nodes";
+import { belongsTo, belongsToMany, hasMany, hasOne, Raw, When } from "./nodes";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
 
@@ -17,19 +17,16 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
-const Player = Table ("player", [
-  belongsTo ("team")
-], querier);
+// dynamic properties
+const idField = "id";
+const bdField = "birthday";
 
-const searchPlayer = Player<{ q?: string; limit?: number }>`
-  id
-  last_name
-  ${When (p => p.q != null, sql`
-    and last_name like ${p => `%${p.q}%`}
-  `)}
-  ${When (p => p.limit != null, sql`
-    limit ${p => p.limit} 
-  `)}
+const playerById = sql<{ id: number }>`
+  select id, last_name, age (${Raw (bdField)})::text
+  from player where ${Raw (idField)} = ${p => p.id}
 `;
 
-searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
+// query: select id, last_name, age (birthday)::text from player where id = $1
+// values: [1]
+
+playerById ({ id: 1 }, querier).then (console.log);
