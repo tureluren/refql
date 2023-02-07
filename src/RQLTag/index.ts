@@ -1,5 +1,5 @@
 import castAs from "../common/castAs";
-import { flConcat, flContramap, flMap, refqlType } from "../common/consts";
+import { flConcat, flContramap, flMap, flPromap, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, Runnable, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
@@ -26,6 +26,7 @@ interface Extra<Params = unknown, Output = unknown> {
 interface RQLTag<Params = unknown, Output = unknown> {
   table: Table;
   nodes: ASTNode<Params, Output>[];
+  defaultQuerier?: Querier;
   interpreted: InterpretedRQLTag<Params, Output>;
   concat<Params2, Output2>(other: RQLTag<Params2, Output2>): RQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<Params, Output>["concat"];
@@ -33,6 +34,8 @@ interface RQLTag<Params = unknown, Output = unknown> {
   [flContramap]: RQLTag<Params, Output>["contramap"];
   map<Output2>(f: (rows: Output) => Output2): RQLTag<Params, Output2> & Runnable<Params, Output2>;
   [flMap]: RQLTag<Params, Output>["map"];
+  promap<Params2, Output2>(f: (p: Params) => Params2, g: (rows: Output) => Output2): RQLTag<Params2, Output2> & Runnable<Params2, Output2>;
+  [flPromap]: RQLTag<Params, Output>["promap"];
   interpret(): InterpretedRQLTag<Params, Output> & Extra<Params, Output>;
   compile(params: Params): [string, any[], Next<Params, Output>[]];
   aggregate(params: Params, querier: Querier): Promise<Output>;
@@ -49,6 +52,8 @@ const prototype = {
   [flContramap]: contramap,
   map,
   [flMap]: map,
+  promap,
+  [flPromap]: promap,
   interpret,
   compile,
   aggregate
@@ -64,7 +69,7 @@ function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[], 
 
   Object.setPrototypeOf (
     tag,
-    Object.assign (Object.create (Function.prototype), prototype, { table, nodes })
+    Object.assign (Object.create (Function.prototype), prototype, { table, nodes, defaultQuerier })
   );
 
   return tag;
@@ -99,12 +104,13 @@ function concat(this: RQLTag, other: RQLTag) {
 
   return RQLTag (
     this.table,
-    [...nodes, ...Object.values (refs)]
+    [...nodes, ...Object.values (refs)],
+    this.defaultQuerier
   );
 }
 
 function map(this: RQLTag & Runnable, f: (rows: unknown) => unknown) {
-  let newTag = RQLTag (this.table, this.nodes);
+  let newTag = RQLTag (this.table, this.nodes, this.defaultQuerier);
 
   const tag = (params?: unknown, querier?: Querier) => this (params, querier).then (f);
 
@@ -114,9 +120,19 @@ function map(this: RQLTag & Runnable, f: (rows: unknown) => unknown) {
 }
 
 function contramap(this: RQLTag & Runnable, f: (p: unknown) => unknown) {
-  let newTag = RQLTag (this.table, this.nodes);
+  let newTag = RQLTag (this.table, this.nodes, this.defaultQuerier);
 
   const tag = (params?: unknown, querier?: Querier) => this (f (params), querier);
+
+  Object.setPrototypeOf (tag, newTag);
+
+  return tag;
+}
+
+function promap(this: RQLTag & Runnable, g: (p: unknown) => unknown, f: (rows: unknown) => unknown) {
+  let newTag = RQLTag (this.table, this.nodes, this.defaultQuerier);
+
+  const tag = (params?: unknown, querier?: Querier) => this (g (params), querier).then (f);
 
   Object.setPrototypeOf (tag, newTag);
 

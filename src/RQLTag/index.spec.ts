@@ -2,7 +2,7 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import RQLTag from ".";
-import { flConcat, flContramap, flEmpty, flMap } from "../common/consts";
+import { flConcat, flContramap, flEmpty, flMap, flPromap } from "../common/consts";
 import { Querier } from "../common/types";
 import {
   all, BelongsToMany, Identifier, Literal, Raw,
@@ -69,9 +69,9 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([]);
 
-    const [player1] = await tag ({}, querier);
+    const [player] = await tag ({}, querier);
 
-    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "birthday"]);
+    expect (Object.keys (player)).toEqual (["id", "first_name", "last_name", "birthday"]);
   });
 
   test ("calls and subselect", async () => {
@@ -99,9 +99,9 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([1, true]);
 
-    const [player1] = await tag ({}, querier);
+    const [player] = await tag ({}, querier);
 
-    expect (Object.keys (player1)).toEqual (["full_name", "literals", "vars", "no_of_goals"]);
+    expect (Object.keys (player)).toEqual (["full_name", "literals", "vars", "no_of_goals"]);
   });
 
   test ("merge variable of same table", async () => {
@@ -130,9 +130,9 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([]);
 
-    const [player1] = await tag ({}, querier);
+    const [player] = await tag ({}, querier);
 
-    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team_id"]);
+    expect (Object.keys (player)).toEqual (["id", "first_name", "last_name", "team_id"]);
   });
 
    test ("literals", async () => {
@@ -156,9 +156,9 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([]);
 
-    const [player1] = await tag ({}, querier);
+    const [player] = await tag ({}, querier);
 
-    expect (player1).toEqual ({ one: 1, two: "2", t: "true", f: "false", n: null });
+    expect (player).toEqual ({ one: 1, two: "2", t: "true", f: "false", n: null });
    });
 
   test ("Semigroup", () => {
@@ -199,25 +199,23 @@ describe ("RQLTag type", () => {
       prefix: "player"
     };
 
-    const [player1] = await tag (params, querier);
+    const [player] = await tag (params, querier);
     const [player2] = await tag[flMap] (x => x) (params, querier);
 
-    expect (player1).toEqual (player2);
+    expect (player).toEqual (player2);
 
     const first = (rows: any[]) =>
       rows[0];
 
-    const toUpperPrefix = (row: any) => ({
-      ...row,
-      prefixed_name: row.prefixed_name.toUpperCase ()
-    });
+    const getPrefixedName = (row: any) =>
+      row.prefixed_name;
 
-    const player3 = await tag[flMap] (rows => toUpperPrefix (first (rows))) (params, querier);
-    const player4 = await tag[flMap] (first)[flMap] (toUpperPrefix) (params, querier);
+    const prefixedName = await tag[flMap] (rows => getPrefixedName (first (rows))) (params, querier);
+    const prefixedName2 = await tag[flMap] (first)[flMap] (getPrefixedName) (params, querier);
 
-    expect (player3).toEqual (player4);
+    expect (prefixedName).toEqual (prefixedName2);
 
-    expect (player3.prefixed_name.startsWith ("PLAYER-")).toBe (true);
+    expect (prefixedName.startsWith ("player-")).toBe (true);
   });
 
   test ("Contravariant", async () => {
@@ -237,10 +235,10 @@ describe ("RQLTag type", () => {
       prefix: " player "
     };
 
-    const [player1] = await tag (params, querier);
+    const [player] = await tag (params, querier);
     const [player2] = await tag[flContramap] (x => x) (params, querier);
 
-    expect (player1).toEqual (player2);
+    expect (player).toEqual (player2);
 
     const trim = (p: Params): Params => ({
       id: p.id,
@@ -258,6 +256,52 @@ describe ("RQLTag type", () => {
     expect (player3).toEqual (player4);
 
     expect (player3.prefixed_name.startsWith ("PLAYER-")).toBe (true);
+  });
+
+  test ("Profunctor", async () => {
+    type Params = {id: number; prefix: string};
+
+    const tag = Player<Params, Player[]>`
+      first_name
+      last_name
+      concat:prefixed_name (${p => p.prefix}::text, '-', last_name)
+      ${sql<{id: number}, any>`
+        and id = ${p => p.id} 
+      `}
+    `;
+
+    const params: Params = {
+      id: 1,
+      prefix: "player"
+    };
+
+    const [player] = await tag (params, querier);
+    const [player2] = await tag[flPromap] (x => x, x => x) (params, querier);
+
+    expect (player).toEqual (player2);
+
+    const first = (rows: any[]) =>
+      rows[0];
+
+    const getPrefixedName = (row: any) =>
+      row.prefixed_name;
+
+    const trim = (p: Params): Params => ({
+      id: p.id,
+      prefix: p.prefix.trim ()
+    });
+
+    const toUpper = (p: Params): Params => ({
+      id: p.id,
+      prefix: p.prefix.toUpperCase ()
+    });
+
+    const prefixedName = await tag[flPromap] (p => toUpper (trim (p)), rows => getPrefixedName (first (rows))) (params, querier);
+    const prefixedName2 = await tag[flPromap] (trim, first)[flPromap] (toUpper, getPrefixedName) (params, querier);
+
+    expect (prefixedName).toEqual (prefixedName2);
+
+    expect (prefixedName.startsWith ("PLAYER-")).toBe (true);
   });
 
   test ("aggregate", async () => {
@@ -392,14 +436,14 @@ describe ("RQLTag type", () => {
 
     // db results
     const players = await tag ({}, querier);
-    const player1 = players[0];
-    const playerTeam = player1.team;
+    const player = players[0];
+    const playerTeam = player.team;
     const defender = playerTeam.defenders[0];
-    const teamLeague = player1.team.league;
-    const playerGame = player1.games[0];
-    const playerRating = player1.rating;
+    const teamLeague = player.team.league;
+    const playerGame = player.games[0];
+    const playerRating = player.rating;
 
-    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team", "games", "rating"]);
+    expect (Object.keys (player)).toEqual (["id", "first_name", "last_name", "team", "games", "rating"]);
     expect (Object.keys (playerTeam)).toEqual (["name", "league", "defenders"]);
     expect (Object.keys (teamLeague)).toEqual (["name"]);
     expect (Object.keys (defender)).toEqual (["last_name"]);
@@ -418,11 +462,11 @@ describe ("RQLTag type", () => {
     `;
 
     const players = await tag ({}, querier);
-    const player1 = players[0];
-    const playerTeam = player1.team;
-    const playerGame = player1.games[0];
+    const player = players[0];
+    const playerTeam = player.team;
+    const playerGame = player.games[0];
 
-    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "cars", "birthday", "team_id", "position_id", "team", "games"]);
+    expect (Object.keys (player)).toEqual (["id", "first_name", "last_name", "cars", "birthday", "team_id", "position_id", "team", "games"]);
     expect (Object.keys (playerTeam)).toEqual (["id", "name", "league_id"]);
     expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
   });
@@ -440,9 +484,9 @@ describe ("RQLTag type", () => {
     `;
 
     const players = await tag ({}, querier);
-    const player1 = players[0];
-    const playerGame = player1.first_game;
-    const playerGoal = player1.first_goal;
+    const player = players[0];
+    const playerGame = player.first_game;
+    const playerGoal = player.first_goal;
 
     expect (Object.keys (playerGame)).toEqual (["id", "home_team_id", "away_team_id", "league_id", "result"]);
     expect (Object.keys (playerGoal)).toEqual (["id", "minute"]);
@@ -465,10 +509,10 @@ describe ("RQLTag type", () => {
     `;
 
     const players = await tag.concat (tag2) (null as any, querier);
-    const player1 = players[0];
-    const playerTeam = player1.team;
+    const player = players[0];
+    const playerTeam = player.team;
 
-    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team"]);
+    expect (Object.keys (player)).toEqual (["id", "first_name", "last_name", "team"]);
     expect (Object.keys (playerTeam)).toEqual (["name"]);
     expect (players.length).toBe (30);
   });
@@ -499,11 +543,11 @@ describe ("RQLTag type", () => {
     `;
 
     const players = await tag.concat (tag2) (null as any, querier);
-    const player1 = players[0];
-    const playerTeam = player1.team;
-    const teamLeague = player1.team.league;
+    const player = players[0];
+    const playerTeam = player.team;
+    const teamLeague = player.team.league;
 
-    expect (Object.keys (player1)).toEqual (["id", "first_name", "last_name", "team"]);
+    expect (Object.keys (player)).toEqual (["id", "first_name", "last_name", "team"]);
     expect (Object.keys (playerTeam)).toEqual (["id", "name", "league"]);
     expect (Object.keys (teamLeague)).toEqual (["id", "name"]);
     expect (players.length).toBe (30);
@@ -550,9 +594,9 @@ describe ("RQLTag type", () => {
     `;
 
     const players = await tag ({}, querier);
-    const player1 = players[0];
+    const player = players[0];
 
-    expect (player1.id).toBe (1);
+    expect (player.id).toBe (1);
     expect (players.length).toBe (1);
   });
 

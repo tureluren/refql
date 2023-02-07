@@ -1,4 +1,4 @@
-import { flConcat, flContramap, flEmpty, flMap, refqlType } from "../common/consts";
+import { flConcat, flContramap, flEmpty, flMap, flPromap, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import { Querier, Runnable, TagFunctionVariable } from "../common/types";
 import unimplemented from "../common/unimplemented";
@@ -24,6 +24,7 @@ interface InterpretedSQLTag<Params = unknown> {
 interface SQLTag<Params = unknown, Output = unknown> {
   nodes: ASTNode<Params, Output>[];
   interpreted?: InterpretedSQLTag<Params>;
+  defaultQuerier?: Querier;
   concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
   join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
   [flConcat]: SQLTag<Params, Output>["concat"];
@@ -31,6 +32,8 @@ interface SQLTag<Params = unknown, Output = unknown> {
   [flContramap]: SQLTag<Params, Output>["contramap"];
   map<Output2>(f: (rows: Output) => Output2): SQLTag<Params, Output2> & Runnable<Params, Output2>;
   [flMap]: SQLTag<Params, Output>["map"];
+  promap<Params2, Output2>(f: (p: Params) => Params2, g: (rows: Output) => Output2): SQLTag<Params2, Output2> & Runnable<Params2, Output2>;
+  [flPromap]: SQLTag<Params, Output>["promap"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params, table?: Table): [string, any[]];
 }
@@ -47,6 +50,8 @@ const prototype = {
   [flContramap]: contramap,
   map,
   [flMap]: map,
+  promap,
+  [flPromap]: promap,
   interpret,
   compile
 };
@@ -64,7 +69,7 @@ function SQLTag<Params, Output>(nodes: ASTNode<Params, Output>[], defaultQuerier
 
   Object.setPrototypeOf (
     tag,
-    Object.assign (Object.create (Function.prototype), prototype, { nodes })
+    Object.assign (Object.create (Function.prototype), prototype, { nodes, defaultQuerier })
   );
 
   return tag;
@@ -82,7 +87,7 @@ function concat(this: SQLTag, other: SQLTag) {
 }
 
 function map(this: SQLTag & Runnable, f: (rows: unknown) => unknown) {
-  let newTag = SQLTag (this.nodes);
+  let newTag = SQLTag (this.nodes, this.defaultQuerier);
 
   const tag = (params?: unknown, querier?: Querier) => this (params, querier).then (f);
 
@@ -92,9 +97,19 @@ function map(this: SQLTag & Runnable, f: (rows: unknown) => unknown) {
 }
 
 function contramap(this: SQLTag & Runnable, f: (p: unknown) => unknown) {
-  let newTag = SQLTag (this.nodes);
+  let newTag = SQLTag (this.nodes, this.defaultQuerier);
 
   const tag = (params?: unknown, querier?: Querier) => this (f (params), querier);
+
+  Object.setPrototypeOf (tag, newTag);
+
+  return tag;
+}
+
+function promap(this: SQLTag & Runnable, g: (p: unknown) => unknown, f: (rows: unknown) => unknown) {
+  let newTag = SQLTag (this.nodes, this.defaultQuerier);
+
+  const tag = (params?: unknown, querier?: Querier) => this (g (params), querier).then (f);
 
   Object.setPrototypeOf (tag, newTag);
 
