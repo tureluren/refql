@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { belongsTo, belongsToMany, hasMany, hasOne } from "./nodes";
+import { belongsTo, belongsToMany, hasMany, hasOne, When } from "./nodes";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
 
@@ -21,15 +21,15 @@ const Player = Table ("player", [
   belongsTo ("team")
 ], querier);
 
-const playerById = Player`
+const playerPage = Player<{ limit?: number; offset?: number }>`
   id
-  // first_name
-  // last_name
-  concat: full_name(first_name, ' ', last_name)
-  ${sql`
-    and id = 1 
-  `}
+  first_name
+  ${When (p => p.limit != null, sql`
+    limit ${p => p.limit} 
+  `)}
+  ${When (p => p.offset != null, sql`
+    offset ${p => p.offset} 
+  `)}
 `;
 
-
-playerById ({ id: 1 }).then (console.log);
+playerPage ({ limit: 5, offset: 5 }).then (console.log);

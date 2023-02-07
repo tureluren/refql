@@ -215,8 +215,25 @@ secondPlayer ({ id: 1 }).then (console.log);
 ### Values
 ### Values2D
 ### When
+`When` takes a predicate and a `SQLTag`. If the predicate returns true, the tag is added to `playerPage`.
+```ts
+const playerPage = Player<{ limit?: number; offset?: number }>`
+  id
+  first_name
+  ${When (p => p.limit != null, sql`
+    limit ${p => p.limit} 
+  `)}
+  ${When (p => p.offset != null, sql`
+    offset ${p => p.offset} 
+  `)}
+`;
+
+playerPage ({ limit: 5, offset: 5 }).then (console.log);
+```
+
 ### Comments
 Just use `//` to comment out a line.
+
 ```ts
 const playerById = Player`
   id
