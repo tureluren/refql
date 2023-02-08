@@ -66,7 +66,7 @@ playerById ({ id: 1 }, querier).then(console.log);
 * [Values](#values)
 * [Values2D](#values2d)
 * [Comments](#comments)
-* [Functions, subselects, aliases, casts, literals, :1, *](#functions-subselects-aliases-casts-literals-1)
+* [Functions, subselects, aliases, casts, literals, :1](#functions-subselects-aliases-casts-literals-1)
 
 ## Tables and References
 The example below shows how to define tables and describe their references to other tables. From then on, these references can be used in a `RQLTag`. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
@@ -468,7 +468,7 @@ playerById ({ id: 1 }).then (console.log);
 // [ { id: 1, full_name: 'Steve Short' } ]
 ```
 
-## Functions, subselects, aliases, casts, literals, :1, *
+## Functions, subselects, aliases, casts, literals, :1
 Some other features of RefQL.
 
 ```ts
