@@ -9,7 +9,7 @@ import {
   belongsToMany, hasMany,
   hasOne, Raw, RefNode
 } from "../nodes";
-import Ref from "../Ref";
+import RefField from "../RefField";
 import sql from "../SQLTag/sql";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
@@ -111,8 +111,8 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "team",
-      lRef: Ref ("player.team_id", "teamlref"),
-      rRef: Ref ("team.id", "teamrref")
+      lRef: RefField ("player.team_id", "teamlref"),
+      rRef: RefField ("team.id", "teamrref")
     };
 
     expect (belongsToNode.info).toEqual (expected);
@@ -130,8 +130,8 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "crew",
-      lRef: Ref ("player.team_id", "crewlref"),
-      rRef: Ref ("team.id", "crewrref")
+      lRef: RefField ("player.team_id", "crewlref"),
+      rRef: RefField ("team.id", "crewrref")
     };
 
     expect (belongsToNode.info).toEqual (expected);
@@ -148,8 +148,8 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "team",
-      lRef: Ref ("player.TEAM_ID", "teamlref"),
-      rRef: Ref ("team.ID", "teamrref")
+      lRef: RefField ("player.TEAM_ID", "teamlref"),
+      rRef: RefField ("team.ID", "teamrref")
     };
 
     expect (belongsToNode.info).toEqual (expected);
@@ -169,10 +169,10 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "games",
-      lRef: Ref ("player.id", "gameslref"),
-      rRef: Ref ("game.id", "gamesrref"),
-      lxRef: Ref ("game_player.player_id", "gameslxref"),
-      rxRef: Ref ("game_player.game_id", "gamesrxref"),
+      lRef: RefField ("player.id", "gameslref"),
+      rRef: RefField ("game.id", "gamesrref"),
+      lxRef: RefField ("game_player.player_id", "gameslxref"),
+      rxRef: RefField ("game_player.game_id", "gamesrxref"),
       xTable: GamePlayer
     };
 
@@ -197,10 +197,10 @@ describe ("Table type", () => {
     const expected = {
       parent: athlete,
       as: "games",
-      lRef: Ref ("athlete.id", "gameslref"),
-      rRef: Ref ("game.id", "gamesrref"),
-      lxRef: Ref ("athlete_game.athlete_id", "gameslxref"),
-      rxRef: Ref ("athlete_game.game_id", "gamesrxref"),
+      lRef: RefField ("athlete.id", "gameslref"),
+      rRef: RefField ("game.id", "gamesrref"),
+      lxRef: RefField ("athlete_game.athlete_id", "gameslxref"),
+      rxRef: RefField ("athlete_game.game_id", "gamesrxref"),
       xTable: Table ("athlete_game")
     };
 
@@ -225,10 +225,10 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "matches",
-      lRef: Ref ("player.id", "matcheslref"),
-      rRef: Ref ("game.id", "matchesrref"),
-      lxRef: Ref ("game_player.player_id", "matcheslxref"),
-      rxRef: Ref ("game_player.game_id", "matchesrxref"),
+      lRef: RefField ("player.id", "matcheslref"),
+      rRef: RefField ("game.id", "matchesrref"),
+      lxRef: RefField ("game_player.player_id", "matcheslxref"),
+      rxRef: RefField ("game_player.game_id", "matchesrxref"),
       xTable: GamePlayer
     };
 
@@ -260,10 +260,10 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "fixtures",
-      lRef: Ref ("player.ID", "fixtureslref"),
-      rRef: Ref ("game.ID", "fixturesrref"),
-      lxRef: Ref ("GAME_PLAYER.PLAYER_ID", "fixtureslxref"),
-      rxRef: Ref ("GAME_PLAYER.GAME_ID", "fixturesrxref"),
+      lRef: RefField ("player.ID", "fixtureslref"),
+      rRef: RefField ("game.ID", "fixturesrref"),
+      lxRef: RefField ("GAME_PLAYER.PLAYER_ID", "fixtureslxref"),
+      rxRef: RefField ("GAME_PLAYER.GAME_ID", "fixturesrxref"),
       xTable: Table ("GAME_PLAYER")
     };
 
@@ -289,8 +289,8 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "goals",
-      lRef: Ref ("player.id", "goalslref"),
-      rRef: Ref ("goal.player_id", "goalsrref")
+      lRef: RefField ("player.id", "goalslref"),
+      rRef: RefField ("goal.player_id", "goalsrref")
     };
 
     expect (hasManyNode.info).toEqual (expected);
@@ -310,8 +310,8 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "finishes",
-      lRef: Ref ("player.id", "finisheslref"),
-      rRef: Ref ("goal.player_id", "finishesrref")
+      lRef: RefField ("player.id", "finisheslref"),
+      rRef: RefField ("goal.player_id", "finishesrref")
     };
 
     expect (hasManyNode.info).toEqual (expected);
@@ -332,8 +332,8 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "points",
-      lRef: Ref ("player.ID", "pointslref"),
-      rRef: Ref ("goal.PLAYER_ID", "pointsrref")
+      lRef: RefField ("player.ID", "pointslref"),
+      rRef: RefField ("goal.PLAYER_ID", "pointsrref")
     };
 
     expect (hasManyNode.info).toEqual (expected);
@@ -352,8 +352,8 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "rating",
-      lRef: Ref ("player.id", "ratinglref"),
-      rRef: Ref ("rating.player_id", "ratingrref")
+      lRef: RefField ("player.id", "ratinglref"),
+      rRef: RefField ("rating.player_id", "ratingrref")
     };
 
     expect (hasOneNode.info).toEqual (expected);
@@ -371,8 +371,8 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "score",
-      lRef: Ref ("player.id", "scorelref"),
-      rRef: Ref ("rating.player_id", "scorerref")
+      lRef: RefField ("player.id", "scorelref"),
+      rRef: RefField ("rating.player_id", "scorerref")
     };
 
     expect (hasOneNode.info).toEqual (expected);
@@ -393,8 +393,8 @@ describe ("Table type", () => {
     const expected = {
       parent: Player,
       as: "grade",
-      lRef: Ref ("player.ID", "gradelref"),
-      rRef: Ref ("rating.PLAYER_ID", "graderref")
+      lRef: RefField ("player.ID", "gradelref"),
+      rRef: RefField ("rating.PLAYER_ID", "graderref")
     };
 
     expect (hasOneNode.info).toEqual (expected);

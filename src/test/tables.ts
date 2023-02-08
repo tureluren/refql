@@ -1,6 +1,6 @@
 import Table from "../Table";
 import { belongsTo, belongsToMany, hasMany, hasOne } from "../nodes";
-import Ref from "../Ref";
+import RefField from "../RefField";
 
 interface League {
   id: number;
@@ -87,7 +87,6 @@ const GamePlayer = Table ("game_player");
 const Goal = Table ("goal");
 const League = Table ("league");
 
-
 const Player = Table ("player", [
   belongsTo ("public.team", {
     as: "team",
@@ -128,10 +127,10 @@ const Dummy = Table ("dummy");
 const dummyRefInfo = {
   parent: Table ("player"),
   as: "dummy",
-  lRef: Ref ("player.id", "dummylref"),
-  rRef: Ref ("game.id", "dummyrref"),
-  lxRef: Ref ("dummy_player.player_id", "dummylxref"),
-  rxRef: Ref ("dummy_player.dummy_id", "dummyrxref"),
+  lRef: RefField ("player.id", "dummylref"),
+  rRef: RefField ("game.id", "dummyrref"),
+  lxRef: RefField ("dummy_player.player_id", "dummylxref"),
+  rxRef: RefField ("dummy_player.dummy_id", "dummyrxref"),
   xTable: Table ("dummy_player")
 };
 

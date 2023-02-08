@@ -1,7 +1,7 @@
 import { refqlType } from "../common/consts";
 import Table from "../Table";
 
-interface Ref {
+interface RefField {
   name: string;
   as: string;
   toString(): string;
@@ -11,12 +11,12 @@ const type = "refql/Ref";
 
 const prototype = {
   [refqlType]: type,
-  constructor: Ref,
+  constructor: RefField,
   toString
 };
 
-function Ref(name: string, as: string) {
-  let ref: Ref = Object.create (prototype);
+function RefField(name: string, as: string) {
+  let ref: RefField = Object.create (prototype);
 
   ref.name = name;
   ref.as = as;
@@ -24,20 +24,20 @@ function Ref(name: string, as: string) {
   return ref;
 }
 
-function toString(this: Ref) {
+function toString(this: RefField) {
   return `${this.name} ${this.as}`;
 }
 
-Ref.isRef = function (x: any): x is Ref {
+RefField.isRefField = function (x: any): x is RefField {
   return x != null && x[refqlType] === type;
 };
 
-Ref.refOf = function (as: string) {
+RefField.refFieldOf = function (as: string) {
   return (table: Table, kw: string, ref: string) =>
-    Ref (
+    RefField (
       `${table.name}.${ref.trim ()}`,
       `${(as).replace (/_/g, "").toLowerCase ()}${kw}`
     );
 };
 
-export default Ref;
+export default RefField;

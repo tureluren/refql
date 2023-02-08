@@ -1,7 +1,7 @@
 import { refqlType } from "../common/consts";
-import { RefInfo, RefInput, RefMaker, RefMakerPair, RefQLRows, StringMap } from "../common/types";
+import { Ref, RefInfo, RefInput, RefMaker, RefQLRows, StringMap } from "../common/types";
 import validateTable from "../common/validateTable";
-import Ref from "../Ref";
+import RefField from "../RefField";
 import RQLTag from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -103,7 +103,7 @@ export const validateRefInput = (input: RefInput) => {
 
 const makeBelongsTo = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag, as?: string) => {
   as = as || input.as || child.name;
-  const refOf = Ref.refOf (as);
+  const refOf = RefField.refFieldOf (as);
 
   return RefNode (
     {
@@ -119,7 +119,7 @@ const makeBelongsTo = (child: Table, input: RefNodeInput) => (parent: Table, tag
 
 const makeHasMany = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag, as?: string, single?: boolean) => {
   as = as || input.as || `${child.name}s`;
-  const refOf = Ref.refOf (as);
+  const refOf = RefField.refFieldOf (as);
 
   return RefNode (
     {
@@ -135,7 +135,7 @@ const makeHasMany = (child: Table, input: RefNodeInput) => (parent: Table, tag: 
 
 const makeHasOne = (child: Table, input: RefNodeInput) => (parent: Table, tag: RQLTag, as?: string) => {
   as = as || input.as || child.name;
-  const refOf = Ref.refOf (as);
+  const refOf = RefField.refFieldOf (as);
 
   return RefNode (
     {
@@ -149,7 +149,7 @@ const makeHasOne = (child: Table, input: RefNodeInput) => (parent: Table, tag: R
   );
 };
 
-const makeRefNode = (f: (child: Table, input: RefNodeInput) => RefMaker) => (table: string, input: RefNodeInput = {}): RefMakerPair => {
+const makeRefNode = (f: (child: Table, input: RefNodeInput) => RefMaker) => (table: string, input: RefNodeInput = {}): Ref => {
   validateTable (table);
 
   validateRefInput (input);

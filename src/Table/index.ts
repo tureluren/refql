@@ -1,5 +1,5 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Querier, RefMakerPair, RQLTagMaker, RQLTagVariable, Runnable } from "../common/types";
+import { Querier, Ref, RQLTagMaker, RQLTagVariable, Runnable } from "../common/types";
 import validateTable from "../common/validateTable";
 import { ASTNode } from "../nodes";
 import RQLTag from "../RQLTag";
@@ -8,7 +8,7 @@ import Parser from "../RQLTag/Parser";
 interface Table {
   name: string;
   schema?: string;
-  refs: RefMakerPair[];
+  refs: Ref[];
   equals(other: Table): boolean;
   empty<Params, Output>(): RQLTag<Params, Output> & Runnable<Params, Output>;
   toString(): string;
@@ -28,7 +28,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   run
 });
 
-function Table(name: string, refs: RefMakerPair[] = [], defaultQuerier?: Querier): Table & RQLTagMaker {
+function Table(name: string, refs: Ref[] = [], defaultQuerier?: Querier): Table & RQLTagMaker {
   validateTable (name);
 
   if (!Array.isArray (refs)) {
@@ -82,7 +82,7 @@ Table.isTable = function (x: any): x is Table {
   return x != null && x[refqlType] === type;
 };
 
-export const createTableWithDefaultQuerier = (defaultQuerier: Querier) => (name: string, refs: RefMakerPair[] = []) => {
+export const createTableWithDefaultQuerier = (defaultQuerier: Querier) => (name: string, refs: Ref[] = []) => {
   return Table (name, refs, defaultQuerier);
 };
 

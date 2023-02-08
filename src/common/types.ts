@@ -1,6 +1,6 @@
 import { ASTNode } from "../nodes";
 import RefNode from "../nodes/RefNode";
-import Ref from "../Ref";
+import RefField from "../RefField";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
@@ -28,11 +28,11 @@ export interface CastAs {
 export interface RefInfo {
   parent: Table;
   as: string;
-  lRef: Ref;
-  rRef: Ref;
+  lRef: RefField;
+  rRef: RefField;
   xTable?: Table;
-  lxRef?: Ref;
-  rxRef?: Ref;
+  lxRef?: RefField;
+  rxRef?: RefField;
 }
 
 export interface RefInput {
@@ -70,11 +70,10 @@ export interface RefQLRows {
 export type RefMaker =
   (parent: Table, tag: RQLTag, as?: string, single?: boolean) => RefNode;
 
-
 export type RQLTagMaker =
   <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => RQLTag<Params, Output> & Runnable<Params, Output>;
 
-export type RefMakerPair = [
+export type Ref = [
   Table & RQLTagMaker,
   RefMaker
 ];

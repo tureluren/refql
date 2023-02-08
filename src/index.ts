@@ -1,4 +1,4 @@
-import Ref from "./Ref";
+import RefField from "./RefField";
 import RQLTag from "./RQLTag";
 import SQLTag from "./SQLTag";
 import sql, { createSQLWithDefaultQuerier } from "./SQLTag/sql";
@@ -10,7 +10,7 @@ export * from "./common/types";
 export {
   createSQLWithDefaultQuerier,
   createTableWithDefaultQuerier,
-  Ref,
+  RefField,
   RQLTag,
   sql,
   SQLTag,

@@ -1,6 +1,6 @@
-import { RefInfo, RefInput, RefMakerPair, RefQLRows, StringMap } from "../common/types";
+import { Ref, RefInfo, RefInput, RefQLRows, StringMap } from "../common/types";
 import validateTable from "../common/validateTable";
-import Ref from "../Ref";
+import RefField from "../RefField";
 import RQLTag from "../RQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -62,7 +62,7 @@ function caseOf(this: BelongsToMany, structureMap: StringMap) {
 
 type BelongsToManyInput = RefInput;
 
-export const belongsToMany = (table: string, input: BelongsToManyInput = {}): RefMakerPair => {
+export const belongsToMany = (table: string, input: BelongsToManyInput = {}): Ref => {
   validateTable (table);
 
   validateRefInput (input);
@@ -71,7 +71,7 @@ export const belongsToMany = (table: string, input: BelongsToManyInput = {}): Re
 
   const makeBelongsToMany = (parent: Table, tag: RQLTag, as?: string, single?: boolean) => {
     as = as || input.as || `${child.name}s`;
-    const refOf = Ref.refOf (as);
+    const refOf = RefField.refFieldOf (as);
 
     const xTable = Table (
       input.xTable ||
