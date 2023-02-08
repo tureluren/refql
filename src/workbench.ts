@@ -1,7 +1,7 @@
 import { Pool } from "pg";
-import { belongsTo, belongsToMany, hasMany, hasOne, Raw, When } from "./nodes";
-import sql from "./SQLTag/sql";
-import Table from "./Table";
+import { belongsTo, belongsToMany, hasMany, hasOne, Raw, Values, Values2D, When } from "./nodes";
+import sql, { createSQLWithDefaultQuerier } from "./SQLTag/sql";
+import Table, { createTableWithDefaultQuerier } from "./Table";
 
 const pool = new Pool ({
   user: "test",
@@ -12,21 +12,50 @@ const pool = new Pool ({
 });
 
 const querier = async (query: string, values: any[]) => {
+  console.log (query);
   const { rows } = await pool.query (query, values);
 
   return rows;
 };
 
-// dynamic properties
-const idField = "id";
-const bdField = "birthday";
+const Goal = Table ("goal");
 
-const playerById = sql<{ id: number }>`
-  select id, last_name, age (${Raw (bdField)})::text
-  from player where ${Raw (idField)} = ${p => p.id}
+const Player = Table ("player", [
+  hasMany ("goal")
+], querier);
+
+const byId = sql<{id: number}>`
+  and id = ${p => p.id}
 `;
 
-// query: select id, last_name, age (birthday)::text from player where id = $1
-// values: [1]
+const goalCount = sql<{}>`
+  select count(*) from ${Goal}
+  where player_id = player.id
+`;
 
-playerById ({ id: 1 }, querier).then (console.log);
+// select player.* from player where 1 = 1 and team_id = $1 order by player.first_name
+const orderedTeamPlayers = Table ("Player")<{ team_id: number; order_by: string }>`
+  *
+  ${sql`
+    and team_id = ${p => p.team_id}
+    order by ${Raw ((p, t) => `${t}.${p.order_by}`)} 
+  `}
+`;
+
+orderedTeamPlayers ({ team_id: 1, order_by: "first_name" }, querier).then (console.log);
+
+// [
+//   {
+//     id: '9',
+//     first_name: 'Phoebe',
+//     last_name: 'van Dongen',
+//     cars: null,
+//     birthday: 1992-02-25T23:00:00.000Z,
+//     team_id: 1,
+//     position_id: 9,
+//     goal_count: 6,
+//     full_name: 'Phoebe van Dongen',
+//     is_player: true,
+//     first_goal: { id: 2, game_id: 1, player_id: 9, own_goal: false, minute: 30 }
+//   }
+// ]
