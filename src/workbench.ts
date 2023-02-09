@@ -42,7 +42,6 @@ const orderedTeamPlayers = Table ("Player")<{ team_id: number; order_by: string 
   `}
 `;
 
-orderedTeamPlayers ({ team_id: 1, order_by: "first_name" }, querier).then (console.log);
 
 // [
 //   {
@@ -59,3 +58,13 @@ orderedTeamPlayers ({ team_id: 1, order_by: "first_name" }, querier).then (conso
 //     first_goal: { id: 2, game_id: 1, player_id: 9, own_goal: false, minute: 30 }
 //   }
 // ]
+
+const taggie = Player<{}, any[]>`
+  *
+  ${sql`
+    and id = 1 
+  `}
+ 
+`;
+
+taggie.map (x => x[0]).run ({}, querier).then (console.log);

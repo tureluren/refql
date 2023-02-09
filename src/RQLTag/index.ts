@@ -39,6 +39,7 @@ interface RQLTag<Params = unknown, Output = unknown> {
   interpret(): InterpretedRQLTag<Params, Output> & Extra<Params, Output>;
   compile(params: Params): [string, any[], Next<Params, Output>[]];
   aggregate(params: Params, querier: Querier): Promise<Output>;
+  run(params: Params, querier?: Querier): Promise<Output>;
 }
 
 const type = "refql/RQLTag";
@@ -56,7 +57,8 @@ const prototype = {
   [flPromap]: promap,
   interpret,
   compile,
-  aggregate
+  aggregate,
+  run
 };
 
 function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier): RQLTag<Params, Output> & Runnable<Params, Output> {
@@ -73,6 +75,11 @@ function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[], 
   );
 
   return tag;
+}
+
+
+function run(this: RQLTag & Runnable, params: unknown, querier: Querier) {
+  return this (params, querier);
 }
 
 type Deep = { [tableId: string]: RefNode} & { nodes: ASTNode[]};

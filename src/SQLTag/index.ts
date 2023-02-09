@@ -36,6 +36,7 @@ interface SQLTag<Params = unknown, Output = unknown> {
   [flPromap]: SQLTag<Params, Output>["promap"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params, table?: Table): [string, any[]];
+  run(params: Params, querier?: Querier): Promise<Output>;
 }
 
 const type = "refql/SQLTag";
@@ -53,6 +54,7 @@ const prototype = {
   promap,
   [flPromap]: promap,
   interpret,
+  run,
   compile
 };
 
@@ -73,6 +75,10 @@ function SQLTag<Params, Output>(nodes: ASTNode<Params, Output>[], defaultQuerier
   );
 
   return tag;
+}
+
+function run(this: SQLTag & Runnable, params: unknown, querier: Querier) {
+  return this (params, querier);
 }
 
 function join(this: SQLTag, delimiter: string, other: SQLTag) {
