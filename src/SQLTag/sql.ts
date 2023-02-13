@@ -1,11 +1,11 @@
 import SQLTag from ".";
-import { Querier, SQLTagVariable } from "../common/types";
+import { SQLTagVariable } from "../common/types";
 import { ASTNode, Raw, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 
-const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output>[]) => {
+export const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output>[]) => {
   const nodes = [] as ASTNode<Params, Output>[];
 
   for (let [idx, string] of strings.entries ()) {
@@ -48,14 +48,7 @@ const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagV
 
 const sql = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
   const nodes = parse (strings, variables);
-  return SQLTag<Params, Output> (nodes);
-};
-
-export const createSQLWithDefaultQuerier = (defaultQuerier: Querier) => {
-  return <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
-    const nodes = parse (strings, variables);
-    return SQLTag<Params, Output> (nodes, defaultQuerier);
-  };
+  return SQLTag<Params, Output, "Promise"> (nodes);
 };
 
 export default sql;

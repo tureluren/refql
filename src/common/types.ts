@@ -4,6 +4,7 @@ import RefField from "../RefField";
 import RQLTag from "../RQLTag";
 import SQLTag from "../SQLTag";
 import Table from "../Table";
+import { HKT, Kind, URIS } from "./HKT";
 
 // Array, Function, Date, ...
 export type StringMap = Record<string, any>;
@@ -70,17 +71,19 @@ export interface RefQLRows {
 export type RefMaker =
   (parent: Table, tag: RQLTag, as?: string, single?: boolean) => RefNode;
 
-export type RQLTagMaker =
-  <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => RQLTag<Params, Output> & Runnable<Params, Output>;
+export type ConvertPromise<F extends URIS, A = unknown> = (p: Promise<A>) => Kind<F, A>;
+
+export type Runnable<Params = unknown, Output = unknown> =
+  Params extends Record<string, never>
+    ? (params?: Params, querier?: Querier) => Output
+    : Params extends StringMap
+      ? (params: Params, querier?: Querier) => Output
+      : (params?: Params, querier?: Querier) => Output;
+
+export type RQLTagMaker<URI extends URIS = "Promise"> =
+  <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => RQLTag<Params, Output, URI> & Runnable<Params, ReturnType<ConvertPromise<URI, Output>>>;
 
 export type Ref = [
   Table & RQLTagMaker,
   RefMaker
 ];
-
-export type Runnable<Params = unknown, Output = unknown> =
-  Params extends Record<string, never>
-    ? (params?: Params, querier?: Querier) => Promise<Output>
-    : Params extends StringMap
-      ? (params: Params, querier?: Querier) => Promise<Output>
-      : (params?: Params, querier?: Querier) => Promise<Output>;

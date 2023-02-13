@@ -1,11 +1,12 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Querier, Ref, RQLTagMaker, RQLTagVariable, Runnable } from "../common/types";
+import { URIS } from "../common/HKT";
+import { ConvertPromise, Querier, Ref, RQLTagMaker, RQLTagVariable, Runnable } from "../common/types";
 import validateTable from "../common/validateTable";
 import { ASTNode } from "../nodes";
 import RQLTag from "../RQLTag";
 import Parser from "../RQLTag/Parser";
 
-interface Table {
+interface Table<URI extends URIS = "Promise"> {
   name: string;
   schema?: string;
   refs: Ref[];
@@ -28,7 +29,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   run
 });
 
-function Table(name: string, refs: Ref[] = [], defaultQuerier?: Querier): Table & RQLTagMaker {
+function Table<URI extends URIS = "Promise">(name: string, refs: Ref[] = [], defaultQuerier?: Querier, convertPromise?: ConvertPromise<URIS>) {
   validateTable (name);
 
   if (!Array.isArray (refs)) {
@@ -38,8 +39,8 @@ function Table(name: string, refs: Ref[] = [], defaultQuerier?: Querier): Table 
   const table = (<Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => {
     const parser = new Parser (strings.join ("$"), variables, table);
 
-    return RQLTag<Params, Output> (table, parser.nodes () as ASTNode<Params, Output>[], defaultQuerier);
-  }) as Table & RQLTagMaker;
+    return RQLTag<Params, Output, URI> (table, parser.nodes () as ASTNode<Params, Output>[], defaultQuerier, convertPromise as ConvertPromise<URI, Output>);
+  }) as Table<URI> & RQLTagMaker<URI>;
 
   Object.setPrototypeOf (table, prototype);
 
@@ -80,10 +81,6 @@ function equals(this: Table, other: Table) {
 
 Table.isTable = function (x: any): x is Table {
   return x != null && x[refqlType] === type;
-};
-
-export const createTableWithDefaultQuerier = (defaultQuerier: Querier) => (name: string, refs: Ref[] = []) => {
-  return Table (name, refs, defaultQuerier);
 };
 
 export default Table;

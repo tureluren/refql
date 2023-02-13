@@ -1,7 +1,8 @@
 import castAs from "../common/castAs";
-import { flConcat, flContramap, flMap, flPromap, refqlType } from "../common/consts";
+import { flConcat, refqlType } from "../common/consts";
+import { URIS } from "../common/HKT";
 import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows, Runnable, StringMap } from "../common/types";
+import { ConvertPromise, Querier, RefInfo, RefQLRows, Runnable, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
 import { all, ASTNode, Raw, RefNode, When } from "../nodes";
 import SQLTag from "../SQLTag";
@@ -23,23 +24,17 @@ interface Extra<Params = unknown, Output = unknown> {
   extra: SQLTag<Params, Output>;
 }
 
-interface RQLTag<Params = unknown, Output = unknown> {
+interface RQLTag<Params = unknown, Output = unknown, URI extends URIS = "Promise"> {
   table: Table;
   nodes: ASTNode<Params, Output>[];
   defaultQuerier?: Querier;
+  convertPromise?: ConvertPromise<URI, Output>;
   interpreted: InterpretedRQLTag<Params, Output>;
-  concat<Params2, Output2>(other: RQLTag<Params2, Output2>): RQLTag<Params & Params2, Output & Output2> & Runnable<Params & Params2, Output & Output2>;
+  concat<Params2, Output2>(other: RQLTag<Params2, Output2, URI>): RQLTag<Params & Params2, Output & Output2, URI> & Runnable<Params & Params2, ReturnType<ConvertPromise<URI, Output & Output2>>>;
   [flConcat]: RQLTag<Params, Output>["concat"];
-  contramap<Params2>(f: (p: Params) => Params2): RQLTag<Params2, Output> & Runnable<Params, Output>;
-  [flContramap]: RQLTag<Params, Output>["contramap"];
-  map<Output2>(f: (rows: Output) => Output2): RQLTag<Params, Output2> & Runnable<Params, Output2>;
-  [flMap]: RQLTag<Params, Output>["map"];
-  promap<Params2, Output2>(f: (p: Params) => Params2, g: (rows: Output) => Output2): RQLTag<Params2, Output2> & Runnable<Params2, Output2>;
-  [flPromap]: RQLTag<Params, Output>["promap"];
   interpret(): InterpretedRQLTag<Params, Output> & Extra<Params, Output>;
   compile(params: Params): [string, any[], Next<Params, Output>[]];
   aggregate(params: Params, querier: Querier): Promise<Output>;
-  run(params: Params, querier?: Querier): Promise<Output>;
 }
 
 const type = "refql/RQLTag";
@@ -49,37 +44,32 @@ const prototype = {
   [refqlType]: type,
   concat,
   [flConcat]: concat,
-  contramap: contramap,
-  [flContramap]: contramap,
-  map,
-  [flMap]: map,
-  promap,
-  [flPromap]: promap,
   interpret,
   compile,
-  aggregate,
-  run
+  aggregate
 };
 
-function RQLTag<Params, Output>(table: Table, nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier): RQLTag<Params, Output> & Runnable<Params, Output> {
+function RQLTag<Params, Output, URI extends URIS>(table: Table, nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<URI, Output>) {
+  const convert = convertPromise || (x => x);
+
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
     }
-    return tag.aggregate (params, (querier || defaultQuerier) as Querier);
-  }) as RQLTag<Params, Output> & Runnable<Params, Output>;
+    return convert (tag.aggregate (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
+  }) as RQLTag<Params, Output, URI> & Runnable<Params, ReturnType<ConvertPromise<URI, Output>>>;
 
   Object.setPrototypeOf (
     tag,
-    Object.assign (Object.create (Function.prototype), prototype, { table, nodes, defaultQuerier })
+    Object.assign (Object.create (Function.prototype), prototype, {
+      table,
+      nodes,
+      defaultQuerier,
+      convertPromise
+    })
   );
 
   return tag;
-}
-
-
-function run(this: RQLTag & Runnable, params: unknown, querier: Querier) {
-  return this (params, querier);
 }
 
 type Deep = { [tableId: string]: RefNode} & { nodes: ASTNode[]};
@@ -112,38 +102,9 @@ function concat(this: RQLTag, other: RQLTag) {
   return RQLTag (
     this.table,
     [...nodes, ...Object.values (refs)],
-    this.defaultQuerier
+    this.defaultQuerier,
+    this.convertPromise
   );
-}
-
-function map(this: RQLTag & Runnable, f: (rows: unknown) => unknown) {
-  let newTag = RQLTag (this.table, this.nodes, this.defaultQuerier);
-
-  const tag = (params?: unknown, querier?: Querier) => this (params, querier).then (f);
-
-  Object.setPrototypeOf (tag, newTag);
-
-  return tag;
-}
-
-function contramap(this: RQLTag & Runnable, f: (p: unknown) => unknown) {
-  let newTag = RQLTag (this.table, this.nodes, this.defaultQuerier);
-
-  const tag = (params?: unknown, querier?: Querier) => this (f (params), querier);
-
-  Object.setPrototypeOf (tag, newTag);
-
-  return tag;
-}
-
-function promap(this: RQLTag & Runnable, g: (p: unknown) => unknown, f: (rows: unknown) => unknown) {
-  let newTag = RQLTag (this.table, this.nodes, this.defaultQuerier);
-
-  const tag = (params?: unknown, querier?: Querier) => this (g (params), querier).then (f);
-
-  Object.setPrototypeOf (tag, newTag);
-
-  return tag;
 }
 
 const unsupported = unimplemented ("RQLTag");
