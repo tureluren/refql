@@ -63,7 +63,7 @@ function caseOf<Params, Output, Box extends Boxes>(this: BelongsToMany<Params, O
 
 type BelongsToManyInput = RefInput;
 
-export const belongsToMany = <Box extends Boxes>(table: string, input: BelongsToManyInput = {}): Ref<Box> => {
+export const belongsToMany = <Box extends Boxes = "Promise">(table: string, input: BelongsToManyInput = {}): Ref<Box> => {
   validateTable (table);
 
   validateRefInput (input);

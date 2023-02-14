@@ -47,9 +47,9 @@ export const parse = <Params, Output, Box extends Boxes>(strings: TemplateString
   return nodes;
 };
 
-const sql = <Params, Output, Box extends Boxes> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, Box>[]) => {
+const sql = <Params = unknown, Output = unknown, Box extends Boxes = "Promise"> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, Box>[]) => {
   const nodes = parse<Params, Output, Box> (strings, variables);
-  return SQLTag<Params, Output, Box> (nodes);
+  return SQLTag (nodes);
 };
 
 export default sql;

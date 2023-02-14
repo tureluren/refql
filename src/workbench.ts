@@ -1,6 +1,6 @@
 import { Pool } from "pg";
-import { ConvertPromise, Ref, SQLTagVariable } from "./common/types";
-import { belongsTo, belongsToMany, hasMany, hasOne, Raw, Values, Values2D, When } from "./nodes";
+import { Ref, SQLTagVariable } from "./common/types";
+import { Raw } from "./nodes";
 import SQLTag from "./SQLTag";
 import sql, { parse } from "./SQLTag/sql";
 import Table from "./Table";
@@ -62,7 +62,6 @@ const orderedTeamPlayers = Table ("Player")<{ team_id: number; order_by: string 
 //   }
 // ]
 
-type Box = "Task";
 
 declare module "./common/BoxRegistry" {
   interface BoxRegistry<Output> {
@@ -94,13 +93,13 @@ const promiseToTask = <Output>(p: Promise<Output>) =>
   new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
 
-const sql2 = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
-  const nodes = parse (strings, variables);
-  return SQLTag<Params, Output, Box> (nodes, querier, promiseToTask);
+const sql2 = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
+  const nodes = parse <Params, Output, "Task"> (strings, variables);
+  return SQLTag (nodes, querier, promiseToTask);
 };
 
-const Table2 = (name: string, refs: Ref[] = []) => {
-  return Table<Box> (name, refs, querier, promiseToTask);
+const Table2 = (name: string, refs: Ref<"Task">[] = []) => {
+  return Table<"Task"> (name, refs, querier, promiseToTask);
 };
 
 const taggie = sql2<{}, {id: number; first_name: string}[]>`

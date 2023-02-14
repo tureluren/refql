@@ -1,10 +1,9 @@
-import { refqlType } from "../common/consts";
 import { Boxes } from "../common/BoxRegistry";
+import { refqlType } from "../common/consts";
 import { Ref, RefInfo, RefInput, RefMaker, RefQLRows, StringMap } from "../common/types";
 import validateTable from "../common/validateTable";
 import RefField from "../RefField";
 import RQLTag from "../RQLTag";
-import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import ASTNode, { astNodePrototype } from "./ASTNode";
@@ -103,7 +102,7 @@ export const validateRefInput = (input: RefInput) => {
   }
 };
 
-const makeBelongsTo = <Box extends Boxes>(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string) => {
+const makeBelongsTo = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string) => {
   as = as || input.as || child.name;
   const refOf = RefField.refFieldOf (as);
 
@@ -119,7 +118,7 @@ const makeBelongsTo = <Box extends Boxes>(child: Table<Box>, input: RefNodeInput
   );
 };
 
-const makeHasMany = <Box extends Boxes>(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string, single?: boolean) => {
+const makeHasMany = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string, single?: boolean) => {
   as = as || input.as || `${child.name}s`;
   const refOf = RefField.refFieldOf (as);
 
@@ -135,7 +134,7 @@ const makeHasMany = <Box extends Boxes>(child: Table<Box>, input: RefNodeInput) 
   );
 };
 
-const makeHasOne = <Box extends Boxes>(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string) => {
+const makeHasOne = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string) => {
   as = as || input.as || child.name;
   const refOf = RefField.refFieldOf (as);
 

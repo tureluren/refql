@@ -2,7 +2,7 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import RQLTag from ".";
-import { flConcat, flContramap, flEmpty, flMap, flPromap } from "../common/consts";
+import { flConcat, flEmpty } from "../common/consts";
 import { Querier } from "../common/types";
 import {
   all, BelongsToMany, Identifier, Literal, Raw,
@@ -172,15 +172,15 @@ describe ("RQLTag type", () => {
     expect (res.compile ({})).toEqual (res2.compile ({}));
   });
 
-  // test ("Monoid", () => {
-  //   const tag = Player`id last_name`;
+  test ("Monoid", () => {
+    const tag = Player`id last_name`;
 
-  //   const res = tag[flConcat] (Player.empty ());
-  //   const res2 = Player[flEmpty] ()[flConcat] (tag);
+    const res = tag[flConcat] (Player.empty ());
+    const res2 = Player[flEmpty] ()[flConcat] (tag);
 
-  //   expect (res.compile ({})).toEqual (tag.compile ({}));
-  //   expect (res2.compile ({})).toEqual (tag.compile ({}));
-  // });
+      expect (res.compile ({})).toEqual (tag.compile ({}));
+      expect (res2.compile ({})).toEqual (tag.compile ({}));
+  });
 
   test ("aggregate", async () => {
     const tag = Player<{}, any>`

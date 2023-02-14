@@ -30,7 +30,7 @@ interface RQLTag<Params, Output, Box extends Boxes> {
   defaultQuerier?: Querier;
   convertPromise?: ConvertPromise<Box, Output>;
   interpreted: InterpretedRQLTag<Params, Output, Box>;
-  concat<Params2, Output2>(other: RQLTag<Params2, Output2, Box>): RQLTag<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
+  concat<Params2, Output2, Box2 extends Boxes>(other: RQLTag<Params2, Output2, Box2>): RQLTag<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
   [flConcat]: RQLTag<Params, Output, Box>["concat"];
   interpret(): InterpretedRQLTag<Params, Output, Box> & Extra<Params, Output, Box>;
   compile(params: Params): [string, any[], Next<Params, Output, Box>[]];

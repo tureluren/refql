@@ -1,6 +1,6 @@
 import RQLTag from ".";
 import { Boxes } from "../common/BoxRegistry";
-import { RQLTagVariable } from "../common/types";
+import { Ref, RQLTagVariable } from "../common/types";
 import {
   all, ASTNode, Call, Identifier,
   isASTNode, Literal, StringLiteral, Variable
@@ -43,7 +43,7 @@ class Parser<Params, Output, Box extends Boxes> {
       return tag.nodes;
     }
 
-    const refs = this.table.refs.filter (([t]) => {
+    const refs: Ref<Box>[] = this.table.refs.filter (([t]) => {
       return t.equals (tag.table);
     });
 

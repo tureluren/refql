@@ -1,15 +1,14 @@
 import RefField from "./RefField";
 import RQLTag from "./RQLTag";
 import SQLTag from "./SQLTag";
-import sql, { createSQLWithDefaultQuerier } from "./SQLTag/sql";
-import Table, { createTableWithDefaultQuerier } from "./Table";
+import sql, { parse } from "./SQLTag/sql";
+import Table from "./Table";
 
 export * from "./nodes";
 export * from "./common/types";
 
 export {
-  createSQLWithDefaultQuerier,
-  createTableWithDefaultQuerier,
+  parse,
   RefField,
   RQLTag,
   sql,

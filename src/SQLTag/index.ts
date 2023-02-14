@@ -1,5 +1,5 @@
-import { flConcat, refqlType } from "../common/consts";
 import { Boxes } from "../common/BoxRegistry";
+import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import { ConvertPromise, Querier, Runnable, TagFunctionVariable } from "../common/types";
 import unimplemented from "../common/unimplemented";
@@ -26,7 +26,7 @@ interface SQLTag<Params, Output, Box extends Boxes> {
   interpreted?: InterpretedSQLTag<Params, Box>;
   defaultQuerier?: Querier;
   convertPromise?: ConvertPromise<Box, Output>;
-  concat<Params2, Output2>(other: SQLTag<Params2, Output2, Box>): SQLTag<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
+  concat<Params2, Output2, Box2 extends Boxes>(other: SQLTag<Params2, Output2, Box2>): SQLTag<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
   join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2, Box>): SQLTag<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
   [flConcat]: SQLTag<Params, Output, Box>["concat"];
   interpret(): InterpretedSQLTag<Params, Box>;
