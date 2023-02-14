@@ -63,34 +63,7 @@ const orderedTeamPlayers = Table ("Player")<{ team_id: number; order_by: string 
 // ]
 
 
-declare module "./common/BoxRegistry" {
-  interface BoxRegistry<Output> {
-    readonly Task: Task<Output>;
-  }
-}
 
-class Task<T> {
-  fork: (reject: (x: any) => void, resolve: (x: T) => void) => void;
-
-  constructor(fork: (reject: (x: any) => void, resolve: (x: T) => void) => void) {
-    this.fork = fork;
-  }
-
-  static rejected<T>(x: any): Task<T> {
-    return new Task ((reject, _) => reject (x));
-  }
-
-  static of<T>(x: T): Task<T> {
-    return new Task ((_, resolve) => resolve (x));
-  }
-
-  map(fn: (x: T) => any): Task<any> {
-    return new Task ((reject, resolve) => this.fork (reject, res => resolve (fn (res))));
-  }
-}
-
-const promiseToTask = <Output>(p: Promise<Output>) =>
-  new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
 
 const sql2 = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {

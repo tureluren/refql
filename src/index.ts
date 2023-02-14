@@ -6,6 +6,7 @@ import Table from "./Table";
 
 export * from "./nodes";
 export * from "./common/types";
+export * from "./common/BoxRegistry";
 
 export {
   parse,
