@@ -1,7 +1,8 @@
+import { Boxes } from "../common/BoxRegistry";
 import { StringMap } from "../common/types";
 import Literal, { literalPrototype } from "./Literal";
 
-interface StringLiteral extends Literal {
+interface StringLiteral<Params, Output, Box extends Boxes> extends Literal<Params, Output, Box> {
   x: string;
 }
 
@@ -10,8 +11,8 @@ const prototype = Object.assign ({}, literalPrototype, {
   caseOf
 });
 
-function StringLiteral(x: string, as?: string, cast?: string) {
-  let stringLiteral: StringLiteral = Object.create (prototype);
+function StringLiteral<Params, Output, Box extends Boxes>(x: string, as?: string, cast?: string) {
+  let stringLiteral: StringLiteral<Params, Output, Box> = Object.create (prototype);
 
   stringLiteral.x = x;
   stringLiteral.as = as;
@@ -20,7 +21,7 @@ function StringLiteral(x: string, as?: string, cast?: string) {
   return stringLiteral;
 }
 
-function caseOf(this: StringLiteral, structureMap: StringMap) {
+function caseOf<Params, Output, Box extends Boxes>(this: StringLiteral<Params, Output, Box>, structureMap: StringMap) {
   return structureMap.StringLiteral (this.x, this.as, this.cast);
 }
 

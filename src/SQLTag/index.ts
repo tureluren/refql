@@ -1,37 +1,36 @@
-import { flConcat, flEmpty, refqlType } from "../common/consts";
-import { URIS } from "../common/HKT";
+import { flConcat, refqlType } from "../common/consts";
+import { Boxes } from "../common/BoxRegistry";
 import isEmptyTag from "../common/isEmptyTag";
 import { ConvertPromise, Querier, Runnable, TagFunctionVariable } from "../common/types";
 import unimplemented from "../common/unimplemented";
 import { ASTNode, Raw, When } from "../nodes";
 import Table from "../Table";
-import sql from "./sql";
 
-type InterpretedString<Params = unknown> = {
-  pred: TagFunctionVariable<Params, boolean>;
-  run: (params: Params, idx: number, table?: Table) => [string, number];
+type InterpretedString<Params, Box extends Boxes> = {
+  pred: TagFunctionVariable<Params, Box, boolean>;
+  run: (params: Params, idx: number, table?: Table<Box>) => [string, number];
 };
 
-type InterpretedValue<Params = unknown> = {
-  pred: TagFunctionVariable<Params, boolean>;
-  run: TagFunctionVariable<Params>;
+type InterpretedValue<Params, Box extends Boxes> = {
+  pred: TagFunctionVariable<Params, Box, boolean>;
+  run: TagFunctionVariable<Params, Box>;
 };
 
-interface InterpretedSQLTag<Params = unknown> {
-  strings: InterpretedString<Params>[];
-  values: InterpretedValue<Params>[];
+interface InterpretedSQLTag<Params, Box extends Boxes> {
+  strings: InterpretedString<Params, Box>[];
+  values: InterpretedValue<Params, Box>[];
 }
 
-interface SQLTag<Params = unknown, Output = unknown, URI extends URIS = "Promise"> {
-  nodes: ASTNode<Params, Output>[];
-  interpreted?: InterpretedSQLTag<Params>;
+interface SQLTag<Params, Output, Box extends Boxes> {
+  nodes: ASTNode<Params, Output, Box>[];
+  interpreted?: InterpretedSQLTag<Params, Box>;
   defaultQuerier?: Querier;
-  convertPromise?: ConvertPromise<URI, Output>;
-  concat<Params2, Output2>(other: SQLTag<Params2, Output2, URI>): SQLTag<Params & Params2, Output & Output2, URI> & Runnable<Params & Params2, ReturnType<ConvertPromise<URI, Output & Output2>>>;
-  join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2, URI>): SQLTag<Params & Params2, Output & Output2, URI> & Runnable<Params & Params2, ReturnType<ConvertPromise<URI, Output & Output2>>>;
-  [flConcat]: SQLTag<Params, Output>["concat"];
-  interpret(): InterpretedSQLTag<Params>;
-  compile(params: Params, table?: Table): [string, any[]];
+  convertPromise?: ConvertPromise<Box, Output>;
+  concat<Params2, Output2>(other: SQLTag<Params2, Output2, Box>): SQLTag<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
+  join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2, Box>): SQLTag<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
+  [flConcat]: SQLTag<Params, Output, Box>["concat"];
+  interpret(): InterpretedSQLTag<Params, Box>;
+  compile(params: Params, table?: Table<Box>): [string, any[]];
 }
 
 const type = "refql/SQLTag";
@@ -46,7 +45,7 @@ const prototype = {
   compile
 };
 
-function SQLTag<Params, Output, URI extends URIS>(nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<URI, Output>) {
+function SQLTag<Params, Output, Box extends Boxes>(nodes: ASTNode<Params, Output, Box>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<Box, Output>) {
   const convert = convertPromise || (x => x);
 
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
@@ -57,7 +56,7 @@ function SQLTag<Params, Output, URI extends URIS>(nodes: ASTNode<Params, Output>
     const [query, values] = tag.compile (params);
 
     return convert ((querier || defaultQuerier as Querier) (query, values) as Promise<Output>);
-  }) as SQLTag<Params, Output, URI> & Runnable<Params, ReturnType<ConvertPromise<URI, Output>>>;
+  }) as SQLTag<Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
 
   Object.setPrototypeOf (
     tag,
@@ -71,18 +70,18 @@ function SQLTag<Params, Output, URI extends URIS>(nodes: ASTNode<Params, Output>
   return tag;
 }
 
-function join(this: SQLTag, delimiter: string, other: SQLTag) {
+function join<Params, Output, Box extends Boxes>(this: SQLTag<Params, Output, Box>, delimiter: string, other: SQLTag<Params, Output, Box>) {
   if (isEmptyTag (this)) return other;
   if (isEmptyTag (other)) return this;
 
   return SQLTag (
-    this.nodes.concat (Raw (delimiter), ...other.nodes),
+    this.nodes.concat (Raw<Params, Output, Box> (delimiter), ...other.nodes),
     this.defaultQuerier,
     this.convertPromise
   );
 }
 
-function concat(this: SQLTag, other: SQLTag) {
+function concat<Params, Output, Box extends Boxes>(this: SQLTag<Params, Output, Box>, other: SQLTag<Params, Output, Box>) {
   return this.join (" ", other);
 }
 
@@ -90,9 +89,9 @@ const unsupported = unimplemented ("SQLTag");
 
 const truePred = () => true;
 
-function interpret(this: SQLTag): InterpretedSQLTag {
-  const strings = [] as InterpretedString[],
-    values = [] as InterpretedValue[];
+function interpret<Params, Output, Box extends Boxes>(this: SQLTag<Params, Output, Box>): InterpretedSQLTag<Params, Box> {
+  const strings = [] as InterpretedString<Params, Box>[],
+    values = [] as InterpretedValue<Params, Box>[];
 
   for (const [idx, node] of this.nodes.entries ()) {
     node.caseOf<void> ({
@@ -102,7 +101,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
           pred: truePred,
           run: (p, _i, t) => {
             let s = run (p, t);
-            if (When.isWhen (nextNode) && !nextNode.pred (p, t)) {
+            if (When.isWhen<Params, Output, Box> (nextNode) && !nextNode.pred (p, t)) {
               s = s.trimEnd ();
             }
             return [s, 0];
@@ -164,12 +163,12 @@ function interpret(this: SQLTag): InterpretedSQLTag {
         const { strings: strings2, values: values2 } = tag.interpret ();
 
         strings.push (...strings2.map (({ run, pred }) => ({
-          pred: (p: unknown, t?: Table) => pred2 (p, t) && pred (p, t),
+          pred: (p: Params, t?: Table<Box>) => pred2 (p, t) && pred (p, t),
           run
         })));
 
         values.push (...values2.map (({ run, pred }) => ({
-          pred: (p: unknown, t?: Table) => pred2 (p, t) && pred (p, t),
+          pred: (p: Params, t?: Table<Box>) => pred2 (p, t) && pred (p, t),
           run
         })));
       },
@@ -187,7 +186,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
   return { strings, values };
 }
 
-function compile(this: SQLTag, params: unknown, table?: Table) {
+function compile<Params, Output, Box extends Boxes>(this: SQLTag<Params, Output, Box>, params: Params, table?: Table<Box>) {
   if (!this.interpreted) {
     this.interpreted = this.interpret ();
   }
@@ -205,15 +204,11 @@ function compile(this: SQLTag, params: unknown, table?: Table) {
 
     values
       .filter (({ pred }) => pred (params, table))
-      .map (({ run }) => run (params, table as Table)).flat (1)
+      .map (({ run }) => run (params, table)).flat (1)
   ];
 }
 
-SQLTag.empty = SQLTag[flEmpty] = function () {
-  return sql``;
-} as <Params, Output>() => SQLTag<Params, Output>;
-
-SQLTag.isSQLTag = function <Params, Output> (x: any): x is SQLTag<Params, Output> {
+SQLTag.isSQLTag = function <Params, Output, Box extends Boxes> (x: any): x is SQLTag<Params, Output, Box> {
   return x != null && x[refqlType] === type;
 };
 

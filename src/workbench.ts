@@ -4,6 +4,7 @@ import { belongsTo, belongsToMany, hasMany, hasOne, Raw, Values, Values2D, When 
 import SQLTag from "./SQLTag";
 import sql, { parse } from "./SQLTag/sql";
 import Table from "./Table";
+import { Player } from "./test/tables";
 
 const pool = new Pool ({
   user: "test",
@@ -61,11 +62,11 @@ const orderedTeamPlayers = Table ("Player")<{ team_id: number; order_by: string 
 //   }
 // ]
 
-type URI = "Task";
+type Box = "Task";
 
-declare module "./common/HKT" {
-  interface URItoKind<A> {
-    readonly Task: Task<A>;
+declare module "./common/BoxRegistry" {
+  interface BoxRegistry<Output> {
+    readonly Task: Task<Output>;
   }
 }
 
@@ -95,11 +96,11 @@ const promiseToTask = <Output>(p: Promise<Output>) =>
 
 const sql2 = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
   const nodes = parse (strings, variables);
-  return SQLTag<Params, Output, URI> (nodes, querier, promiseToTask);
+  return SQLTag<Params, Output, Box> (nodes, querier, promiseToTask);
 };
 
 const Table2 = (name: string, refs: Ref[] = []) => {
-  return Table<URI> (name, refs, querier, promiseToTask);
+  return Table<Box> (name, refs, querier, promiseToTask);
 };
 
 const taggie = sql2<{}, {id: number; first_name: string}[]>`
@@ -123,6 +124,7 @@ const taggie3 = Player<{}, {id: number; first_name: string}[]>`
 const taggie4 = Player<{}, {last_name: string}[]>`
   id
   first_name
+  ${Raw ((p, t) => t)}
 `;
 
 const res1 = taggie3.concat (taggie4) ({}).map (res => res[0]);
@@ -135,3 +137,14 @@ const res1 = taggie3.concat (taggie4) ({}).map (res => res[0]);
 // const buh: test = Promise.resolve ([{ id: 1, first_name: "ronny", last_name: "Tureluren" }]);
 
 // buh.then (res => res);
+
+// #readme
+// table setoid
+// Raw functor
+// RQLTag monoid
+// defaults
+
+const rawPart = Raw ("test");
+
+const sqlellie = sql<{}, Player[]>`
+`;

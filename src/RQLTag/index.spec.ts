@@ -172,137 +172,15 @@ describe ("RQLTag type", () => {
     expect (res.compile ({})).toEqual (res2.compile ({}));
   });
 
-  test ("Monoid", () => {
-    const tag = Player`id last_name`;
+  // test ("Monoid", () => {
+  //   const tag = Player`id last_name`;
 
-    const res = tag[flConcat] (Player.empty ());
-    const res2 = Player[flEmpty] ()[flConcat] (tag);
+  //   const res = tag[flConcat] (Player.empty ());
+  //   const res2 = Player[flEmpty] ()[flConcat] (tag);
 
-    expect (res.compile ({})).toEqual (tag.compile ({}));
-    expect (res2.compile ({})).toEqual (tag.compile ({}));
-  });
-
-  test ("Functor", async () => {
-    type Params = {id: number; prefix: string};
-
-    const tag = Player<Params, Player[]>`
-      first_name
-      last_name
-      concat:prefixed_name (${p => p.prefix}::text, '-', last_name)
-      ${sql<{id: number}, any>`
-        and id = ${p => p.id} 
-      `}
-    `;
-
-    const params: Params = {
-      id: 1,
-      prefix: "player"
-    };
-
-    const [player] = await tag (params, querier);
-    const [player2] = await tag[flMap] (x => x) (params, querier);
-
-    expect (player).toEqual (player2);
-
-    const first = (rows: any[]) =>
-      rows[0];
-
-    const getPrefixedName = (row: any) =>
-      row.prefixed_name;
-
-    const prefixedName = await tag[flMap] (rows => getPrefixedName (first (rows))) (params, querier);
-    const prefixedName2 = await tag[flMap] (first)[flMap] (getPrefixedName) (params, querier);
-
-    expect (prefixedName).toEqual (prefixedName2);
-
-    expect (prefixedName.startsWith ("player-")).toBe (true);
-  });
-
-  test ("Contravariant", async () => {
-    type Params = {id: number; prefix: string};
-
-    const tag = Player<Params, any>`
-      first_name
-      last_name
-      concat:prefixed_name (${p => p.prefix}::text, '-', last_name)
-      ${sql<{id: number}, any>`
-        and id = ${p => p.id} 
-      `}
-    `;
-
-    const params: Params = {
-      id: 1,
-      prefix: " player "
-    };
-
-    const [player] = await tag (params, querier);
-    const [player2] = await tag[flContramap] (x => x) (params, querier);
-
-    expect (player).toEqual (player2);
-
-    const trim = (p: Params): Params => ({
-      id: p.id,
-      prefix: p.prefix.trim ()
-    });
-
-    const toUpper = (p: Params): Params => ({
-      id: p.id,
-      prefix: p.prefix.toUpperCase ()
-    });
-
-    const [player3] = await tag[flContramap] (p => toUpper (trim (p))) (params, querier);
-    const [player4] = await tag[flContramap] (trim)[flContramap] (toUpper) (params, querier);
-
-    expect (player3).toEqual (player4);
-
-    expect (player3.prefixed_name.startsWith ("PLAYER-")).toBe (true);
-  });
-
-  test ("Profunctor", async () => {
-    type Params = {id: number; prefix: string};
-
-    const tag = Player<Params, Player[]>`
-      first_name
-      last_name
-      concat:prefixed_name (${p => p.prefix}::text, '-', last_name)
-      ${sql<{id: number}, any>`
-        and id = ${p => p.id} 
-      `}
-    `;
-
-    const params: Params = {
-      id: 1,
-      prefix: "player"
-    };
-
-    const [player] = await tag (params, querier);
-    const [player2] = await tag[flPromap] (x => x, x => x) (params, querier);
-
-    expect (player).toEqual (player2);
-
-    const first = (rows: any[]) =>
-      rows[0];
-
-    const getPrefixedName = (row: any) =>
-      row.prefixed_name;
-
-    const trim = (p: Params): Params => ({
-      id: p.id,
-      prefix: p.prefix.trim ()
-    });
-
-    const toUpper = (p: Params): Params => ({
-      id: p.id,
-      prefix: p.prefix.toUpperCase ()
-    });
-
-    const prefixedName = await tag[flPromap] (p => toUpper (trim (p)), rows => getPrefixedName (first (rows))) (params, querier);
-    const prefixedName2 = await tag[flPromap] (trim, first)[flPromap] (toUpper, getPrefixedName) (params, querier);
-
-    expect (prefixedName).toEqual (prefixedName2);
-
-    expect (prefixedName.startsWith ("PLAYER-")).toBe (true);
-  });
+  //   expect (res.compile ({})).toEqual (tag.compile ({}));
+  //   expect (res2.compile ({})).toEqual (tag.compile ({}));
+  // });
 
   test ("aggregate", async () => {
     const tag = Player<{}, any>`

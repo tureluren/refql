@@ -1,12 +1,13 @@
 import SQLTag from ".";
+import { Boxes } from "../common/BoxRegistry";
 import { SQLTagVariable } from "../common/types";
 import { ASTNode, Raw, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 
-export const parse = <Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output>[]) => {
-  const nodes = [] as ASTNode<Params, Output>[];
+export const parse = <Params, Output, Box extends Boxes>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output, Boxes>[]) => {
+  const nodes = [] as ASTNode<Params, Output, Box>[];
 
   for (let [idx, string] of strings.entries ()) {
     const x = variables[idx];
@@ -25,30 +26,30 @@ export const parse = <Params, Output>(strings: TemplateStringsArray, variables: 
       }
 
       if (string) {
-        nodes.push (Raw (string));
+        nodes.push (Raw<Params, Output, Box> (string));
       }
     }
 
     if (!x) {
-    } else if (SQLTag.isSQLTag<Params, Output> (x)) {
+    } else if (SQLTag.isSQLTag<Params, Output, Box> (x)) {
       nodes.push (...x.nodes);
     } else if (RQLTag.isRQLTag (x)) {
       throw new Error ("U can't use RQLTags inside SQLTags");
     } else if (Table.isTable (x)) {
-      nodes.push (Raw (x.name));
-    } else if (isASTNode<Params, Output> (x)) {
+      nodes.push (Raw<Params, Output, Box> (x.name));
+    } else if (isASTNode<Params, Output, Box> (x)) {
       nodes.push (x);
     } else {
-      nodes.push (Value (x));
+      nodes.push (Value<Params, Output, Box> (x));
     }
   }
 
   return nodes;
 };
 
-const sql = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) => {
-  const nodes = parse (strings, variables);
-  return SQLTag<Params, Output, "Promise"> (nodes);
+const sql = <Params, Output, Box extends Boxes> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, Box>[]) => {
+  const nodes = parse<Params, Output, Box> (strings, variables);
+  return SQLTag<Params, Output, Box> (nodes);
 };
 
 export default sql;

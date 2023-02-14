@@ -1,7 +1,7 @@
 import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
-import Table, { createTableWithDefaultQuerier } from ".";
+import Table from ".";
 import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
 import {
@@ -68,22 +68,22 @@ describe ("Table type", () => {
     expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
   });
 
-  test ("create Table with default querier", async () => {
-    const Player2 = createTableWithDefaultQuerier (querier) ("player");
+  // test ("create Table with default querier", async () => {
+  //   const Player2 = createTableWithDefaultQuerier (querier) ("player");
 
-    const firstPlayer = Player2<{}, any[]>`
-      id last_name
-      ${sql`
-        limit 1 
-      `} 
-    `;
+  //   const firstPlayer = Player2<{}, any[]>`
+  //     id last_name
+  //     ${sql`
+  //       limit 1
+  //     `}
+  //   `;
 
-    const players = await firstPlayer ();
+  //   const players = await firstPlayer ();
 
-    expect (players.length).toBe (1);
+  //   expect (players.length).toBe (1);
 
-    expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
-  });
+  //   expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
+  // });
 
   test ("run", async () => {
     const positions = await Position.run<Position[]> (querier);

@@ -1,12 +1,13 @@
 import { flMap, refqlType } from "../common/consts";
+import { Boxes } from "../common/BoxRegistry";
 import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
 import Table from "../Table";
 
-interface Raw<Params = unknown> extends ASTNode<Params> {
-  run: TagFunctionVariable<Params, string>;
-  map(f: (x: ValueType) => ValueType): Raw<Params>;
-  [flMap]: Raw<Params>["map"];
+interface Raw<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box> {
+  run: TagFunctionVariable<Params, Box, string>;
+  map(f: (x: ValueType) => ValueType): Raw<Params, Output, Box>;
+  [flMap]: Raw<Params, Output, Box>["map"];
 }
 
 const type = "refql/Raw";
@@ -19,8 +20,8 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Raw<Params>(run: ValueType | TagFunctionVariable<Params>) {
-  let raw: Raw<Params> = Object.create (prototype);
+function Raw<Params, Output, Box extends Boxes>(run: ValueType | TagFunctionVariable<Params, Box>) {
+  let raw: Raw<Params, Output, Box> = Object.create (prototype);
 
   raw.run = (p, t) => String ((
     typeof run === "function" && !Table.isTable (run) ? run : () => run
@@ -29,17 +30,17 @@ function Raw<Params>(run: ValueType | TagFunctionVariable<Params>) {
   return raw;
 }
 
-function map(this: Raw, f: (x: ValueType) => ValueType) {
-  return Raw ((p, t) => {
+function map<Params, Output, Box extends Boxes>(this: Raw<Params, Output, Box>, f: (x: ValueType) => ValueType) {
+  return Raw<Params, Output, Box> ((p, t) => {
     return f (this.run (p, t));
   });
 }
 
-function caseOf(this: Raw, structureMap: StringMap) {
+function caseOf<Params, Output, Box extends Boxes>(this: Raw<Params, Output, Box>, structureMap: StringMap) {
   return structureMap.Raw (this.run);
 }
 
-Raw.isRaw = function<Params> (x: any): x is Raw<Params> {
+Raw.isRaw = function<Params, Output, Box extends Boxes> (x: any): x is Raw<Params, Output, Box> {
   return x != null && x[refqlType] === type;
 };
 

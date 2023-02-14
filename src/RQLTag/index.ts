@@ -1,39 +1,39 @@
 import castAs from "../common/castAs";
 import { flConcat, refqlType } from "../common/consts";
-import { URIS } from "../common/HKT";
+import { Boxes } from "../common/BoxRegistry";
 import joinMembers from "../common/joinMembers";
-import { ConvertPromise, Querier, RefInfo, RefQLRows, Runnable, StringMap } from "../common/types";
+import { ConvertPromise, Querier, RefInfo, RefQLRows, Runnable } from "../common/types";
 import unimplemented from "../common/unimplemented";
 import { all, ASTNode, Raw, RefNode, When } from "../nodes";
 import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 
-export interface Next<Params = unknown, Output = unknown> {
-  tag: RQLTag<Params & RefQLRows, Output>;
+export interface Next<Params, Output, Box extends Boxes> {
+  tag: RQLTag<Params & RefQLRows, Output, Box>;
   link: [string, string];
   single: boolean;
 }
 
-interface InterpretedRQLTag<Params = unknown, Output = unknown> {
-  tag: SQLTag<Params, Output>;
-  next: Next<Params, Output>[];
+interface InterpretedRQLTag<Params, Output, Box extends Boxes> {
+  tag: SQLTag<Params, Output, Box>;
+  next: Next<Params, Output, Box>[];
 }
 
-interface Extra<Params = unknown, Output = unknown> {
-  extra: SQLTag<Params, Output>;
+interface Extra<Params, Output, Box extends Boxes> {
+  extra: SQLTag<Params, Output, Box>;
 }
 
-interface RQLTag<Params = unknown, Output = unknown, URI extends URIS = "Promise"> {
-  table: Table;
-  nodes: ASTNode<Params, Output>[];
+interface RQLTag<Params, Output, Box extends Boxes> {
+  table: Table<Box>;
+  nodes: ASTNode<Params, Output, Box>[];
   defaultQuerier?: Querier;
-  convertPromise?: ConvertPromise<URI, Output>;
-  interpreted: InterpretedRQLTag<Params, Output>;
-  concat<Params2, Output2>(other: RQLTag<Params2, Output2, URI>): RQLTag<Params & Params2, Output & Output2, URI> & Runnable<Params & Params2, ReturnType<ConvertPromise<URI, Output & Output2>>>;
-  [flConcat]: RQLTag<Params, Output>["concat"];
-  interpret(): InterpretedRQLTag<Params, Output> & Extra<Params, Output>;
-  compile(params: Params): [string, any[], Next<Params, Output>[]];
+  convertPromise?: ConvertPromise<Box, Output>;
+  interpreted: InterpretedRQLTag<Params, Output, Box>;
+  concat<Params2, Output2>(other: RQLTag<Params2, Output2, Box>): RQLTag<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
+  [flConcat]: RQLTag<Params, Output, Box>["concat"];
+  interpret(): InterpretedRQLTag<Params, Output, Box> & Extra<Params, Output, Box>;
+  compile(params: Params): [string, any[], Next<Params, Output, Box>[]];
   aggregate(params: Params, querier: Querier): Promise<Output>;
 }
 
@@ -49,7 +49,7 @@ const prototype = {
   aggregate
 };
 
-function RQLTag<Params, Output, URI extends URIS>(table: Table, nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<URI, Output>) {
+function RQLTag<Params, Output, Box extends Boxes>(table: Table<Box>, nodes: ASTNode<Params, Output, Box>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<Box, Output>) {
   const convert = convertPromise || (x => x);
 
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
@@ -57,7 +57,7 @@ function RQLTag<Params, Output, URI extends URIS>(table: Table, nodes: ASTNode<P
       throw new Error ("There was no Querier provided");
     }
     return convert (tag.aggregate (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
-  }) as RQLTag<Params, Output, URI> & Runnable<Params, ReturnType<ConvertPromise<URI, Output>>>;
+  }) as RQLTag<Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
 
   Object.setPrototypeOf (
     tag,
@@ -72,11 +72,11 @@ function RQLTag<Params, Output, URI extends URIS>(table: Table, nodes: ASTNode<P
   return tag;
 }
 
-type Deep = { [tableId: string]: RefNode} & { nodes: ASTNode[]};
+type Deep<Params, Output, Box extends Boxes> = { [tableId: string]: RefNode<Params, Output, Box>} & { nodes: ASTNode<Params, Output, Box>[]};
 
-const concatDeep = (nodes: ASTNode[]): Deep => {
+const concatDeep = <Params, Output, Box extends Boxes>(nodes: ASTNode<Params, Output, Box>[]): Deep<Params, Output, Box> => {
   return nodes.reduce ((acc, node) => {
-    if (RefNode.isRefNode (node)) {
+    if (RefNode.isRefNode<Params, Output, Box> (node)) {
       const { table } = node.tag;
       const id = table.toString ();
 
@@ -89,10 +89,10 @@ const concatDeep = (nodes: ASTNode[]): Deep => {
       acc.nodes.push (node);
     }
     return acc;
-  }, { nodes: [] as ASTNode[] } as Deep);
+  }, { nodes: [] as ASTNode<Params, Output, Box>[] } as Deep<Params, Output, Box>);
 };
 
-function concat(this: RQLTag, other: RQLTag) {
+function concat<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output, Box>, other: RQLTag<Params, Output, Box>) {
   if (!this.table.equals (other.table)) {
     throw new Error ("U can't concat RQLTags that come from different tables");
   }
@@ -109,14 +109,14 @@ function concat(this: RQLTag, other: RQLTag) {
 
 const unsupported = unimplemented ("RQLTag");
 
-function interpret(this: RQLTag): InterpretedRQLTag & Extra {
+function interpret<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output, Box>): InterpretedRQLTag<Params, Output, Box> & Extra<Params, Output, Box> {
   const { nodes, table } = this,
-    next = [] as Next[],
-    members = [] as (Raw | SQLTag)[];
+    next = [] as Next<Params, Output, Box>[],
+    members = [] as (Raw<Params, Output, Box> | SQLTag<Params, Output, Box>)[];
 
-  let extra = SQLTag.empty ();
+  let extra = sql<Params, Output, Box>``;
 
-  const caseOfRef = (tag: RQLTag<RefQLRows>, info: RefInfo, single: boolean) => {
+  const caseOfRef = (tag: RQLTag<Params & RefQLRows, Output, Box>, info: RefInfo<Box>, single: boolean) => {
     members.push (Raw (info.lRef));
 
     next.push ({ tag, link: [info.as, info.lRef.as], single });
@@ -142,9 +142,9 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
         );
       },
       Variable: (x, as, cast) => {
-        if (SQLTag.isSQLTag (x)) {
+        if (SQLTag.isSQLTag<Params, Output, Box> (x)) {
           if (as) {
-            members.push (sql`
+            members.push (sql<Params, Output, Box>`
               (${x})${Raw (castAs (cast, as))} 
             `);
           } else {
@@ -162,7 +162,7 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
         members.push (Raw (`'${x}'${castAs (cast, as)}`));
       },
       When: (pred, tag) => {
-        extra = extra.concat (sql`${When (pred, tag)}`);
+        extra = extra.concat (sql<Params, Output, Box>`${When (pred, tag)}`);
       },
       Raw: unsupported ("Raw"),
       Value: unsupported ("Value"),
@@ -179,7 +179,7 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
     members.push (Raw (`${table.name}.${all.sign}`));
   }
 
-  let tag = sql`
+  let tag = sql<Params, Output, Box>`
     select ${joinMembers (members)}
     from ${Raw (table)}
   `;
@@ -187,7 +187,7 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
   return { next, tag, extra };
 }
 
-function compile(this: RQLTag, params: unknown) {
+function compile<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output, Box>, params: Params) {
   if (!this.interpreted) {
     const { tag, extra, next } = this.interpret ();
 
@@ -203,7 +203,7 @@ function compile(this: RQLTag, params: unknown) {
   ];
 }
 
-async function aggregate(this: RQLTag, params: StringMap, querier: Querier): Promise<any[]> {
+async function aggregate<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output, Box>, params: Params, querier: Querier): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
   const refQLRows = await querier<any> (query, values);
@@ -240,7 +240,7 @@ async function aggregate(this: RQLTag, params: StringMap, querier: Querier): Pro
   );
 }
 
-RQLTag.isRQLTag = function <Params, Output> (x: any): x is RQLTag<Params, Output> {
+RQLTag.isRQLTag = function <Params, Output, Box extends Boxes> (x: any): x is RQLTag<Params, Output, Box> {
   return x != null && x[refqlType] === type;
 };
 

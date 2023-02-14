@@ -1,21 +1,20 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { URIS } from "../common/HKT";
+import { Boxes } from "../common/BoxRegistry";
 import { ConvertPromise, Querier, Ref, RQLTagMaker, RQLTagVariable, Runnable } from "../common/types";
 import validateTable from "../common/validateTable";
-import { ASTNode } from "../nodes";
 import RQLTag from "../RQLTag";
 import Parser from "../RQLTag/Parser";
 
-interface Table<URI extends URIS = "Promise"> {
+interface Table<Box extends Boxes> {
   name: string;
   schema?: string;
-  refs: Ref[];
-  equals(other: Table): boolean;
-  empty<Params, Output>(): RQLTag<Params, Output> & Runnable<Params, Output>;
+  refs: Ref<Box>[];
+  equals<URI2 extends Boxes>(other: Table<URI2>): boolean;
+  empty<Params, Output>(): RQLTag<Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
   toString(): string;
+  // Promise ??
   run<Output>(querier: Querier): Promise<Output>;
-  [flEmpty]: Table["empty"];
-  [flEquals]: Table["equals"];
+  [flEquals]: Table<Box>["equals"];
 }
 
 const type = "refql/Table";
@@ -29,18 +28,18 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   run
 });
 
-function Table<URI extends URIS = "Promise">(name: string, refs: Ref[] = [], defaultQuerier?: Querier, convertPromise?: ConvertPromise<URIS>) {
+function Table<Box extends Boxes>(name: string, refs: Ref<Box>[] = [], defaultQuerier?: Querier, convertPromise?: ConvertPromise<Boxes>) {
   validateTable (name);
 
   if (!Array.isArray (refs)) {
     throw new Error ("Invalid refs: not an Array");
   }
 
-  const table = (<Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output>[]) => {
-    const parser = new Parser (strings.join ("$"), variables, table);
+  const table = (<Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output, Box>[]) => {
+    const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
 
-    return RQLTag<Params, Output, URI> (table, parser.nodes () as ASTNode<Params, Output>[], defaultQuerier, convertPromise as ConvertPromise<URI, Output>);
-  }) as Table<URI> & RQLTagMaker<URI>;
+    return RQLTag<Params, Output, Box> (table, parser.nodes (), defaultQuerier, convertPromise as ConvertPromise<Box, Output>);
+  }) as Table<Box> & RQLTagMaker<Box>;
 
   Object.setPrototypeOf (table, prototype);
 
@@ -58,19 +57,19 @@ function Table<URI extends URIS = "Promise">(name: string, refs: Ref[] = [], def
   return table;
 }
 
-function empty(this: Table & RQLTagMaker) {
+function empty<Box extends Boxes>(this: Table<Box> & RQLTagMaker<Box>) {
   return this``;
 }
 
-function run(this: Table & RQLTagMaker, querier: Querier) {
+function run<Box extends Boxes>(this: Table<Box> & RQLTagMaker<Box>, querier: Querier) {
   return this.empty () ({}, querier);
 }
 
-function toString(this: Table) {
+function toString<Box extends Boxes>(this: Table<Box>) {
   return `${this.schema ? `${this.schema}.` : ""}${this.name}`;
 }
 
-function equals(this: Table, other: Table) {
+function equals<Box extends Boxes>(this: Table<Box>, other: Table<Box>) {
   if (!Table.isTable (other)) return false;
 
   return (
@@ -79,7 +78,7 @@ function equals(this: Table, other: Table) {
   );
 }
 
-Table.isTable = function (x: any): x is Table {
+Table.isTable = function<Box extends Boxes> (x: any): x is Table<Box> {
   return x != null && x[refqlType] === type;
 };
 

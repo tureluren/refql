@@ -1,4 +1,6 @@
 import RQLTag from ".";
+import { Boxes } from "../common/BoxRegistry";
+import { RQLTagVariable } from "../common/types";
 import {
   all, ASTNode, Call, Identifier,
   isASTNode, Literal, StringLiteral, Variable
@@ -6,15 +8,15 @@ import {
 import Table from "../Table";
 import Tokenizer, { Token, TokenType } from "./Tokenizer";
 
-class Parser {
+class Parser<Params, Output, Box extends Boxes> {
   str: string;
-  variables: any[];
+  variables: RQLTagVariable<Params, Output, Box>[];
   idx: number;
   tokenizer: Tokenizer;
   lookahead: Token;
-  table: Table;
+  table: Table<Box>;
 
-  constructor(str: string, variables: any[], table: Table) {
+  constructor(str: string, variables: any[], table: Table<Box>) {
     this.str = str;
     this.variables = variables;
     this.idx = 0;
@@ -36,7 +38,7 @@ class Parser {
     return all;
   }
 
-  refer(tag: RQLTag, as?: string, single?: boolean) {
+  refer(tag: RQLTag<Params, Output, Box>, as?: string, single?: boolean) {
     if (tag.table.equals (this.table)) {
       return tag.nodes;
     }
@@ -63,17 +65,17 @@ class Parser {
     const [as, cast, single] = this.castAs ();
     this.idx += 1;
 
-    if (RQLTag.isRQLTag (x)) {
+    if (RQLTag.isRQLTag<Params, Output, Box> (x)) {
       return this.refer (x, as, single);
     }
 
-    if (Table.isTable (x)) {
+    if (Table.isTable<Box> (x)) {
       return this.refer (x.empty (), as, single);
     }
 
     if (Array.isArray (x)) {
       if (
-        !x.reduce ((acc: Boolean, m: ASTNode) => acc && isASTNode (m), true)
+        !(x as ASTNode<Params, Output, Box>[]).reduce ((acc: boolean, m: ASTNode<Params, Output, Box>) => acc && isASTNode<Params, Output, Box> (m), true)
       ) {
         throw new Error ("Invalid dynamic members, expected Array of ASTNode");
       }
@@ -91,18 +93,18 @@ class Parser {
     return variable;
   }
 
-  Call(identifier: Identifier) {
+  Call(identifier: Identifier<Params, Output, Box>) {
     return Call (identifier.name, this.arguments (), identifier.as, identifier.cast);
   }
 
-  nodes(): ASTNode[] {
+  nodes(): ASTNode<Params, Output, Box>[] {
     const members = [];
 
     while (!this.isNext ("EOT")) {
       const member = this.Member ();
 
       if (this.isNext ("(")) {
-        members.push (this.Call (member as Identifier));
+        members.push (this.Call (member as unknown as Identifier<Params, Output, Box>));
       } else {
         members.push (member);
       }
@@ -115,16 +117,16 @@ class Parser {
 
   arguments() {
     this.eat ("(");
-    const argumentList: ASTNode[] = [];
+    const argumentList: ASTNode<Params, Output, Box>[] = [];
 
     if (!this.isNext (")")) {
       do {
         const argument = this.Argument ();
 
         if (this.isNext ("(")) {
-          argumentList.push (this.Call (argument as Identifier));
+          argumentList.push (this.Call (argument as unknown as Identifier<Params, Output, Box>));
         } else {
-          argumentList.push (argument as ASTNode);
+          argumentList.push (argument as ASTNode<Params, Output, Box>);
         }
       } while (this.hasArg ());
     }
@@ -190,7 +192,7 @@ class Parser {
     throw new SyntaxError (`Unknown Argument Type: "${this.lookahead.type}"`);
   }
 
-  Literal(): Literal {
+  Literal(): Literal<Params, Output, Box> {
     switch (this.lookahead.type) {
       case "NUMBER":
         return this.NumericLiteral ();
@@ -211,14 +213,14 @@ class Parser {
     this.eat (x ? "true" : "false");
     const [as, cast] = this.castAs ();
 
-    return Literal (x, as, cast);
+    return Literal<Params, Output, Box> (x, as, cast);
   }
 
   NullLiteral() {
     this.eat ("null");
     const [as, cast] = this.castAs ();
 
-    return Literal (null, as, cast);
+    return Literal<Params, Output, Box> (null, as, cast);
   }
 
   StringLiteral() {
@@ -226,14 +228,14 @@ class Parser {
     const x = token.x.slice (1, -1);
     const [as, cast] = this.castAs ();
 
-    return StringLiteral (x, as, cast);
+    return StringLiteral<Params, Output, Box> (x, as, cast);
   }
 
   NumericLiteral() {
     const token = this.eat ("NUMBER");
     const [as, cast] = this.castAs ();
 
-    return Literal (Number (token.x), as, cast);
+    return Literal<Params, Output, Box> (Number (token.x), as, cast);
   }
 
   getNextToken(): any {

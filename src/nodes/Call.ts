@@ -1,5 +1,6 @@
 import castAs from "../common/castAs";
 import { refqlType } from "../common/consts";
+import { Boxes } from "../common/BoxRegistry";
 import joinMembers from "../common/joinMembers";
 import { CastAs, StringMap } from "../common/types";
 import unimplemented from "../common/unimplemented";
@@ -8,10 +9,10 @@ import sql from "../SQLTag/sql";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 import Raw from "./Raw";
 
-interface Call<Params = unknown, Output = unknown> extends ASTNode<Params, Output>, CastAs {
+interface Call<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box>, CastAs {
   name: string;
-  nodes: ASTNode[];
-  interpret(): SQLTag<Params, Output>;
+  nodes: ASTNode<Params, Output, Box>[];
+  interpret(): SQLTag<Params, Output, Box>;
 }
 
 const type = "refql/Call";
@@ -23,8 +24,8 @@ const prototype = Object.assign ({}, astNodePrototype, {
   [refqlType]: type
 });
 
-function Call<Params, Output>(name: string, nodes: ASTNode[], as?: string, cast?: string) {
-  let call: Call<Params, Output> = Object.create (prototype);
+function Call<Params, Output, Box extends Boxes>(name: string, nodes: ASTNode<Params, Output, Box>[], as?: string, cast?: string) {
+  let call: Call<Params, Output, Box> = Object.create (prototype);
 
   call.name = name;
   call.nodes = nodes;
@@ -36,8 +37,8 @@ function Call<Params, Output>(name: string, nodes: ASTNode[], as?: string, cast?
 
 const unsupported = unimplemented ("Call");
 
-function interpret(this: Call) {
-  const args = [] as (Raw | SQLTag)[];
+function interpret<Params, Output, Box extends Boxes>(this: Call<Params, Output, Box>) {
+  const args = [] as (Raw<Params, Output, Box> | SQLTag<Params, Output, Box>)[];
 
   for (const node of this.nodes) {
     node.caseOf<void> ({
@@ -74,11 +75,11 @@ function interpret(this: Call) {
   return joinMembers (args);
 }
 
-function caseOf(this: Call, structureMap: StringMap) {
+function caseOf<Params, Output, Box extends Boxes>(this: Call<Params, Output, Box>, structureMap: StringMap) {
   return structureMap.Call (this.interpret (), this.name, this.as, this.cast);
 }
 
-Call.isCall = function <Params, Output> (x: any): x is Call<Params, Output> {
+Call.isCall = function <Params, Output, Box extends Boxes> (x: any): x is Call<Params, Output, Box> {
   return x != null && x[refqlType] === type;
 };
 

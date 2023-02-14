@@ -1,4 +1,5 @@
 import { refqlType } from "../common/consts";
+import { Boxes } from "../common/BoxRegistry";
 import Table from "../Table";
 
 interface RefField {
@@ -33,7 +34,7 @@ RefField.isRefField = function (x: any): x is RefField {
 };
 
 RefField.refFieldOf = function (as: string) {
-  return (table: Table, kw: string, ref: string) =>
+  return <Box extends Boxes>(table: Table<Box>, kw: string, ref: string) =>
     RefField (
       `${table.name}.${ref.trim ()}`,
       `${(as).replace (/_/g, "").toLowerCase ()}${kw}`
