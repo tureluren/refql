@@ -27,24 +27,6 @@ const Goal = Table ("goal");
 //   hasMany ("goal")
 // ], querier);
 
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
-`;
-
-const goalCount = sql<{}>`
-  select count(*) from ${Goal}
-  where player_id = player.id
-`;
-
-// select player.* from player where 1 = 1 and team_id = $1 order by player.first_name
-const orderedTeamPlayers = Table ("Player")<{ team_id: number; order_by: string }>`
-  *
-  ${sql`
-    and team_id = ${p => p.team_id}
-    order by ${Raw ((p, t) => `${t}.${p.order_by}`)} 
-  `}
-`;
-
 
 // [
 //   {
@@ -66,57 +48,9 @@ const orderedTeamPlayers = Table ("Player")<{ team_id: number; order_by: string 
 
 
 
-const sql2 = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
-  const nodes = parse <Params, Output, "Task"> (strings, variables);
-  return SQLTag (nodes, querier, promiseToTask);
-};
-
-const Table2 = (name: string, refs: Ref<"Task">[] = []) => {
-  return Table<"Task"> (name, refs, querier, promiseToTask);
-};
-
-const taggie = sql2<{}, {id: number; first_name: string}[]>`
-  select id, first_name
-`;
-
-const taggie2 = sql2<{}, {last_name: string}[]>`
-  , last_name
-  from player where id = 1
-`;
-
-const total = taggie.concat (taggie2) ({});
-
-const Player = Table2 ("Player");
-
-const taggie3 = Player<{}, {id: number; first_name: string}[]>`
-  id
-  first_name
-`;
-
-const taggie4 = Player<{}, {last_name: string}[]>`
-  id
-  first_name
-  ${Raw ((p, t) => t)}
-`;
-
-const res1 = taggie3.concat (taggie4) ({}).map (res => res[0]);
-
-
-
-// type test = Promise<{id: number; first_name: string}[]> & Promise<{last_name: string}[]>;
-
-
-// const buh: test = Promise.resolve ([{ id: 1, first_name: "ronny", last_name: "Tureluren" }]);
-
-// buh.then (res => res);
 
 // #readme
 // table setoid
 // Raw functor
+// Raw contramap
 // RQLTag monoid
-// defaults
-
-const rawPart = Raw ("test");
-
-const sqlellie = sql<{}, Player[]>`
-`;

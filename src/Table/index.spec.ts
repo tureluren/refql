@@ -3,11 +3,10 @@ import mySQL from "mysql2";
 import pg from "pg";
 import Table from ".";
 import { flEquals } from "../common/consts";
-import { Querier } from "../common/types";
+import { Querier, Ref } from "../common/types";
 import {
-  belongsTo, BelongsToMany,
-  belongsToMany, hasMany,
-  hasOne, Raw, RefNode
+  belongsTo, belongsToMany, hasMany,
+  hasOne, Raw
 } from "../nodes";
 import RefField from "../RefField";
 import sql from "../SQLTag/sql";
@@ -15,9 +14,9 @@ import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import {
-  Game, GamePlayer, Goal, Player,
-  Position, Rating, Team
+  Game, GamePlayer, Goal, Player, Rating, Team
 } from "../test/tables";
+import { fork, promiseToTask } from "../test/Task";
 import userConfig from "../test/userConfig";
 
 describe ("Table type", () => {
@@ -68,22 +67,38 @@ describe ("Table type", () => {
     expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
   });
 
-  // test ("create Table with default querier", async () => {
-  //   const Player2 = createTableWithDefaultQuerier (querier) ("player");
+  test ("create Table with default querier that returns Task", async () => {
+    const Table2 = (name: string, refs: Ref<"Task">[] = []) => {
+      return Table<"Task"> (name, refs, querier, promiseToTask);
+    };
 
-  //   const firstPlayer = Player2<{}, any[]>`
-  //     id last_name
-  //     ${sql`
-  //       limit 1
-  //     `}
-  //   `;
+    const Team2 = Table2 ("team");
+    const Player2 = Table2 ("Player", [
+      belongsTo ("team")
+    ]);
 
-  //   const players = await firstPlayer ();
+    const tag = Player2<{}, { id: number; first_name: string }[]>`
+      id
+      first_name
+    `;
 
-  //   expect (players.length).toBe (1);
+    const tag2 = Player2<{}, { last_name: string; team: { name: string } }[]>`
+      last_name
+      ${Team2`name`}
+      ${sql`
+        limit 1 
+      `}
+    `;
 
-  //   expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
-  // });
+    const tag3 = tag.concat (tag2);
+
+    const players = await fork (tag3 ());
+
+    expect (players.length).toBe (1);
+
+    expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name", "team"]);
+    expect (Object.keys (players[0].team)).toEqual (["name"]);
+  });
 
   test ("invalid table creation", () => {
     expect (() => Table (["player"] as any)).toThrow ("Invalid table: player, expected a string");
