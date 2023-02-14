@@ -3,7 +3,7 @@ import mySQL from "mysql2";
 import pg from "pg";
 import SQLTag from ".";
 import { flConcat } from "../common/consts";
-import { Querier, StringMap } from "../common/types";
+import { Querier, SQLTagVariable, StringMap } from "../common/types";
 import {
   all, BelongsToMany, Call, Identifier, Literal,
   Raw, RefNode, StringLiteral, Values, Values2D, Variable, When
@@ -14,8 +14,9 @@ import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import { Dummy, dummyRefInfo, Player } from "../test/tables";
+import { fork, promiseToTask } from "../test/Task";
 import userConfig from "../test/userConfig";
-import sql from "./sql";
+import sql, { parse } from "./sql";
 
 describe ("SQLTag type", () => {
   let pool: any;
@@ -48,21 +49,30 @@ describe ("SQLTag type", () => {
     expect (SQLTag.isSQLTag ({})).toBe (false);
   });
 
-  // test ("create sql with default querier", async () => {
-  //   const sql = createSQLWithDefaultQuerier (querier);
+  test ("create sql with default querier that returns Task", async () => {
+    const sql2 = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
+      const nodes = parse <Params, Output, "Task"> (strings, variables);
+      return SQLTag (nodes, querier, promiseToTask);
+    };
 
-  //   const firstPlayer = sql<{}, any[]>`
-  //     select id, last_name
-  //     from player
-  //     limit 1
-  //   `;
+    const tag = sql2<{}, { id: number; first_name: string }[]>`
+      select id, first_name,
+    `;
 
-  //   const players = await firstPlayer ();
+    const tag2 = sql2<{}, { last_name: string }[]>`
+      last_name
+      from player
+      limit 1
+    `;
 
-  //   expect (players.length).toBe (1);
+    const tag3 = tag.concat (tag2);
 
-  //   expect (Object.keys (players[0])).toEqual (["id", "last_name"]);
-  // });
+    const players = await fork (tag3 ());
+
+    expect (players.length).toBe (1);
+
+    expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
+  });
 
   test ("Semigroup", () => {
     const tag = sql`

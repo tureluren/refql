@@ -15,4 +15,9 @@ class Task<Output> {
 export const promiseToTask = <Output>(p: Promise<Output>) =>
   new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
+export const fork = <Output>(task: Task<Output>) =>
+  new Promise<Output> ((res, rej) =>
+    task.fork (rej, res)
+  );
+
 export default Task;
