@@ -101,6 +101,17 @@ describe ("SQLTag type", () => {
     expect (values).toEqual (values2);
   });
 
+  test ("Dynamic Table", async () => {
+    const playerById = sql<{ id: number }, Player[]>`
+      select id, first_name from ${Player}
+      where id = ${p => p.id}
+    `;
+
+    const [firstPlayer] = await playerById ({ id: 1 }, querier);
+
+    expect (Object.keys (firstPlayer)).toEqual (["id", "first_name"]);
+  });
+
   test ("Values", async () => {
     const tag = sql<{ids: number[]}, Player[]>`
       select id, first_name, ${rawLastName}

@@ -169,6 +169,21 @@ fullPlayer ({ limit: 1 }).then(console.log);
 //   }
 // ];
 ```
+### Ref info
+RefQL tries to link 2 tables based on logical column names, using snake case. You can always point RefQL in the right direction if this doesn't work for you.
+
+```ts
+const playerBelongsToManyGames = belongsToMany ("game", {
+  lRef: "id",
+  rRef: "id",
+  lxRef: "player_id",
+  rxRef: "game_id",
+  xTable: "game_player",
+  as: "games"
+});
+```
+
+
 ## Querier
 The querier should have the type signature `<T>(query: string, values: any[]) => Promise<T[]>`. This function is a necessary in-between piece to make RefQL independent from database clients. This allows you to choose your own client. This is also the place where you can debug or transform a query before it goes to the database or when the result is obtained. Example of a querier for mySQL:
 
@@ -191,57 +206,99 @@ const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
   });
 ```
 
-### createSQLWithDefaultQuerier
-If you don't always want to pass the querier when executing a `SQLTag`, you can create your own `sql` function with a default querier injected.
+### create `sql` with default querier that returns another container type
 
 ```ts
-import { createSQLWithDefaultQuerier } from "refql";
+import { parse, SQLTag, SQLTagVariable } from "refql";
 
-const querier = async (query: string, values: any[]) => {
-  const { rows } = await pool.query (query, values);
+declare module "refql" {
+  interface BoxRegistry<Output> {
+    readonly Task: Task<Output>;
+  }
+}
 
-  return rows;
+class Task<Output> {
+  fork: (rej: (x: any) => void, res: (x: Output) => void) => void;
+
+  constructor(fork: (rej: (x: any) => void, res: (x: Output) => void) => void) {
+    this.fork = fork;
+  }
+}
+
+// natural transformation
+const promiseToTask = <Output>(p: Promise<Output>) =>
+  new Task<Output> ((rej, res) => p.then (res).catch (rej));
+
+const sql = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
+  const nodes = parse <Params, Output, "Task"> (strings, variables);
+  return SQLTag (nodes, querier, promiseToTask);
 };
 
-const sql = createSQLWithDefaultQuerier (querier);
-
-const playerById = sql<{ id: number }>`
-  select id, last_name
-  from player
-  where id = ${p => p.id}
+const tag = sql<{}, { id: number; first_name: string }[]>`
+  select id, first_name,
 `;
 
-playerById ({ id: 1 }).then (console.log);
+const tag2 = sql<{}, { last_name: string }[]>`
+  last_name
+  from player
+  limit 1
+`;
 
-// [ { id: 1, last_name: 'Short' } ]
+const tag3 = tag.concat (tag2);
 
+// no need to provide a querier anymore
+tag3 ().fork (console.error, console.log);
+
+// [ { id: 1, first_name: "Georgia", last_name: "Marquez" } ];
 ```
-### createTableWithDefaultQuerier
-If you don't always want to pass the querier when executing a `RQLTag`, you can create your own `Table` function with a default querier injected.
+
+### create `Table` with default querier that returns another container type
 
 ```ts
-import { createTableWithDefaultQuerier } from "refql";
+import { Ref, sql, Table } from "refql";
 
-const querier = async (query: string, values: any[]) => {
-  const { rows } = await pool.query (query, values);
+declare module "refql" {
+  interface BoxRegistry<Output> {
+    readonly Task: Task<Output>;
+  }
+}
 
-  return rows;
+class Task<Output> {
+  fork: (rej: (x: any) => void, res: (x: Output) => void) => void;
+
+  constructor(fork: (rej: (x: any) => void, res: (x: Output) => void) => void) {
+    this.fork = fork;
+  }
+}
+
+// natural transformation
+const promiseToTask = <Output>(p: Promise<Output>) =>
+  new Task<Output> ((rej, res) => p.then (res).catch (rej));
+
+const Table2 = (name: string, refs: Ref<"Task">[] = []) => {
+  return Table<"Task"> (name, refs, querier, promiseToTask);
 };
 
-const Table = createTableWithDefaultQuerier (querier);
-const Player = Table ("Player");
+const Player = Table2 ("Player");
 
-const playerById = Player<{ id: number }>`
+const tag = Player<{}, { id: number; first_name: string }[]>`
   id
+  first_name
+`;
+
+const tag2 = Player<{}, { last_name: string; team: { name: string } }[]>`
   last_name
   ${sql`
-    and id = ${p => p.id}
+    limit 1 
   `}
 `;
 
-playerById ({ id: 1 }).then (console.log);
+const tag3 = tag.concat (tag2);
 
-// [ { id: 1, last_name: 'Short' } ]
+// no need to provide a querier anymore
+tag3 ().fork (console.error, console.log);
+
+// [ { id: 1, first_name: "Georgia", last_name: "Marquez" } ];
 ```
 
 ## Function placeholder
@@ -284,7 +341,7 @@ orderedTeamPlayers ({ team_id: 1, order_by: "first_name" }, querier).then (conso
 ## Fantasy Land Interoperability
 <a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
 
-Both `RQLTag` and `SQLTag` are `Semigroup`, `Monoid`, `Functor`, `Contravariant` and `Profunctor` structures.
+Both `RQLTag` and `SQLTag` are `Semigroup` structures. `RQLTag` is also a `Monoid` and `Table` is a `Setoid`.
 
 ```ts
 const Player = Table ("player", [
@@ -308,23 +365,19 @@ const lastNameAndTeam = Player<{ id: number }, { last_name: string; team: { name
   ${byId}
 `;
 
-// Semigroup 
 const playerById = idAndFirstName
   .concat (lastNameAndTeam);
 
-// Contravariant & Functor
-const secondPlayer = playerById
-  .contramap (p => ({ id: p.id + 1 }))
-  .map (players => players[0]);
+playerById ({ id: 1 }).then (console.log);
 
-secondPlayer ({ id: 1 }).then (console.log);
-
-// {
-//   id: 2,
-//   first_name: 'Victor',
-//   last_name: 'Owens',
-//   team: { name: 'FC Adunupmev' }
-// }
+// [
+//   {
+//     id: 1,
+//     first_name: 'Georgia',
+//     last_name: 'Marquez',
+//     team: { name: 'FC Evatelo' }
+//   }
+// ]
 ```
 
 ## Raw
@@ -504,8 +557,8 @@ const features = Player`
   *
   id::text
   ${goalCount}:goal_count::int
-  concat: full_name (first_name, " ", last_name)
-  true: is_player
+  concat:full_name (first_name, " ", last_name)
+  true:is_player
   ${Goal}:1 first_goal
   ${byId}
 `;

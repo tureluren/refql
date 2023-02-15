@@ -495,6 +495,24 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (0);
   });
 
+  test ("No relation found", async () => {
+    const tag = Player<{}, any[]>`
+      ${Team`
+        ${sql`
+          and id = 999999999
+        `} 
+      `}
+      ${sql`
+        and player.id = 1
+      `}
+    `;
+
+    const players = await tag ({}, querier);
+
+    expect (players.length).toBe (1);
+    expect (players[0].team).toBe (null);
+  });
+
   test ("errors", () => {
     expect (() => Player`id last_name`.concat (Team`id name`))
       .toThrowError (new Error ("U can't concat RQLTags that come from different tables"));
