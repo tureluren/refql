@@ -43,7 +43,6 @@ echo "export * from \"./index.ts\";" > "$deno_dir/mod.ts"
 
 # remove unnecessary files
 rm -rf "$deno_dir/test"
-rm "$deno_dir/soccer.ts"
 rm "$deno_dir/workbench.ts"
 
 # remove test files
