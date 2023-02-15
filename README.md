@@ -206,7 +206,8 @@ const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
   });
 ```
 
-### create `sql` with default querier that returns another container type
+### Create `sql` with default querier that returns another container type
+U can use [Module augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation) in TypeScript to register another container type.
 
 ```ts
 import { parse, SQLTag, SQLTagVariable } from "refql";
@@ -252,7 +253,8 @@ tag3 ().fork (console.error, console.log);
 // [ { id: 1, first_name: "Georgia", last_name: "Marquez" } ];
 ```
 
-### create `Table` with default querier that returns another container type
+### Create `Table` with default querier that returns another container type
+U can use [Module augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation) in TypeScript to register another container type.
 
 ```ts
 import { Ref, sql, Table } from "refql";
