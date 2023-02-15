@@ -219,9 +219,9 @@ declare module "refql" {
 }
 
 class Task<Output> {
-  fork: (rej: (x: any) => void, res: (x: Output) => void) => void;
+  fork: (rej: (e: any) => void, res: (x: Output) => void) => void;
 
-  constructor(fork: (rej: (x: any) => void, res: (x: Output) => void) => void) {
+  constructor(fork: (rej: (e: any) => void, res: (x: Output) => void) => void) {
     this.fork = fork;
   }
 }
@@ -266,9 +266,9 @@ declare module "refql" {
 }
 
 class Task<Output> {
-  fork: (rej: (x: any) => void, res: (x: Output) => void) => void;
+  fork: (rej: (e: any) => void, res: (x: Output) => void) => void;
 
-  constructor(fork: (rej: (x: any) => void, res: (x: Output) => void) => void) {
+  constructor(fork: (rej: (e: any) => void, res: (x: Output) => void) => void) {
     this.fork = fork;
   }
 }

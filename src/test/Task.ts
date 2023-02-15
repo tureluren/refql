@@ -5,9 +5,9 @@ declare module "../common/BoxRegistry" {
 }
 
 class Task<Output> {
-  fork: (rej: (x: any) => void, res: (x: Output) => void) => void;
+  fork: (rej: (e: any) => void, res: (x: Output) => void) => void;
 
-  constructor(fork: (rej: (x: any) => void, res: (x: Output) => void) => void) {
+  constructor(fork: (rej: (e: any) => void, res: (x: Output) => void) => void) {
     this.fork = fork;
   }
 }
