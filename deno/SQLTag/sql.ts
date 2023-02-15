@@ -6,7 +6,7 @@ import { isASTNode } from "../nodes/ASTNode.ts";
 import RQLTag from "../RQLTag/index.ts";
 import Table from "../Table/index.ts";
 
-export const parse = <Params, Output, Box extends Boxes>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output, Boxes>[]) => {
+export const parse = <Params, Output, Box extends Boxes = "Promise">(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output, Boxes>[]) => {
   const nodes = [] as ASTNode<Params, Output, Box>[];
 
   for (let [idx, string] of strings.entries ()) {
