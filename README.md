@@ -232,7 +232,7 @@ const promiseToTask = <Output>(p: Promise<Output>) =>
 
 const sql = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
   const nodes = parse <Params, Output, "Task"> (strings, variables);
-  return SQLTag (nodes, querier, promiseToTask);
+  return SQLTag (nodes, defaultQuerier, promiseToTask);
 };
 
 const tag = sql<{}, { id: number; first_name: string }[]>`
@@ -278,7 +278,7 @@ const promiseToTask = <Output>(p: Promise<Output>) =>
   new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
 const Table2 = (name: string, refs: Ref<"Task">[] = []) => {
-  return Table<"Task"> (name, refs, querier, promiseToTask);
+  return Table<"Task"> (name, refs, defaultQuerier, promiseToTask);
 };
 
 const Player = Table2 ("Player");
