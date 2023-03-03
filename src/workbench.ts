@@ -1,8 +1,5 @@
 import { Pool } from "pg";
-import { Ref, SQLTagVariable } from "./common/types";
-import { belongsTo, belongsToMany } from "./nodes";
-import SQLTag from "./SQLTag";
-import sql, { parse } from "./SQLTag/sql";
+import { belongsTo } from "./nodes";
 import Table from "./Table";
 
 const pool = new Pool ({
@@ -14,8 +11,25 @@ const pool = new Pool ({
 });
 
 const querier = async (query: string, values: any[]) => {
-  console.log (query);
   const { rows } = await pool.query (query, values);
 
   return rows;
 };
+
+interface Team {
+  id: number;
+  name: string;
+}
+
+const Team = Table ("team");
+
+interface Player {
+  id: number;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+}
+
+const Player = Table ("player", [
+  belongsTo ("team")
+]);

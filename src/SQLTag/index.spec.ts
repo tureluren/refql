@@ -13,7 +13,7 @@ import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { Dummy, dummyRefInfo, Player } from "../test/tables";
+import { Dummy, dummyRefInfo, Player, Team } from "../test/tables";
 import { fork, promiseToTask } from "../test/Task";
 import userConfig from "../test/userConfig";
 import sql, { parse } from "./sql";
@@ -110,6 +110,24 @@ describe ("SQLTag type", () => {
     const [firstPlayer] = await playerById ({ id: 1 }, querier);
 
     expect (Object.keys (firstPlayer)).toEqual (["id", "first_name"]);
+  });
+
+  test ("Dynamic Table with schema", async () => {
+    const teamById = sql<{ id: number }, Player[]>`
+      select id, name from ${Team}
+      where id = ${p => p.id}
+    `;
+
+    const [query] = teamById.compile ({ id: 1 });
+
+    expect (query).toBe (format (`
+      select id, name
+      from public.team
+      where id = $1
+    `));
+    const [firstTeam] = await teamById ({ id: 1 }, querier);
+
+    expect (Object.keys (firstTeam)).toEqual (["id", "name"]);
   });
 
   test ("Values", async () => {

@@ -36,7 +36,7 @@ export function parse<Params, Output, Box extends Boxes>(strings: TemplateString
     } else if (RQLTag.isRQLTag (x)) {
       throw new Error ("U can't use RQLTags inside SQLTags");
     } else if (Table.isTable (x)) {
-      nodes.push (Raw<Params, Output, Box> (x.name));
+      nodes.push (Raw<Params, Output, Box> (x));
     } else if (isASTNode<Params, Output, Box> (x)) {
       nodes.push (x);
     } else {
