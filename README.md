@@ -1,6 +1,9 @@
 # RefQL
 A typesafe Node.js and Deno ORM-like library for composing and running SQL queries.
 
+<img height="358" width="452" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
+
+
 ## Installation
 ```bash
 yarn install refql
