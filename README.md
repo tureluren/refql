@@ -14,7 +14,7 @@ npm install refql
 ## Getting started
 ```ts
 import { Pool } from "pg";
-import { sql, Table } from "refql";
+import { belongsTo, sql, Table } from "refql";
 
 // Table
 const Player = Table ("player", [
