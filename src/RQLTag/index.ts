@@ -8,6 +8,7 @@ import { all, ASTNode, Raw, RefNode, When } from "../nodes";
 import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
+import Table2 from "../Table2";
 
 export interface Next<Params, Output, Box extends Boxes> {
   tag: RQLTag<Params & RefQLRows, Output, Box>;
@@ -25,7 +26,7 @@ interface Extra<Params, Output, Box extends Boxes> {
 }
 
 interface RQLTag<Params, Output, Box extends Boxes> {
-  table: Table<Box>;
+  table: Table<Box> | Table2<Box>;
   nodes: ASTNode<Params, Output, Box>[];
   defaultQuerier?: Querier;
   convertPromise?: ConvertPromise<Box, Output>;
@@ -49,7 +50,7 @@ const prototype = {
   aggregate
 };
 
-function RQLTag<Params, Output, Box extends Boxes>(table: Table<Box>, nodes: ASTNode<Params, Output, Box>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<Box, Output>) {
+function RQLTag<Params, Output, Box extends Boxes>(table: Table<Box> | Table2<Box>, nodes: ASTNode<Params, Output, Box>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<Box, Output>) {
   const convert = convertPromise || (x => x);
 
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
@@ -93,9 +94,9 @@ const concatDeep = <Params, Output, Box extends Boxes>(nodes: ASTNode<Params, Ou
 };
 
 function concat<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output, Box>, other: RQLTag<Params, Output, Box>) {
-  if (!this.table.equals (other.table)) {
-    throw new Error ("U can't concat RQLTags that come from different tables");
-  }
+  // if (!this.table.equals (other.table)) {
+  //   throw new Error ("U can't concat RQLTags that come from different tables");
+  // }
 
   const { nodes, ...refs } = concatDeep (this.nodes.concat (other.nodes));
 
@@ -198,7 +199,7 @@ function compile<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output,
   }
 
   return [
-    ...this.interpreted.tag.compile (params, this.table),
+    ...this.interpreted.tag.compile (params, this.table as any),
     this.interpreted.next
   ];
 }

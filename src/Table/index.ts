@@ -34,10 +34,10 @@ function Table<Box extends Boxes = "Promise">(name: string, refs: Ref<Box>[] = [
   }
 
   const table = (<Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output, Box>[]) => {
-    const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
+    const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table as unknown as Table<Box>);
 
-    return RQLTag (table, parser.nodes (), defaultQuerier, convertPromise as ConvertPromise<Box, Output>);
-  }) as Table<Box> & RQLTagMaker<Box>;
+    return RQLTag (table as unknown as Table<Box>, parser.nodes (), defaultQuerier, convertPromise as ConvertPromise<Box, Output>);
+  });
 
   Object.setPrototypeOf (table, prototype);
 
@@ -49,10 +49,10 @@ function Table<Box extends Boxes = "Promise">(name: string, refs: Ref<Box>[] = [
     enumerable: true
   });
 
-  table.schema = schema;
-  table.refs = refs;
+  (table as unknown as Table<Box>).schema = schema;
+  (table as unknown as Table<Box>).refs = refs;
 
-  return table;
+  return table as Table<Box> & typeof table;
 }
 
 function toString<Box extends Boxes>(this: Table<Box>) {
