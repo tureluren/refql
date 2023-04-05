@@ -1,10 +1,13 @@
 import { Pool } from "pg";
-import { belongsTo, Identifier } from "./nodes";
+import { InputSpec, Spec } from "./common/types2";
+import { belongsTo } from "./nodes";
 import Table from "./Table";
 import Table2 from "./Table2";
 import Field from "./Table2/Field";
 import numberField from "./Table2/NumberField";
+import tableF from "./Table2/tableF";
 import varchar from "./Table2/varchar";
+
 
 const pool = new Pool ({
   user: "test",
@@ -20,39 +23,41 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
-interface Team {
-  id: number;
-  name: string;
-}
-
-const Team = Table ("team");
-
 
 interface Identifier {
   name: string;
   as: string;
 }
 
-type Table2 = (tableName: string, spec: { [field: string]: ((name: string) => Identifier) }) => Table;
-
 
 const Player = Table2 ("player", {
   id: numberField ("id"),
   // ids: "foemp",
-  firstName: varchar ("first_name")
+  firstName: varchar ("first_name"),
+  team: tableF ("team")
 });
 
-const lastName = Field<"lastName", string> ("last_name", "lastName");
-const firstName = Field<"firstName", string> ("first_name", "firstName");
+const Team = Table2 ("team", {
+  id: numberField ("id"),
+  // ids: "foemp",
+  name: varchar ("name")
+});
+
+const uuid = numberField ("uuid") ("uuiid");
+
+const lastName = Field<"lastName", "last_name", string> ("lastName", "last_name");
+
+const { firstName } = Player.spec;
 
 const playerById = Player ([
-  // "id",
-  // "bb",
-  // "firstName",
+  "id",
   firstName,
-  lastName,
-  "id"
+  Team ([
+    "id",
+    "name"
+  ])
 ]);
+
 
 
 
@@ -122,3 +127,16 @@ playerById ().then (res => console.log (res));
 //   lg: 1280,
 //   xl: 1920
 // };
+
+const test = <I extends InputSpec>(input: I, selection: (keyof I)[]) => {
+  // const spec = Object.keys(I).reduce(k)
+  const spec = input as unknown as Spec<I>;
+
+  // return keys<Spec<I>> ().filter (k => selection.includes (k));
+};
+
+const t = test ({
+  id: numberField ("id"),
+  name: varchar ("name")
+}, ["id"]);
+

@@ -1,7 +1,7 @@
 import { refqlType } from "../common/consts";
 
-interface Field<As = unknown, Type = unknown> {
-  name: string;
+interface Field<Name = unknown, As = unknown, Type = unknown> {
+  name: Name;
   as: As;
   type: Type;
 }
@@ -13,8 +13,8 @@ const prototype = {
   [refqlType]: type
 };
 
-function Field<As = unknown, Type = unknown>(name: string, as: As) {
-  let field: Field<As, Type> = Object.create (prototype);
+function Field<Name = unknown, As = unknown, Type = unknown>(name: Name, as: As) {
+  let field: Field<Name, As, Type> = Object.create (prototype);
 
   field.name = name;
   field.as = as;

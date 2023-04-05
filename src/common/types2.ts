@@ -10,7 +10,7 @@ export type InputSpec = {
 };
 
 export type Spec<S extends InputSpec> = {
-  [As in keyof S]: Field<As, ReturnType<S[As]>["type"]>
+  [As in keyof S]: Field<ReturnType<S[As]>["name"], As, ReturnType<S[As]>["type"]>
 };
 
 

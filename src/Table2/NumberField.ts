@@ -1,6 +1,6 @@
 import Field from "./Field";
 
-const numberField = (col: string) => <As>(as: As) =>
-  Field<As, number> (col, as);
+const numberField = <Name extends string>(name: Name) => <As extends string>(as: As) =>
+  Field<Name, As, number> (name, as);
 
 export default numberField;
