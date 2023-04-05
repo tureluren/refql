@@ -117,7 +117,7 @@ function Table2<As extends string, Input extends InputSpec, Box extends Boxes = 
   });
   // table.name = tableName;
 
-  let buh = table as unknown as Table2<As, Spec<Input>> & typeof table;
+  let buh = table as unknown as Table2<As, { [K in keyof Spec<Input>]: Spec<Input>[K] }> & typeof table;
 
   (table as any).schema = schema;
   // table.spec = Object.keys(spec).map((s: Ide) => );
