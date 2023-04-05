@@ -88,11 +88,11 @@ function Table2<As extends string, Input extends InputSpec, Box extends Boxes = 
 
     const selected = comps.map ((c: Comp):
       Comp extends keyof Spec<Input>
-        ? Comp
+        ? {as: Comp; type: Spec<Input>[Comp]["type"]}
         : Comp extends Spec<Input>[keyof Spec<Input>]
-          ? Comp["as"]
+          ? Comp
           : Comp extends RQLTag<string, {}, any, Box>
-            ? Spec<Input>[Comp["as"]]["as"]
+            ? {as: Spec<Input>[Comp["as"]]["as"]; type: Comp["type"]}
             : never => {
       return "" as any;
     });
@@ -101,8 +101,8 @@ function Table2<As extends string, Input extends InputSpec, Box extends Boxes = 
 
     // const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
 
-    return RQLTag<As, {}, { [K in typeof selected[number]]: typeof specS[K]["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number]]: typeof specS[K]["type"] }>);
-    // return RQLTag<{}, {}, Box> (table as unknown as Table<Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, {}>);
+    return RQLTag<As, {}, { [K in typeof selected[number] as K["as"]]: K["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }>);
+    // return RQLTag<As, {}, { [K in typeof selected[number]]: typeof specS[K]["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number]]: typeof specS[K]["type"] }>);
   });
   // as Table2<Spec<Input>> & RQLTagMaker2<Input, Spec<Input>, Box>;
 

@@ -40,7 +40,14 @@ const Player = Table2 ("player", {
 const Team = Table2 ("team", {
   id: numberField ("id"),
   // ids: "foemp",
-  name: varchar ("name")
+  name: varchar ("name"),
+  league: tableF ("league")
+});
+
+const League = Table2 ("league", {
+  id: numberField ("id"),
+  // ids: "foemp",
+  leagueName: varchar ("name")
 });
 
 const uuid = numberField ("uuid") ("uuiid");
@@ -52,9 +59,11 @@ const { firstName } = Player.spec;
 const playerById = Player ([
   "id",
   firstName,
+  // lastName,
   Team ([
     "id",
-    "name"
+    "name",
+    League (["id", "leagueName"])
   ])
 ]);
 
