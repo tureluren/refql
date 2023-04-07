@@ -63,17 +63,7 @@ const { firstName, team } = Player.spec;
 
 const playerById = Player ([
   "id",
-  firstName,
-  // lastName,
-  Team ([
-    "id",
-    "name",
-    League (["id", "leagueName"])
-  ]),
-  Goal ([
-    "id",
-    "minute"
-  ])
+  Team (["id", "name"])
 ]);
 
 

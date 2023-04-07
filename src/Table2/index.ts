@@ -9,15 +9,15 @@ import Field from "./Field";
 import numberField from "./NumberField";
 import TableField from "./TableField";
 
-interface Table2<Name, S, Box extends Boxes = "Promise"> {
+interface Table2<Name extends string, S, Box extends Boxes = "Promise"> {
   name: Name;
   schema?: string;
   // refs: Ref<Box>[];
   spec: S;
   empty<Params, Output>(): RQLTag<Name, Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
-  [flEmpty]: Table2<S, Box>["empty"];
-  equals<Box2 extends Boxes>(other: Table2<S, Box2>): boolean;
-  [flEquals]: Table2<S, Box>["equals"];
+  [flEmpty]: Table2<Name, S, Box>["empty"];
+  equals<Box2 extends Boxes>(other: Table2<Name, S, Box2>): boolean;
+  [flEquals]: Table2<Name, S, Box>["equals"];
   toString(): string;
 }
 
@@ -84,7 +84,7 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
   });
   // table.name = tableName;
 
-  let buh = table as unknown as Table2<As, { [K in keyof Spec<Input>]: Spec<Input>[K] }> & typeof table;
+  let buh = table as unknown as Table2<Name, { [K in keyof Spec<Input>]: Spec<Input>[K] }> & typeof table;
 
   (table as any).schema = schema;
   // table.spec = Object.keys(spec).map((s: Ide) => );
