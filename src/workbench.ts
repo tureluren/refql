@@ -18,16 +18,12 @@ const pool = new Pool ({
 });
 
 const querier = async (query: string, values: any[]) => {
+  console.log (query);
   const { rows } = await pool.query (query, values);
 
   return rows;
 };
 
-
-interface Identifier {
-  name: string;
-  as: string;
-}
 
 const Player = Table2 ("player", {
   id: numberField ("id"),
