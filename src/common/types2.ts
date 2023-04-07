@@ -1,19 +1,28 @@
-import { Identifier } from "../nodes";
-import RQLTag from "../RQLTag";
 import Field from "../Table2/Field";
-import { Boxes, BoxRegistry } from "./BoxRegistry";
-import { ConvertPromise, Runnable } from "./types";
+import TableField from "../Table2/TableField";
 
 
 export type InputSpec = {
-  [key: string]: (as: any) => Field;
+  [key: string]: (as: any) => Field | TableField<any>;
 };
+
+export type RelType = "BelongsTo" | "HasMany";
 
 export type Spec<S extends InputSpec> = {
-  [As in keyof S]: Field<ReturnType<S[As]>["name"], As, ReturnType<S[As]>["type"]>
+  [As in keyof S]: As extends string ? ReturnType<S[As]> extends Field
+    ? Field<ReturnType<S[As]>["name"], As, ReturnType<S[As]>["type"]>
+    : ReturnType<S[As]> extends TableField<any>
+      ? TableField<ReturnType<S[As]>["rel"], ReturnType<S[As]>["name"], As>
+      : never : never
 };
 
+export type OnlyFields<T> = {
+  [P in keyof T as T[P] extends Field ? P : never]: T[P] extends Field ? T[P] : never
+};
 
+export type NameMap<T extends { [key: string]: { name: string }}> = {
+  [b in keyof T as T[b]["name"]]: T[b]
+};
 
 // export type RQLTagMaker2<S, Box extends Boxes> =
 //   <Params = unknown>(comps: (keyof S | S[keyof S])[])

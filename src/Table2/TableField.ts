@@ -1,9 +1,10 @@
 import { refqlType } from "../common/consts";
+import { RelType } from "../common/types2";
 
-interface TableField<Name = unknown, As = unknown, Type = unknown> {
+interface TableField<Rel extends RelType = any, Name extends string = any, As extends string = any> {
+  rel: Rel;
   name: Name;
   as: As;
-  type: Type;
 }
 
 const type = "refql/TableField";
@@ -13,9 +14,10 @@ const prototype = {
   [refqlType]: type
 };
 
-function TableField<Name = unknown, As = unknown, Type = unknown>(name: Name, as: As) {
-  let field: TableField<Name, As, Type> = Object.create (prototype);
+function TableField<Rel extends RelType = any, Name extends string = any, As extends string = any>(rel: Rel, name: Name, as: As) {
+  let field: TableField<Rel, Name, As> = Object.create (prototype);
 
+  field.rel = rel;
   field.name = name;
   field.as = as;
 
