@@ -38,13 +38,13 @@ class Parser<Params, Output, Box extends Boxes> {
     return all;
   }
 
-  refer(tag: RQLTag<Params, Output, Box>, as?: string, single?: boolean) {
-    if (tag.table.equals (this.table)) {
+  refer(tag: RQLTag<any, Params, Output, Box>, as?: string, single?: boolean) {
+    if (tag.table.equals (this.table as any)) {
       return tag.nodes;
     }
 
     const refs: Ref<Box>[] = this.table.refs.filter (([t]) => {
-      return t.equals (tag.table);
+      return t.equals (tag.table as any);
     });
 
     if (!refs.length) {
@@ -65,7 +65,7 @@ class Parser<Params, Output, Box extends Boxes> {
     const [as, cast, single] = this.castAs ();
     this.idx += 1;
 
-    if (RQLTag.isRQLTag<Params, Output, Box> (x)) {
+    if (RQLTag.isRQLTag<any, Params, Output, Box> (x)) {
       return this.refer (x, as, single);
     }
 

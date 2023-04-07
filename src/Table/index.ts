@@ -9,7 +9,7 @@ interface Table<Box extends Boxes = "Promise"> {
   name: string;
   schema?: string;
   refs: Ref<Box>[];
-  empty<Params, Output>(): RQLTag<Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
+  empty<Params, Output>(): RQLTag<any, Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
   [flEmpty]: Table<Box>["empty"];
   equals<Box2 extends Boxes>(other: Table<Box2>): boolean;
   [flEquals]: Table<Box>["equals"];
@@ -36,7 +36,7 @@ function Table<Box extends Boxes = "Promise">(name: string, refs: Ref<Box>[] = [
   const table = (<Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output, Box>[]) => {
     const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table as unknown as Table<Box>);
 
-    return RQLTag (table as unknown as Table<Box>, parser.nodes (), defaultQuerier, convertPromise as ConvertPromise<Box, Output>);
+    return RQLTag (table as unknown as Table<Box> as any, parser.nodes (), defaultQuerier, convertPromise as ConvertPromise<Box, Output>);
   });
 
   Object.setPrototypeOf (table, prototype);

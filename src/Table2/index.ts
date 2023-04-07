@@ -3,6 +3,7 @@ import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { ConvertPromise, Querier, RQLTagMaker, Runnable } from "../common/types";
 import { NameMap, InputSpec, OnlyFields, Spec, OnlyTableFields } from "../common/types2";
 import validateTable from "../common/validateTable";
+import { Identifier } from "../nodes";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Field from "./Field";
@@ -32,13 +33,13 @@ const prototype = Object.assign (Object.create (Function.prototype), {
 });
 
 function Table2<Name extends string, Input extends InputSpec, Box extends Boxes = "Promise">(name: Name, spec: Input, defaultQuerier?: Querier, convertPromise?: ConvertPromise<Boxes>) {
-  // let iep = (Object.keys (spec) as (keyof Input)[]).reduce ((acc, key) => {
-
-  // }, {} as { [key: keyof Input]: Field });
-
-
   type SpecS = Spec<Input>;
-  let specS: SpecS = spec as unknown as Spec<Input>;
+  let specS = Object.keys (spec).reduce ((acc, key) => {
+    return {
+      ...acc,
+      [key]: spec[key] (key)
+    };
+  }, {} as unknown as SpecS);
 
   // validateTable (name);
 
@@ -49,6 +50,7 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
 
 
   const table = (<Comp extends keyof OnlyFields<SpecS> | OnlyFields<SpecS>[keyof OnlyFields<SpecS>] | RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["name"], {}, any, Box>>(comps: Comp[]) => {
+    console.log (comps);
     const selected = comps.map (<Fields extends OnlyFields<SpecS>, Tables extends OnlyTableFields<SpecS>, Names extends NameMap<Tables>>(c: Comp):
       Comp extends keyof Fields
         ? {as: Comp; type: Fields[Comp]["type"]}
@@ -64,15 +66,41 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
       return "" as any;
     });
 
+    const nodes: Identifier<any, any, any>[] = [];
+
+    for (const comp of comps) {
+      if (typeof comp === "string") {
+        const id = specS[comp] as Field;
+        nodes.push (Identifier (id.name, id.as));
+      }
+    }
 
 
     // const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
 
-    return RQLTag<Name, {}, { [K in typeof selected[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }[]>);
+    return RQLTag<Name, {}, { [K in typeof selected[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, Spec<Input>, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }[]>);
     // return RQLTag<As, {}, { [K in typeof selected[number]]: typeof specS[K]["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number]]: typeof specS[K]["type"] }>);
   });
   // as Table2<Spec<Input>> & RQLTagMaker2<Input, Spec<Input>, Box>;
 
+  // Object.setPrototypeOf (table, prototype);
+
+  // const [tableName, schema] = name.trim ().split (".").reverse ();
+
+  // Object.defineProperty (table, "name", {
+  //   value: tableName,
+  //   writable: false,
+  //   enumerable: true
+  // });
+  // // table.name = tableName;
+
+  // let buh = table
+
+  // (table as any).schema = schema;
+  // // table.spec = Object.keys(spec).map((s: Ide) => );
+  // (table as any).spec = specS;
+
+  // return buh;
   Object.setPrototypeOf (table, prototype);
 
   const [tableName, schema] = name.trim ().split (".").reverse ();
@@ -82,23 +110,18 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
     writable: false,
     enumerable: true
   });
-  // table.name = tableName;
 
-  let buh = table as unknown as Table2<Name, { [K in keyof Spec<Input>]: Spec<Input>[K] }> & typeof table;
-
-  (table as any).schema = schema;
-  // table.spec = Object.keys(spec).map((s: Ide) => );
   (table as any).spec = specS;
+  (table as any).schema = schema;
 
-  return buh;
-
+  return table as unknown as Table2<Name, { [K in keyof Spec<Input>]: Spec<Input>[K] }> & typeof table;
 }
 
-function toString<Box extends Boxes>(this: Table2<Box>) {
+function toString<Name extends string, S, Box extends Boxes>(this: Table2<Name, S, Box>) {
   return `${this.schema ? `${this.schema}.` : ""}${this.name}`;
 }
 
-function equals<Box extends Boxes>(this: Table2<Box>, other: Table2<Box>) {
+function equals<Name extends string, S, Box extends Boxes>(this: Table2<Name, S, Box>, other: Table2<Name, S, Box>) {
   if (!Table2.isTable (other)) return false;
 
   return (
@@ -107,11 +130,12 @@ function equals<Box extends Boxes>(this: Table2<Box>, other: Table2<Box>) {
   );
 }
 
-function empty<Box extends Boxes>(this: Table2<Box> & RQLTagMaker<Box>) {
+// Revisit
+function empty<Name extends string, S, Box extends Boxes>(this: Table2<Name, S, Box> & RQLTagMaker<Box>) {
   return this``;
 }
 
-Table2.isTable = function<Box extends Boxes> (x: any): x is Table2<Box> {
+Table2.isTable = function<Name extends string, S, Box extends Boxes> (x: any): x is Table2<Name, S, Box> {
   return x != null && x[refqlType] === type;
 };
 

@@ -11,8 +11,8 @@ import Raw from "./Raw";
 import Values from "./Values";
 
 interface RefNode<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box> {
-  joinLateral(): RQLTag<Params, Output, Box>;
-  tag: RQLTag<Params, Output, Box>;
+  joinLateral(): RQLTag<any, Params, Output, Box>;
+  tag: RQLTag<any, Params, Output, Box>;
   info: RefInfo<Box>;
   single: boolean;
 }
@@ -25,7 +25,7 @@ export const refNodePrototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function RefNode<Params, Output, Box extends Boxes>(info: RefInfo<Box>, tag: RQLTag<Params, Output, Box>, single: boolean) {
+function RefNode<Params, Output, Box extends Boxes>(info: RefInfo<Box>, tag: RQLTag<any, Params, Output, Box>, single: boolean) {
   let refNode: RefNode<Params, Output, Box> = Object.create (refNodePrototype);
 
   refNode.info = info;
@@ -102,7 +102,7 @@ export const validateRefInput = (input: RefInput) => {
   }
 };
 
-const makeBelongsTo = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string) => {
+const makeBelongsTo = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<any, Params, Output, Box>, as?: string) => {
   as = as || input.as || child.name;
   const refOf = RefField.refFieldOf (as);
 
@@ -118,7 +118,7 @@ const makeBelongsTo = <Box extends Boxes = "Promise">(child: Table<Box>, input: 
   );
 };
 
-const makeHasMany = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string, single?: boolean) => {
+const makeHasMany = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<any, Params, Output, Box>, as?: string, single?: boolean) => {
   as = as || input.as || `${child.name}s`;
   const refOf = RefField.refFieldOf (as);
 
@@ -134,7 +134,7 @@ const makeHasMany = <Box extends Boxes = "Promise">(child: Table<Box>, input: Re
   );
 };
 
-const makeHasOne = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string) => {
+const makeHasOne = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<any, Params, Output, Box>, as?: string) => {
   as = as || input.as || child.name;
   const refOf = RefField.refFieldOf (as);
 

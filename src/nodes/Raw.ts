@@ -2,7 +2,7 @@ import { flMap, refqlType } from "../common/consts";
 import { Boxes } from "../common/BoxRegistry";
 import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
-import Table from "../Table";
+import Table2 from "../Table2";
 
 interface Raw<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box> {
   run: TagFunctionVariable<Params, Box, string>;
@@ -24,7 +24,7 @@ function Raw<Params, Output, Box extends Boxes>(run: ValueType | TagFunctionVari
   let raw: Raw<Params, Output, Box> = Object.create (prototype);
 
   raw.run = (p, t) => String ((
-    typeof run === "function" && !Table.isTable (run) ? run : () => run
+    typeof run === "function" && !Table2.isTable (run) ? run : () => run
   ) (p, t));
 
   return raw;

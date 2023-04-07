@@ -19,7 +19,7 @@ const prototype = Object.assign ({}, refNodePrototype, {
   caseOf
 });
 
-function BelongsToMany<Params, Output, Box extends Boxes>(info: Required<RefInfo<Box>>, tag: RQLTag<Params, Output, Box>, single: boolean) {
+function BelongsToMany<Params, Output, Box extends Boxes>(info: Required<RefInfo<Box>>, tag: RQLTag<any, Params, Output, Box>, single: boolean) {
   let belongsToMany: BelongsToMany<Params, Output, Box> = Object.create (prototype);
 
   belongsToMany.tag = tag;
@@ -70,7 +70,7 @@ export const belongsToMany = <Box extends Boxes = "Promise">(table: string, inpu
 
   const child = Table<Box> (table);
 
-  const makeBelongsToMany = <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string, single?: boolean) => {
+  const makeBelongsToMany = <Params, Output>(parent: Table<Box>, tag: RQLTag<any, Params, Output, Box>, as?: string, single?: boolean) => {
     as = as || input.as || `${child.name}s`;
     const refOf = RefField.refFieldOf (as);
 
