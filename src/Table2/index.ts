@@ -1,7 +1,7 @@
 import { Boxes } from "../common/BoxRegistry";
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { ConvertPromise, Querier, RQLTagMaker, Runnable } from "../common/types";
-import { NameMap, InputSpec, OnlyFields, Spec } from "../common/types2";
+import { NameMap, InputSpec, OnlyFields, Spec, OnlyTableFields } from "../common/types2";
 import validateTable from "../common/validateTable";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
@@ -37,7 +37,8 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
   // }, {} as { [key: keyof Input]: Field });
 
 
-  let specS: Spec<Input> = spec as unknown as Spec<Input>;
+  type SpecS = Spec<Input>;
+  let specS: SpecS = spec as unknown as Spec<Input>;
 
   // validateTable (name);
 
@@ -47,17 +48,17 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
 
 
 
-  const table = (<Comp extends keyof OnlyFields<Spec<Input>> | OnlyFields<Spec<Input>>[keyof OnlyFields<Spec<Input>>] | RQLTag<Spec<Input>[keyof Spec<Input>]["name"], {}, any, Box>>(comps: Comp[]) => {
-    const selected = comps.map ((c: Comp):
-      Comp extends keyof OnlyFields<Spec<Input>>
-        ? {as: Comp; type: OnlyFields<Spec<Input>>[Comp]["type"]}
-        : Comp extends OnlyFields<Spec<Input>>[keyof OnlyFields<Spec<Input>>]
+  const table = (<Comp extends keyof OnlyFields<SpecS> | OnlyFields<SpecS>[keyof OnlyFields<SpecS>] | RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["name"], {}, any, Box>>(comps: Comp[]) => {
+    const selected = comps.map (<Fields extends OnlyFields<SpecS>, Tables extends OnlyTableFields<SpecS>, Names extends NameMap<Tables>>(c: Comp):
+      Comp extends keyof Fields
+        ? {as: Comp; type: Fields[Comp]["type"]}
+        : Comp extends Fields[keyof Fields]
           ? {as: Comp["as"]; type: Comp["type"]}
-          : Comp extends RQLTag<Spec<Input>[keyof Spec<Input>]["name"], {}, any, Box>
-            ? NameMap<Spec<Input>>[Comp["as"]] extends TableField<"BelongsTo">
-              ? {as: NameMap<Spec<Input>>[Comp["as"]]["as"]; type: Comp["type"]}
-              : NameMap<Spec<Input>>[Comp["as"]] extends TableField<"HasMany">
-              ? {as: NameMap<Spec<Input>>[Comp["as"]]["as"]; type: Comp["type"][]}
+          : Comp extends RQLTag<Tables[keyof Tables]["name"], {}, any, Box>
+            ? Names[Comp["as"]] extends TableField<"BelongsTo">
+              ? {as: Names[Comp["as"]]["as"]; type: Comp["type"][0]}
+              : Names[Comp["as"]] extends TableField<"HasMany">
+              ? {as: Names[Comp["as"]]["as"]; type: Comp["type"]}
               : never
             : never => {
       return "" as any;
@@ -67,7 +68,7 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
 
     // const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
 
-    return RQLTag<Name, {}, { [K in typeof selected[number] as K["as"]]: K["type"] }, Box> (table as unknown as Table2<Name, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }>);
+    return RQLTag<Name, {}, { [K in typeof selected[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }[]>);
     // return RQLTag<As, {}, { [K in typeof selected[number]]: typeof specS[K]["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number]]: typeof specS[K]["type"] }>);
   });
   // as Table2<Spec<Input>> & RQLTagMaker2<Input, Spec<Input>, Box>;

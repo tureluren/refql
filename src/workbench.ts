@@ -71,11 +71,10 @@ const playerById = Player ([
     League (["id", "leagueName"])
   ]),
   Goal ([
+    "id",
     "minute"
   ])
 ]);
-
-
 
 
 playerById ().then (res => console.log (res));

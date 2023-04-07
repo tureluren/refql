@@ -3,7 +3,7 @@ import TableField from "../Table2/TableField";
 
 
 export type InputSpec = {
-  [key: string]: (as: any) => Field | TableField<any>;
+  [key: string]: (as: any) => Field | TableField;
 };
 
 export type RelType = "BelongsTo" | "HasMany";
@@ -16,12 +16,16 @@ export type Spec<S extends InputSpec> = {
       : never : never
 };
 
-export type OnlyFields<T> = {
-  [P in keyof T as T[P] extends Field ? P : never]: T[P] extends Field ? T[P] : never
+export type Only<T, S> = {
+  [K in keyof T as T[K] extends S ? K : never]: T[K] extends S ? T[K] : never
 };
 
+export type OnlyFields<T> = Only<T, Field>;
+
+export type OnlyTableFields<T> = Only<T, TableField>;
+
 export type NameMap<T extends { [key: string]: { name: string }}> = {
-  [b in keyof T as T[b]["name"]]: T[b]
+  [K in keyof T as T[K]["name"]]: T[K]
 };
 
 // export type RQLTagMaker2<S, Box extends Boxes> =
