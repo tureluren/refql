@@ -22,7 +22,7 @@ export const belongsTo = <Name extends string>(table: Name, input: RefNodeInput 
       rRef: refOf (child, "rref", input.rRef || "id")
     };
 
-    return TableField<"BelongsTo", Name, As> ("BelongsTo", table, as, parent, child, refInfo);
+    return TableField<"BelongsTo", Name, As> ("BelongsTo", table, as, child, refInfo);
   };
 };
 

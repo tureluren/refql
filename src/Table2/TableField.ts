@@ -7,7 +7,6 @@ interface TableField<Rel extends RelType = any, Name extends string = any, As ex
   name: Name;
   as: As;
   refInfo: Rel extends "BelongsToMany" ? Required<RefInfo<As>> : RefInfo<As>;
-  parent: Table2;
   child: Table2;
 }
 
@@ -18,13 +17,12 @@ const prototype = {
   [refqlType]: type
 };
 
-function TableField<Rel extends RelType = any, Name extends string = any, As extends string = any>(rel: Rel, name: Name, as: As, parent: Table2, child: Table2, refInfo: Rel extends "BelongsToMany" ? Required<RefInfo<As>> : RefInfo<As>) {
+function TableField<Rel extends RelType = any, Name extends string = any, As extends string = any>(rel: Rel, name: Name, as: As, child: Table2, refInfo: Rel extends "BelongsToMany" ? Required<RefInfo<As>> : RefInfo<As>) {
   let field: TableField<Rel, Name, As> = Object.create (prototype);
 
   field.rel = rel;
   field.name = name;
   field.as = as;
-  field.parent = parent;
   field.child = child;
   field.refInfo = refInfo;
 
