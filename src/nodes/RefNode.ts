@@ -1,6 +1,8 @@
+// @ts-nocheck
 import { Boxes } from "../common/BoxRegistry";
 import { refqlType } from "../common/consts";
-import { Ref, RefInfo, RefInput, RefMaker, RefQLRows, StringMap } from "../common/types";
+import { Ref, RefInput, RefMaker, RefQLRows, StringMap } from "../common/types";
+import { RefInfo } from "../common/types2";
 import validateTable from "../common/validateTable";
 import RefField from "../RefField";
 import RQLTag from "../RQLTag";
@@ -13,7 +15,7 @@ import Values from "./Values";
 interface RefNode<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box> {
   joinLateral(): RQLTag<any, Params, Output, Box>;
   tag: RQLTag<any, Params, Output, Box>;
-  info: RefInfo<Box>;
+  info: RefInfo<any>;
   single: boolean;
 }
 

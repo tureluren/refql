@@ -3,14 +3,14 @@ import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { ConvertPromise, Querier, RQLTagMaker, Runnable } from "../common/types";
 import { NameMap, InputSpec, OnlyFields, Spec, OnlyTableFields } from "../common/types2";
 import validateTable from "../common/validateTable";
-import { Identifier } from "../nodes";
+import { ASTNode, Identifier, RefNode } from "../nodes";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Field from "./Field";
 import numberField from "./NumberField";
 import TableField from "./TableField";
 
-interface Table2<Name extends string, S, Box extends Boxes = "Promise"> {
+interface Table2<Name extends string = any, S = {}, Box extends Boxes = "Promise"> {
   name: Name;
   schema?: string;
   // refs: Ref<Box>[];
@@ -32,15 +32,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table2<Name extends string, Input extends InputSpec, Box extends Boxes = "Promise">(name: Name, spec: Input, defaultQuerier?: Querier, convertPromise?: ConvertPromise<Boxes>) {
-  type SpecS = Spec<Input>;
-  let specS = Object.keys (spec).reduce ((acc, key) => {
-    return {
-      ...acc,
-      [key]: spec[key] (key)
-    };
-  }, {} as unknown as SpecS);
-
+function Table2<Name extends string = any, Input extends InputSpec = {}, Box extends Boxes = "Promise">(name: Name, spec: Input, defaultQuerier?: Querier, convertPromise?: ConvertPromise<Boxes>) {
   // validateTable (name);
 
   // if (!Array.isArray (refs)) {
@@ -48,9 +40,9 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
   // }
 
 
+  type SpecS = Spec<Input>;
 
   const table = (<Comp extends keyof OnlyFields<SpecS> | OnlyFields<SpecS>[keyof OnlyFields<SpecS>] | RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["name"], {}, any, Box>>(comps: Comp[]) => {
-    console.log (comps);
     const selected = comps.map (<Fields extends OnlyFields<SpecS>, Tables extends OnlyTableFields<SpecS>, Names extends NameMap<Tables>>(c: Comp):
       Comp extends keyof Fields
         ? {as: Comp; type: Fields[Comp]["type"]}
@@ -66,12 +58,22 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
       return "" as any;
     });
 
-    const nodes: Identifier<any, any, any>[] = [];
+    const nodes: ASTNode<{}, any, any>[] = [];
 
     for (const comp of comps) {
+      // and keys includes comp
       if (typeof comp === "string") {
-        const id = specS[comp] as Field;
+        const id = (table as any).spec[comp] as Field;
         nodes.push (Identifier (id.name, id.as));
+      } else if (RQLTag.isRQLTag (comp)) {
+        for (const specKey in (table as any).spec) {
+          const sp = (table as any).spec[specKey];
+
+          if (TableField.isTableField (sp) && sp.child.equals (comp.table)) {
+            nodes.push (RefNode (sp.refInfo as any, comp, true));
+          }
+        }
+
       }
     }
 
@@ -110,6 +112,14 @@ function Table2<Name extends string, Input extends InputSpec, Box extends Boxes 
     writable: false,
     enumerable: true
   });
+
+  let specS = Object.keys (spec).reduce ((acc, key) => {
+    return {
+      ...acc,
+      [key]: spec[key] (key, table)
+    };
+  }, {} as unknown as SpecS);
+
 
   (table as any).spec = specS;
   (table as any).schema = schema;

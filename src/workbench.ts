@@ -29,15 +29,15 @@ const Player = Table2 ("player", {
   id: numberField ("id"),
   // ids: "foemp",
   firstName: varchar ("first_name"),
-  team: belongsTo ("team"),
-  goals: hasMany ("goal")
+  team: belongsTo ("team")
+  // goals: hasMany ("goal")
 });
 
 const Team = Table2 ("team", {
   id: numberField ("id"),
   // ids: "foemp",
-  name: varchar ("name"),
-  league: belongsTo ("league")
+  name: varchar ("name")
+  // league: belongsTo ("league")
 });
 
 const League = Table2 ("league", {
@@ -59,7 +59,9 @@ const { firstName, team } = Player.spec;
 
 const playerById = Player ([
   "id",
-  "firstName"
+  "firstName",
+  Team ((["id", "name"]))
+
 ]);
 
 

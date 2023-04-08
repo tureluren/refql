@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Boxes } from "../common/BoxRegistry";
 import { Ref, RefInfo, RefInput, RefQLRows, StringMap } from "../common/types";
 import validateTable from "../common/validateTable";
