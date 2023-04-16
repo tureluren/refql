@@ -4,19 +4,39 @@ import Field from "../Table2/Field";
 import TableField from "../Table2/TableField";
 
 
-export type InputSpec = {
-  [key: string]: (...args: any[]) => Field | TableField;
-};
+// export type InputSpec = {
+//   [key: string]: (...args: any[]) => Field | TableField;
+// };
+
+// type buh = ReturnType<InputSpec["1"]>
+
+// export type InputSpec = {
+//   [key: string]: Field | TableField;
+// };
+
 
 export type RelType = "BelongsTo" | "HasMany" | "HasOne" | "BelongsToMany";
 
-export type Spec<S extends InputSpec> = {
-  [As in keyof S]: As extends string ? ReturnType<S[As]> extends Field
-    ? Field<ReturnType<S[As]>["name"], As, ReturnType<S[As]>["type"]>
-    : ReturnType<S[As]> extends TableField<any>
-      ? TableField<ReturnType<S[As]>["rel"], ReturnType<S[As]>["name"], As>
-      : never : never
+// export type Spec<S extends InputSpec> = {
+//   [As in keyof S]: As extends string ? ReturnType<S[As]> extends Field
+//     ? Field<ReturnType<S[As]>["name"], As, ReturnType<S[As]>["type"]>
+//     : ReturnType<S[As]> extends TableField<any>
+//       ? TableField<ReturnType<S[As]>["rel"], ReturnType<S[As]>["name"], As>
+//       : never : never
+// };
+
+// export type InputSpec = Record<string, Field | TableField>;
+export type InputSpec = (Field | TableField) [];
+
+export type Spec<S> = {
+  [As in keyof S]:
+      S[As] extends Field
+        ? Field<S[As]["name"], As extends string ? As : "", S[As]["type"]>
+        : S[As] extends TableField
+          ? TableField<S[As]["rel"], S[As]["name"], As extends string ? As : "">
+          : never
 };
+
 
 export type Only<T, S> = {
   [K in keyof T as T[K] extends S ? K : never]: T[K] extends S ? T[K] : never

@@ -4,6 +4,7 @@ interface Field<Name extends string = any, As extends string = any, Type = unkno
   name: Name;
   as: As;
   type: Type;
+  arrayOf: () => Field<Name, As, Type[]>;
 }
 
 const type = "refql/Field";

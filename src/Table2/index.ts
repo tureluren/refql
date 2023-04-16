@@ -7,7 +7,6 @@ import { ASTNode, Identifier, RefNode } from "../nodes";
 import RQLTag from "../RQLTag";
 import Table from "../Table";
 import Field from "./Field";
-import numberField from "./NumberField";
 import TableField from "./TableField";
 
 interface Table2<Name extends string = any, S = {}, Box extends Boxes = "Promise"> {
@@ -32,17 +31,17 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table2<Name extends string = any, Input extends InputSpec = {}, Box extends Boxes = "Promise">(name: Name, spec: Input, defaultQuerier?: Querier, convertPromise?: ConvertPromise<Boxes>) {
+function Table2<Name extends string = any, Input extends InputSpec = [], Box extends Boxes = "Promise">(name: Name, spec: Input, defaultQuerier?: Querier, convertPromise?: ConvertPromise<Boxes>) {
   // validateTable (name);
 
   // if (!Array.isArray (refs)) {
   //   throw new Error ("Invalid refs: not an Array");
   // }
 
-
-  type SpecS = Spec<Input>;
+  type SpecS = { [S in typeof spec[number] as S["as"]]: S };
 
   const table = (<Comp extends keyof OnlyFields<SpecS> | OnlyFields<SpecS>[keyof OnlyFields<SpecS>] | RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["name"], {}, any, Box>>(comps: Comp[]) => {
+    // const table = (<Comp extends keyof SpecS>(comps: Comp[]) => {
     const selected = comps.map (<Fields extends OnlyFields<SpecS>, Tables extends OnlyTableFields<SpecS>, Names extends NameMap<Tables>>(c: Comp):
       Comp extends keyof Fields
         ? {as: Comp; type: Fields[Comp]["type"]}
@@ -116,7 +115,7 @@ function Table2<Name extends string = any, Input extends InputSpec = {}, Box ext
   let specS = Object.keys (spec).reduce ((acc, key) => {
     return {
       ...acc,
-      [key]: spec[key] (key, table)
+      [key]: spec[key].setAs (key)
     };
   }, {} as unknown as SpecS);
 
@@ -124,7 +123,7 @@ function Table2<Name extends string = any, Input extends InputSpec = {}, Box ext
   (table as any).spec = specS;
   (table as any).schema = schema;
 
-  return table as unknown as Table2<Name, { [K in keyof Spec<Input>]: Spec<Input>[K] }> & typeof table;
+  return table as unknown as Table2<Name, { [K in keyof SpecS]: SpecS[K] }> & typeof table;
 }
 
 function toString<Name extends string, S, Box extends Boxes>(this: Table2<Name, S, Box>) {

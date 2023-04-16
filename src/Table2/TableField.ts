@@ -8,6 +8,7 @@ interface TableField<Rel extends RelType = any, Name extends string = any, As ex
   as: As;
   refInfo: Rel extends "BelongsToMany" ? Required<RefInfo<As>> : RefInfo<As>;
   child: Table2;
+  setAs: <As2 extends string>(as: As2) => TableField<Rel, Name, As2>;
 }
 
 const type = "refql/TableField";
