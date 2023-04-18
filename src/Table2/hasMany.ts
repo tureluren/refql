@@ -1,6 +1,6 @@
 import TableField from "./TableField";
 
-export const hasMany = < As extends string, Name extends string>(as: As, table: Name) =>
-  TableField<As, Name, "HasMany"> (as, table, "HasMany", "" as any, {} as any);
+export const hasMany = <As extends string, TableId extends string>(as: As, tableId: TableId) =>
+  TableField<As, TableId, "HasMany"> (as, tableId, "HasMany", "" as any, {} as any);
 
 export default hasMany;

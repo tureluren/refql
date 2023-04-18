@@ -1,8 +1,5 @@
 import { Pool } from "pg";
-import { InputSpec, OnlyFields, Spec } from "./common/types2";
-import Table from "./Table";
 import Table2 from "./Table2";
-import arrayOf from "./Table2/arrayOf";
 import belongsTo from "./Table2/belongsTo";
 import Field from "./Table2/Field";
 import hasMany from "./Table2/hasMany";
@@ -66,7 +63,6 @@ const playerById = Player ([
   age,
   Team (["id"]),
   Goal (["id", "minute"])
-
 ]);
 
 

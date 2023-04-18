@@ -28,16 +28,6 @@ export type RelType = "BelongsTo" | "HasMany" | "HasOne" | "BelongsToMany";
 // export type InputSpec = Record<string, Field | TableField>;
 export type InputSpec = (Field | TableField) [];
 
-export type Spec<S> = {
-  [As in keyof S]:
-      S[As] extends Field
-        ? Field<S[As]["name"], As extends string ? As : "", S[As]["type"]>
-        : S[As] extends TableField
-          ? TableField<S[As]["rel"], S[As]["name"], As extends string ? As : "">
-          : never
-};
-
-
 export type Only<T, S> = {
   [K in keyof T as T[K] extends S ? K : never]: T[K] extends S ? T[K] : never
 };
@@ -46,8 +36,8 @@ export type OnlyFields<T> = Only<T, Field>;
 
 export type OnlyTableFields<T> = Only<T, TableField>;
 
-export type NameMap<T extends { [key: string]: { name: string }}> = {
-  [K in keyof T as T[K]["name"]]: T[K]
+export type NameMap<T extends { [key: string]: { tableId: string }}> = {
+  [K in keyof T as T[K]["tableId"]]: T[K]
 };
 
 export interface RefInput {

@@ -9,15 +9,15 @@ import SQLTag from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table2 from "../Table2";
 
-export interface Next<As, Params, Output, Box extends Boxes> {
-  tag: RQLTag<As, Params & RefQLRows, Output, Box>;
+export interface Next<TableId, Params, Output, Box extends Boxes> {
+  tag: RQLTag<TableId, Params & RefQLRows, Output, Box>;
   link: [string, string];
   single: boolean;
 }
 
-interface InterpretedRQLTag<As, Params, Output, Box extends Boxes> {
+interface InterpretedRQLTag<TableId, Params, Output, Box extends Boxes> {
   tag: SQLTag<Params, Output, Box>;
-  next: Next<As, Params, Output, Box>[];
+  next: Next<TableId, Params, Output, Box>[];
 }
 
 interface Extra<Params, Output, Box extends Boxes> {
@@ -25,18 +25,18 @@ interface Extra<Params, Output, Box extends Boxes> {
 }
 
 // As or Name ?
-interface RQLTag<As, Params, Output, Box extends Boxes> {
-  as: As;
+interface RQLTag<TableId, Params, Output, Box extends Boxes> {
+  tableId: TableId;
   type: Output;
   table: Table2<any, any, Box>;
   nodes: ASTNode<Params, Output, Box>[];
   defaultQuerier?: Querier;
   convertPromise?: ConvertPromise<Box, Output>;
-  interpreted: InterpretedRQLTag<As, Params, Output, Box>;
-  concat<Params2, Output2, Box2 extends Boxes>(other: RQLTag<As, Params2, Output2, Box2>): RQLTag<As, Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
-  [flConcat]: RQLTag<As, Params, Output, Box>["concat"];
-  interpret(): InterpretedRQLTag<As, Params, Output, Box> & Extra<Params, Output, Box>;
-  compile(params: Params): [string, any[], Next<As, Params, Output, Box>[]];
+  interpreted: InterpretedRQLTag<TableId, Params, Output, Box>;
+  concat<Params2, Output2, Box2 extends Boxes>(other: RQLTag<TableId, Params2, Output2, Box2>): RQLTag<TableId, Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
+  [flConcat]: RQLTag<TableId, Params, Output, Box>["concat"];
+  interpret(): InterpretedRQLTag<TableId, Params, Output, Box> & Extra<Params, Output, Box>;
+  compile(params: Params): [string, any[], Next<TableId, Params, Output, Box>[]];
   aggregate(params: Params, querier: Querier): Promise<Output>;
 }
 
@@ -52,7 +52,7 @@ const prototype = {
   aggregate
 };
 
-function RQLTag<As extends string, Params, Output, Box extends Boxes>(table: Table2<As, any, Box>, nodes: ASTNode<Params, Output, Box>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<Box, Output>) {
+function RQLTag<TableId extends string, Params, Output, Box extends Boxes>(table: Table2<TableId, any, Box>, nodes: ASTNode<Params, Output, Box>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<Box, Output>) {
   const convert = convertPromise || (x => x);
 
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
@@ -60,7 +60,7 @@ function RQLTag<As extends string, Params, Output, Box extends Boxes>(table: Tab
       throw new Error ("There was no Querier provided");
     }
     return convert (tag.aggregate (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
-  }) as RQLTag<As, Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
+  }) as RQLTag<TableId, Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
 
   Object.setPrototypeOf (
     tag,

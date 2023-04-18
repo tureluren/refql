@@ -5,12 +5,12 @@ import RefField from "../RefField";
 import TableField from "./TableField";
 import validateRefInput from "./validateRefInput";
 
-const belongsTo = <As extends string, Name extends string>(as: As, table: Name, input: RefNodeInput = {}) => {
-  validateTable (table);
+const belongsTo = <As extends string, TableId extends string>(as: As, tableId: TableId, input: RefNodeInput = {}) => {
+  validateTable (tableId);
 
   validateRefInput (input);
 
-  return TableField<As, Name, "BelongsTo"> (as, table, "BelongsTo", "" as any, {} as any);
+  return TableField<As, TableId, "BelongsTo"> (as, tableId, "BelongsTo", "" as any, {} as any);
 
 };
 
