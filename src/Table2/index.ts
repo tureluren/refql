@@ -39,8 +39,9 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
   // }
 
   type SpecS = { [S in typeof spec[number] as S["as"] ]: S };
+  type IComp = keyof OnlyFields<SpecS> | OnlyFields<SpecS>[keyof OnlyFields<SpecS>] | RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["tableId"], {}, any, Box>;
 
-  const table = (<Comp extends keyof OnlyFields<SpecS> | OnlyFields<SpecS>[keyof OnlyFields<SpecS>] | RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["tableId"], {}, any, Box>>(comps: Comp[]) => {
+  const table = (<Comp extends IComp>(comps: Comp[]) => {
     // const table = (<Comp extends keyof SpecS>(comps: Comp[]) => {
     const selected = comps.map (<Fields extends OnlyFields<SpecS>, Tables extends OnlyTableFields<SpecS>, Names extends NameMap<Tables>>(c: Comp):
       Comp extends keyof Fields
