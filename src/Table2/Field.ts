@@ -1,10 +1,10 @@
 import { refqlType } from "../common/consts";
 
-interface Field<Name extends string = any, As extends string = any, Type = unknown> {
-  name: Name;
+interface Field<As extends string = any, Type = unknown> {
   as: As;
+  col?: string;
   type: Type;
-  arrayOf: () => Field<Name, As, Type[]>;
+  arrayOf: () => Field<As, Type[]>;
 }
 
 const type = "refql/Field";
@@ -14,14 +14,22 @@ const prototype = {
   [refqlType]: type
 };
 
-function Field<Name extends string = any, As extends string = any, Type = unknown>(name: Name, as: As) {
-  let field: Field<Name, As, Type> = Object.create (prototype);
+function Field<As extends string, Type = unknown>(as: As, col?: string) {
+  let field: Field<As, Type> = Object.create (prototype);
 
-  field.name = name;
   field.as = as;
+  field.col = col;
 
   return field;
 }
+
+
+
+
+
+
+
+
 
 // Field.isField = function (x: any): x is Field {
 //   return x != null && x[refqlType] === type;

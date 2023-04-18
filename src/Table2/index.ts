@@ -38,7 +38,7 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
   //   throw new Error ("Invalid refs: not an Array");
   // }
 
-  type SpecS = { [S in typeof spec[number] as S["as"]]: S };
+  type SpecS = { [S in typeof spec[number] as S["as"] ]: S };
 
   const table = (<Comp extends keyof OnlyFields<SpecS> | OnlyFields<SpecS>[keyof OnlyFields<SpecS>] | RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["name"], {}, any, Box>>(comps: Comp[]) => {
     // const table = (<Comp extends keyof SpecS>(comps: Comp[]) => {
@@ -48,9 +48,9 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
         : Comp extends Fields[keyof Fields]
           ? {as: Comp["as"]; type: Comp["type"]}
           : Comp extends RQLTag<Tables[keyof Tables]["name"], {}, any, Box>
-            ? Names[Comp["as"]] extends TableField<"BelongsTo">
+            ? Names[Comp["as"]] extends TableField<any, any, "BelongsTo">
               ? {as: Names[Comp["as"]]["as"]; type: Comp["type"][0]}
-              : Names[Comp["as"]] extends TableField<"HasMany">
+              : Names[Comp["as"]] extends TableField<any, any, "HasMany">
               ? {as: Names[Comp["as"]]["as"]; type: Comp["type"]}
               : never
             : never => {

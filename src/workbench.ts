@@ -26,13 +26,14 @@ const querier = async (query: string, values: any[]) => {
 };
 
 
+
 const Player = Table2 ("player", [
-  numberField ("id", "id").arrayOf (),
+  numberField ("id").arrayOf (),
   numberField ("age", "age"),
   // ids: "foemp",
   // firstName: varchar ("first_name"),
   belongsTo ("team", "team"),
-  hasMany ("goal", "goal")
+  hasMany ("goals", "goal")
 ]);
 
 const Team = Table2 ("team", [
@@ -54,7 +55,7 @@ const Goal = Table2 ("goal", [
 
 // const uuid = numberField ("uuid") ("uuiid");
 
-const lastName = Field<"lastName", "last_name", string> ("lastName", "last_name");
+const lastName = Field<"lastName", string> ("lastName", "last_name");
 
 const { team, id, age } = Player.spec;
 
@@ -63,7 +64,7 @@ const playerById = Player ([
   // id,
   // "firstName"
   age,
-  Team (["id", League (["id"])]),
+  Team (["id"]),
   Goal (["id", "minute"])
 
 ]);

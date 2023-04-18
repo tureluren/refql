@@ -1,6 +1,6 @@
 import Field from "./Field";
 
-const booleanField = <Name extends string, As extends string>(name: Name, as: As) =>
-  Field<Name, As, boolean> (name, as);
+const booleanField = <As extends string>(as: As, col?: string) =>
+  Field<As, boolean> (as, col);
 
 export default booleanField;
