@@ -1,4 +1,5 @@
 import RefField from "../RefField";
+import SQLTag2 from "../SQLTag2";
 import Table2 from "../Table2";
 import Field from "../Table2/Field";
 import TableField from "../Table2/TableField";
@@ -35,6 +36,8 @@ export type Only<T, S> = {
 export type OnlyFields<T> = Only<T, Field>;
 
 export type OnlyTableFields<T> = Only<T, TableField>;
+
+export type OnlySQLTags<T> = Only<T, SQLTag2>;
 
 export type NameMap<T extends { [key: string]: { tableId: string }}> = {
   [K in keyof T as T[K]["tableId"]]: T[K]

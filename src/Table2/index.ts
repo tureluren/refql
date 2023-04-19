@@ -1,7 +1,7 @@
 import { Boxes } from "../common/BoxRegistry";
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { ConvertPromise, Querier, RQLTagMaker, Runnable, StringMap } from "../common/types";
-import { NameMap, InputSpec, OnlyFields, OnlyTableFields } from "../common/types2";
+import { NameMap, InputSpec, OnlyFields, OnlyTableFields, OnlySQLTags } from "../common/types2";
 import validateTable from "../common/validateTable";
 import { ASTNode, Identifier, RefNode } from "../nodes";
 import RQLTag from "../RQLTag";
@@ -67,36 +67,42 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
 
     type CombinedParams<T extends SQLTag2[]> = UnionToIntersection<T[number]["params"]>;
 
+type SQLTag2Objects<T> = T extends (infer U)[]
+  ? U extends SQLTag2
+    ? U[]
+    : never
+  : never;
+
+// const tags = comps.map ((c: Comp): Comp extends SQLTag2 ? Comp : never => {
+//   return "" as any;
+// }, {});
+type Tags = SQLTag2Objects<typeof comps>;
 
 
-    const tags = comps.map ((c: Comp): Comp extends SQLTag2 ? Comp : never => {
-      return "" as any;
-    }, {});
 
+const nodes: ASTNode<{}, any, any>[] = [];
 
-    const nodes: ASTNode<{}, any, any>[] = [];
-
-    for (const comp of comps) {
-      // and keys includes comp
-      if (typeof comp === "string") {
-        const id = (table as any).spec[comp] as Field;
+for (const comp of comps) {
+  // and keys includes comp
+  if (typeof comp === "string") {
+    const id = (table as any).spec[comp] as Field;
         nodes.push (Identifier (id.col || id.as, id.as));
-      } else if (RQLTag.isRQLTag (comp)) {
-        for (const specKey in (table as any).spec) {
-          const sp = (table as any).spec[specKey];
+  } else if (RQLTag.isRQLTag (comp)) {
+    for (const specKey in (table as any).spec) {
+      const sp = (table as any).spec[specKey];
 
-          if (TableField.isTableField (sp) && sp.child.equals (comp.table)) {
+      if (TableField.isTableField (sp) && sp.child.equals (comp.table)) {
             nodes.push (RefNode (sp.refInfo as any, comp, true));
-          }
-        }
-
       }
     }
 
+  }
+}
 
-    // const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
 
-    return RQLTag<Name, CombinedParams<typeof tags>, { [K in typeof selected[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, SpecS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }[]>);
+// const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
+
+return RQLTag<Name, CombinedParams<Tags>, { [K in typeof selected[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, SpecS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }[]>);
     // return RQLTag<As, {}, { [K in typeof selected[number]]: typeof specS[K]["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number]]: typeof specS[K]["type"] }>);
   });
   // as Table2<Spec<Input>> & RQLTagMaker2<Input, Spec<Input>, Box>;

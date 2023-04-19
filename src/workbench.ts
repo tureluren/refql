@@ -57,7 +57,7 @@ const lastName = Field<"lastName", string> ("lastName", "last_name");
 
 const { team, id, age } = Player.spec;
 
-const byId = sql<{ id: number }>`
+const byId = sql<{ id: number }, typeof Player>`
   and id = ${p => p.id}
 `;
 
@@ -72,9 +72,11 @@ const playerById = Player ([
   age,
   Team (["id"]),
   Goal (["id", "minute"]),
-  byId,
+  sql<{ id: number }>`
+    and id = ${p => p.id}
+  `,
   andName
 ]);
 
 
-playerById ({ id: 2, name: "ddd" }, querier).then (res => console.log (res));
+playerById ({ }, querier).then (res => console.log (res));
