@@ -80,6 +80,9 @@ export type Runnable<Params, Output> =
       ? (params: Params, querier?: Querier) => Output
       : (params?: Params, querier?: Querier) => Output;
 
+export type Runnable2<Output> =
+  <Params>(params: Params, querier?: Querier) => Output;
+
 export type RQLTagMaker<Box extends Boxes> =
   <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output, Box>[]) => RQLTag<Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
 

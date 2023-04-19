@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import sql from "./SQLTag2/sql";
 import Table2 from "./Table2";
 import belongsTo from "./Table2/belongsTo";
 import Field from "./Table2/Field";
@@ -56,14 +57,24 @@ const lastName = Field<"lastName", string> ("lastName", "last_name");
 
 const { team, id, age } = Player.spec;
 
+const byId = sql<{ id: number }>`
+  and id = ${p => p.id}
+`;
+
+const andName = sql<{ name: string }>`
+  and name = ${p => p.name}
+`;
+
 const playerById = Player ([
   "id",
   // id,
   // "firstName"
   age,
   Team (["id"]),
-  Goal (["id", "minute"])
+  Goal (["id", "minute"]),
+  byId,
+  andName
 ]);
 
 
-playerById ({}, querier).then (res => console.log (res));
+playerById ({ id: 2, name: "ddd" }, querier).then (res => console.log (res));

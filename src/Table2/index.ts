@@ -1,10 +1,11 @@
 import { Boxes } from "../common/BoxRegistry";
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { ConvertPromise, Querier, RQLTagMaker, Runnable } from "../common/types";
+import { ConvertPromise, Querier, RQLTagMaker, Runnable, StringMap } from "../common/types";
 import { NameMap, InputSpec, OnlyFields, OnlyTableFields } from "../common/types2";
 import validateTable from "../common/validateTable";
 import { ASTNode, Identifier, RefNode } from "../nodes";
 import RQLTag from "../RQLTag";
+import SQLTag2 from "../SQLTag2";
 import Table from "../Table";
 import Field from "./Field";
 import TableField from "./TableField";
@@ -39,7 +40,10 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
   // }
 
   type SpecS = { [S in typeof spec[number] as S["as"] ]: S };
-  type IComp = keyof OnlyFields<SpecS> | OnlyFields<SpecS>[keyof OnlyFields<SpecS>] | RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["tableId"], {}, any, Box>;
+  type IComp = keyof OnlyFields<SpecS> |
+    OnlyFields<SpecS>[keyof OnlyFields<SpecS>] |
+    RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["tableId"], {}, any, Box> |
+    SQLTag2;
 
   const table = (<Comp extends IComp>(comps: Comp[]) => {
     // const table = (<Comp extends keyof SpecS>(comps: Comp[]) => {
@@ -57,6 +61,18 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
             : never => {
       return "" as any;
     });
+
+    type UnionToIntersection<U> =
+      (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
+
+    type CombinedParams<T extends SQLTag2[]> = UnionToIntersection<T[number]["params"]>;
+
+
+
+    const tags = comps.map ((c: Comp): Comp extends SQLTag2 ? Comp : never => {
+      return "" as any;
+    }, {});
+
 
     const nodes: ASTNode<{}, any, any>[] = [];
 
@@ -80,7 +96,7 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
 
     // const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
 
-    return RQLTag<Name, {}, { [K in typeof selected[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, SpecS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }[]>);
+    return RQLTag<Name, CombinedParams<typeof tags>, { [K in typeof selected[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, SpecS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }[]>);
     // return RQLTag<As, {}, { [K in typeof selected[number]]: typeof specS[K]["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number]]: typeof specS[K]["type"] }>);
   });
   // as Table2<Spec<Input>> & RQLTagMaker2<Input, Spec<Input>, Box>;
