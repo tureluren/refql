@@ -62,6 +62,25 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
       return "" as any;
     });
 
+  type Fields = OnlyFields<SpecS>;
+  type Tables = OnlyTableFields<SpecS>;
+  type Names = NameMap<Tables>;
+
+  type SelectedS<T> =
+    T extends (infer U)[]
+    ? (U extends keyof Fields
+      ? {as: U; type: Fields[U]["type"]}
+      : U extends Fields[keyof Fields]
+        ? {as: U["as"]; type: U["type"]}
+        : U extends RQLTag<Tables[keyof Tables]["tableId"], {}, any, Box>
+          ? Names[U["tableId"]] extends TableField<any, any, "BelongsTo">
+            ? {as: Names[U["tableId"]]["as"]; type: U["type"][0]}
+            : Names[U["tableId"]] extends TableField<any, any, "HasMany">
+              ? {as: Names[U["tableId"]]["as"]; type: U["type"]}
+              : never
+          : never)[]
+    : never;
+
     type UnionToIntersection<U> =
       (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
@@ -102,7 +121,7 @@ for (const comp of comps) {
 
 // const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
 
-return RQLTag<Name, CombinedParams<Tags>, { [K in typeof selected[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, SpecS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number] as K["as"]]: K["type"] }[]>);
+return RQLTag<Name, CombinedParams<Tags>, { [K in SelectedS<typeof comps>[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, SpecS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in SelectedS<typeof comps>[number] as K["as"]]: K["type"] }[]>);
     // return RQLTag<As, {}, { [K in typeof selected[number]]: typeof specS[K]["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number]]: typeof specS[K]["type"] }>);
   });
   // as Table2<Spec<Input>> & RQLTagMaker2<Input, Spec<Input>, Box>;

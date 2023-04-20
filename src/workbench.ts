@@ -79,4 +79,4 @@ const playerById = Player ([
 ]);
 
 
-playerById ({ }, querier).then (res => console.log (res));
+playerById ({ id: 1, name: "dd" }, querier).then (res => console.log (res));
