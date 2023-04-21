@@ -1,4 +1,5 @@
 import RefField from "../RefField";
+import RQLTag from "../RQLTag";
 import SQLTag2 from "../SQLTag2";
 import Table2 from "../Table2";
 import Field from "../Table2/Field";
@@ -78,3 +79,35 @@ export interface RefInfo<As extends string> {
 // export type RQLTagMaker2<Input extends InputSpec, S extends Spec<Input>, Box extends Boxes> =
 //   <Output extends Pick<S, Comp>, Params = unknown, Comp extends keyof S = "">(comps: Comp[])
 //     => RQLTag<Params, { [k in keyof Output]: Output[k]["type"]}, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, { [k in keyof Output]: Output[k]["type"]}>>>;
+
+
+export type UnionToIntersection<U> =
+  (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
+
+export type SQLTag2Objects<T> = T extends (infer U)[]
+  ? U extends SQLTag2
+    ? U[]
+    : never
+  : never;
+
+export type CombinedParams<T> = UnionToIntersection<SQLTag2Objects<T>[number]["params"]>;
+
+export type IComp<T> = keyof OnlyFields<T> |
+  OnlyFields<T>[keyof OnlyFields<T>] |
+  RQLTag<OnlyTableFields<T>[keyof OnlyTableFields<T>]["tableId"], {}, any, any> |
+  SQLTag2;
+
+export type SelectedS<T, S, Fields extends OnlyFields<S> = OnlyFields<S>, Tables extends OnlyTableFields<S> = OnlyTableFields<S>, Names extends NameMap<Tables> = NameMap<Tables>> =
+    T extends (infer U)[]
+    ? (U extends keyof Fields
+      ? {as: U; type: Fields[U]["type"]}
+      : U extends Fields[keyof Fields]
+        ? {as: U["as"]; type: U["type"]}
+        : U extends RQLTag<Tables[keyof Tables]["tableId"], {}, any, Box>
+          ? Names[U["tableId"]] extends TableField<any, any, "BelongsTo">
+            ? {as: Names[U["tableId"]]["as"]; type: U["type"][0]}
+            : Names[U["tableId"]] extends TableField<any, any, "HasMany">
+              ? {as: Names[U["tableId"]]["as"]; type: U["type"]}
+              : never
+          : never)[]
+    : never;

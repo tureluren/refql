@@ -1,7 +1,7 @@
 import { Boxes } from "../common/BoxRegistry";
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { ConvertPromise, Querier, RQLTagMaker, Runnable, StringMap } from "../common/types";
-import { NameMap, InputSpec, OnlyFields, OnlyTableFields, OnlySQLTags } from "../common/types2";
+import { NameMap, InputSpec, OnlyFields, OnlyTableFields, OnlySQLTags, SQLTag2Objects, CombinedParams, IComp, SelectedS } from "../common/types2";
 import validateTable from "../common/validateTable";
 import { ASTNode, Identifier, RefNode } from "../nodes";
 import RQLTag from "../RQLTag";
@@ -39,89 +39,42 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
   //   throw new Error ("Invalid refs: not an Array");
   // }
 
-  type SpecS = { [S in typeof spec[number] as S["as"] ]: S };
-  type IComp = keyof OnlyFields<SpecS> |
-    OnlyFields<SpecS>[keyof OnlyFields<SpecS>] |
-    RQLTag<OnlyTableFields<SpecS>[keyof OnlyTableFields<SpecS>]["tableId"], {}, any, Box> |
-    SQLTag2;
-
-  const table = (<Comp extends IComp>(comps: Comp[]) => {
-    // const table = (<Comp extends keyof SpecS>(comps: Comp[]) => {
-    const selected = comps.map (<Fields extends OnlyFields<SpecS>, Tables extends OnlyTableFields<SpecS>, Names extends NameMap<Tables>>(c: Comp):
-      Comp extends keyof Fields
-        ? {as: Comp; type: Fields[Comp]["type"]}
-        : Comp extends Fields[keyof Fields]
-          ? {as: Comp["as"]; type: Comp["type"]}
-          : Comp extends RQLTag<Tables[keyof Tables]["tableId"], {}, any, Box>
-            ? Names[Comp["tableId"]] extends TableField<any, any, "BelongsTo">
-              ? {as: Names[Comp["tableId"]]["as"]; type: Comp["type"][0]}
-              : Names[Comp["tableId"]] extends TableField<any, any, "HasMany">
-              ? {as: Names[Comp["tableId"]]["as"]; type: Comp["type"]}
-              : never
-            : never => {
-      return "" as any;
-    });
-
-  type Fields = OnlyFields<SpecS>;
-  type Tables = OnlyTableFields<SpecS>;
-  type Names = NameMap<Tables>;
-
-  type SelectedS<T> =
-    T extends (infer U)[]
-    ? (U extends keyof Fields
-      ? {as: U; type: Fields[U]["type"]}
-      : U extends Fields[keyof Fields]
-        ? {as: U["as"]; type: U["type"]}
-        : U extends RQLTag<Tables[keyof Tables]["tableId"], {}, any, Box>
-          ? Names[U["tableId"]] extends TableField<any, any, "BelongsTo">
-            ? {as: Names[U["tableId"]]["as"]; type: U["type"][0]}
-            : Names[U["tableId"]] extends TableField<any, any, "HasMany">
-              ? {as: Names[U["tableId"]]["as"]; type: U["type"]}
-              : never
-          : never)[]
-    : never;
-
-    type UnionToIntersection<U> =
-      (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
-
-    type CombinedParams<T extends SQLTag2[]> = UnionToIntersection<T[number]["params"]>;
-
-type SQLTag2Objects<T> = T extends (infer U)[]
-  ? U extends SQLTag2
-    ? U[]
-    : never
-  : never;
-
-// const tags = comps.map ((c: Comp): Comp extends SQLTag2 ? Comp : never => {
-//   return "" as any;
-// }, {});
-type Tags = SQLTag2Objects<typeof comps>;
+  let specS = spec.reduce ((acc, key) => {
+    return {
+      ...acc,
+      [key.as]: spec[key.as]
+    };
+  }, {} as { [S in typeof spec[number] as S["as"] ]: S });
 
 
 
-const nodes: ASTNode<{}, any, any>[] = [];
 
-for (const comp of comps) {
-  // and keys includes comp
-  if (typeof comp === "string") {
-    const id = (table as any).spec[comp] as Field;
+  const table = (<Comp extends IComp<typeof specS>>(comps: Comp[]) => {
+
+    type Tags = SQLTag2Objects<typeof comps>;
+
+    const nodes: ASTNode<{}, any, any>[] = [];
+
+    for (const comp of comps) {
+      // and keys includes comp
+      if (typeof comp === "string") {
+        const id = (table as any).spec[comp] as Field;
         nodes.push (Identifier (id.col || id.as, id.as));
-  } else if (RQLTag.isRQLTag (comp)) {
-    for (const specKey in (table as any).spec) {
-      const sp = (table as any).spec[specKey];
+      } else if (RQLTag.isRQLTag (comp)) {
+        for (const specKey in (table as any).spec) {
+          const sp = (table as any).spec[specKey];
 
-      if (TableField.isTableField (sp) && sp.child.equals (comp.table)) {
+          if (TableField.isTableField (sp) && sp.child.equals (comp.table)) {
             nodes.push (RefNode (sp.refInfo as any, comp, true));
+          }
+        }
+
       }
     }
 
-  }
-}
+    // const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
 
-
-// const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
-
-return RQLTag<Name, CombinedParams<Tags>, { [K in SelectedS<typeof comps>[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, SpecS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in SelectedS<typeof comps>[number] as K["as"]]: K["type"] }[]>);
+    return RQLTag<Name, CombinedParams<typeof comps>, { [K in SelectedS<typeof comps, typeof specS>[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, typeof specS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in SelectedS<typeof comps, typeof specS>[number] as K["as"]]: K["type"] }[]>);
     // return RQLTag<As, {}, { [K in typeof selected[number]]: typeof specS[K]["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number]]: typeof specS[K]["type"] }>);
   });
   // as Table2<Spec<Input>> & RQLTagMaker2<Input, Spec<Input>, Box>;
@@ -154,18 +107,11 @@ return RQLTag<Name, CombinedParams<Tags>, { [K in SelectedS<typeof comps>[number
     enumerable: true
   });
 
-  let specS = Object.keys (spec).reduce ((acc, key) => {
-    return {
-      ...acc,
-      [key]: spec[key]
-    };
-  }, {} as unknown as SpecS);
-
 
   (table as any).spec = specS;
   (table as any).schema = schema;
 
-  return table as unknown as Table2<Name, { [K in keyof SpecS]: SpecS[K] }> & typeof table;
+  return table as unknown as Table2<Name, { [K in keyof typeof specS]: typeof specS[K] }> & typeof table;
 }
 
 function toString<Name extends string, S, Box extends Boxes>(this: Table2<Name, S, Box>) {
