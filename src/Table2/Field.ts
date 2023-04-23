@@ -1,8 +1,9 @@
 import { refqlType } from "../common/consts";
+import SQLTag2 from "../SQLTag2";
 
-interface Field<As extends string = any, Type = unknown> {
+interface Field<As extends string = any, Type = unknown, Params = any> {
   as: As;
-  col?: string;
+  col: Params extends Record<any, any> ? SQLTag2<Params> : string | undefined;
   type: Type;
   arrayOf: () => Field<As, Type[]>;
 }
@@ -14,16 +15,14 @@ const prototype = {
   [refqlType]: type
 };
 
-function Field<As extends string, Type = unknown>(as: As, col?: string) {
-  let field: Field<As, Type> = Object.create (prototype);
+function Field<As extends string, Type = unknown, Params = any>(as: As, col?: SQLTag2<Params> | string) {
+  let field: Field<As, Type, Params> = Object.create (prototype);
 
   field.as = as;
-  field.col = col;
+  field.col = col as Params extends Record<any, any> ? SQLTag2<Params> : string;
 
   return field;
 }
-
-
 
 
 

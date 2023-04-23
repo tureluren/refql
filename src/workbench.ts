@@ -23,11 +23,22 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
+// const buh = varchar ("fullName", sql<{ table: string }>`
+//     concat (first_name, " ", last_name)
+//   `) ;
+
+// const buh2 = varchar ("fullName") ;
+
+// type IBUh = typeof buh.col;
+// type IBUh2 = typeof buh2.col;
 
 
 const Player = Table2 ("player", [
   numberField ("id").arrayOf (),
   numberField ("age", "age"),
+  varchar ("fullName", sql<{ table: string }>`
+    concat (first_name, " ", last_name) 
+  `),
   // ids: "foemp",
   // firstName: varchar ("first_name"),
   belongsTo ("team", "team"),
@@ -55,7 +66,8 @@ const Goal = Table2 ("goal", [
 
 const lastName = Field<"lastName", string> ("lastName", "last_name");
 
-const { team, id, age } = Player.spec;
+const { team, id, age, fullName } = Player.spec;
+
 
 const byId = sql<{ id: number }, typeof Player>`
   and id = ${p => p.id}
@@ -66,10 +78,11 @@ const andName = sql<{ name: string }>`
 `;
 
 const playerById = Player ([
-  "id",
-  // id,
+  // "id",
+  id,
   // "firstName"
-  age,
+  // age,
+  fullName,
   Team (["id"]),
   Goal (["id", "minute"]),
   sql<{ id: number }>`
@@ -79,4 +92,4 @@ const playerById = Player ([
 ]);
 
 
-playerById ({ id: 1, name: "dd" }, querier).then (res => console.log (res));
+playerById ({ id: 1, name: "", table: "" }, querier).then (res => console.log (res));

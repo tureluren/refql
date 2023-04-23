@@ -51,8 +51,6 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
 
   const table = (<Comp extends IComp<typeof specS>>(comps: Comp[]) => {
 
-    type Tags = SQLTag2Objects<typeof comps>;
-
     const nodes: ASTNode<{}, any, any>[] = [];
 
     for (const comp of comps) {
@@ -74,7 +72,7 @@ function Table2<Name extends string = any, Input extends InputSpec = [], Box ext
 
     // const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table);
 
-    return RQLTag<Name, CombinedParams<typeof comps>, { [K in SelectedS<typeof comps, typeof specS>[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, typeof specS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in SelectedS<typeof comps, typeof specS>[number] as K["as"]]: K["type"] }[]>);
+    return RQLTag<Name, CombinedParams<typeof comps, typeof specS>, { [K in SelectedS<typeof comps, typeof specS>[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, typeof specS, Box>, nodes, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in SelectedS<typeof comps, typeof specS>[number] as K["as"]]: K["type"] }[]>);
     // return RQLTag<As, {}, { [K in typeof selected[number]]: typeof specS[K]["type"] }, Box> (table as unknown as Table2<As, Spec<Input>, Box>, [], defaultQuerier, convertPromise as ConvertPromise<Box, { [K in typeof selected[number]]: typeof specS[K]["type"] }>);
   });
   // as Table2<Spec<Input>> & RQLTagMaker2<Input, Spec<Input>, Box>;

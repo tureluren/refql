@@ -84,13 +84,21 @@ export interface RefInfo<As extends string> {
 export type UnionToIntersection<U> =
   (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
-export type SQLTag2Objects<T> = T extends (infer U)[]
-  ? U extends SQLTag2
-    ? U[]
-    : never
+export type SQLTag2Objects<T, S, Fields extends OnlyFields<S> = OnlyFields<S>> = T extends (infer U)[]
+  ? (U extends SQLTag2
+    ? U
+    : U extends Field
+      ? U["col"] extends SQLTag2
+        ? U["col"]
+        : never
+      : U extends keyof Fields
+        ? Fields[U]["col"] extends SQLTag2
+          ? Fields[U]["col"]
+          : never
+        : never)[]
   : never;
 
-export type CombinedParams<T> = UnionToIntersection<SQLTag2Objects<T>[number]["params"]>;
+export type CombinedParams<T, S> = UnionToIntersection<SQLTag2Objects<T, S>[number]["params"]>;
 
 export type IComp<T> = keyof OnlyFields<T> |
   OnlyFields<T>[keyof OnlyFields<T>] |
@@ -103,7 +111,7 @@ export type SelectedS<T, S, Fields extends OnlyFields<S> = OnlyFields<S>, Tables
       ? {as: U; type: Fields[U]["type"]}
       : U extends Fields[keyof Fields]
         ? {as: U["as"]; type: U["type"]}
-        : U extends RQLTag<Tables[keyof Tables]["tableId"], {}, any, Box>
+        : U extends RQLTag<Tables[keyof Tables]["tableId"], {}, any, "Promise">
           ? Names[U["tableId"]] extends TableField<any, any, "BelongsTo">
             ? {as: Names[U["tableId"]]["as"]; type: U["type"][0]}
             : Names[U["tableId"]] extends TableField<any, any, "HasMany">
