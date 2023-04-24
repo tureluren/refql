@@ -6,6 +6,7 @@ interface Field<As extends string = any, Type = unknown, Params = any> {
   col: Params extends Record<any, any> ? SQLTag2<Params> : string | undefined;
   type: Type;
   arrayOf: () => Field<As, Type[]>;
+  nullable: () => Field<As, Type | null>;
 }
 
 const type = "refql/Field";

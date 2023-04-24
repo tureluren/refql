@@ -4,8 +4,8 @@ import Table2 from "./Table2";
 import belongsTo from "./Table2/belongsTo";
 import Field from "./Table2/Field";
 import hasMany from "./Table2/hasMany";
-import numberField from "./Table2/numberField";
-import varchar from "./Table2/varchar";
+import numberProp from "./Table2/numberProp";
+import stringProp from "./Table2/stringProp";
 
 
 const pool = new Pool ({
@@ -34,9 +34,9 @@ const querier = async (query: string, values: any[]) => {
 
 
 const Player = Table2 ("player", [
-  numberField ("id").arrayOf (),
-  numberField ("age", "age"),
-  varchar ("fullName", sql<{ table: string }>`
+  numberProp ("id").arrayOf (),
+  numberProp ("age", "age").nullable (),
+  stringProp ("fullName", sql<{ table: string }>`
     concat (first_name, " ", last_name) 
   `),
   // ids: "foemp",
@@ -46,20 +46,20 @@ const Player = Table2 ("player", [
 ]);
 
 const Team = Table2 ("team", [
-  numberField ("id", "id"),
-  varchar ("name", "name"),
+  numberProp ("id", "id"),
+  stringProp ("name", "name"),
   belongsTo ("league", "league")
 ]);
 
 const League = Table2 ("league", [
-  numberField ("id", "id")
+  numberProp ("id", "id")
   // ids: "foemp",
   // leagueName: varchar ("name")
 ]);
 
 const Goal = Table2 ("goal", [
-  numberField ("id", "id"),
-  varchar ("minute", "minute")
+  numberProp ("id", "id"),
+  stringProp ("minute", "minute")
 ]);
 
 // const uuid = numberField ("uuid") ("uuiid");
@@ -81,7 +81,7 @@ const playerById = Player ([
   // "id",
   id,
   // "firstName"
-  // age,
+  age,
   fullName,
   Team (["id"]),
   Goal (["id", "minute"]),

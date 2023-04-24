@@ -1,6 +1,7 @@
+import SQLTag2 from "../SQLTag2";
 import Field from "./Field";
 
-const booleanField = <As extends string>(as: As, col?: string) =>
-  Field<As, boolean> (as, col);
+const booleanProp = <As extends string, Params> (as: As, col?: string | SQLTag2<Params>) =>
+  Field<As, number, Params> (as, col);
 
-export default booleanField;
+export default booleanProp;
