@@ -36,6 +36,10 @@ export type Only<T, S> = {
 
 export type OnlyFields<T> = Only<T, Field>;
 
+export type OnlyPropFields<T> = {
+  [K in keyof T as T[K] extends Field ? T[K]["col"] extends SQLTag2 ? never : K : never]: T[K] extends Field ? T[K]["col"] extends SQLTag2 ? never : T[K] : never
+};
+
 export type OnlyTableFields<T> = Only<T, TableField>;
 
 export type OnlySQLTags<T> = Only<T, SQLTag2>;
@@ -100,7 +104,10 @@ export type SQLTag2Objects<T, S, Fields extends OnlyFields<S> = OnlyFields<S>> =
 
 export type CombinedParams<T, S> = UnionToIntersection<SQLTag2Objects<T, S>[number]["params"]>;
 
-export type IComp<T> = keyof OnlyFields<T> |
+export type AllSign = "*";
+
+export type IComp<T> = AllSign |
+  keyof OnlyFields<T> |
   OnlyFields<T>[keyof OnlyFields<T>] |
   RQLTag<OnlyTableFields<T>[keyof OnlyTableFields<T>]["tableId"], {}, any, any> |
   SQLTag2;
@@ -119,3 +126,5 @@ export type SelectedS<T, S, Fields extends OnlyFields<S> = OnlyFields<S>, Tables
               : never
           : never)[]
     : never;
+
+export type AllInComps<S, Comps extends IComp<S>[]> = "*" extends Comps[number] ? true : false;

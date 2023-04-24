@@ -78,17 +78,18 @@ const andName = sql<{ name: string }>`
 `;
 
 const playerById = Player ([
-  // "id",
-  id,
-  // "firstName"
-  age,
-  fullName,
-  Team (["id"]),
-  Goal (["id", "minute"]),
-  sql<{ id: number }>`
-    and id = ${p => p.id}
-  `,
-  andName
+  "*",
+  // // "id",
+  // id,
+  // "id"
+  // age,
+  // fullName,
+  Team (["id"])
+  // Goal (["id", "minute"]),
+  // sql<{ id: number }>`
+  //   and id = ${p => p.id}
+  // `,
+  // andName
 ]);
 
 
