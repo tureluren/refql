@@ -41,6 +41,7 @@ const Player = Table2 ("player", [
   stringProp ("fullName", sql<{ table: string }>`
     concat (first_name, " ", last_name)
   `),
+  stringProp ("firstName", "first_name"),
   // ids: "foemp",
   // firstName: varchar ("first_name"),
   belongsTo ("team", "team"),
@@ -68,7 +69,7 @@ const Goal = Table2 ("goal", [
 
 // const lastName = Field<"lastName", string> ("lastName", "last_name");
 
-// const { team, id, age, fullName } = Player.spec;
+const { team, id, age, fullName } = Player.spec;
 
 
 const byId = sql<{ id: number }, typeof Player>`
@@ -80,8 +81,8 @@ const andName = sql<{ name: string }>`
 `;
 
 const playerById = Player ([
-  // "*",
-  "id",
+  "*",
+  // "id",
   // id,
   // "id"
   // age,
@@ -100,10 +101,10 @@ const playerRes = Player ([
   Team (["name"])
 ]);
 
-const concatted = playerById.concat (playerRes);
+// const concatted = playerById.concat (playerRes);
 
 
-concatted ({ name: "", id: 1 }, querier).then (res => console.log (res[0].team));
+playerById ({ name: "" }, querier).then (res => console.log (res));
 
 const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
   select id, ${Raw (p => p.firstNameField)}

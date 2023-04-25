@@ -28,7 +28,9 @@ export type RelType = "BelongsTo" | "HasMany" | "HasOne" | "BelongsToMany";
 // };
 
 // export type InputSpec = Record<string, Field | TableField>;
-export type InputSpec = (Field | TableField) [];
+
+// Rel ipv TableField
+export type Prop = Field | TableField;
 
 export type Only<T, S> = {
   [K in keyof T as T[K] extends S ? K : never]: T[K] extends S ? T[K] : never
@@ -106,7 +108,7 @@ export type CombinedParams<T, S> = UnionToIntersection<SQLTag2Objects<T, S>[numb
 
 export type AllSign = "*";
 
-export type IComp<T> = AllSign |
+export type Comp<T> = AllSign |
   keyof OnlyFields<T> |
   OnlyFields<T>[keyof OnlyFields<T>] |
   RQLTag<OnlyTableFields<T>[keyof OnlyTableFields<T>]["tableId"], {}, any, any> |
@@ -127,4 +129,4 @@ export type SelectedS<T, S, Fields extends OnlyFields<S> = OnlyFields<S>, Tables
           : never)[]
     : never;
 
-export type AllInComps<S, Comps extends IComp<S>[]> = "*" extends Comps[number] ? true : false;
+export type AllInComps<S, Comps extends Comp<S>[]> = "*" extends Comps[number] ? true : false;
