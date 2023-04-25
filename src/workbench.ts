@@ -69,7 +69,7 @@ const Goal = Table2 ("goal", [
 
 // const lastName = Field<"lastName", string> ("lastName", "last_name");
 
-const { team, id, age, fullName } = Player.spec;
+const { team, id, age, fullName } = Player.props;
 
 
 const byId = sql<{ id: number }, typeof Player>`
