@@ -26,6 +26,7 @@ interface Extra<Params, Output, Box extends Boxes> {
 
 // As or Name ?
 interface RQLTag<TableId, Params, Output, Box extends Boxes> {
+  (params: Params, querier?: Querier): ReturnType<ConvertPromise<Box, Output>>;
   tableId: TableId;
   type: Output;
   table: Table2<any, any, Box>;
@@ -33,7 +34,7 @@ interface RQLTag<TableId, Params, Output, Box extends Boxes> {
   defaultQuerier?: Querier;
   convertPromise?: ConvertPromise<Box, Output>;
   interpreted: InterpretedRQLTag<TableId, Params, Output, Box>;
-  concat<Params2, Output2, Box2 extends Boxes>(other: RQLTag<TableId, Params2, Output2, Box2>): RQLTag<TableId, Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
+  concat<Params2, Output2, Box2 extends Boxes>(other: RQLTag<TableId, Params2, Output2, Box2>): RQLTag<TableId, Params & Params2, Output & Output2, Box>;
   [flConcat]: RQLTag<TableId, Params, Output, Box>["concat"];
   interpret(): InterpretedRQLTag<TableId, Params, Output, Box> & Extra<Params, Output, Box>;
   compile(params: Params): [string, any[], Next<TableId, Params, Output, Box>[]];
@@ -60,7 +61,7 @@ function RQLTag<TableId extends string, Params, Output, Box extends Boxes>(table
       throw new Error ("There was no Querier provided");
     }
     return convert (tag.aggregate (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
-  }) as RQLTag<TableId, Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
+  }) as RQLTag<TableId, Params, Output, Box>;
 
   Object.setPrototypeOf (
     tag,

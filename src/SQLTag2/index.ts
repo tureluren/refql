@@ -22,13 +22,14 @@ interface InterpretedSQLTag<Params, Box extends Boxes> {
 }
 
 interface SQLTag2<Params = any, Output = any, Box extends Boxes = "Promise"> {
+  (params: Params, querier?: Querier): ReturnType<ConvertPromise<Box, Output>>;
   params: Params;
   nodes: ASTNode<Params, Output, Box>[];
   interpreted?: InterpretedSQLTag<Params, Box>;
   defaultQuerier?: Querier;
   convertPromise?: ConvertPromise<Box, Output>;
-  concat<Params2, Output2, Box2 extends Boxes>(other: SQLTag2<Params2, Output2, Box2>): SQLTag2<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
-  join<Params2, Output2>(delimiter: string, other: SQLTag2<Params2, Output2, Box>): SQLTag2<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
+  concat<Params2, Output2, Box2 extends Boxes>(other: SQLTag2<Params2, Output2, Box2>): SQLTag2<Params & Params2, Output & Output2, Box>;
+  join<Params2, Output2>(delimiter: string, other: SQLTag2<Params2, Output2, Box>): SQLTag2<Params & Params2, Output & Output2, Box>;
   [flConcat]: SQLTag2<Params, Output, Box>["concat"];
   interpret(): InterpretedSQLTag<Params, Box>;
   compile(params: Params, table?: Table<Box>): [string, any[]];
@@ -57,7 +58,7 @@ function SQLTag2<Params, Output, Box extends Boxes>(nodes: ASTNode<Params, Outpu
     const [query, values] = tag.compile (params);
 
     return convert ((querier || defaultQuerier as Querier) (query, values) as Promise<Output>);
-  }) as SQLTag2<Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
+  }) as SQLTag2<Params, Output, Box>;
 
   Object.setPrototypeOf (
     tag,

@@ -1,4 +1,6 @@
 import { Pool } from "pg";
+import { Raw } from "./nodes";
+import SQLTag2 from "./SQLTag2";
 import sql from "./SQLTag2/sql";
 import Table2 from "./Table2";
 import belongsTo from "./Table2/belongsTo";
@@ -37,7 +39,7 @@ const Player = Table2 ("player", [
   numberProp ("id").arrayOf (),
   numberProp ("age", "age").nullable (),
   stringProp ("fullName", sql<{ table: string }>`
-    concat (first_name, " ", last_name) 
+    concat (first_name, " ", last_name)
   `),
   // ids: "foemp",
   // firstName: varchar ("first_name"),
@@ -64,9 +66,9 @@ const Goal = Table2 ("goal", [
 
 // const uuid = numberField ("uuid") ("uuiid");
 
-const lastName = Field<"lastName", string> ("lastName", "last_name");
+// const lastName = Field<"lastName", string> ("lastName", "last_name");
 
-const { team, id, age, fullName } = Player.spec;
+// const { team, id, age, fullName } = Player.spec;
 
 
 const byId = sql<{ id: number }, typeof Player>`
@@ -78,19 +80,44 @@ const andName = sql<{ name: string }>`
 `;
 
 const playerById = Player ([
-  "*",
-  // // "id",
+  // "*",
+  "id",
   // id,
   // "id"
   // age,
   // fullName,
-  Team (["id"])
+  Team (["id"]),
   // Goal (["id", "minute"]),
   // sql<{ id: number }>`
   //   and id = ${p => p.id}
   // `,
-  // andName
+  andName
 ]);
 
+const playerRes = Player ([
+  "age",
+  byId,
+  Team (["name"])
+]);
 
-playerById ({ id: 1, name: "", table: "" }, querier).then (res => console.log (res));
+const concatted = playerById.concat (playerRes);
+
+
+concatted ({ name: "", id: 1 }, querier).then (res => console.log (res[0].team));
+
+const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
+  select id, ${Raw (p => p.firstNameField)}
+`;
+
+const simpleTag2 = sql<{limit: number}, { last_name: string}[]>`
+  , last_name
+  from player
+  limit ${p => p.limit}
+`;
+
+const combined = simpleTag.concat (simpleTag2);
+
+// console.log (SQLTag2.prototype);
+
+
+combined ({ firstNameField: "first_name", limit: 2 }, querier).then (res => console.log (res));
