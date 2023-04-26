@@ -4,7 +4,6 @@ import SQLTag2 from "./SQLTag2";
 import sql from "./SQLTag2/sql";
 import Table2 from "./Table2";
 import belongsTo from "./Table2/belongsTo";
-import Field from "./Table2/Field";
 import hasMany from "./Table2/hasMany";
 import numberProp from "./Table2/numberProp";
 import stringProp from "./Table2/stringProp";
@@ -48,6 +47,7 @@ const Player = Table2 ("player", [
   hasMany ("goals", "goal")
 ]);
 
+
 const Team = Table2 ("team", [
   numberProp ("id", "id"),
   stringProp ("name", "name"),
@@ -81,11 +81,10 @@ const andName = sql<{ name: string }>`
 `;
 
 const playerById = Player ([
-  "*",
   // "id",
-  // id,
+  id,
   // "id"
-  // age,
+  age,
   // fullName,
   Team (["id"]),
   // Goal (["id", "minute"]),

@@ -2,7 +2,7 @@ import Table2 from ".";
 import { RefNodeInput } from "../common/types2";
 import validateTable from "../common/validateTable";
 import RefField from "../RefField";
-import TableField from "./TableField";
+import RefProp from "./RefProp";
 import validateRefInput from "./validateRefInput";
 
 const belongsTo = <As extends string, TableId extends string>(as: As, tableId: TableId, input: RefNodeInput = {}) => {
@@ -10,7 +10,7 @@ const belongsTo = <As extends string, TableId extends string>(as: As, tableId: T
 
   validateRefInput (input);
 
-  return TableField<As, TableId, "BelongsTo"> (as, tableId, "BelongsTo", "" as any, {} as any);
+  return RefProp<As, TableId, "BelongsTo"> (as, tableId, "BelongsTo", "" as any, {} as any);
 
 };
 

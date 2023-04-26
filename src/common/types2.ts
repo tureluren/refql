@@ -2,8 +2,8 @@ import RefField from "../RefField";
 import RQLTag from "../RQLTag";
 import SQLTag2 from "../SQLTag2";
 import Table2 from "../Table2";
-import Field from "../Table2/Field";
-import TableField from "../Table2/TableField";
+import Prop from "../Table2/Prop";
+import RefProp from "../Table2/RefProp";
 
 
 // export type InputSpec = {
@@ -30,19 +30,18 @@ export type RelType = "BelongsTo" | "HasMany" | "HasOne" | "BelongsToMany";
 // export type InputSpec = Record<string, Field | TableField>;
 
 // Rel ipv TableField
-export type Component = Field | TableField;
 
 export type Only<T, S> = {
   [K in keyof T as T[K] extends S ? K : never]: T[K] extends S ? T[K] : never
 };
 
-export type OnlyFields<T> = Only<T, Field>;
+export type OnlyFields<T> = Only<T, Prop>;
 
 export type OnlyPropFields<T> = {
-  [K in keyof T as T[K] extends Field ? T[K]["col"] extends SQLTag2 ? never : K : never]: T[K] extends Field ? T[K]["col"] extends SQLTag2 ? never : T[K] : never
+  [K in keyof T as T[K] extends Prop ? T[K]["col"] extends SQLTag2 ? never : K : never]: T[K] extends Prop ? T[K]["col"] extends SQLTag2 ? never : T[K] : never
 };
 
-export type OnlyTableFields<T> = Only<T, TableField>;
+export type OnlyTableFields<T> = Only<T, RefProp>;
 
 export type OnlySQLTags<T> = Only<T, SQLTag2>;
 
@@ -93,7 +92,7 @@ export type UnionToIntersection<U> =
 export type SQLTag2Objects<T, S, Fields extends OnlyFields<S> = OnlyFields<S>> = T extends (infer U)[]
   ? (U extends SQLTag2
     ? U
-    : U extends Field
+    : U extends Prop
       ? U["col"] extends SQLTag2
         ? U["col"]
         : never
@@ -121,12 +120,12 @@ export type SelectedS<T, S, Fields extends OnlyFields<S> = OnlyFields<S>, Tables
       : U extends Fields[keyof Fields]
         ? {as: U["as"]; type: U["type"]}
         : U extends RQLTag<Tables[keyof Tables]["tableId"], {}, any, "Promise">
-          ? Names[U["tableId"]] extends TableField<any, any, "BelongsTo">
+          ? Names[U["tableId"]] extends RefProp<any, any, "BelongsTo">
             ? {as: Names[U["tableId"]]["as"]; type: U["type"][0]}
-            : Names[U["tableId"]] extends TableField<any, any, "HasMany">
+            : Names[U["tableId"]] extends RefProp<any, any, "HasMany">
               ? {as: Names[U["tableId"]]["as"]; type: U["type"]}
               : never
           : never)[]
     : never;
 
-export type AllInComps<S, Comps extends Comp<S>[]> = "*" extends Comps[number] ? true : false;
+export type AllInComps<S, Comps extends Selectable<S>[]> = "*" extends Comps[number] ? true : false;

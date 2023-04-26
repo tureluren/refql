@@ -1,6 +1,6 @@
-import TableField from "./TableField";
+import RefProp from "./RefProp";
 
 export const hasMany = <As extends string, TableId extends string>(as: As, tableId: TableId) =>
-  TableField<As, TableId, "HasMany"> (as, tableId, "HasMany", "" as any, {} as any);
+  RefProp<As, TableId, "HasMany"> (as, tableId, "HasMany", "" as any, {} as any);
 
 export default hasMany;

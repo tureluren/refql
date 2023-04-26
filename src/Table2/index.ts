@@ -1,11 +1,11 @@
 import { Boxes } from "../common/BoxRegistry";
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { ConvertPromise, Querier, RQLTagMaker } from "../common/types";
-import { AllInComps, CombinedParams, Selectable, OnlyPropFields, Component, SelectedS } from "../common/types2";
+import { AllInComps, CombinedParams, Selectable, OnlyPropFields, SelectedS } from "../common/types2";
 import { ASTNode, Identifier, RefNode } from "../nodes";
 import RQLTag from "../RQLTag";
-import Field from "./Field";
-import TableField from "./TableField";
+import Prop from "./Prop";
+import RefProp from "./RefProp";
 
 interface Table2<Name extends string = any, Props = {}, Box extends Boxes = "Promise"> {
   name: Name;
@@ -29,38 +29,36 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table2<Name extends string = any, Components extends Component[] = [], Box extends Boxes = "Promise">(name: Name, components: Components, defaultQuerier?: Querier, convertPromise?: ConvertPromise<Boxes>) {
+function Table2<Name extends string = any, Props extends(Prop | RefProp)[] = [], Box extends Boxes = "Promise">(name: Name, props: Props, defaultQuerier?: Querier, convertPromise?: ConvertPromise<Boxes>) {
   // validateTable (name);
 
-  // if (!Array.isArray (refs)) {
-  //   throw new Error ("Invalid refs: not an Array");
-  // }
+  if (!Array.isArray (props)) {
+    throw new Error ("Invalid props: not an Array");
+  }
 
-  let props = components.reduce ((acc, key) => {
+  let properties = props.reduce ((acc, key) => {
     return {
       ...acc,
-      [key.as]: components[key.as]
+      [key.as]: props[key.as]
     };
-  }, {} as { [C in Components[number] as C["as"] ]: C });
+  }, {} as { [P in Props[number] as P["as"] ]: P });
 
 
-
-
-  const table = (<Comps extends Selectable<typeof props>[]>(comps: Comps) => {
-    type Compies = AllInComps<typeof props, Comps> extends true ? [keyof OnlyPropFields<typeof props>, ...Comps] : Comps;
+  const table = (<Components extends Selectable<typeof properties>[]>(components: Components) => {
+    type Compies = AllInComps<typeof properties, Components> extends true ? [keyof OnlyPropFields<typeof properties>, ...Components] : Components;
 
     const nodes: ASTNode<{}, any, any>[] = [];
 
-    for (const comp of comps) {
+    for (const comp of components) {
       // and keys includes comp
       if (typeof comp === "string") {
-        const id = (table as any).spec[comp] as Field;
+        const id = (table as any).spec[comp] as Prop;
         nodes.push (Identifier (id.col || id.as, id.as));
       } else if (RQLTag.isRQLTag (comp)) {
         for (const specKey in (table as any).spec) {
           const sp = (table as any).spec[specKey];
 
-          if (TableField.isTableField (sp) && sp.child.equals (comp.table)) {
+          if (RefProp.isRefProp (sp) && sp.child.equals (comp.table)) {
             nodes.push (RefNode (sp.refInfo as any, comp, true));
           }
         }
@@ -68,7 +66,7 @@ function Table2<Name extends string = any, Components extends Component[] = [], 
       }
     }
 
-    return RQLTag<Name, CombinedParams<Comps, typeof props>, { [K in SelectedS<Compies, typeof props>[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, typeof props, Box>, nodes as any, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in SelectedS<Compies, typeof props>[number] as K["as"]]: K["type"] }[]>);
+    return RQLTag<Name, CombinedParams<Components, typeof properties>, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, typeof properties, Box>, nodes as any, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[]>);
   });
 
   Object.setPrototypeOf (table, prototype);
@@ -82,10 +80,10 @@ function Table2<Name extends string = any, Components extends Component[] = [], 
   });
 
 
-  (table as any).props = props;
+  (table as any).props = properties;
   (table as any).schema = schema;
 
-  return table as unknown as Table2<Name, { [K in keyof typeof props]: typeof props[K] }> & typeof table;
+  return table as unknown as Table2<Name, { [K in keyof typeof properties]: typeof properties[K] }> & typeof table;
 }
 
 function toString<Name extends string, S, Box extends Boxes>(this: Table2<Name, S, Box>) {
