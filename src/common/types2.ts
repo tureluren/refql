@@ -1,6 +1,6 @@
 import RefField from "../RefField";
 import RQLTag from "../RQLTag";
-import SQLTag2 from "../SQLTag2";
+import { SQLTag2 } from "../SQLTag2";
 import Table2 from "../Table2";
 import Prop from "../Table2/Prop";
 import RefProp from "../Table2/RefProp";
@@ -110,7 +110,7 @@ export type AllSign = "*";
 export type Selectable<T> = AllSign |
   keyof OnlyFields<T> |
   OnlyFields<T>[keyof OnlyFields<T>] |
-  RQLTag<OnlyTableFields<T>[keyof OnlyTableFields<T>]["tableId"], {}, any, any> |
+  RQLTag<OnlyTableFields<T>[keyof OnlyTableFields<T>]["tableId"], {}, any> |
   SQLTag2;
 
 export type SelectedS<T, S, Fields extends OnlyFields<S> = OnlyFields<S>, Tables extends OnlyTableFields<S> = OnlyTableFields<S>, Names extends NameMap<Tables> = NameMap<Tables>> =
@@ -119,7 +119,7 @@ export type SelectedS<T, S, Fields extends OnlyFields<S> = OnlyFields<S>, Tables
       ? {as: U; type: Fields[U]["type"]}
       : U extends Fields[keyof Fields]
         ? {as: U["as"]; type: U["type"]}
-        : U extends RQLTag<Tables[keyof Tables]["tableId"], {}, any, "Promise">
+        : U extends RQLTag<Tables[keyof Tables]["tableId"], {}, any>
           ? Names[U["tableId"]] extends RefProp<any, any, "BelongsTo">
             ? {as: Names[U["tableId"]]["as"]; type: U["type"][0]}
             : Names[U["tableId"]] extends RefProp<any, any, "HasMany">

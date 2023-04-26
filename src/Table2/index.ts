@@ -7,15 +7,15 @@ import RQLTag from "../RQLTag";
 import Prop from "./Prop";
 import RefProp from "./RefProp";
 
-interface Table2<Name extends string = any, Props = {}, Box extends Boxes = "Promise"> {
+interface Table2<Name extends string = any, Props = {}> {
   name: Name;
   schema?: string;
   // refs: Ref<Box>[];
   props: Props;
-  empty<Params, Output>(): RQLTag<Name, Params, Output, Box>;
-  [flEmpty]: Table2<Name, Props, Box>["empty"];
-  equals<Box2 extends Boxes>(other: Table2<Name, Props, Box2>): boolean;
-  [flEquals]: Table2<Name, Props, Box>["equals"];
+  empty<Params, Output>(): RQLTag<Name, Params, Output>;
+  [flEmpty]: Table2<Name, Props>["empty"];
+  equals(other: Table2<Name, Props>): boolean;
+  [flEquals]: Table2<Name, Props>["equals"];
   toString(): string;
 }
 
@@ -29,7 +29,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table2<Name extends string = any, Props extends(Prop | RefProp)[] = [], Box extends Boxes = "Promise">(name: Name, props: Props, defaultQuerier?: Querier, convertPromise?: ConvertPromise<Boxes>) {
+function Table2<Name extends string = any, Props extends(Prop | RefProp)[] = []>(name: Name, props: Props, defaultQuerier?: Querier) {
   // validateTable (name);
 
   if (!Array.isArray (props)) {
@@ -66,7 +66,7 @@ function Table2<Name extends string = any, Props extends(Prop | RefProp)[] = [],
       }
     }
 
-    return RQLTag<Name, CombinedParams<Components, typeof properties>, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[], Box> (table as unknown as Table2<Name, typeof properties, Box>, nodes as any, defaultQuerier, convertPromise as ConvertPromise<Box, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[]>);
+    return RQLTag<Name, CombinedParams<Components, typeof properties>, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[]> (table as unknown as Table2<Name, typeof properties>, nodes as any, defaultQuerier);
   });
 
   Object.setPrototypeOf (table, prototype);
@@ -86,11 +86,11 @@ function Table2<Name extends string = any, Props extends(Prop | RefProp)[] = [],
   return table as unknown as Table2<Name, { [K in keyof typeof properties]: typeof properties[K] }> & typeof table;
 }
 
-function toString<Name extends string, S, Box extends Boxes>(this: Table2<Name, S, Box>) {
+function toString<Name extends string, S>(this: Table2<Name, S>) {
   return `${this.schema ? `${this.schema}.` : ""}${this.name}`;
 }
 
-function equals<Name extends string, S, Box extends Boxes>(this: Table2<Name, S, Box>, other: Table2<Name, S, Box>) {
+function equals<Name extends string, S>(this: Table2<Name, S>, other: Table2<Name, S>) {
   if (!Table2.isTable (other)) return false;
 
   return (
@@ -100,11 +100,11 @@ function equals<Name extends string, S, Box extends Boxes>(this: Table2<Name, S,
 }
 
 // Revisit
-function empty<Name extends string, S, Box extends Boxes>(this: Table2<Name, S, Box> & RQLTagMaker<Box>) {
+function empty<Name extends string, S>(this: Table2<Name, S> & RQLTagMaker<any>) {
   return this``;
 }
 
-Table2.isTable = function<Name extends string, S, Box extends Boxes> (x: any): x is Table2<Name, S, Box> {
+Table2.isTable = function<Name extends string, S> (x: any): x is Table2<Name, S> {
   return x != null && x[refqlType] === type;
 };
 

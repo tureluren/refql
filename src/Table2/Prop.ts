@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import SQLTag2 from "../SQLTag2";
+import { SQLTag2 } from "../SQLTag2";
 
 interface Prop<As extends string = any, Type = unknown, Params = any> {
   as: As;

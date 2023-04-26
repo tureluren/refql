@@ -36,31 +36,31 @@ const querier = async (query: string, values: any[]) => {
 // type IBUh2 = typeof buh2.col;
 
 
-// const Player = Table2 ("player", [
-//   numberProp ("id").arrayOf (),
-//   numberProp ("age", "age").nullable (),
-//   stringProp ("fullName", sql<{ table: string }>`
-//     concat (first_name, " ", last_name)
-//   `),
-//   stringProp ("firstName", "first_name"),
-//   // ids: "foemp",
-//   // firstName: varchar ("first_name"),
-//   belongsTo ("team", "team"),
-//   hasMany ("goals", "goal")
-// ]);
+const Player = Table2 ("player", [
+  numberProp ("id").arrayOf (),
+  numberProp ("age", "age").nullable (),
+  stringProp ("fullName", sql<{ table: string }>`
+    concat (first_name, " ", last_name)
+  `),
+  stringProp ("firstName", "first_name"),
+  // ids: "foemp",
+  // firstName: varchar ("first_name"),
+  belongsTo ("team", "team"),
+  hasMany ("goals", "goal")
+]);
 
 
-// const Team = Table2 ("team", [
-//   numberProp ("id", "id"),
-//   stringProp ("name", "name"),
-//   belongsTo ("league", "league")
-// ]);
+const Team = Table2 ("team", [
+  numberProp ("id", "id"),
+  stringProp ("name", "name"),
+  belongsTo ("league", "league")
+]);
 
-// const League = Table2 ("league", [
-//   numberProp ("id", "id")
-//   // ids: "foemp",
-//   // leagueName: varchar ("name")
-// ]);
+const League = Table2 ("league", [
+  numberProp ("id", "id")
+  // ids: "foemp",
+  // leagueName: varchar ("name")
+]);
 
 // const Goal = Table2 ("goal", [
 //   numberProp ("id", "id"),
@@ -71,7 +71,7 @@ const querier = async (query: string, values: any[]) => {
 
 // // const lastName = Field<"lastName", string> ("lastName", "last_name");
 
-// const { team, id, age, fullName } = Player.props;
+const { team, id, age, fullName } = Player.props;
 
 
 // const byId = sql<{ id: number }, typeof Player>`
@@ -82,19 +82,19 @@ const querier = async (query: string, values: any[]) => {
 //   and name = ${p => p.name}
 // `;
 
-// const playerById = Player ([
-//   // "id",
-//   id,
-//   // "id"
-//   age,
-//   // fullName,
-//   Team (["id"]),
-//   // Goal (["id", "minute"]),
-//   // sql<{ id: number }>`
-//   //   and id = ${p => p.id}
-//   // `,
-//   andName
-// ]);
+const playerById = Player ([
+  // "id",
+  id,
+  // "id"
+  age,
+  // fullName,
+  Team (["id"])
+  // Goal (["id", "minute"]),
+  // sql<{ id: number }>`
+  //   and id = ${p => p.id}
+  // `,
+  // andName
+]);
 
 // const playerRes = Player ([
 //   "age",
@@ -105,7 +105,7 @@ const querier = async (query: string, values: any[]) => {
 // // const concatted = playerById.concat (playerRes);
 
 
-// playerById ({ name: "" }, querier).then (res => console.log (res));
+playerById ({ name: "" }, querier).then (res => console.log (res));
 // natural transformation
 
 // declare module "./SQLTag2" {
