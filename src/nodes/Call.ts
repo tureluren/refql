@@ -42,30 +42,30 @@ function interpret<Params, Output, Box extends Boxes>(this: Call<Params, Output,
 
   for (const node of this.nodes) {
     node.caseOf<void> ({
-      Call: (call, name, _as, cast) => {
-        args.push (sql`
-          ${Raw (name)} (${call})${Raw (castAs (cast))}
-        `);
-      },
-      Identifier: (name, _as, cast) => {
-        args.push (Raw ((_, t) => `${t!.name}.${name}${castAs (cast)}`));
-      },
+      // Call: (call, name, _as, cast) => {
+      //   args.push (sql`
+      //     ${Raw (name)} (${call})${Raw (castAs (cast))}
+      //   `);
+      // },
+      // Identifier: (name, _as, cast) => {
+      //   args.push (Raw ((_, t) => `${t!.name}.${name}${castAs (cast)}`));
+      // },
       Raw: run => {
         args.push (Raw (run));
       },
-      Literal: x => {
-        args.push (Raw (x));
-      },
-      StringLiteral: x => {
-        args.push (Raw (`'${x}'`));
-      },
-      Variable: (x, _as, cast) => {
-        args.push (sql`${x}${Raw (castAs (cast))}`);
-      },
+      // Literal: x => {
+      //   args.push (Raw (x));
+      // },
+      // StringLiteral: x => {
+      //   args.push (Raw (`'${x}'`));
+      // },
+      // Variable: (x, _as, cast) => {
+      //   args.push (sql`${x}${Raw (castAs (cast))}`);
+      // },
       When: unsupported ("When"),
-      RefNode: unsupported ("RefNode"),
-      BelongsToMany: unsupported ("BelongsToMany"),
-      All: unsupported ("All"),
+      // RefNode: unsupported ("RefNode"),
+      // BelongsToMany: unsupported ("BelongsToMany"),
+      // All: unsupported ("All"),
       Value: unsupported ("Value"),
       Values: unsupported ("Values"),
       Values2D: unsupported ("Values2D")

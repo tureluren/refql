@@ -171,15 +171,7 @@ function interpret<Params, Output, Box extends Boxes>(this: SQLTag<Params, Outpu
           pred: (p: Params, t?: Table<Box>) => pred2 (p, t) && pred (p, t),
           run
         })));
-      },
-      Identifier: unsupported ("Identifier"),
-      RefNode: unsupported ("RefNode"),
-      BelongsToMany: unsupported ("BelongsToMany"),
-      All: unsupported ("All"),
-      Variable: unsupported ("Variable"),
-      Call: unsupported ("Call"),
-      Literal: unsupported ("Literal"),
-      StringLiteral: unsupported ("StringLiteral")
+      }
     });
   }
 

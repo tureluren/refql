@@ -128,43 +128,43 @@ function interpret<As, Params, Output, Box extends Boxes>(this: RQLTag<As, Param
 
   for (const node of nodes) {
     node.caseOf<void> ({
-      RefNode: caseOfRef,
-      BelongsToMany: caseOfRef,
-      Call: (tag, name, as, cast) => {
-        members.push (sql`
-          ${Raw (name)} (${tag})${Raw (castAs (cast, as))}
-        `);
-      },
-      All: sign => {
-        members.push (
-          Raw (`${table.name}.${sign}`)
-        );
-      },
-      Identifier: (name, as, cast) => {
-        members.push (
-          Raw (`${table.name}.${name}${castAs (cast, as)}`)
-        );
-      },
-      Variable: (x, as, cast) => {
-        if (SQLTag.isSQLTag<Params, Output, Box> (x)) {
-          if (as) {
-            members.push (sql<Params, Output, Box>`
-              (${x})${Raw (castAs (cast, as))} 
-            `);
-          } else {
-            extra = extra.concat (x);
-          }
+      // RefNode: caseOfRef,
+      // BelongsToMany: caseOfRef,
+      // Call: (tag, name, as, cast) => {
+      //   members.push (sql`
+      //     ${Raw (name)} (${tag})${Raw (castAs (cast, as))}
+      //   `);
+      // },
+      // All: sign => {
+      //   members.push (
+      //     Raw (`${table.name}.${sign}`)
+      //   );
+      // },
+      // Identifier: (name, as, cast) => {
+      //   members.push (
+      //     Raw (`${table.name}.${name}${castAs (cast, as)}`)
+      //   );
+      // },
+      // Variable: (x, as, cast) => {
+      //   if (SQLTag.isSQLTag<Params, Output, Box> (x)) {
+      //     if (as) {
+      //       members.push (sql<Params, Output, Box>`
+      //         (${x})${Raw (castAs (cast, as))}
+      //       `);
+      //     } else {
+      //       extra = extra.concat (x);
+      //     }
 
-        } else {
-          throw new Error (`U can't insert "${x}" in this section of the RQLTag`);
-        }
-      },
-      Literal: (x, as, cast) => {
-        members.push (Raw (`${x}${castAs (cast, as)}`));
-      },
-      StringLiteral: (x, as, cast) => {
-        members.push (Raw (`'${x}'${castAs (cast, as)}`));
-      },
+      //   } else {
+      //     throw new Error (`U can't insert "${x}" in this section of the RQLTag`);
+      //   }
+      // },
+      // Literal: (x, as, cast) => {
+      //   members.push (Raw (`${x}${castAs (cast, as)}`));
+      // },
+      // StringLiteral: (x, as, cast) => {
+      //   members.push (Raw (`'${x}'${castAs (cast, as)}`));
+      // },
       When: (pred, tag) => {
         extra = extra.concat (sql<Params, Output, Box>`${When (pred, tag)}`);
       },
