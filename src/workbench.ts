@@ -1,14 +1,14 @@
 import { Pool } from "pg";
-import { SQLTagVariable } from "./common/types";
+import { Querier, SQLTagVariable } from "./common/types";
 import { Raw } from "./nodes";
-import SQLTag2 from "./SQLTag2";
-import { parse } from "./SQLTag2/sql";
+import SQLTag2, { setConvertPromise } from "./SQLTag2";
 import Table2 from "./Table2";
 import belongsTo from "./Table2/belongsTo";
 import hasMany from "./Table2/hasMany";
 import numberProp from "./Table2/numberProp";
 import stringProp from "./Table2/stringProp";
-import { promiseToTask } from "./test/Task";
+import Task, { promiseToTask } from "./test/Task";
+import sql from "./SQLTag2/sql";
 
 
 const pool = new Pool ({
@@ -108,10 +108,13 @@ const querier = async (query: string, values: any[]) => {
 // playerById ({ name: "" }, querier).then (res => console.log (res));
 // natural transformation
 
-const sql = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
-  const nodes = parse <Params, Output, "Task"> (strings, variables);
-  return SQLTag2 (nodes, querier, promiseToTask);
-};
+// declare module "./SQLTag2" {
+//   interface SQLTag2<Params, Output> {
+//     (params: Params, querier?: Querier): Task<Output>;
+//   }
+// }
+
+// setConvertPromise (promiseToTask);
 
 const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
   select id, ${Raw (p => p.firstNameField)}
@@ -126,8 +129,9 @@ const simpleTag2 = sql<{limit: number}, { last_name: string}[]>`
 const combined = simpleTag.concat (simpleTag2);
 
 
+// combined.co
 
-// console.log (SQLTag2.prototype);
 
 
-combined ({ firstNameField: "first_name", limit: 2 }).fork (console.log, console.log);
+
+combined ({ firstNameField: "first_name", limit: 2 }, querier).then (console.log);

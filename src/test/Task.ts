@@ -1,8 +1,11 @@
-declare module "../common/BoxRegistry" {
-  interface BoxRegistry<Output> {
-    readonly Task: Task<Output>;
-  }
-}
+import { Querier } from "../common/types";
+
+// declare module "../SQLTag2" {
+//   interface SQLTag2<Params = any, Output = any> {
+//     (params: Params, querier?: Querier): ReturnType<SQLTag2["convertPromise"]>;
+//     convertPromise: (p: Promise<Output>) => Task<Output>;
+//   }
+// }
 
 class Task<Output> {
   fork: (rej: (e: any) => void, res: (x: Output) => void) => void;
