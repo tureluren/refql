@@ -1,8 +1,9 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Querier } from "../common/types";
-import { AllInComps, CombinedParams, OnlyPropFields, Selectable, SelectedS } from "../common/types2";
+import { AllInComps, AllSign, CombinedParams, OnlyPropFields, Selectable, SelectedS } from "../common/types2";
 import { ASTNode, Identifier, RefNode } from "../nodes";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
+import { isSQLTag, SQLTag } from "../SQLTag";
 import Prop from "./Prop";
 import RefProp from "./RefProp";
 
@@ -34,37 +35,42 @@ function Table<Name extends string = any, Props extends(Prop | RefProp)[] = []>(
     throw new Error ("Invalid props: not an Array");
   }
 
-  let properties = props.reduce ((acc, key) => {
+  let properties = props.reduce ((acc, prop) => {
     return {
       ...acc,
-      [key.as]: props[key.as]
+      [prop.as]: prop
     };
   }, {} as { [P in Props[number] as P["as"] ]: P });
-
 
   const table = (<Components extends Selectable<typeof properties>[]>(components: Components) => {
     type Compies = AllInComps<typeof properties, Components> extends true ? [keyof OnlyPropFields<typeof properties>, ...Components] : Components;
 
-    const nodes: ASTNode<{}, any>[] = [];
+    const nodes: (AllSign | Prop | RefProp | SQLTag)[] = [];
 
     for (const comp of components) {
       // and keys includes comp
-      if (typeof comp === "string") {
-        const id = (table as any).spec[comp] as Prop;
-        nodes.push (Identifier (id.col || id.as, id.as));
+      if (comp === "*") {
+        nodes.push (comp);
+      } if (typeof comp === "string" && properties[comp]) {
+        const prop = properties[comp] as Prop;
+        nodes.push (prop);
+      } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
+        nodes.push (comp);
+      } else if (isSQLTag (comp)) {
+        nodes.push (comp);
       } else if (isRQLTag (comp)) {
-        for (const specKey in (table as any).spec) {
-          const sp = (table as any).spec[specKey];
+        // for (const specKey in (table as any).spec) {
+        //   const sp = (table as any).spec[specKey];
 
-          if (RefProp.isRefProp (sp) && sp.child.equals (comp.table)) {
-            nodes.push (RefNode (sp.refInfo as any, comp, true));
-          }
-        }
+        //   if (RefProp.isRefProp (sp) && sp.child.equals (comp.table)) {
+        //     nodes.push (RefNode (sp.refInfo as any, comp, true));
+        //   }
+        // }
 
       }
     }
 
-    return createRQLTag<Name, CombinedParams<Components, typeof properties>, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[]> (table as unknown as Table<Name, typeof properties>, nodes as any, defaultQuerier);
+    return createRQLTag<Name, CombinedParams<Components, typeof properties>, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[]> (table as unknown as Table<Name, typeof properties>, nodes, defaultQuerier);
   });
 
   Object.setPrototypeOf (table, prototype);

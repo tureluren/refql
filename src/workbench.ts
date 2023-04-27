@@ -5,6 +5,7 @@ import { convertSQLTagResult } from "./SQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
 import belongsTo from "./Table/belongsTo";
+import dateProp from "./Table/dateProp";
 import hasMany from "./Table/hasMany";
 import numberProp from "./Table/numberProp";
 import stringProp from "./Table/stringProp";
@@ -36,18 +37,18 @@ const querier = async (query: string, values: any[]) => {
 // type IBUh2 = typeof buh2.col;
 
 
-// const Player = Table ("player", [
-//   numberProp ("id").arrayOf (),
-//   numberProp ("age", "age").nullable (),
-//   stringProp ("fullName", sql<{ table: string }>`
-//     concat (first_name, " ", last_name)
-//   `),
-//   stringProp ("firstName", "first_name"),
-//   // ids: "foemp",
-//   // firstName: varchar ("first_name"),
-//   belongsTo ("team", "team"),
-//   hasMany ("goals", "goal")
-// ]);
+const Player = Table ("player", [
+  numberProp ("id").arrayOf (),
+  dateProp ("birthday", "birthday").nullable (),
+  stringProp ("fullName", sql`
+    concat (first_name, ' ', last_name)
+  `)
+  // stringProp ("firstName", "first_name"),
+  // // ids: "foemp",
+  // // firstName: varchar ("first_name"),
+  // belongsTo ("team", "team"),
+  // hasMany ("goals", "goal")
+]);
 
 
 // const Team = Table ("team", [
@@ -71,30 +72,21 @@ const querier = async (query: string, values: any[]) => {
 
 // // // const lastName = Field<"lastName", string> ("lastName", "last_name");
 
-// const { team, id, age, fullName } = Player.props;
+const { id, birthday, fullName } = Player.props;
 
 
-// // const byId = sql<{ id: number }, typeof Player>`
-// //   and id = ${p => p.id}
-// // `;
+const byId = sql<{ id: number }>`
+  and id = ${p => p.id}
+`;
 
 // // const andName = sql<{ name: string }>`
 // //   and name = ${p => p.name}
 // // `;
 
-// const playerById = Player ([
-//   // "id",
-//   id,
-//   // "id"
-//   age,
-//   // fullName,
-//   Team (["id"])
-//   // Goal (["id", "minute"]),
-//   // sql<{ id: number }>`
-//   //   and id = ${p => p.id}
-//   // `,
-//   // andName
-// ]);
+const playerById = Player ([
+  "*",
+  byId
+]);
 
 // // const playerRes = Player ([
 // //   "age",
@@ -105,33 +97,33 @@ const querier = async (query: string, values: any[]) => {
 // // // const concatted = playerById.concat (playerRes);
 
 
-// // playerById ({ name: "" }, querier).then (res => console.log (res));
+playerById ({ id: 4 }, querier).then (res => console.log (res[0]));
 // // natural transformation
 
-declare module "./SQLTag" {
-  interface SQLTag<Params, Output> {
-    (params: Params, querier?: Querier): Task<Output>;
-  }
-}
+// declare module "./SQLTag" {
+//   interface SQLTag<Params, Output> {
+//     (params: Params, querier?: Querier): Task<Output>;
+//   }
+// }
 
-convertSQLTagResult (promiseToTask);
+// convertSQLTagResult (promiseToTask);
 
-const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
-  select id, ${Raw (p => p.firstNameField)}
-`;
+// const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
+//   select id, ${Raw (p => p.firstNameField)}
+// `;
 
-const simpleTag2 = sql<{limit: number}, { last_name: string}[]>`
-  , last_name
-  from player
-  limit ${p => p.limit}
-`;
+// const simpleTag2 = sql<{limit: number}, { last_name: string}[]>`
+//   , last_name
+//   from player
+//   limit ${p => p.limit}
+// `;
 
-const combined = simpleTag.concat (simpleTag2);
-
-
-// combined.co
+// const combined = simpleTag.concat (simpleTag2);
 
 
+// // combined.co
 
 
-combined ({ firstNameField: "first_name", limit: 2 }, querier).fork (console.log, console.log);
+
+
+// combined ({ firstNameField: "first_name", limit: 2 }, querier).fork (console.log, console.log);

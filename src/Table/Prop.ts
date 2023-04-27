@@ -36,8 +36,8 @@ function nullable<As extends string, Type = unknown, Params = any>(this: Prop<As
 }
 
 
-// Field.isField = function (x: any): x is Field {
-//   return x != null && x[refqlType] === type;
-// };
+Prop.isProp = function (x: any): x is Prop {
+  return x != null && x[refqlType] === type;
+};
 
 export default Prop;
