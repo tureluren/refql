@@ -38,7 +38,7 @@ const type = "refql/SQLTag2";
 
 let prototype = {
   [refqlType]: type,
-  constructor: SQLTag2,
+  constructor: createSQLTag2,
   concat,
   join,
   [flConcat]: concat,
@@ -47,7 +47,7 @@ let prototype = {
   convertPromise: <T>(p: Promise<T>) => p
 };
 
-function SQLTag2<Params, Output>(nodes: ASTNode<Params, Output, any>[], defaultQuerier?: Querier) {
+export function createSQLTag2<Params, Output>(nodes: ASTNode<Params, Output, any>[], defaultQuerier?: Querier) {
 
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {
@@ -74,7 +74,7 @@ function join<Params, Output>(this: SQLTag2<Params, Output>, delimiter: string, 
   if (isEmptyTag (this)) return other;
   if (isEmptyTag (other)) return this;
 
-  return SQLTag2 (
+  return createSQLTag2 (
     this.nodes.concat (Raw<Params, Output, any> (delimiter), ...other.nodes),
     this.defaultQuerier
   );
@@ -199,12 +199,10 @@ function compile<Params, Output>(this: SQLTag2<Params, Output>, params: Params, 
   ];
 }
 
-export const setConvertPromise = (f: <T>(p: Promise<T>) => any) => {
+export const convertSQLTagResult = (f: <T>(p: Promise<T>) => any) => {
   prototype.convertPromise = f;
 };
 
 export const isSQLTag = function <Params, Output> (x: any): x is SQLTag2<Params, Output> {
   return x != null && x[refqlType] === type;
 };
-
-export default SQLTag2;

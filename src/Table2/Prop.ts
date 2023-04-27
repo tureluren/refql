@@ -13,7 +13,9 @@ const type = "refql/Prop";
 
 const prototype = {
   constructor: Prop,
-  [refqlType]: type
+  [refqlType]: type,
+  arrayOf,
+  nullable
 };
 
 function Prop<As extends string, Type = unknown, Params = any>(as: As, col?: SQLTag2<Params> | string) {
@@ -25,10 +27,13 @@ function Prop<As extends string, Type = unknown, Params = any>(as: As, col?: SQL
   return prop;
 }
 
+function arrayOf<As extends string, Type = unknown, Params = any>(this: Prop<As, Type, Params>) {
+  return Prop<As, Type[], Params> (this.as, this.col);
+}
 
-
-
-
+function nullable<As extends string, Type = unknown, Params = any>(this: Prop<As, Type, Params>) {
+  return Prop<As, Type | null, Params> (this.as, this.col);
+}
 
 
 // Field.isField = function (x: any): x is Field {

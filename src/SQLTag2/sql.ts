@@ -1,8 +1,8 @@
-import SQLTag2, { isSQLTag } from ".";
+import { createSQLTag2, isSQLTag } from ".";
 import { SQLTagVariable } from "../common/types";
 import { ASTNode, Raw, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
-import RQLTag from "../RQLTag";
+import { isRQLTag } from "../RQLTag";
 import Table from "../Table";
 
 export function parse<Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output, any>[]) {
@@ -32,7 +32,7 @@ export function parse<Params, Output>(strings: TemplateStringsArray, variables: 
     if (!x) {
     } else if (isSQLTag<Params, Output> (x)) {
       nodes.push (...x.nodes);
-    } else if (RQLTag.isRQLTag (x)) {
+    } else if (isRQLTag (x)) {
       throw new Error ("U can't use RQLTags inside SQLTags");
     } else if (Table.isTable (x)) {
       nodes.push (Raw<Params, Output, any> (x));
@@ -48,7 +48,7 @@ export function parse<Params, Output>(strings: TemplateStringsArray, variables: 
 
 function sql <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, any>[]) {
   const nodes = parse<Params, Output> (strings, variables);
-  return SQLTag2 (nodes);
+  return createSQLTag2 (nodes);
 }
 
 export default sql;

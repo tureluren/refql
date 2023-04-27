@@ -3,7 +3,7 @@ import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { ConvertPromise, Querier, RQLTagMaker } from "../common/types";
 import { AllInComps, CombinedParams, Selectable, OnlyPropFields, SelectedS } from "../common/types2";
 import { ASTNode, Identifier, RefNode } from "../nodes";
-import RQLTag from "../RQLTag";
+import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import Prop from "./Prop";
 import RefProp from "./RefProp";
 
@@ -54,7 +54,7 @@ function Table2<Name extends string = any, Props extends(Prop | RefProp)[] = []>
       if (typeof comp === "string") {
         const id = (table as any).spec[comp] as Prop;
         nodes.push (Identifier (id.col || id.as, id.as));
-      } else if (RQLTag.isRQLTag (comp)) {
+      } else if (isRQLTag (comp)) {
         for (const specKey in (table as any).spec) {
           const sp = (table as any).spec[specKey];
 
@@ -66,7 +66,7 @@ function Table2<Name extends string = any, Props extends(Prop | RefProp)[] = []>
       }
     }
 
-    return RQLTag<Name, CombinedParams<Components, typeof properties>, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[]> (table as unknown as Table2<Name, typeof properties>, nodes as any, defaultQuerier);
+    return createRQLTag<Name, CombinedParams<Components, typeof properties>, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[]> (table as unknown as Table2<Name, typeof properties>, nodes as any, defaultQuerier);
   });
 
   Object.setPrototypeOf (table, prototype);

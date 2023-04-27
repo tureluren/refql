@@ -3,7 +3,7 @@ import { Boxes } from "../common/BoxRegistry";
 import { SQLTagVariable } from "../common/types";
 import { ASTNode, Raw, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
-import RQLTag from "../RQLTag";
+import { RQLTag, isRQLTag } from "../RQLTag";
 import Table from "../Table";
 
 export function parse<Params, Output, Box extends Boxes>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output, Boxes>[]) {
@@ -33,7 +33,7 @@ export function parse<Params, Output, Box extends Boxes>(strings: TemplateString
     if (!x) {
     } else if (SQLTag.isSQLTag<Params, Output, Box> (x)) {
       nodes.push (...x.nodes);
-    } else if (RQLTag.isRQLTag (x)) {
+    } else if (isRQLTag (x)) {
       throw new Error ("U can't use RQLTags inside SQLTags");
     } else if (Table.isTable (x)) {
       nodes.push (Raw<Params, Output, Box> (x));

@@ -1,14 +1,14 @@
 import { Pool } from "pg";
-import { Querier, SQLTagVariable } from "./common/types";
+import { Querier } from "./common/types";
 import { Raw } from "./nodes";
-import SQLTag2, { setConvertPromise } from "./SQLTag2";
+import { convertSQLTagResult } from "./SQLTag2";
+import sql from "./SQLTag2/sql";
 import Table2 from "./Table2";
 import belongsTo from "./Table2/belongsTo";
 import hasMany from "./Table2/hasMany";
 import numberProp from "./Table2/numberProp";
 import stringProp from "./Table2/stringProp";
 import Task, { promiseToTask } from "./test/Task";
-import sql from "./SQLTag2/sql";
 
 
 const pool = new Pool ({
@@ -36,85 +36,85 @@ const querier = async (query: string, values: any[]) => {
 // type IBUh2 = typeof buh2.col;
 
 
-const Player = Table2 ("player", [
-  numberProp ("id").arrayOf (),
-  numberProp ("age", "age").nullable (),
-  stringProp ("fullName", sql<{ table: string }>`
-    concat (first_name, " ", last_name)
-  `),
-  stringProp ("firstName", "first_name"),
-  // ids: "foemp",
-  // firstName: varchar ("first_name"),
-  belongsTo ("team", "team"),
-  hasMany ("goals", "goal")
-]);
+// const Player = Table2 ("player", [
+//   numberProp ("id").arrayOf (),
+//   numberProp ("age", "age").nullable (),
+//   stringProp ("fullName", sql<{ table: string }>`
+//     concat (first_name, " ", last_name)
+//   `),
+//   stringProp ("firstName", "first_name"),
+//   // ids: "foemp",
+//   // firstName: varchar ("first_name"),
+//   belongsTo ("team", "team"),
+//   hasMany ("goals", "goal")
+// ]);
 
 
-const Team = Table2 ("team", [
-  numberProp ("id", "id"),
-  stringProp ("name", "name"),
-  belongsTo ("league", "league")
-]);
-
-const League = Table2 ("league", [
-  numberProp ("id", "id")
-  // ids: "foemp",
-  // leagueName: varchar ("name")
-]);
-
-// const Goal = Table2 ("goal", [
+// const Team = Table2 ("team", [
 //   numberProp ("id", "id"),
-//   stringProp ("minute", "minute")
+//   stringProp ("name", "name"),
+//   belongsTo ("league", "league")
 // ]);
 
-// // const uuid = numberField ("uuid") ("uuiid");
-
-// // const lastName = Field<"lastName", string> ("lastName", "last_name");
-
-const { team, id, age, fullName } = Player.props;
-
-
-// const byId = sql<{ id: number }, typeof Player>`
-//   and id = ${p => p.id}
-// `;
-
-// const andName = sql<{ name: string }>`
-//   and name = ${p => p.name}
-// `;
-
-const playerById = Player ([
-  // "id",
-  id,
-  // "id"
-  age,
-  // fullName,
-  Team (["id"])
-  // Goal (["id", "minute"]),
-  // sql<{ id: number }>`
-  //   and id = ${p => p.id}
-  // `,
-  // andName
-]);
-
-// const playerRes = Player ([
-//   "age",
-//   byId,
-//   Team (["name"])
+// const League = Table2 ("league", [
+//   numberProp ("id", "id")
+//   // ids: "foemp",
+//   // leagueName: varchar ("name")
 // ]);
 
-// // const concatted = playerById.concat (playerRes);
+// // const Goal = Table2 ("goal", [
+// //   numberProp ("id", "id"),
+// //   stringProp ("minute", "minute")
+// // ]);
+
+// // // const uuid = numberField ("uuid") ("uuiid");
+
+// // // const lastName = Field<"lastName", string> ("lastName", "last_name");
+
+// const { team, id, age, fullName } = Player.props;
 
 
-playerById ({ name: "" }, querier).then (res => console.log (res));
-// natural transformation
+// // const byId = sql<{ id: number }, typeof Player>`
+// //   and id = ${p => p.id}
+// // `;
 
-// declare module "./SQLTag2" {
-//   interface SQLTag2<Params, Output> {
-//     (params: Params, querier?: Querier): Task<Output>;
-//   }
-// }
+// // const andName = sql<{ name: string }>`
+// //   and name = ${p => p.name}
+// // `;
 
-// setConvertPromise (promiseToTask);
+// const playerById = Player ([
+//   // "id",
+//   id,
+//   // "id"
+//   age,
+//   // fullName,
+//   Team (["id"])
+//   // Goal (["id", "minute"]),
+//   // sql<{ id: number }>`
+//   //   and id = ${p => p.id}
+//   // `,
+//   // andName
+// ]);
+
+// // const playerRes = Player ([
+// //   "age",
+// //   byId,
+// //   Team (["name"])
+// // ]);
+
+// // // const concatted = playerById.concat (playerRes);
+
+
+// // playerById ({ name: "" }, querier).then (res => console.log (res));
+// // natural transformation
+
+declare module "./SQLTag2" {
+  interface SQLTag2<Params, Output> {
+    (params: Params, querier?: Querier): Task<Output>;
+  }
+}
+
+convertSQLTagResult (promiseToTask);
 
 const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
   select id, ${Raw (p => p.firstNameField)}
@@ -134,4 +134,4 @@ const combined = simpleTag.concat (simpleTag2);
 
 
 
-combined ({ firstNameField: "first_name", limit: 2 }, querier).then (console.log);
+combined ({ firstNameField: "first_name", limit: 2 }, querier).fork (console.log, console.log);

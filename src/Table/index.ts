@@ -2,14 +2,14 @@ import { Boxes } from "../common/BoxRegistry";
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { ConvertPromise, Querier, Ref, RQLTagMaker, RQLTagVariable, Runnable } from "../common/types";
 import validateTable from "../common/validateTable";
-import RQLTag from "../RQLTag";
+import { RQLTag, createRQLTag } from "../RQLTag";
 import Parser from "../RQLTag/Parser";
 
 interface Table<Box extends Boxes = "Promise"> {
   name: string;
   schema?: string;
   refs: Ref<Box>[];
-  empty<Params, Output>(): RQLTag<any, Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
+  empty<Params, Output>(): RQLTag<any, Params, Output> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
   [flEmpty]: Table<Box>["empty"];
   equals<Box2 extends Boxes>(other: Table<Box2>): boolean;
   [flEquals]: Table<Box>["equals"];
@@ -36,7 +36,7 @@ function Table<Box extends Boxes = "Promise">(name: string, refs: Ref<Box>[] = [
   const table = (<Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output, Box>[]) => {
     const parser = new Parser<Params, Output, Box> (strings.join ("$"), variables, table as unknown as Table<Box>);
 
-    return RQLTag (table as unknown as Table<Box> as any, parser.nodes (), defaultQuerier, convertPromise as ConvertPromise<Box, Output>);
+    return createRQLTag (table as unknown as Table<Box> as any, parser.nodes (), defaultQuerier);
   });
 
   Object.setPrototypeOf (table, prototype);

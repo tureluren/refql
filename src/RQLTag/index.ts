@@ -25,7 +25,7 @@ interface Extra<Params, Output> {
 }
 
 // As or Name ?
-interface RQLTag<TableId, Params, Output> {
+export interface RQLTag<TableId, Params, Output> {
   (params: Params, querier?: Querier): Promise<Output>;
   tableId: TableId;
   type: Output;
@@ -43,8 +43,8 @@ interface RQLTag<TableId, Params, Output> {
 
 const type = "refql/RQLTag";
 
-const prototype = {
-  constructor: RQLTag,
+let prototype = {
+  constructor: createRQLTag,
   [refqlType]: type,
   concat,
   [flConcat]: concat,
@@ -54,7 +54,7 @@ const prototype = {
   convertPromise: <T>(p: Promise<T>) => p
 };
 
-function RQLTag<TableId extends string, Params, Output>(table: Table2<TableId, any>, nodes: ASTNode<Params, Output, any>[], defaultQuerier?: Querier) {
+export function createRQLTag<TableId extends string, Params, Output>(table: Table2<TableId, any>, nodes: ASTNode<Params, Output, any>[], defaultQuerier?: Querier) {
 
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {
@@ -102,7 +102,7 @@ function concat<As, Params, Output>(this: RQLTag<As, Params, Output>, other: RQL
 
   const { nodes, ...refs } = concatDeep (this.nodes.concat (other.nodes));
 
-  return RQLTag (
+  return createRQLTag (
     this.table,
     [...nodes, ...Object.values (refs)],
     this.defaultQuerier
@@ -182,7 +182,7 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
   }
 
   let tag = sql<Params, Output>`
-    select ${joinMembers (members)}
+    select ${joinMembers (members as any)}
     from ${Raw (table)}
   `;
   return { next, tag, extra };
@@ -241,8 +241,10 @@ async function aggregate<As, Params, Output>(this: RQLTag<As, Params, Output>, p
   );
 }
 
-RQLTag.isRQLTag = function <As, Params, Output> (x: any): x is RQLTag<As, Params, Output> {
-  return x != null && x[refqlType] === type;
+export const convertRQLTagResult = (f: <T>(p: Promise<T>) => any) => {
+  prototype.convertPromise = f;
 };
 
-export default RQLTag;
+export const isRQLTag = function <As, Params, Output> (x: any): x is RQLTag<As, Params, Output> {
+  return x != null && x[refqlType] === type;
+};

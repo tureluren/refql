@@ -1,4 +1,4 @@
-import RQLTag from ".";
+import { RQLTag, createRQLTag, isRQLTag } from ".";
 import { Boxes } from "../common/BoxRegistry";
 import { Ref, RQLTagVariable } from "../common/types";
 import {
@@ -38,7 +38,7 @@ class Parser<Params, Output, Box extends Boxes> {
     return all;
   }
 
-  refer(tag: RQLTag<any, Params, Output, Box>, as?: string, single?: boolean) {
+  refer(tag: RQLTag<any, Params, Output>, as?: string, single?: boolean) {
     if (tag.table.equals (this.table as any)) {
       return tag.nodes;
     }
@@ -53,7 +53,7 @@ class Parser<Params, Output, Box extends Boxes> {
       );
     }
 
-    return refs.map (ref => ref[1] (this.table, RQLTag (tag.table, tag.nodes), as, single));
+    return refs.map (ref => ref[1] (this.table, createRQLTag (tag.table, tag.nodes), as, single));
   }
 
   Variable() {
@@ -65,7 +65,7 @@ class Parser<Params, Output, Box extends Boxes> {
     const [as, cast, single] = this.castAs ();
     this.idx += 1;
 
-    if (RQLTag.isRQLTag<any, Params, Output, Box> (x)) {
+    if (isRQLTag<any, Params, Output> (x)) {
       return this.refer (x, as, single);
     }
 

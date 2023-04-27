@@ -1,6 +1,6 @@
 import { Boxes } from "../common/BoxRegistry";
 import { TagFunctionVariable, ValueType, RefInfo, RefQLRows } from "../common/types";
-import RQLTag from "../RQLTag";
+import { RQLTag } from "../RQLTag";
 import SQLTag from "../SQLTag";
 
 export type StructureMap<Params, Output, Box extends Boxes, Return> = {
