@@ -63,7 +63,8 @@ export interface RefInfo<As extends string> {
   parent: Table;
   lRef: RefField;
   rRef: RefField;
-  xTable?: Table<As, any>;
+  as: As;
+  xTable?: Table;
   lxRef?: RefField;
   rxRef?: RefField;
 }

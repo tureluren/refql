@@ -2,6 +2,7 @@ import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Querier } from "../common/types";
 import { AllInComps, AllSign, CombinedParams, OnlyPropFields, Selectable, SelectedS } from "../common/types2";
 import { ASTNode, Identifier, RefNode } from "../nodes";
+import RefField from "../RefField";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import { isSQLTag, SQLTag } from "../SQLTag";
 import Prop from "./Prop";
@@ -45,7 +46,7 @@ function Table<Name extends string = any, Props extends(Prop | RefProp)[] = []>(
   const table = (<Components extends Selectable<typeof properties>[]>(components: Components) => {
     type Compies = AllInComps<typeof properties, Components> extends true ? [keyof OnlyPropFields<typeof properties>, ...Components] : Components;
 
-    const nodes: (AllSign | Prop | RefProp | SQLTag)[] = [];
+    const nodes: (AllSign | Prop | RefProp | SQLTag | RefNode<any, any>)[] = [];
 
     for (const comp of components) {
       // and keys includes comp
@@ -59,13 +60,14 @@ function Table<Name extends string = any, Props extends(Prop | RefProp)[] = []>(
       } else if (isSQLTag (comp)) {
         nodes.push (comp);
       } else if (isRQLTag (comp)) {
-        // for (const specKey in (table as any).spec) {
-        //   const sp = (table as any).spec[specKey];
+        for (const key in properties) {
+          const prop = properties[key as keyof typeof properties];
 
-        //   if (RefProp.isRefProp (sp) && sp.child.equals (comp.table)) {
-        //     nodes.push (RefNode (sp.refInfo as any, comp, true));
-        //   }
-        // }
+          if (RefProp.isRefProp (prop) && prop.child.equals (comp.table)) {
+            const refInfo = (prop as RefProp).getRefInfo (table as any);
+            nodes.push (RefNode (refInfo, comp, true));
+          }
+        }
 
       }
     }

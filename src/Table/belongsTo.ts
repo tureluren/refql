@@ -10,8 +10,9 @@ const belongsTo = <As extends string, TableId extends string>(as: As, tableId: T
 
   validateRefInput (input);
 
-  return RefProp<As, TableId, "BelongsTo"> (as, tableId, "BelongsTo", "" as any, {} as any);
+  const child = Table (tableId, []);
 
+  return RefProp<As, TableId, "BelongsTo"> (as, tableId, "BelongsTo", child, input);
 };
 
 // return <As extends string>(as: As, parent: Table) => {

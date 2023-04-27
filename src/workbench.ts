@@ -40,22 +40,22 @@ const querier = async (query: string, values: any[]) => {
 const Player = Table ("player", [
   numberProp ("id").arrayOf (),
   dateProp ("birthday", "birthday").nullable (),
-  stringProp ("fullName", sql`
+  stringProp ("fullName", sql<{}>`
     concat (first_name, ' ', last_name)
-  `)
+  `),
   // stringProp ("firstName", "first_name"),
   // // ids: "foemp",
   // // firstName: varchar ("first_name"),
-  // belongsTo ("team", "team"),
+  belongsTo ("team", "team")
   // hasMany ("goals", "goal")
 ]);
 
 
-// const Team = Table ("team", [
-//   numberProp ("id", "id"),
-//   stringProp ("name", "name"),
-//   belongsTo ("league", "league")
-// ]);
+const Team = Table ("team", [
+  numberProp ("id", "id"),
+  stringProp ("name", "name")
+  // belongsTo ("league", "league")
+]);
 
 // const League = Table ("league", [
 //   numberProp ("id", "id")
@@ -85,6 +85,7 @@ const byId = sql<{ id: number }>`
 
 const playerById = Player ([
   "*",
+  Team (["name"]),
   byId
 ]);
 
