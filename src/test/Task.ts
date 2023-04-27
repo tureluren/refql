@@ -1,8 +1,8 @@
 import { Querier } from "../common/types";
 
-// declare module "../SQLTag2" {
-//   interface SQLTag2<Params = any, Output = any> {
-//     (params: Params, querier?: Querier): ReturnType<SQLTag2["convertPromise"]>;
+// declare module "../SQLTag" {
+//   interface SQLTag<Params = any, Output = any> {
+//     (params: Params, querier?: Querier): ReturnType<SQLTag["convertPromise"]>;
 //     convertPromise: (p: Promise<Output>) => Task<Output>;
 //   }
 // }

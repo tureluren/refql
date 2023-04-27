@@ -1,10 +1,9 @@
 import { ASTNode } from "../nodes";
 import RefNode from "../nodes/RefNode";
 import RefField from "../RefField";
-import RQLTag from "../RQLTag";
-import SQLTag from "../SQLTag";
+import { RQLTag } from "../RQLTag";
+import { SQLTag } from "../SQLTag";
 import Table from "../Table";
-import { Kind, Boxes } from "./BoxRegistry";
 
 // Array, Function, Date, ...
 export type StringMap = Record<string, any>;
@@ -26,12 +25,12 @@ export interface CastAs {
   cast?: string;
 }
 
-export interface RefInfo<Box extends Boxes> {
-  parent: Table<Box>;
+export interface RefInfo {
+  parent: Table;
   as: string;
   lRef: RefField;
   rRef: RefField;
-  xTable?: Table<Box>;
+  xTable?: Table;
   lxRef?: RefField;
   rxRef?: RefField;
 }
@@ -45,33 +44,31 @@ export interface RefInput {
   rxRef?: string;
 }
 
-export type TagFunctionVariable<Params, Box extends Boxes, Return = ValueType> =
-  (params: Params, table?: Table<Box>) => Return;
+export type TagFunctionVariable<Params, Return = ValueType> =
+  (params: Params) => Return;
 
-export type SQLTagVariable<Params, Output, Box extends Boxes> =
-  | SQLTag<Params, Output, Box>
-  | ASTNode<Params, Output, Box>
-  | Table<Box>
-  | TagFunctionVariable<Params, Box>
+export type SQLTagVariable<Params, Output> =
+  // | SQLTag<Params, Output>
+  | ASTNode<Params, Output>
+  | Table
+  | TagFunctionVariable<Params>
   | ValueType;
 
-export type RQLTagVariable<Params, Output, Box extends Boxes> =
-  | RQLTag<Params, Output, Box>
-  | SQLTag<Params, Output, Box>
-  | ASTNode<Params, Output, Box>
-  | ASTNode<Params, Output, Box>[]
-  | Table<Box>
-  | TagFunctionVariable<Params, Box>
+export type RQLTagVariable<Params, Output> =
+  // | RQLTag<Params, Output>
+  | SQLTag<Params, Output>
+  | ASTNode<Params, Output>
+  | ASTNode<Params, Output>[]
+  | Table
+  | TagFunctionVariable<Params>
   | ValueType;
 
 export interface RefQLRows {
   refQLRows: any[];
 }
 
-export type RefMaker<Box extends Boxes> =
-  <Params, Output>(parent: Table<Box>, tag: RQLTag<Params, Output, Box>, as?: string, single?: boolean) => RefNode<Params, Output, Box>;
-
-export type ConvertPromise<F extends Boxes, A = unknown> = (p: Promise<A>) => Kind<F, A>;
+export type RefMaker =
+  <Params, Output>(parent: Table, tag: RQLTag<any, Params, Output>, as?: string, single?: boolean) => RefNode<Params, Output>;
 
 export type Runnable<Params, Output> =
   Params extends Record<string, never>
@@ -80,13 +77,8 @@ export type Runnable<Params, Output> =
       ? (params: Params, querier?: Querier) => Output
       : (params?: Params, querier?: Querier) => Output;
 
-export type Runnable2<Output> =
-  <Params>(params: Params, querier?: Querier) => Output;
 
-export type RQLTagMaker<Box extends Boxes> =
-  <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: RQLTagVariable<Params, Output, Box>[]) => RQLTag<Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
-
-export type Ref<Box extends Boxes> = [
-  Table<Box> & RQLTagMaker<Box>,
-  RefMaker<Box>
+export type Ref = [
+  Table,
+  RefMaker
 ];

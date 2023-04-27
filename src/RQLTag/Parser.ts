@@ -1,5 +1,4 @@
 import { RQLTag, createRQLTag, isRQLTag } from ".";
-import { Boxes } from "../common/BoxRegistry";
 import { Ref, RQLTagVariable } from "../common/types";
 import {
   all, ASTNode, Call, Identifier,
@@ -8,15 +7,15 @@ import {
 import Table from "../Table";
 import Tokenizer, { Token, TokenType } from "./Tokenizer";
 
-class Parser<Params, Output, Box extends Boxes> {
+class Parser<Params, Output> {
   str: string;
-  variables: RQLTagVariable<Params, Output, Box>[];
+  variables: RQLTagVariable<Params, Output>[];
   idx: number;
   tokenizer: Tokenizer;
   lookahead: Token;
-  table: Table<Box>;
+  table: Table;
 
-  constructor(str: string, variables: any[], table: Table<Box>) {
+  constructor(str: string, variables: any[], table: Table) {
     this.str = str;
     this.variables = variables;
     this.idx = 0;
@@ -43,9 +42,10 @@ class Parser<Params, Output, Box extends Boxes> {
       return tag.nodes;
     }
 
-    const refs: Ref<Box>[] = this.table.refs.filter (([t]) => {
-      return t.equals (tag.table as any);
-    });
+    // const refs: Ref[] = this.table.refs.filter (([t]) => {
+    //   return t.equals (tag.table as any);
+    // });
+    const refs: any[] = [];
 
     if (!refs.length) {
       throw new Error (
@@ -69,13 +69,13 @@ class Parser<Params, Output, Box extends Boxes> {
       return this.refer (x, as, single);
     }
 
-    if (Table.isTable<Box> (x)) {
+    if (Table.isTable (x)) {
       return this.refer (x.empty (), as, single);
     }
 
     if (Array.isArray (x)) {
       if (
-        !(x as ASTNode<Params, Output, Box>[]).reduce ((acc: boolean, m: ASTNode<Params, Output, Box>) => acc && isASTNode<Params, Output, Box> (m), true)
+        !(x as ASTNode<Params, Output>[]).reduce ((acc: boolean, m: ASTNode<Params, Output>) => acc && isASTNode<Params, Output> (m), true)
       ) {
         throw new Error ("Invalid dynamic members, expected Array of ASTNode");
       }
@@ -93,18 +93,18 @@ class Parser<Params, Output, Box extends Boxes> {
     return variable;
   }
 
-  Call(identifier: Identifier<Params, Output, Box>) {
+  Call(identifier: Identifier<Params, Output>) {
     return Call (identifier.name, this.arguments (), identifier.as, identifier.cast);
   }
 
-  nodes(): ASTNode<Params, Output, Box>[] {
+  nodes(): ASTNode<Params, Output>[] {
     const members = [];
 
     while (!this.isNext ("EOT")) {
       const member = this.Member ();
 
       if (this.isNext ("(")) {
-        members.push (this.Call (member as unknown as Identifier<Params, Output, Box>));
+        members.push (this.Call (member as unknown as Identifier<Params, Output>));
       } else {
         members.push (member);
       }
@@ -117,16 +117,16 @@ class Parser<Params, Output, Box extends Boxes> {
 
   arguments() {
     this.eat ("(");
-    const argumentList: ASTNode<Params, Output, Box>[] = [];
+    const argumentList: ASTNode<Params, Output>[] = [];
 
     if (!this.isNext (")")) {
       do {
         const argument = this.Argument ();
 
         if (this.isNext ("(")) {
-          argumentList.push (this.Call (argument as unknown as Identifier<Params, Output, Box>));
+          argumentList.push (this.Call (argument as unknown as Identifier<Params, Output>));
         } else {
-          argumentList.push (argument as ASTNode<Params, Output, Box>);
+          argumentList.push (argument as ASTNode<Params, Output>);
         }
       } while (this.hasArg ());
     }
@@ -192,7 +192,7 @@ class Parser<Params, Output, Box extends Boxes> {
     throw new SyntaxError (`Unknown Argument Type: "${this.lookahead.type}"`);
   }
 
-  Literal(): Literal<Params, Output, Box> {
+  Literal(): Literal<Params, Output> {
     switch (this.lookahead.type) {
       case "NUMBER":
         return this.NumericLiteral ();
@@ -213,14 +213,14 @@ class Parser<Params, Output, Box extends Boxes> {
     this.eat (x ? "true" : "false");
     const [as, cast] = this.castAs ();
 
-    return Literal<Params, Output, Box> (x, as, cast);
+    return Literal<Params, Output> (x, as, cast);
   }
 
   NullLiteral() {
     this.eat ("null");
     const [as, cast] = this.castAs ();
 
-    return Literal<Params, Output, Box> (null, as, cast);
+    return Literal<Params, Output> (null, as, cast);
   }
 
   StringLiteral() {
@@ -228,14 +228,14 @@ class Parser<Params, Output, Box extends Boxes> {
     const x = token.x.slice (1, -1);
     const [as, cast] = this.castAs ();
 
-    return StringLiteral<Params, Output, Box> (x, as, cast);
+    return StringLiteral<Params, Output> (x, as, cast);
   }
 
   NumericLiteral() {
     const token = this.eat ("NUMBER");
     const [as, cast] = this.castAs ();
 
-    return Literal<Params, Output, Box> (Number (token.x), as, cast);
+    return Literal<Params, Output> (Number (token.x), as, cast);
   }
 
   getNextToken(): any {

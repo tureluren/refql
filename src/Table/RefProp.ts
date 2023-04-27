@@ -1,4 +1,4 @@
-import Table2 from ".";
+import Table from ".";
 import { refqlType } from "../common/consts";
 import { RefInfo, RelType } from "../common/types2";
 
@@ -7,7 +7,7 @@ interface RefProp<As extends string = any, TableId extends string = any, Rel ext
   tableId: TableId;
   as: As;
   refInfo: Rel extends "BelongsToMany" ? Required<RefInfo<As>> : RefInfo<As>;
-  child: Table2;
+  child: Table;
   // nullable ?
 }
 
@@ -18,7 +18,7 @@ const prototype = {
   [refqlType]: type
 };
 
-function RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any>(as: As, tableId: TableId, rel: Rel, child: Table2, refInfo: Rel extends "BelongsToMany" ? Required<RefInfo<As>> : RefInfo<As>) {
+function RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any>(as: As, tableId: TableId, rel: Rel, child: Table, refInfo: Rel extends "BelongsToMany" ? Required<RefInfo<As>> : RefInfo<As>) {
   let refProp: RefProp<As, TableId, Rel> = Object.create (prototype);
 
   refProp.rel = rel;

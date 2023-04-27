@@ -1,13 +1,12 @@
-import SQLTag from ".";
-import { Boxes } from "../common/BoxRegistry";
+import { createSQLTag2, isSQLTag } from ".";
 import { SQLTagVariable } from "../common/types";
 import { ASTNode, Raw, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
-import { RQLTag, isRQLTag } from "../RQLTag";
+import { isRQLTag } from "../RQLTag";
 import Table from "../Table";
 
-export function parse<Params, Output, Box extends Boxes>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output, Boxes>[]) {
-  const nodes = [] as ASTNode<Params, Output, Box>[];
+export function parse<Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params, Output>[]) {
+  const nodes = [] as ASTNode<Params, Output>[];
 
   for (let [idx, string] of strings.entries ()) {
     const x = variables[idx];
@@ -26,30 +25,30 @@ export function parse<Params, Output, Box extends Boxes>(strings: TemplateString
       }
 
       if (string) {
-        nodes.push (Raw<Params, Output, Box> (string));
+        nodes.push (Raw<Params, Output> (string));
       }
     }
 
     if (!x) {
-    } else if (SQLTag.isSQLTag<Params, Output, Box> (x)) {
+    } else if (isSQLTag<Params, Output> (x)) {
       nodes.push (...x.nodes);
     } else if (isRQLTag (x)) {
       throw new Error ("U can't use RQLTags inside SQLTags");
     } else if (Table.isTable (x)) {
-      nodes.push (Raw<Params, Output, Box> (x));
-    } else if (isASTNode<Params, Output, Box> (x)) {
+      nodes.push (Raw<Params, Output> (x));
+    } else if (isASTNode<Params, Output> (x)) {
       nodes.push (x);
     } else {
-      nodes.push (Value<Params, Output, Box> (x));
+      nodes.push (Value<Params, Output> (x));
     }
   }
 
   return nodes;
 }
 
-function sql <Params = unknown, Output = unknown, Box extends Boxes = "Promise">(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, Box>[]) {
-  const nodes = parse<Params, Output, Box> (strings, variables);
-  return SQLTag (nodes);
+function sql <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) {
+  const nodes = parse<Params, Output> (strings, variables);
+  return createSQLTag2 (nodes);
 }
 
 export default sql;

@@ -1,9 +1,8 @@
 import { refqlType } from "../common/consts";
-import { Boxes } from "../common/BoxRegistry";
 import { CastAs, StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Literal<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box>, CastAs {
+interface Literal<Params, Output> extends ASTNode<Params, Output>, CastAs {
   x: string | number | boolean | null;
 }
 
@@ -14,8 +13,8 @@ export const literalPrototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Literal<Params, Output, Box extends Boxes>(x: string | number | boolean | null, as?: string, cast?: string) {
-  let literal: Literal<Params, Output, Box> = Object.create (literalPrototype);
+function Literal<Params, Output>(x: string | number | boolean | null, as?: string, cast?: string) {
+  let literal: Literal<Params, Output> = Object.create (literalPrototype);
 
   literal.x = x;
   literal.as = as;
@@ -24,11 +23,11 @@ function Literal<Params, Output, Box extends Boxes>(x: string | number | boolean
   return literal;
 }
 
-function caseOf<Params, Output, Box extends Boxes>(this: Literal<Params, Output, Box>, structureMap: StringMap) {
+function caseOf<Params, Output>(this: Literal<Params, Output>, structureMap: StringMap) {
   return structureMap.Literal (this.x, this.as, this.cast);
 }
 
-Literal.isLiteral = function <Params, Output, Box extends Boxes> (x: any): x is Literal<Params, Output, Box> {
+Literal.isLiteral = function <Params, Output> (x: any): x is Literal<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 

@@ -1,9 +1,9 @@
 import RefField from "../RefField";
 import { RQLTag } from "../RQLTag";
-import { SQLTag2 } from "../SQLTag2";
-import Table2 from "../Table2";
-import Prop from "../Table2/Prop";
-import RefProp from "../Table2/RefProp";
+import { SQLTag } from "../SQLTag";
+import Table from "../Table";
+import Prop from "../Table/Prop";
+import RefProp from "../Table/RefProp";
 
 
 // export type InputSpec = {
@@ -38,12 +38,12 @@ export type Only<T, S> = {
 export type OnlyFields<T> = Only<T, Prop>;
 
 export type OnlyPropFields<T> = {
-  [K in keyof T as T[K] extends Prop ? T[K]["col"] extends SQLTag2 ? never : K : never]: T[K] extends Prop ? T[K]["col"] extends SQLTag2 ? never : T[K] : never
+  [K in keyof T as T[K] extends Prop ? T[K]["col"] extends SQLTag ? never : K : never]: T[K] extends Prop ? T[K]["col"] extends SQLTag ? never : T[K] : never
 };
 
 export type OnlyTableFields<T> = Only<T, RefProp>;
 
-export type OnlySQLTags<T> = Only<T, SQLTag2>;
+export type OnlySQLTags<T> = Only<T, SQLTag>;
 
 export type NameMap<T extends { [key: string]: { tableId: string }}> = {
   [K in keyof T as T[K]["tableId"]]: T[K]
@@ -60,44 +60,26 @@ export interface RefInput {
 export type RefNodeInput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;
 
 export interface RefInfo<As extends string> {
-  parent: Table2;
+  parent: Table;
   lRef: RefField;
   rRef: RefField;
-  xTable?: Table2<As, any>;
+  xTable?: Table<As, any>;
   lxRef?: RefField;
   rxRef?: RefField;
 }
-
-// export type RQLTagMaker2<S, Box extends Boxes> =
-//   <Params = unknown>(comps: (keyof S | S[keyof S])[])
-//     => RQLTag<Params, { [] }, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
-
-// type extractFromObj<T, K extends keyof T> = (obj: T, keys: K[]): Pick<T, K>;
-
-// type Pickie<Input extends InputSpec, S extends Spec<Input>, Comp> = Comp extends keyof S ? Pick<S, Comp> : never;
-// type Pickie<Input extends InputSpec, S extends Spec<Input>, Comp extends keyof S> = Comp extends keyof S ? Pick<S, Comp> : never;
-
-// export type RQLTagMaker2<Input extends InputSpec, S extends Spec<Input>, Box extends Boxes> =
-//   <Output extends Pickie<Input, S, Comp>, Params = unknown, Comp extends keyof S = "">(comps: Comp[])
-//     => RQLTag<Params, { [k in keyof Output]: Output[k]["type"]}, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, { [k in keyof Output]: Output[k]["type"]}>>>;
-
-// export type RQLTagMaker2<Input extends InputSpec, S extends Spec<Input>, Box extends Boxes> =
-//   <Output extends Pick<S, Comp>, Params = unknown, Comp extends keyof S = "">(comps: Comp[])
-//     => RQLTag<Params, { [k in keyof Output]: Output[k]["type"]}, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, { [k in keyof Output]: Output[k]["type"]}>>>;
-
 
 export type UnionToIntersection<U> =
   (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
 export type SQLTag2Objects<T, S, Fields extends OnlyFields<S> = OnlyFields<S>> = T extends (infer U)[]
-  ? (U extends SQLTag2
+  ? (U extends SQLTag
     ? U
     : U extends Prop
-      ? U["col"] extends SQLTag2
+      ? U["col"] extends SQLTag
         ? U["col"]
         : never
       : U extends keyof Fields
-        ? Fields[U]["col"] extends SQLTag2
+        ? Fields[U]["col"] extends SQLTag
           ? Fields[U]["col"]
           : never
         : never)[]
@@ -111,7 +93,7 @@ export type Selectable<T> = AllSign |
   keyof OnlyFields<T> |
   OnlyFields<T>[keyof OnlyFields<T>] |
   RQLTag<OnlyTableFields<T>[keyof OnlyTableFields<T>]["tableId"], any, any> |
-  SQLTag2;
+  SQLTag;
 
 export type SelectedS<T, S, Fields extends OnlyFields<S> = OnlyFields<S>, Tables extends OnlyTableFields<S> = OnlyTableFields<S>, Names extends NameMap<Tables> = NameMap<Tables>> =
     T extends (infer U)[]

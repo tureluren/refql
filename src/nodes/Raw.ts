@@ -1,13 +1,12 @@
 import { flMap, refqlType } from "../common/consts";
-import { Boxes } from "../common/BoxRegistry";
 import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import ASTNode, { astNodePrototype } from "../nodes/ASTNode";
-import Table2 from "../Table2";
+import Table from "../Table";
 
-interface Raw<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box> {
-  run: TagFunctionVariable<Params, Box, string>;
-  map(f: (x: ValueType) => ValueType): Raw<Params, Output, Box>;
-  [flMap]: Raw<Params, Output, Box>["map"];
+interface Raw<Params, Output> extends ASTNode<Params, Output> {
+  run: TagFunctionVariable<Params, string>;
+  map(f: (x: ValueType) => ValueType): Raw<Params, Output>;
+  [flMap]: Raw<Params, Output>["map"];
 }
 
 const type = "refql/Raw";
@@ -20,27 +19,27 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Raw<Params, Output, Box extends Boxes>(run: ValueType | TagFunctionVariable<Params, Box>) {
-  let raw: Raw<Params, Output, Box> = Object.create (prototype);
+function Raw<Params, Output>(run: ValueType | TagFunctionVariable<Params>) {
+  let raw: Raw<Params, Output> = Object.create (prototype);
 
-  raw.run = (p, t) => String ((
-    typeof run === "function" && !Table2.isTable (run) ? run : () => run
-  ) (p, t));
+  raw.run = p => String ((
+    typeof run === "function" && !Table.isTable (run) ? run : () => run
+  ) (p));
 
   return raw;
 }
 
-function map<Params, Output, Box extends Boxes>(this: Raw<Params, Output, Box>, f: (x: ValueType) => ValueType) {
-  return Raw<Params, Output, Box> ((p, t) => {
-    return f (this.run (p, t));
+function map<Params, Output>(this: Raw<Params, Output>, f: (x: ValueType) => ValueType) {
+  return Raw<Params, Output> (p => {
+    return f (this.run (p));
   });
 }
 
-function caseOf<Params, Output, Box extends Boxes>(this: Raw<Params, Output, Box>, structureMap: StringMap) {
+function caseOf<Params, Output>(this: Raw<Params, Output>, structureMap: StringMap) {
   return structureMap.Raw (this.run);
 }
 
-Raw.isRaw = function<Params, Output, Box extends Boxes> (x: any): x is Raw<Params, Output, Box> {
+Raw.isRaw = function<Params, Output> (x: any): x is Raw<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 

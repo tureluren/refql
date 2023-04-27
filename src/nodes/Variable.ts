@@ -1,10 +1,9 @@
-import { Boxes } from "../common/BoxRegistry";
 import { CastAs, StringMap, ValueType } from "../common/types";
-import SQLTag from "../SQLTag";
+import { SQLTag } from "../SQLTag";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Variable<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box>, CastAs {
-  x: SQLTag<Params, Output, Box> | ValueType;
+interface Variable<Params, Output> extends ASTNode<Params, Output>, CastAs {
+  x: SQLTag<Params, Output> | ValueType;
 }
 
 const prototype = Object.assign ({}, astNodePrototype, {
@@ -12,8 +11,8 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Variable<Params, Output, Box extends Boxes>(x: SQLTag<Params, Output, Box> | ValueType, as?: string, cast?: string) {
-  let variable: Variable<Params, Output, Box> = Object.create (prototype);
+function Variable<Params, Output>(x: SQLTag<Params, Output> | ValueType, as?: string, cast?: string) {
+  let variable: Variable<Params, Output> = Object.create (prototype);
 
   variable.x = x;
   variable.as = as;
@@ -22,7 +21,7 @@ function Variable<Params, Output, Box extends Boxes>(x: SQLTag<Params, Output, B
   return variable;
 }
 
-function caseOf<Params, Output, Box extends Boxes>(this: Variable<Params, Output, Box>, structureMap: StringMap) {
+function caseOf<Params, Output>(this: Variable<Params, Output>, structureMap: StringMap) {
   return structureMap.Variable (this.x, this.as, this.cast);
 }
 

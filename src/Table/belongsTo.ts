@@ -1,4 +1,4 @@
-import Table2 from ".";
+import Table from ".";
 import { RefNodeInput } from "../common/types2";
 import validateTable from "../common/validateTable";
 import RefField from "../RefField";
@@ -14,7 +14,7 @@ const belongsTo = <As extends string, TableId extends string>(as: As, tableId: T
 
 };
 
-// return <As extends string>(as: As, parent: Table2) => {
+// return <As extends string>(as: As, parent: Table) => {
 //   const refOf = RefField.refFieldOf (as);
 
 //   const refInfo = {

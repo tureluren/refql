@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { Boxes } from "../common/BoxRegistry";
 import { refqlType } from "../common/consts";
 import { Ref, RefInput, RefMaker, RefQLRows, StringMap } from "../common/types";
 import { RefInfo } from "../common/types2";
@@ -12,9 +11,9 @@ import ASTNode, { astNodePrototype } from "./ASTNode";
 import Raw from "./Raw";
 import Values from "./Values";
 
-interface RefNode<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box> {
-  joinLateral(): RQLTag<any, Params, Output, Box>;
-  tag: RQLTag<any, Params, Output, Box>;
+interface RefNode<Params, Output> extends ASTNode<Params, Output> {
+  joinLateral(): RQLTag<any, Params, Output>;
+  tag: RQLTag<any, Params, Output>;
   info: RefInfo<any>;
   single: boolean;
 }
@@ -27,8 +26,8 @@ export const refNodePrototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function RefNode<Params, Output, Box extends Boxes>(info: RefInfo<Box>, tag: RQLTag<any, Params, Output, Box>, single: boolean) {
-  let refNode: RefNode<Params, Output, Box> = Object.create (refNodePrototype);
+function RefNode<Params, Output>(info: RefInfo, tag: RQLTag<any, Params, Output>, single: boolean) {
+  let refNode: RefNode<Params, Output> = Object.create (refNodePrototype);
 
   refNode.info = info;
   refNode.tag = tag;
@@ -37,11 +36,11 @@ function RefNode<Params, Output, Box extends Boxes>(info: RefInfo<Box>, tag: RQL
   return refNode;
 }
 
-function joinLateral<Params, Output, Box extends Boxes>(this: RefNode<Params, Output, Box>) {
+function joinLateral<Params, Output>(this: RefNode<Params, Output>) {
   const { tag, next, extra } = this.tag.interpret ();
   const { rRef, lRef, parent } = this.info;
 
-  const l1 = sql<Params & RefQLRows, Output, Box>`
+  const l1 = sql<Params & RefQLRows, Output>`
     select distinct ${Raw (lRef)}
     from ${Raw (parent)}
     where ${Raw (lRef.name)}
@@ -54,7 +53,7 @@ function joinLateral<Params, Output, Box extends Boxes>(this: RefNode<Params, Ou
     `)
     .concat (extra);
 
-  const joined = sql<Params, Output, Box>`
+  const joined = sql<Params, Output>`
     select * from (${l1}) refqll1,
     lateral (${l2}) refqll2
   `;
@@ -64,11 +63,11 @@ function joinLateral<Params, Output, Box extends Boxes>(this: RefNode<Params, Ou
   return this.tag;
 }
 
-function caseOf<Params, Output, Box extends Boxes>(this: RefNode<Params, Output, Box>, structureMap: StringMap) {
+function caseOf<Params, Output>(this: RefNode<Params, Output>, structureMap: StringMap) {
   return structureMap.RefNode (this.joinLateral (), this.info, this.single);
 }
 
-RefNode.isRefNode = function <Params, Output, Box extends Boxes> (x: any): x is RefNode<Params, Output, Box> {
+RefNode.isRefNode = function <Params, Output> (x: any): x is RefNode<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 
@@ -104,7 +103,7 @@ export const validateRefInput = (input: RefInput) => {
   }
 };
 
-const makeBelongsTo = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<any, Params, Output, Box>, as?: string) => {
+const makeBelongsTo = (child: Table, input: RefNodeInput) => <Params, Output>(parent: Table, tag: RQLTag<any, Params, Output>, as?: string) => {
   as = as || input.as || child.name;
   const refOf = RefField.refFieldOf (as);
 
@@ -120,7 +119,7 @@ const makeBelongsTo = <Box extends Boxes = "Promise">(child: Table<Box>, input: 
   );
 };
 
-const makeHasMany = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<any, Params, Output, Box>, as?: string, single?: boolean) => {
+const makeHasMany = (child: Table, input: RefNodeInput) => <Params, Output>(parent: Table, tag: RQLTag<any, Params, Output>, as?: string, single?: boolean) => {
   as = as || input.as || `${child.name}s`;
   const refOf = RefField.refFieldOf (as);
 
@@ -136,7 +135,7 @@ const makeHasMany = <Box extends Boxes = "Promise">(child: Table<Box>, input: Re
   );
 };
 
-const makeHasOne = <Box extends Boxes = "Promise">(child: Table<Box>, input: RefNodeInput) => <Params, Output>(parent: Table<Box>, tag: RQLTag<any, Params, Output, Box>, as?: string) => {
+const makeHasOne = (child: Table, input: RefNodeInput) => <Params, Output>(parent: Table, tag: RQLTag<any, Params, Output>, as?: string) => {
   as = as || input.as || child.name;
   const refOf = RefField.refFieldOf (as);
 
@@ -152,12 +151,12 @@ const makeHasOne = <Box extends Boxes = "Promise">(child: Table<Box>, input: Ref
   );
 };
 
-const makeRefNode = <Box extends Boxes>(f: (child: Table<Box>, input: RefNodeInput) => RefMaker<Box>) => (table: string, input: RefNodeInput = {}): Ref<Box> => {
+const makeRefNode = (f: (child: Table, input: RefNodeInput) => RefMaker) => (table: string, input: RefNodeInput = {}): Ref => {
   validateTable (table);
 
   validateRefInput (input);
 
-  const child = Table<Box> (table);
+  const child = Table (table);
 
   return [child, f (child, input)];
 };

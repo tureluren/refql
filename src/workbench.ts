@@ -1,13 +1,13 @@
 import { Pool } from "pg";
 import { Querier } from "./common/types";
 import { Raw } from "./nodes";
-import { convertSQLTagResult } from "./SQLTag2";
-import sql from "./SQLTag2/sql";
-import Table2 from "./Table2";
-import belongsTo from "./Table2/belongsTo";
-import hasMany from "./Table2/hasMany";
-import numberProp from "./Table2/numberProp";
-import stringProp from "./Table2/stringProp";
+import { convertSQLTagResult } from "./SQLTag";
+import sql from "./SQLTag/sql";
+import Table from "./Table";
+import belongsTo from "./Table/belongsTo";
+import hasMany from "./Table/hasMany";
+import numberProp from "./Table/numberProp";
+import stringProp from "./Table/stringProp";
 import Task, { promiseToTask } from "./test/Task";
 
 
@@ -36,7 +36,7 @@ const querier = async (query: string, values: any[]) => {
 // type IBUh2 = typeof buh2.col;
 
 
-// const Player = Table2 ("player", [
+// const Player = Table ("player", [
 //   numberProp ("id").arrayOf (),
 //   numberProp ("age", "age").nullable (),
 //   stringProp ("fullName", sql<{ table: string }>`
@@ -50,19 +50,19 @@ const querier = async (query: string, values: any[]) => {
 // ]);
 
 
-// const Team = Table2 ("team", [
+// const Team = Table ("team", [
 //   numberProp ("id", "id"),
 //   stringProp ("name", "name"),
 //   belongsTo ("league", "league")
 // ]);
 
-// const League = Table2 ("league", [
+// const League = Table ("league", [
 //   numberProp ("id", "id")
 //   // ids: "foemp",
 //   // leagueName: varchar ("name")
 // ]);
 
-// // const Goal = Table2 ("goal", [
+// // const Goal = Table ("goal", [
 // //   numberProp ("id", "id"),
 // //   stringProp ("minute", "minute")
 // // ]);
@@ -108,8 +108,8 @@ const querier = async (query: string, values: any[]) => {
 // // playerById ({ name: "" }, querier).then (res => console.log (res));
 // // natural transformation
 
-declare module "./SQLTag2" {
-  interface SQLTag2<Params, Output> {
+declare module "./SQLTag" {
+  interface SQLTag<Params, Output> {
     (params: Params, querier?: Querier): Task<Output>;
   }
 }

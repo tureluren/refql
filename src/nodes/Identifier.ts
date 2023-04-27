@@ -1,9 +1,8 @@
 import { refqlType } from "../common/consts";
-import { Boxes } from "../common/BoxRegistry";
 import { CastAs, StringMap } from "../common/types";
 import ASTNode, { astNodePrototype } from "./ASTNode";
 
-interface Identifier<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box>, CastAs {
+interface Identifier<Params, Output> extends ASTNode<Params, Output>, CastAs {
   name: string;
 }
 
@@ -15,8 +14,8 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Identifier<Params, Output, Box extends Boxes>(name: string, as?: string, cast?: string) {
-  let identifier: Identifier<Params, Output, Box> = Object.create (prototype);
+function Identifier<Params, Output>(name: string, as?: string, cast?: string) {
+  let identifier: Identifier<Params, Output> = Object.create (prototype);
 
   identifier.name = name;
   identifier.as = as;
@@ -25,11 +24,11 @@ function Identifier<Params, Output, Box extends Boxes>(name: string, as?: string
   return identifier;
 }
 
-function caseOf<Params, Output, Box extends Boxes>(this: Identifier<Params, Output, Box>, structureMap: StringMap) {
+function caseOf<Params, Output>(this: Identifier<Params, Output>, structureMap: StringMap) {
   return structureMap.Identifier (this.name, this.as, this.cast);
 }
 
-Identifier.isIdentifier = function<Params, Output, Box extends Boxes> (x: any): x is Identifier<Params, Output, Box> {
+Identifier.isIdentifier = function<Params, Output> (x: any): x is Identifier<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 

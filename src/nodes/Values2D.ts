@@ -1,11 +1,10 @@
 import { refqlType } from "../common/consts";
-import { Boxes } from "../common/BoxRegistry";
 import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
 import { ASTNode } from "../nodes";
 import { astNodePrototype } from "../nodes/ASTNode";
 
-interface Values2D<Params, Output, Box extends Boxes> extends ASTNode<Params, Output, Box> {
-  run: TagFunctionVariable<Params, Box, ValueType[][]>;
+interface Values2D<Params, Output> extends ASTNode<Params, Output> {
+  run: TagFunctionVariable<Params, ValueType[][]>;
 }
 
 const type = "refql/Values2D";
@@ -16,18 +15,18 @@ const prototype = Object.assign ({}, astNodePrototype, {
   caseOf
 });
 
-function Values2D<Params, Output, Box extends Boxes>(run: ValueType[][] | TagFunctionVariable<Params, Box, any[][]>) {
-  let values2D: Values2D<Params, Output, Box> = Object.create (prototype);
+function Values2D<Params, Output>(run: ValueType[][] | TagFunctionVariable<Params, any[][]>) {
+  let values2D: Values2D<Params, Output> = Object.create (prototype);
   values2D.run = typeof run === "function" ? run : () => run;
 
   return values2D;
 }
 
-function caseOf<Params, Output, Box extends Boxes>(this: Values2D<Params, Output, Box>, structureMap: StringMap) {
+function caseOf<Params, Output>(this: Values2D<Params, Output>, structureMap: StringMap) {
   return structureMap.Values2D (this.run);
 }
 
-Values2D.isValues2D = function <Params, Output, Box extends Boxes> (x: any): x is Values2D<Params, Output, Box> {
+Values2D.isValues2D = function <Params, Output> (x: any): x is Values2D<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 

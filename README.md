@@ -280,11 +280,11 @@ class Task<Output> {
 const promiseToTask = <Output>(p: Promise<Output>) =>
   new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
-const Table2 = (name: string, refs: Ref<"Task">[] = []) => {
+const Table = (name: string, refs: Ref<"Task">[] = []) => {
   return Table<"Task"> (name, refs, defaultQuerier, promiseToTask);
 };
 
-const Player = Table2 ("Player");
+const Player = Table ("Player");
 
 const tag = Player<{}, { id: number; first_name: string }[]>`
   id
