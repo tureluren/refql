@@ -12,7 +12,7 @@ const belongsTo = <As extends string, TableId extends (string | (() => Table<any
 
   // const child = typeof tableId === "string" ? Table (tableId, []) : tableId;
 
-  return RefProp<As, TableId, "BelongsTo"> (as, tableId, "BelongsTo", tableId as any, input);
+  return RefProp<As, TableId, "BelongsTo"> (as, tableId, "BelongsTo", input);
 };
 
 // return <As extends string>(as: As, parent: Table) => {

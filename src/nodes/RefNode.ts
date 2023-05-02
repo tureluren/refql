@@ -29,7 +29,7 @@ function RefNode<Params, Output>(refProp: RefProp, tag: RQLTag<any, Params, Outp
 
   const { as, rel, child, refInput } = refProp;
 
-  const ch = typeof child === "string" ? Table (child, []) : (child as any) ();
+  const ch = typeof child === "string" ? Table (child, []) : child ();
 
   if (rel === "BelongsTo") {
     const refOf = RefField.refFieldOf (as);
