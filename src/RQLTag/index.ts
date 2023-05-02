@@ -208,6 +208,7 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
   return { next, tag, extra };
 }
 
+// make compile async to lazy resolve table
 function compile<As, Params, Output>(this: RQLTag<As, Params, Output>, params: Params) {
   if (!this.interpreted) {
     const { tag, extra, next } = this.interpret ();

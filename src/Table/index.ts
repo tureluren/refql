@@ -63,9 +63,9 @@ function Table<Name extends string = any, Props extends(Prop | RefProp)[] = []>(
         for (const key in properties) {
           const prop = properties[key as keyof typeof properties];
 
-          if (RefProp.isRefProp (prop) && prop.child.equals (comp.table)) {
-            const refInfo = (prop as RefProp).getRefInfo (table as any);
-            nodes.push (RefNode (refInfo, comp, true));
+          // if (RefProp.isRefProp (prop) && prop.child.equals (comp.table)) {
+          if (RefProp.isRefProp (prop)) {
+            nodes.push (RefNode (prop, comp, table as any));
           }
         }
 

@@ -5,14 +5,14 @@ import RefField from "../RefField";
 import RefProp from "./RefProp";
 import validateRefInput from "./validateRefInput";
 
-const belongsTo = <As extends string, TableId extends string>(as: As, tableId: TableId, input: RefNodeInput = {}) => {
-  validateTable (tableId);
+const belongsTo = <As extends string, TableId extends (string | (() => Table<any, any>))>(as: As, tableId: TableId, input: RefNodeInput = {}) => {
+  // validateTable (tableId);
 
   validateRefInput (input);
 
-  const child = Table (tableId, []);
+  // const child = typeof tableId === "string" ? Table (tableId, []) : tableId;
 
-  return RefProp<As, TableId, "BelongsTo"> (as, tableId, "BelongsTo", child, input);
+  return RefProp<As, TableId, "BelongsTo"> (as, tableId, "BelongsTo", tableId as any, input);
 };
 
 // return <As extends string>(as: As, parent: Table) => {

@@ -37,6 +37,7 @@ const querier = async (query: string, values: any[]) => {
 // type IBUh2 = typeof buh2.col;
 
 
+
 const Player = Table ("player", [
   numberProp ("id").arrayOf (),
   dateProp ("birthday", "birthday").nullable (),
@@ -46,7 +47,7 @@ const Player = Table ("player", [
   // stringProp ("firstName", "first_name"),
   // // ids: "foemp",
   // // firstName: varchar ("first_name"),
-  belongsTo ("team", "team")
+  belongsTo ("team", () => Team)
   // hasMany ("goals", "goal")
 ]);
 

@@ -1,8 +1,11 @@
 import { refqlType } from "../common/consts";
 import { RefQLRows, StringMap } from "../common/types";
 import { RefInfo } from "../common/types2";
+import RefField from "../RefField";
 import { RQLTag } from "../RQLTag";
 import sql from "../SQLTag/sql";
+import Table from "../Table";
+import RefProp from "../Table/RefProp";
 import Raw from "./Raw";
 import Values from "./Values";
 
@@ -21,12 +24,26 @@ export const refNodePrototype = {
   caseOf
 };
 
-function RefNode<Params, Output>(info: RefInfo<any>, tag: RQLTag<any, Params, Output>, single: boolean) {
+function RefNode<Params, Output>(refProp: RefProp, tag: RQLTag<any, Params, Output>, parent: Table) {
   let refNode: RefNode<Params, Output> = Object.create (refNodePrototype);
 
-  refNode.info = info;
+  const { as, rel, child, refInput } = refProp;
+
+  const ch = typeof child === "string" ? Table (child, []) : (child as any) ();
+
+  if (rel === "BelongsTo") {
+    const refOf = RefField.refFieldOf (as);
+
+    refNode.info = {
+      parent,
+      as,
+      lRef: refOf (parent, "lref", refInput.lRef || `${ch.name}_id`),
+      rRef: refOf (ch, "rref", refInput.rRef || "id")
+    };
+  }
+
   refNode.tag = tag;
-  refNode.single = single;
+  refNode.single = rel === "BelongsTo";
 
   return refNode;
 }
