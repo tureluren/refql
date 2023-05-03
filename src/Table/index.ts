@@ -60,15 +60,7 @@ function Table<Name extends string = any, Props extends(Prop | RefProp)[] = []>(
       } else if (isSQLTag (comp)) {
         nodes.push (comp);
       } else if (isRQLTag (comp)) {
-        for (const key in properties) {
-          const prop = properties[key as keyof typeof properties];
-
-          // if (RefProp.isRefProp (prop) && prop.child.equals (comp.table)) {
-          if (RefProp.isRefProp (prop)) {
-            nodes.push (RefNode (prop, comp, table as any));
-          }
-        }
-
+        nodes.push (RefNode (comp, table as any));
       }
     }
 

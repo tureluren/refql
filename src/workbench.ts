@@ -5,8 +5,10 @@ import { convertSQLTagResult } from "./SQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
 import belongsTo from "./Table/belongsTo";
+import belongsToMany from "./Table/belongsToMany";
 import dateProp from "./Table/dateProp";
 import hasMany from "./Table/hasMany";
+import hasOne from "./Table/hasOne";
 import numberProp from "./Table/numberProp";
 import stringProp from "./Table/stringProp";
 import Task, { promiseToTask } from "./test/Task";
@@ -47,10 +49,16 @@ const Player = Table ("player", [
   // stringProp ("firstName", "first_name"),
   // // ids: "foemp",
   // // firstName: varchar ("first_name"),
-  belongsTo ("team", () => Team)
-  // hasMany ("goals", "goal")
+  belongsToMany ("games", () => Game),
+  belongsTo ("team", () => Team),
+  hasMany ("goals", "goal"),
+  hasOne ("rating", "rating")
 ]);
 
+const Rating = Table ("rating", [
+  numberProp ("id", "id")
+  // belongsTo ("league", "league")
+]);
 
 const Team = Table ("team", [
   numberProp ("id", "id"),
@@ -64,10 +72,15 @@ const Team = Table ("team", [
 //   // leagueName: varchar ("name")
 // ]);
 
-// // const Goal = Table ("goal", [
-// //   numberProp ("id", "id"),
-// //   stringProp ("minute", "minute")
-// // ]);
+const Goal = Table ("goal", [
+  numberProp ("id", "id"),
+  stringProp ("minute", "minute")
+]);
+
+const Game = Table ("game", [
+  numberProp ("id", "id"),
+  stringProp ("result", "result")
+]);
 
 // // // const uuid = numberField ("uuid") ("uuiid");
 
@@ -86,7 +99,10 @@ const byId = sql<{ id: number }>`
 
 const playerById = Player ([
   "*",
+  Game (["result"]),
   Team (["name"]),
+  Goal (["*"]),
+  Rating (["*"]),
   byId
 ]);
 
@@ -99,7 +115,7 @@ const playerById = Player ([
 // // // const concatted = playerById.concat (playerRes);
 
 
-playerById ({ id: 4 }, querier).then (res => console.log (res[0]));
+playerById ({ id: 9 }, querier).then (res => console.log (res[0]));
 // // natural transformation
 
 // declare module "./SQLTag" {

@@ -52,7 +52,7 @@ export type NameMap<T extends { [key: string]: { tableId: string }}> = {
 export interface RefInput {
   lRef?: string;
   rRef?: string;
-  xTable?: string;
+  xTable?: string | (() => Table);
   lxRef?: string;
   rxRef?: string;
 }
@@ -103,9 +103,9 @@ export type SelectedS<T, S, Fields extends OnlyFields<S> = OnlyFields<S>, Tables
       : U extends Fields[keyof Fields]
         ? {as: U["as"]; type: U["type"]}
         : U extends RQLTag<Tables[keyof Tables]["tableId"], any, any>
-          ? Names[U["tableId"]] extends RefProp<any, any, "BelongsTo">
+          ? Names[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne">
             ? {as: Names[U["tableId"]]["as"]; type: U["type"][0]}
-            : Names[U["tableId"]] extends RefProp<any, any, "HasMany">
+            : Names[U["tableId"]] extends RefProp<any, any, "HasMany" | "BelongsToMany">
               ? {as: Names[U["tableId"]]["as"]; type: U["type"]}
               : never
           : never)[]
