@@ -31,7 +31,7 @@ export interface RQLTag<TableId, Params, Output> {
   tableId: TableId;
   type: Output;
   table: Table<any, any>;
-  nodes: (AllSign | Prop | RefProp | SQLTag | RefNode<Params, Output>)[];
+  nodes: (Prop | RefProp | SQLTag | RefNode<Params, Output>)[];
   defaultQuerier?: Querier;
   convertPromise: (p: Promise<Output>) => any;
   interpreted: InterpretedRQLTag<TableId, Params, Output>;
@@ -55,7 +55,7 @@ let prototype = {
   convertPromise: <T>(p: Promise<T>) => p
 };
 
-export function createRQLTag<TableId extends string, Params, Output>(table: Table<TableId, any>, nodes: (AllSign | Prop | RefProp | SQLTag | RefNode<Params, Output>)[], defaultQuerier?: Querier) {
+export function createRQLTag<TableId extends string, Params, Output>(table: Table<TableId, any>, nodes: (Prop | RefProp | SQLTag | RefNode<Params, Output>)[], defaultQuerier?: Querier) {
 
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {
@@ -76,9 +76,9 @@ export function createRQLTag<TableId extends string, Params, Output>(table: Tabl
   return tag;
 }
 
-type Deep<Params, Output> = { [tableId: string]: RefNode<Params, Output>} & { nodes: (AllSign | Prop | RefProp | SQLTag)[]};
+type Deep<Params, Output> = { [tableId: string]: RefNode<Params, Output>} & { nodes: (Prop | RefProp | SQLTag)[]};
 
-const concatDeep = <Params, Output>(nodes: (AllSign | Prop | RefProp | SQLTag | RefNode<Params, Output>)[]): Deep<Params, Output> => {
+const concatDeep = <Params, Output>(nodes: (Prop | RefProp | SQLTag | RefNode<Params, Output>)[]): Deep<Params, Output> => {
   return nodes.reduce ((acc, node) => {
     if (RefNode.isRefNode<Params, Output> (node)) {
       const { table } = node.tag;
@@ -93,7 +93,7 @@ const concatDeep = <Params, Output>(nodes: (AllSign | Prop | RefProp | SQLTag | 
       acc.nodes.push (node);
     }
     return acc;
-  }, { nodes: [] as (AllSign | Prop | RefProp | SQLTag | RefNode<Params, Output>)[] } as Deep<Params, Output>);
+  }, { nodes: [] as (Prop | RefProp | SQLTag | RefNode<Params, Output>)[] } as Deep<Params, Output>);
 };
 
 // function concat<As, Params, Output>(this: RQLTag<As, Params, Output>, other: RQLTag<As, Params, Output>) {
@@ -126,11 +126,7 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
   };
 
   for (const node of nodes) {
-    if (node === "*") {
-      members.push (
-        Raw (`${table.name}.*`)
-      );
-    } else if (Prop.isProp (node)) {
+    if (Prop.isProp (node)) {
       if (isSQLTag (node.col)) {
         members.push (sql`
           (${node.col as any}) ${Raw (`"${node.as}"`)}

@@ -56,7 +56,7 @@ const Player = Table ("player", [
 ]);
 
 const Rating = Table ("rating", [
-  numberProp ("id", "id")
+  numberProp ("playerId", "player_id")
   // belongsTo ("league", "league")
 ]);
 
@@ -99,8 +99,8 @@ const byId = sql<{ id: number }>`
 
 const playerById = Player ([
   "*",
-  Game (["result"]),
-  Team (["name"]),
+  // Game (["result"]),
+  Team (["*"]),
   Goal (["*"]),
   Rating (["*"]),
   byId

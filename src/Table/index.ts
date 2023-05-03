@@ -46,12 +46,18 @@ function Table<Name extends string = any, Props extends(Prop | RefProp)[] = []>(
   const table = (<Components extends Selectable<typeof properties>[]>(components: Components) => {
     type Compies = AllInComps<typeof properties, Components> extends true ? [keyof OnlyPropFields<typeof properties>, ...Components] : Components;
 
-    const nodes: (AllSign | Prop | RefProp | SQLTag | RefNode<any, any>)[] = [];
+    const nodes: (Prop | RefProp | SQLTag | RefNode<any, any>)[] = [];
 
     for (const comp of components) {
       // and keys includes comp
       if (comp === "*") {
-        nodes.push (comp);
+        const fieldProps = Object.keys (properties)
+          .map ((prop: keyof typeof properties) => properties[prop] as Prop)
+          .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
+          console.log (fieldProps);
+
+        nodes.push (...fieldProps);
+
       } if (typeof comp === "string" && properties[comp]) {
         const prop = properties[comp] as Prop;
         nodes.push (prop);
