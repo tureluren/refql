@@ -50,7 +50,7 @@ export type TagFunctionVariable<Params, Return = ValueType> =
 export type SQLTagVariable<Params, Output> =
   // | SQLTag<Params, Output>
   | ASTNode<Params, Output>
-  | Table
+  // | Table
   | TagFunctionVariable<Params>
   | ValueType;
 
@@ -59,7 +59,7 @@ export type RQLTagVariable<Params, Output> =
   | SQLTag<Params, Output>
   | ASTNode<Params, Output>
   | ASTNode<Params, Output>[]
-  | Table
+  // | Table
   | TagFunctionVariable<Params>
   | ValueType;
 

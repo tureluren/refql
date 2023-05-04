@@ -1,6 +1,6 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Querier } from "../common/types";
-import { IsAllSignSelected, OnlyStringColProps, Output, Params, RQLNode, Selectable } from "../common/types2";
+import { Output, Params, RQLNode, Selectable } from "../common/types2";
 import validateTable from "../common/validateTable";
 import { RefNode } from "../nodes";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
@@ -9,6 +9,7 @@ import Prop from "./Prop";
 import RefProp from "./RefProp";
 
 interface Table<TableId extends string = any, Props = {}> {
+  <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Components, Props>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;
   tableId: TableId;
   name: string;
   schema?: string;
@@ -42,10 +43,7 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
     {} as { [P in Props[number] as P["as"] ]: P }
   );
 
-  const run = (<Components extends Selectable<typeof properties>[]>(components: Components) => {
-    type FinalComponents = IsAllSignSelected<typeof properties, Components> extends true
-      ? [keyof OnlyStringColProps<typeof properties>, ...Components]
-      : Components;
+  const table = (components => {
 
     const nodes: RQLNode[] = [];
 
@@ -65,16 +63,14 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
       } else if (isSQLTag (comp)) {
         nodes.push (comp);
       } else if (isRQLTag (comp)) {
-        nodes.push (RefNode (comp, run as unknown as Table));
+        nodes.push (RefNode (comp, table as unknown as Table));
       }
     }
 
-    return createRQLTag<TableId, Params<Components, typeof properties>, { [K in Output<FinalComponents, typeof properties>[number] as K["as"]]: K["type"] }[]> (table as unknown as Table<TableId, typeof properties>, nodes, defaultQuerier);
-  });
+    return createRQLTag (table, nodes, defaultQuerier);
+  }) as Table<TableId, typeof properties>;
 
-  Object.setPrototypeOf (run, prototype);
-
-  let table = run as unknown as Table<TableId, typeof properties> & typeof run;
+  Object.setPrototypeOf (table, prototype);
 
   const [tableName, schema] = name.trim ().split (".").reverse ();
 

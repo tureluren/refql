@@ -2,7 +2,7 @@ import { flConcat, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows } from "../common/types";
 import { RQLNode } from "../common/types2";
-import { all, Raw, RefNode } from "../nodes";
+import { Raw, RefNode } from "../nodes";
 import { isSQLTag, SQLTag } from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -136,14 +136,6 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
     } else if (RefNode.isRefNode (node)) {
       caseOfRef (node.joinLateral () as any, node.info, node.single);
     }
-  }
-
-  const refMemberLength = nodes.reduce ((n, node) =>
-    RefNode.isRefNode (node) ? n + 1 : n
-  , 0);
-
-  if (refMemberLength === members.length) {
-    members.push (Raw (`${table.name}.${all.sign}`));
   }
 
   let tag = sql<Params, Output>`

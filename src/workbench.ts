@@ -114,7 +114,7 @@ const playerTeam = Player ([
   ])
 ]);
 
-const playerAndTeam = playerById.concat (playerTeam);
+// const playerAndTeam = playerById.concat (playerTeam);
 
 // // const playerRes = Player ([
 // //   "age",
@@ -125,7 +125,7 @@ const playerAndTeam = playerById.concat (playerTeam);
 // // // const concatted = playerById.concat (playerRes);
 
 
-playerAndTeam ({ id: 9 }, querier).then (res => console.log (res[0]));
+playerById ({ id: 9 }, querier).then (res => console.log (res[0]));
 // // natural transformation
 
 // declare module "./SQLTag" {

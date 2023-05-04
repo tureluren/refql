@@ -72,8 +72,14 @@ export type Selectable<T> =
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any>
   | SQLTag;
 
-export type Output<T, S, Props extends OnlyProps<S> = OnlyProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
-  T extends (infer U)[]
+export type IsAllSignSelected<S, Components extends Selectable<S>[]> = AllSign extends Components[number] ? true : false;
+
+export type FinalComponents<Props, Components extends Selectable<Props>[], > = IsAllSignSelected<Props, Components> extends true
+  ? [keyof OnlyStringColProps<Props>, ...Components]
+  : Components;
+
+export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
+  FinalComponents<S, T> extends (infer U)[]
   ? (U extends keyof Props
     ? {as: U; type: Props[U]["type"]}
     : U extends Props[keyof Props]
@@ -86,7 +92,5 @@ export type Output<T, S, Props extends OnlyProps<S> = OnlyProps<S>, RefProps ext
             : never
         : never)[]
   : never;
-
-export type IsAllSignSelected<S, Components extends Selectable<S>[]> = AllSign extends Components[number] ? true : false;
 
 export type RQLNode = Prop | SQLTag | RefNode<any, any>;
