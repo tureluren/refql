@@ -1,14 +1,12 @@
 import { flConcat, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows } from "../common/types";
-import { AllSign } from "../common/types2";
-import unimplemented from "../common/unimplemented";
-import { all, Raw, RefNode, When } from "../nodes";
+import { RQLNode } from "../common/types2";
+import { all, Raw, RefNode } from "../nodes";
 import { isSQLTag, SQLTag } from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import Prop from "../Table/Prop";
-import RefProp from "../Table/RefProp";
 
 export interface Next<TableId, Params, Output> {
   tag: RQLTag<TableId, Params & RefQLRows, Output>;
@@ -31,7 +29,7 @@ export interface RQLTag<TableId, Params, Output> {
   tableId: TableId;
   type: Output;
   table: Table<any, any>;
-  nodes: (Prop | RefProp | SQLTag | RefNode<Params, Output>)[];
+  nodes: RQLNode[];
   defaultQuerier?: Querier;
   convertPromise: (p: Promise<Output>) => any;
   interpreted: InterpretedRQLTag<TableId, Params, Output>;
@@ -55,7 +53,7 @@ let prototype = {
   convertPromise: <T>(p: Promise<T>) => p
 };
 
-export function createRQLTag<TableId extends string, Params, Output>(table: Table<TableId, any>, nodes: (Prop | RefProp | SQLTag | RefNode<Params, Output>)[], defaultQuerier?: Querier) {
+export function createRQLTag<TableId extends string, Params, Output>(table: Table<TableId, any>, nodes: RQLNode[], defaultQuerier?: Querier) {
 
   const tag = ((params: Params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {
@@ -76,9 +74,9 @@ export function createRQLTag<TableId extends string, Params, Output>(table: Tabl
   return tag;
 }
 
-type Deep<Params, Output> = { [tableId: string]: RefNode<Params, Output>} & { nodes: (Prop | RefProp | SQLTag)[]};
+type Deep<Params, Output> = { [tableId: string]: RefNode<Params, Output>} & { nodes: (Prop | SQLTag)[]};
 
-const concatDeep = <Params, Output>(nodes: (Prop | RefProp | SQLTag | RefNode<Params, Output>)[]): Deep<Params, Output> => {
+const concatDeep = <Params, Output>(nodes: RQLNode[]): Deep<Params, Output> => {
   return nodes.reduce ((acc, node) => {
     if (RefNode.isRefNode<Params, Output> (node)) {
       const { table } = node.tag;
@@ -90,10 +88,10 @@ const concatDeep = <Params, Output>(nodes: (Prop | RefProp | SQLTag | RefNode<Pa
         acc[id] = node;
       }
     } else {
-      acc.nodes.push (node);
+      acc.nodes.push (node as any);
     }
     return acc;
-  }, { nodes: [] as (Prop | RefProp | SQLTag | RefNode<Params, Output>)[] } as Deep<Params, Output>);
+  }, { nodes: [] as RQLNode[] } as Deep<Params, Output>);
 };
 
 // function concat<As, Params, Output>(this: RQLTag<As, Params, Output>, other: RQLTag<As, Params, Output>) {
@@ -109,8 +107,6 @@ const concatDeep = <Params, Output>(nodes: (Prop | RefProp | SQLTag | RefNode<Pa
 //     this.defaultQuerier
 //   );
 // }
-
-const unsupported = unimplemented ("RQLTag");
 
 function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): InterpretedRQLTag<As, Params, Output> & Extra<Params, Output> {
   const { nodes, table } = this,
@@ -141,52 +137,6 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
     } else if (RefNode.isRefNode (node)) {
       caseOfRef (node.joinLateral () as any, node.info, node.single);
     }
-    // node.caseOf<void> ({
-    // RefNode: caseOfRef,
-    // BelongsToMany: caseOfRef,
-    // Call: (tag, name, as, cast) => {
-    //   members.push (sql`
-    //     ${Raw (name)} (${tag})${Raw (castAs (cast, as))}
-    //   `);
-    // },
-    // All: sign => {
-    //   members.push (
-    //     Raw (`${table.name}.${sign}`)
-    //   );
-    // },
-    // Identifier: (name, as, cast) => {
-    //   members.push (
-    //     Raw (`${table.name}.${name}${castAs (cast, as)}`)
-    //   );
-    // },
-    // Variable: (x, as, cast) => {
-    //   if (SQLTag.isSQLTag<Params, Output> (x)) {
-    //     if (as) {
-    //       members.push (sql<Params, Output>`
-    //         (${x})${Raw (castAs (cast, as))}
-    //       `);
-    //     } else {
-    //       extra = extra.concat (x);
-    //     }
-
-    //   } else {
-    //     throw new Error (`U can't insert "${x}" in this section of the RQLTag`);
-    //   }
-    // },
-    // Literal: (x, as, cast) => {
-    //   members.push (Raw (`${x}${castAs (cast, as)}`));
-    // },
-    // StringLiteral: (x, as, cast) => {
-    //   members.push (Raw (`'${x}'${castAs (cast, as)}`));
-    // },
-    //   When: (pred, tag) => {
-    //     extra = extra.concat (sql<Params, Output>`${When (pred, tag)}`);
-    //   },
-    //   Raw: unsupported ("Raw"),
-    //   Value: unsupported ("Value"),
-    //   Values: unsupported ("Values"),
-    //   Values2D: unsupported ("Values2D")
-    // });
   }
 
   const refMemberLength = nodes.reduce ((n, node) =>

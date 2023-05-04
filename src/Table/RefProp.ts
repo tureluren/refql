@@ -19,7 +19,7 @@ const prototype = {
 };
 
 function RefProp<As extends string = any, TableId extends(string | (() => Table)) = any, Rel extends RelType = any>(as: As, tableId: TableId, rel: Rel, refInput: Rel extends "BelongsToMany" ? RefInput : RefNodeInput) {
-  let refProp: RefProp<As, TableId extends string ? TableId : TableId extends () => Table ? ReturnType<TableId>["name"] : never, Rel> = Object.create (prototype);
+  let refProp: RefProp<As, TableId extends string ? TableId : TableId extends () => Table ? ReturnType<TableId>["tableId"] : never, Rel> = Object.create (prototype);
 
   refProp.rel = rel;
   refProp.as = as;

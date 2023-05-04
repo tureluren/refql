@@ -1,21 +1,22 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Querier } from "../common/types";
-import { AllInComps, AllSign, CombinedParams, OnlyPropFields, Selectable, SelectedS } from "../common/types2";
-import { ASTNode, Identifier, RefNode } from "../nodes";
-import RefField from "../RefField";
+import { IsAllSignSelected, OnlyStringColProps, Output, Params, RQLNode, Selectable } from "../common/types2";
+import validateTable from "../common/validateTable";
+import { RefNode } from "../nodes";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
-import { isSQLTag, SQLTag } from "../SQLTag";
+import { isSQLTag } from "../SQLTag";
 import Prop from "./Prop";
 import RefProp from "./RefProp";
 
-interface Table<Name extends string = any, Props = {}> {
-  name: Name;
+interface Table<TableId extends string = any, Props = {}> {
+  tableId: TableId;
+  name: string;
   schema?: string;
   props: Props;
-  empty<Params, Output>(): RQLTag<Name, Params, Output>;
-  [flEmpty]: Table<Name, Props>["empty"];
-  equals(other: Table<Name, Props>): boolean;
-  [flEquals]: Table<Name, Props>["equals"];
+  empty<Params, Output>(): RQLTag<TableId, Params, Output>;
+  [flEmpty]: Table<TableId, Props>["empty"];
+  equals(other: Table<TableId, Props>): boolean;
+  [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
 }
 
@@ -29,32 +30,30 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table<Name extends string = any, Props extends(Prop | RefProp)[] = []>(name: Name, props: Props, defaultQuerier?: Querier) {
-  // validateTable (name);
+function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
+  validateTable (name);
 
   if (!Array.isArray (props)) {
     throw new Error ("Invalid props: not an Array");
   }
 
-  let properties = props.reduce ((acc, prop) => {
-    return {
-      ...acc,
-      [prop.as]: prop
-    };
-  }, {} as { [P in Props[number] as P["as"] ]: P });
+  let properties = props.reduce (
+    (acc, prop) => ({ ...acc, [prop.as]: prop }),
+    {} as { [P in Props[number] as P["as"] ]: P }
+  );
 
-  const table = (<Components extends Selectable<typeof properties>[]>(components: Components) => {
-    type Compies = AllInComps<typeof properties, Components> extends true ? [keyof OnlyPropFields<typeof properties>, ...Components] : Components;
+  const run = (<Components extends Selectable<typeof properties>[]>(components: Components) => {
+    type FinalComponents = IsAllSignSelected<typeof properties, Components> extends true
+      ? [keyof OnlyStringColProps<typeof properties>, ...Components]
+      : Components;
 
-    const nodes: (Prop | RefProp | SQLTag | RefNode<any, any>)[] = [];
+    const nodes: RQLNode[] = [];
 
     for (const comp of components) {
-      // and keys includes comp
       if (comp === "*") {
-        const fieldProps = Object.keys (properties)
-          .map ((prop: keyof typeof properties) => properties[prop] as Prop)
+        const fieldProps = Object.entries (properties)
+          .map (([, prop]) => prop as Prop)
           .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
-          console.log (fieldProps);
 
         nodes.push (...fieldProps);
 
@@ -66,28 +65,30 @@ function Table<Name extends string = any, Props extends(Prop | RefProp)[] = []>(
       } else if (isSQLTag (comp)) {
         nodes.push (comp);
       } else if (isRQLTag (comp)) {
-        nodes.push (RefNode (comp, table as any));
+        nodes.push (RefNode (comp, run as unknown as Table));
       }
     }
 
-    return createRQLTag<Name, CombinedParams<Components, typeof properties>, { [K in SelectedS<Compies, typeof properties>[number] as K["as"]]: K["type"] }[]> (table as unknown as Table<Name, typeof properties>, nodes, defaultQuerier);
+    return createRQLTag<TableId, Params<Components, typeof properties>, { [K in Output<FinalComponents, typeof properties>[number] as K["as"]]: K["type"] }[]> (table as unknown as Table<TableId, typeof properties>, nodes, defaultQuerier);
   });
 
-  Object.setPrototypeOf (table, prototype);
+  Object.setPrototypeOf (run, prototype);
 
-  const [tableId, schema] = name.trim ().split (".").reverse ();
+  let table = run as unknown as Table<TableId, typeof properties> & typeof run;
+
+  const [tableName, schema] = name.trim ().split (".").reverse ();
 
   Object.defineProperty (table, "name", {
-    value: tableId,
+    value: tableName,
     writable: false,
     enumerable: true
   });
 
+  table.tableId = name;
+  table.schema = schema;
+  table.props = properties;
 
-  (table as any).props = properties;
-  (table as any).schema = schema;
-
-  return table as unknown as Table<Name, { [K in keyof typeof properties]: typeof properties[K] }> & typeof table;
+  return table;
 }
 
 function toString<Name extends string, S>(this: Table<Name, S>) {

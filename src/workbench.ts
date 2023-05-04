@@ -49,18 +49,19 @@ const Player = Table ("player", [
   // stringProp ("firstName", "first_name"),
   // // ids: "foemp",
   // // firstName: varchar ("first_name"),
-  belongsToMany ("games", () => Game),
   belongsTo ("team", () => Team),
+  belongsToMany ("games", () => Game),
   hasMany ("goals", "goal"),
   hasOne ("rating", "rating")
 ]);
 
 const Rating = Table ("rating", [
-  numberProp ("playerId", "player_id")
+  numberProp ("playerId", "player_id"),
+  numberProp ("acceleration", "acceleration")
   // belongsTo ("league", "league")
 ]);
 
-const Team = Table ("team", [
+const Team = Table ("public.team", [
   numberProp ("id", "id"),
   stringProp ("name", "name")
   // belongsTo ("league", "league")
@@ -100,7 +101,7 @@ const byId = sql<{ id: number }>`
 const playerById = Player ([
   "*",
   // Game (["result"]),
-  Team (["*"]),
+  Team (["id"]),
   Goal (["*"]),
   Rating (["*"]),
   byId
