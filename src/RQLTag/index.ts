@@ -23,7 +23,6 @@ interface Extra<Params, Output> {
   extra: SQLTag<Params, Output>;
 }
 
-// As or Name ?
 export interface RQLTag<TableId, Params, Output> {
   (params: Params, querier?: Querier): Promise<Output>;
   tableId: TableId;
@@ -45,8 +44,8 @@ const type = "refql/RQLTag";
 let prototype = {
   constructor: createRQLTag,
   [refqlType]: type,
-  // concat,
-  // [flConcat]: concat,
+  concat,
+  [flConcat]: concat,
   interpret,
   compile,
   aggregate,
@@ -74,7 +73,7 @@ export function createRQLTag<TableId extends string, Params, Output>(table: Tabl
   return tag;
 }
 
-type Deep<Params, Output> = { [tableId: string]: RefNode<Params, Output>} & { nodes: (Prop | SQLTag)[]};
+type Deep<Params, Output> = { [tableId: string]: RefNode<Params, Output>} & { nodes: RQLNode[]};
 
 const concatDeep = <Params, Output>(nodes: RQLNode[]): Deep<Params, Output> => {
   return nodes.reduce ((acc, node) => {
@@ -88,25 +87,25 @@ const concatDeep = <Params, Output>(nodes: RQLNode[]): Deep<Params, Output> => {
         acc[id] = node;
       }
     } else {
-      acc.nodes.push (node as any);
+      acc.nodes.push (node);
     }
     return acc;
   }, { nodes: [] as RQLNode[] } as Deep<Params, Output>);
 };
 
-// function concat<As, Params, Output>(this: RQLTag<As, Params, Output>, other: RQLTag<As, Params, Output>) {
-//   // if (!this.table.equals (other.table)) {
-//   //   throw new Error ("U can't concat RQLTags that come from different tables");
-//   // }
+function concat<As, Params, Output>(this: RQLTag<As, Params, Output>, other: RQLTag<As, Params, Output>) {
+  if (!this.table.equals (other.table)) {
+    throw new Error ("U can't concat RQLTags that come from different tables");
+  }
 
-//   const { nodes, ...refs } = concatDeep (this.nodes.concat (other.nodes));
+  const { nodes, ...refs } = concatDeep (this.nodes.concat (other.nodes));
 
-//   return createRQLTag (
-//     this.table,
-//     [...nodes, ...Object.values (refs)],
-//     this.defaultQuerier
-//   );
-// }
+  return createRQLTag (
+    this.table,
+    [...nodes, ...Object.values (refs)],
+    this.defaultQuerier
+  );
+}
 
 function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): InterpretedRQLTag<As, Params, Output> & Extra<Params, Output> {
   const { nodes, table } = this,
