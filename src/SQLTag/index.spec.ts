@@ -4,6 +4,7 @@ import pg from "pg";
 import { createSQLTag, isSQLTag } from ".";
 import { flConcat } from "../common/consts";
 import { Querier, SQLTagVariable, StringMap } from "../common/types";
+import { OnlyStringColProps } from "../common/types2";
 import {
   Raw, RefNode, Values, Values2D, When
 } from "../nodes";
@@ -130,7 +131,7 @@ describe ("SQLTag type", () => {
   // });
 
   test ("Values", async () => {
-    const tag = sql<{ids: number[]}, (typeof Player["type"])[]>`
+    const tag = sql<{ids: number[]}, OnlyStringColProps<typeof Player["props"]>[]>`
       select id, first_name "firstName", ${rawLastName}
       from player
       where id in ${Values (p => p.ids)}
