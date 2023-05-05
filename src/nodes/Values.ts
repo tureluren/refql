@@ -1,32 +1,26 @@
 import { refqlType } from "../common/consts";
-import { StringMap, TagFunctionVariable, ValueType } from "../common/types";
-import { ASTNode } from "../nodes";
-import { astNodePrototype } from "../nodes/ASTNode";
+import { TagFunctionVariable, ValueType } from "../common/types";
+import { sqlNodePrototype } from "./isSQLNode";
 
-interface Values<Params, Output> extends ASTNode<Params, Output> {
+interface Values<Params> {
   run: TagFunctionVariable<Params, ValueType[]>;
 }
 
 const type = "refql/Values";
 
-const prototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, sqlNodePrototype, {
   constructor: Values,
-  [refqlType]: type,
-  caseOf
+  [refqlType]: type
 });
 
-function Values<Params, Output>(run: ValueType[] | TagFunctionVariable<Params, any[]>) {
-  let values: Values<Params, Output> = Object.create (prototype);
+function Values<Params>(run: ValueType[] | TagFunctionVariable<Params, any[]>) {
+  let values: Values<Params> = Object.create (prototype);
   values.run = typeof run === "function" ? run : () => run;
 
   return values;
 }
 
-function caseOf<Params, Output>(this: Values<Params, Output>, structureMap: StringMap) {
-  return structureMap.Values (this.run);
-}
-
-Values.isValues = function <Params, Output> (x: any): x is Values<Params, Output> {
+Values.isValues = function <Params> (x: any): x is Values<Params> {
   return x != null && x[refqlType] === type;
 };
 

@@ -1,6 +1,5 @@
-import { ASTNode } from "../nodes";
+import { Raw, Value, Values, Values2D, When } from "../nodes";
 import RefField from "../RefField";
-import { SQLTag } from "../SQLTag";
 import Table from "../Table";
 
 // Array, Function, Date, ...
@@ -42,14 +41,21 @@ export interface RefInput {
   rxRef?: string;
 }
 
-export type TagFunctionVariable<Params> =
-  (params: Params) => any;
-
-export type SQLTagVariable<Params, Output> =
-  | ASTNode<Params, Output>
-  | TagFunctionVariable<Params>
-  | ValueType;
-
 export interface RefQLRows {
   refQLRows: any[];
 }
+
+export type TagFunctionVariable<Params, Output = ValueType> =
+  (params: Params) => Output;
+
+export type SQLNode<Params> =
+  | Raw<Params>
+  | Value<Params>
+  | Values<Params>
+  | Values2D<Params>
+  | When<Params>;
+
+export type SQLTagVariable<Params> =
+  | SQLNode<Params>
+  | TagFunctionVariable<Params>
+  | ValueType;

@@ -39,6 +39,12 @@ const querier = async (query: string, values: any[]) => {
 // type IBUh2 = typeof buh2.col;
 
 
+const Game = Table ("game", [
+  numberProp ("id", "id"),
+  stringProp ("result", "result"),
+  belongsTo ("homeTeam", () => Team, { lRef: "home_team_id" }),
+  belongsTo ("awayTeam", () => Team, { lRef: "away_team_id" })
+]);
 
 const Player = Table ("player", [
   numberProp ("id").arrayOf (),
@@ -78,10 +84,6 @@ const Goal = Table ("goal", [
   stringProp ("minute", "minute")
 ]);
 
-const Game = Table ("game", [
-  numberProp ("id", "id"),
-  stringProp ("result", "result")
-]);
 
 // // // const uuid = numberField ("uuid") ("uuiid");
 
@@ -90,9 +92,8 @@ const Game = Table ("game", [
 const { id, birthday, fullName } = Player.props;
 
 
-const byId = sql<{ id: number; limit: number }>`
+const byId = sql<{ id: number }>`
   and id = ${p => p.id}
-  ${sql`${p => p}`}
 `;
 
 // // const andName = sql<{ name: string }>`
@@ -105,6 +106,7 @@ const playerById = Player ([
   Team (["id"]),
   Goal (["*"]),
   Rating (["*"]),
+  Game ([Team (["name"])]),
   byId
 ]);
 
@@ -126,7 +128,7 @@ const playerTeam = Player ([
 // // // const concatted = playerById.concat (playerRes);
 
 
-playerById ({ id: 9 }, querier).then (res => console.log (res[0]));
+playerById ({ id: 9 }, querier).then (res => console.log (res[0].games));
 // // natural transformation
 
 // declare module "./SQLTag" {

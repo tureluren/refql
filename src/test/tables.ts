@@ -1,137 +1,128 @@
 import Table from "../Table";
-import { belongsTo, belongsToMany, hasMany, hasOne } from "../nodes";
 import RefField from "../RefField";
+import numberProp from "../Table/numberProp";
+import hasMany from "../Table/hasMany";
+import belongsTo from "../Table/belongsTo";
+import stringProp from "../Table/stringProp";
+import hasOne from "../Table/hasOne";
+import belongsToMany from "../Table/belongsToMany";
+import booleanProp from "../Table/booleanField";
 
-interface League {
-  id: number;
-  name: string;
-  teams: Team[];
-}
+const id = numberProp ("id");
+const name = numberProp ("name");
 
-interface Team {
-  id: number;
-  name: string;
-  league: League;
-  players: Player[];
-}
-
-interface Position {
-  id: number;
-  name: string;
-}
-
-interface Player {
-  id: number;
-  firstName: string;
-  lastName: string;
-  birthday: string;
-  teamId: number;
-  team: Team;
-  positionId: number;
-  position: Position;
-  goals: Goal[];
-  games: Game[];
-  rating: Rating;
-}
-
-interface Rating {
-  playerId: number;
-  acceleration: number;
-  finishing: number;
-  positioning: number;
-  shotPower: number;
-  freeKick: number;
-  stamina: number;
-  dribbling: number;
-  tackling: number;
-}
-
-interface Game {
-  id: number;
-  homeTeamId: number;
-  homeTeam: Team;
-  awayTeamId: number;
-  awayTeam: Team;
-  leagueId: number;
-  league: League;
-  result: string;
-}
-
-interface Goal {
-  id: number;
-  gameId: number;
-  game: Game;
-  playerId: number;
-  player: Player;
-  ownGoal: boolean;
-  minute: number;
-}
-
-interface Assist {
-  id: number;
-  gameId: number;
-  game: Game;
-  goalId: number;
-  goal: Goal;
-  playerId: number;
-  player: Player;
-}
-
-const Game = Table ("game", [
-  belongsTo ("league"),
-  belongsTo ("public.team", { as: "home_team", lRef: "home_team_id" }),
-  belongsTo ("public.team", { as: "away_team", lRef: "away_team_id" })
+const Position = Table ("game", [
+  id,
+  name
 ]);
 
-const GamePlayer = Table ("game_player");
-const Goal = Table ("goal");
-const League = Table ("league");
-
-const Player = Table ("player", [
-  belongsTo ("public.team", {
-    as: "team",
-    lRef: "team_id",
-    rRef: "id"
-  }),
-  belongsTo ("position"),
-  hasOne ("rating", {
-    as: "rating",
-    lRef: "id",
-    rRef: "player_id"
-  }),
-  hasMany ("goal", {
-    as: "goals",
-    lRef: "id",
-    rRef: "player_id"
-  }),
-  belongsToMany ("game", { as: "games" })
+const Rating = Table ("rating", [
+  numberProp ("playerId", "player_id"),
+  numberProp ("acceleration"),
+  numberProp ("finishing"),
+  numberProp ("positioning"),
+  numberProp ("shotPower", "shot_power"),
+  numberProp ("freeKick", "free_kick"),
+  numberProp ("stamina"),
+  numberProp ("dribbling"),
+  numberProp ("tackling")
 ]);
 
-const Position = Table ("position");
+const League = Table ("league", [
+  id,
+  name,
+  hasMany ("teams", "public.team")
+]);
 
 const Team = Table ("public.team", [
-  hasMany ("player", { as: "players" }),
-  belongsTo ("league", {
-    as: "league",
+  id,
+  name,
+  hasMany ("player", "player"),
+  belongsTo ("league", "league", {
     lRef: "league_id",
     rRef: "id"
   })
 ]);
 
-const Rating = Table ("rating");
+// implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+// const Team = Table ("public.team", [
+//   id,
+//   name,
+//   hasMany ("player", () => Player),
+//   belongsTo ("league", "league", {
+//     lRef: "league_id",
+//     rRef: "id"
+//   })
+// ]);
 
-const Assist = Table ("assist");
 
-const Dummy = Table ("dummy");
+const Player = Table ("player", [
+  id,
+  stringProp ("firstName", "first_name"),
+  stringProp ("lastName", "last_name"),
+  stringProp ("birthday"),
+  numberProp ("teamId", "team_id"),
+  belongsTo ("team", "public.team", {
+    lRef: "team_id",
+    rRef: "id"
+  }),
+  numberProp ("positionId", "position_id"),
+  belongsTo ("position", "position"),
+  hasOne ("rating", "rating", {
+    lRef: "id",
+    rRef: "player_id"
+  }),
+  hasMany ("goals", "goal", {
+    lRef: "id",
+    rRef: "player_id"
+  }),
+  belongsToMany ("game", "game")
+]);
+
+const Game = Table ("game", [
+  id,
+  stringProp ("result"),
+  numberProp ("homeTeamId", "home_team_id"),
+  numberProp ("awayTeamId", "away_team_id"),
+  belongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
+  belongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
+  numberProp ("leagueId", "league_id"),
+  belongsTo ("league", "league")
+]);
+
+const Goal = Table ("goal", [
+  id,
+  numberProp ("minute"),
+  numberProp ("playerId", "player_id"),
+  numberProp ("gameId", "game_id"),
+  booleanProp ("ownGoal", "own_goal"),
+  belongsTo ("game", "game"),
+  belongsTo ("player", "player")
+]);
+
+const Assist = Table ("assist", [
+  id,
+  numberProp ("playerId", "player_id"),
+  numberProp ("gameId", "game_id"),
+  numberProp ("goalId", "goal_id"),
+  belongsTo ("game", "game"),
+  belongsTo ("player", "player"),
+  belongsTo ("goal", "goal")
+]);
+
+
+const GamePlayer = Table ("game_player", []);
+
+const Dummy = Table ("dummy", []);
 
 const dummyRefInfo = {
-  parent: Table ("player"),
+  parent: Player,
   as: "dummy",
   lRef: RefField ("player.id", "dummylref"),
   rRef: RefField ("game.id", "dummyrref"),
   lxRef: RefField ("dummy_player.player_id", "dummylxref"),
   rxRef: RefField ("dummy_player.dummy_id", "dummyrxref"),
-  xTable: Table ("dummy_player")
+  xTable: Table ("dummy_player", [])
 };
 
 export {

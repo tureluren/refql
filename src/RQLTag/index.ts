@@ -110,7 +110,7 @@ function concat<As, Params, Output>(this: RQLTag<As, Params, Output>, other: RQL
 function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): InterpretedRQLTag<As, Params, Output> & Extra<Params, Output> {
   const { nodes, table } = this,
     next = [] as Next<As, Params, Output>[],
-    members = [] as (Raw<Params, Output> | SQLTag<Params, Output>)[];
+    members = [] as (Raw<Params> | SQLTag<Params, Output>)[];
 
   let extra = sql<Params, Output>``;
 
@@ -125,7 +125,7 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
       if (isSQLTag (node.col)) {
         members.push (sql`
           (${node.col as any}) ${Raw (`"${node.as}"`)}
-        `);
+        ` as any);
       } else {
         members.push (
           Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
@@ -142,7 +142,7 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
     select ${joinMembers (members as any)}
     from ${Raw (table)}
   `;
-  return { next, tag, extra };
+  return { next, tag: tag as any, extra: extra as any };
 }
 
 // make compile async to lazy resolve table

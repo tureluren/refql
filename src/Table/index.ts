@@ -1,6 +1,6 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Querier } from "../common/types";
-import { Output, Params, RQLNode, Selectable } from "../common/types2";
+import { OnlyStringColProps, Output, Params, RQLNode, Selectable } from "../common/types2";
 import validateTable from "../common/validateTable";
 import { RefNode } from "../nodes";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
@@ -8,7 +8,7 @@ import { isSQLTag } from "../SQLTag";
 import Prop from "./Prop";
 import RefProp from "./RefProp";
 
-interface Table<TableId extends string = any, Props = {}> {
+interface Table<TableId extends string = any, Props = {}, Type = {}> {
   <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Props, Components>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;
   tableId: TableId;
   name: string;
@@ -19,6 +19,7 @@ interface Table<TableId extends string = any, Props = {}> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
+  type: Type;
 }
 
 const type = "refql/Table";
@@ -55,7 +56,7 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
 
         nodes.push (...fieldProps);
 
-      } if (typeof comp === "string" && properties[comp]) {
+      } else if (typeof comp === "string" && properties[comp]) {
         const prop = properties[comp] as Prop;
         nodes.push (prop);
       } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
@@ -70,7 +71,7 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
     }
 
     return createRQLTag (table, nodes, defaultQuerier);
-  }) as Table<TableId, typeof properties>;
+  }) as Table<TableId, typeof properties, { [P in keyof OnlyStringColProps<typeof properties>]: OnlyStringColProps<typeof properties>[P]["type"] }>;
 
   Object.setPrototypeOf (table, prototype);
 

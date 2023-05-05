@@ -20,8 +20,7 @@ const type = "refql/RefNode";
 
 export const refNodePrototype = {
   [refqlType]: type,
-  joinLateral,
-  caseOf
+  joinLateral
 };
 
 function RefNode<Params, Output>(tag: RQLTag<any, Params, Output>, parent: Table) {
@@ -136,7 +135,7 @@ function joinLateral<Params, Output>(this: RefNode<Params, Output>) {
     lateral (${l2}) refqll2
   `;
 
-    this.tag.interpreted = { tag: joined, next };
+    this.tag.interpreted = { tag: joined as any, next };
 
     return this.tag;
 
@@ -162,14 +161,10 @@ function joinLateral<Params, Output>(this: RefNode<Params, Output>) {
     lateral (${l2}) refqll2
   `;
 
-    this.tag.interpreted = { tag: joined, next };
+    this.tag.interpreted = { tag: joined as any, next };
 
     return this.tag;
   }
-}
-
-function caseOf<Params, Output>(this: RefNode<Params, Output>, structureMap: StringMap) {
-  return structureMap.RefNode (this.joinLateral (), this.info, this.single);
 }
 
 RefNode.isRefNode = function <Params, Output> (x: any): x is RefNode<Params, Output> {

@@ -1,7 +1,7 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
-import { Querier, TagFunctionVariable } from "../common/types";
-import { ASTNode, Raw, When } from "../nodes";
+import { Querier, SQLNode, TagFunctionVariable } from "../common/types";
+import { Raw, Value, Values, Values2D, When } from "../nodes";
 
 type InterpretedString<Params> = {
   pred: TagFunctionVariable<Params, boolean>;
@@ -21,7 +21,7 @@ interface InterpretedSQLTag<Params> {
 export interface SQLTag<Params = any, Output = any> {
   (params: Params, querier?: Querier): Promise<Output>;
   params: Params;
-  nodes: ASTNode<Params, Output>[];
+  nodes: SQLNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
   defaultQuerier?: Querier;
   convertPromise: (p: Promise<Output>) => any;
@@ -45,7 +45,7 @@ let prototype = {
   convertPromise: <T>(p: Promise<T>) => p
 };
 
-export function createSQLTag<Params, Output>(nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier) {
+export function createSQLTag<Params, Output>(nodes: SQLNode<Params>[], defaultQuerier?: Querier) {
 
   const tag = ((params = {} as Params, querier?) => {
     if (!querier && !defaultQuerier) {
@@ -73,7 +73,7 @@ function join<Params, Output>(this: SQLTag<Params, Output>, delimiter: string, o
   if (isEmptyTag (other)) return this;
 
   return createSQLTag (
-    this.nodes.concat (Raw<Params, Output> (delimiter), ...other.nodes),
+    this.nodes.concat (Raw<Params> (delimiter), ...other.nodes),
     this.defaultQuerier
   );
 }
@@ -89,85 +89,89 @@ function interpret<Params, Output>(this: SQLTag<Params, Output>): InterpretedSQL
     values = [] as InterpretedValue<Params>[];
 
   for (const [idx, node] of this.nodes.entries ()) {
-    node.caseOf<void> ({
-      Raw: run => {
-        const nextNode = this.nodes[idx + 1];
-        strings.push ({
-          pred: truePred,
-          run: (p, _i) => {
-            let s = run (p);
-            if (When.isWhen<Params, Output> (nextNode) && !nextNode.pred (p)) {
-              s = s.trimEnd ();
-            }
-            return [s, 0];
+    if (Raw.isRaw (node)) {
+      const { run } = node;
+      const nextNode = this.nodes[idx + 1];
+
+      strings.push ({
+        pred: truePred,
+        run: (p, _i) => {
+          let s = run (p);
+          if (When.isWhen<Params, Output> (nextNode) && !nextNode.pred (p)) {
+            s = s.trimEnd ();
           }
-        });
-      },
-      Value: run => {
-        values.push ({
-          pred: truePred,
-          run: p => [run (p)]
-        });
-        strings.push ({
-          pred: truePred,
-          run: (_p, i) => [`$${i + 1}`, 1]
-        });
-      },
-      Values: run => {
-        values.push ({
-          pred: truePred,
-          run
-        });
+          return [s, 0];
+        }
+      });
+    } else if (Value.isValue (node)) {
+      const { run } = node;
 
-        strings.push ({
-          pred: truePred,
-          run: (p, i) => {
-            const xs = run (p);
-            return [
-              `(${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
-              xs.length
-            ];
+      values.push ({
+        pred: truePred,
+        run: p => [run (p)]
+      });
+      strings.push ({
+        pred: truePred,
+        run: (_p, i) => [`$${i + 1}`, 1]
+      });
+    } else if (Values.isValues (node)) {
+      const { run } = node;
+
+      values.push ({
+        pred: truePred,
+        run
+      });
+
+      strings.push ({
+        pred: truePred,
+        run: (p, i) => {
+          const xs = run (p);
+          return [
+            `(${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
+            xs.length
+          ];
+        }
+      });
+    } else if (Values2D.isValues2D (node)) {
+      const { run } = node;
+
+      values.push ({
+        pred: truePred,
+        run: p => run (p).flat (1)
+      });
+
+      strings.push ({
+        pred: truePred,
+        run: (p, i) => {
+          const values2D = run (p),
+            s = [];
+
+          let n = 0;
+
+          for (const values of values2D) {
+            s.push (
+              `(${values.map (() => { n += 1; return `$${i + n}`; }).join (", ")})`
+            );
           }
-        });
-      },
-      Values2D: run => {
-        values.push ({
-          pred: truePred,
-          run: p => run (p).flat (1)
-        });
 
-        strings.push ({
-          pred: truePred,
-          run: (p, i) => {
-            const values2D = run (p),
-              s = [];
+          return [s.join (", "), n];
+        }
+      });
+    } else if (When.isWhen (node)) {
+      const { pred: pred2, tag } = node;
 
-            let n = 0;
+      const { strings: strings2, values: values2 } = tag.interpret ();
 
-            for (const values of values2D) {
-              s.push (
-                `(${values.map (() => { n += 1; return `$${i + n}`; }).join (", ")})`
-              );
-            }
+      strings.push (...strings2.map (({ run, pred }) => ({
+        pred: (p: Params) => pred2 (p) && pred (p),
+        run
+      })));
 
-            return [s.join (", "), n];
-          }
-        });
-      },
-      When: (pred2, tag) => {
-        const { strings: strings2, values: values2 } = tag.interpret ();
-
-        strings.push (...strings2.map (({ run, pred }) => ({
-          pred: (p: Params) => pred2 (p) && pred (p),
-          run
-        })));
-
-        values.push (...values2.map (({ run, pred }) => ({
-          pred: (p: Params) => pred2 (p) && pred (p),
-          run
-        })));
-      }
-    });
+      values.push (...values2.map (({ run, pred }) => ({
+        pred: (p: Params) => pred2 (p) && pred (p),
+        run
+      })));
+    }
   }
 
   return { strings, values };

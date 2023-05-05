@@ -1,23 +1,22 @@
 import { refqlType } from "../common/consts";
-import { StringMap, TagFunctionVariable } from "../common/types";
+import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
-import ASTNode, { astNodePrototype } from "./ASTNode";
+import { sqlNodePrototype } from "./isSQLNode";
 
-interface When<Params, Output> extends ASTNode<Params, Output> {
+interface When<Params> {
   pred: TagFunctionVariable<Params, boolean>;
-  tag: SQLTag<Params, Output>;
+  tag: SQLTag<Params>;
 }
 
 const type = "refql/When";
 
-const prototype = Object.assign ({}, astNodePrototype, {
+const prototype = Object.assign ({}, sqlNodePrototype, {
   constructor: When,
-  [refqlType]: type,
-  caseOf
+  [refqlType]: type
 });
 
-function When<Params, Output>(pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params, Output>) {
-  let when: When<Params, Output> = Object.create (prototype);
+function When<Params>(pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params>) {
+  let when: When<Params> = Object.create (prototype);
 
   when.pred = pred;
   when.tag = tag;
@@ -25,11 +24,7 @@ function When<Params, Output>(pred: TagFunctionVariable<Params, boolean>, tag: S
   return when;
 }
 
-function caseOf<Params, Output>(this: When<Params, Output>, structureMap: StringMap) {
-  return structureMap.When (this.pred, this.tag);
-}
-
-When.isWhen = function <Params, Output> (x: any): x is When<Params, Output> {
+When.isWhen = function <Params, Output> (x: any): x is When<Params> {
   return x != null && x[refqlType] === type;
 };
 
