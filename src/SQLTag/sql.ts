@@ -1,4 +1,4 @@
-import { createSQLTag2, isSQLTag } from ".";
+import { createSQLTag, isSQLTag } from ".";
 import { SQLTagVariable } from "../common/types";
 import { ASTNode, Raw, Value } from "../nodes";
 import { isASTNode } from "../nodes/ASTNode";
@@ -48,7 +48,7 @@ export function parse<Params, Output>(strings: TemplateStringsArray, variables: 
 
 function sql <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output>[]) {
   const nodes = parse<Params, Output> (strings, variables);
-  return createSQLTag2 (nodes);
+  return createSQLTag (nodes);
 }
 
 export default sql;

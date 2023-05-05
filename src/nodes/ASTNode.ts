@@ -9,6 +9,7 @@ export type StructureMap<Params, Output, Return> = {
   When: (pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params, Output>) => Return;
 };
 
+// Rename to SQLNode ?
 interface ASTNode<Params, Output> {
   caseOf<Return>(structureMap: StructureMap<Params, Output, Return>): Return;
 }

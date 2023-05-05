@@ -90,8 +90,9 @@ const Game = Table ("game", [
 const { id, birthday, fullName } = Player.props;
 
 
-const byId = sql<{ id: number }>`
+const byId = sql<{ id: number; limit: number }>`
   and id = ${p => p.id}
+  ${sql`${p => p}`}
 `;
 
 // // const andName = sql<{ name: string }>`

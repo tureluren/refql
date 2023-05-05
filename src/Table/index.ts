@@ -9,7 +9,7 @@ import Prop from "./Prop";
 import RefProp from "./RefProp";
 
 interface Table<TableId extends string = any, Props = {}> {
-  <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Components, Props>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;
+  <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Props, Components>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;
   tableId: TableId;
   name: string;
   schema?: string;
@@ -64,6 +64,8 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
         nodes.push (comp);
       } else if (isRQLTag (comp)) {
         nodes.push (RefNode (comp, table as unknown as Table));
+      } else {
+        throw new Error ("errorke");
       }
     }
 

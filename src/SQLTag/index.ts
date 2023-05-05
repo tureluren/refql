@@ -1,7 +1,6 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import { Querier, TagFunctionVariable } from "../common/types";
-import unimplemented from "../common/unimplemented";
 import { ASTNode, Raw, When } from "../nodes";
 
 type InterpretedString<Params> = {
@@ -37,7 +36,7 @@ const type = "refql/SQLTag";
 
 let prototype = {
   [refqlType]: type,
-  constructor: createSQLTag2,
+  constructor: createSQLTag,
   concat,
   join,
   [flConcat]: concat,
@@ -46,9 +45,9 @@ let prototype = {
   convertPromise: <T>(p: Promise<T>) => p
 };
 
-export function createSQLTag2<Params, Output>(nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier) {
+export function createSQLTag<Params, Output>(nodes: ASTNode<Params, Output>[], defaultQuerier?: Querier) {
 
-  const tag = ((params: Params = {} as Params, querier?: Querier) => {
+  const tag = ((params = {} as Params, querier?) => {
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
     }
@@ -73,7 +72,7 @@ function join<Params, Output>(this: SQLTag<Params, Output>, delimiter: string, o
   if (isEmptyTag (this)) return other;
   if (isEmptyTag (other)) return this;
 
-  return createSQLTag2 (
+  return createSQLTag (
     this.nodes.concat (Raw<Params, Output> (delimiter), ...other.nodes),
     this.defaultQuerier
   );
@@ -82,8 +81,6 @@ function join<Params, Output>(this: SQLTag<Params, Output>, delimiter: string, o
 function concat<Params, Output>(this: SQLTag<Params, Output>, other: SQLTag<Params, Output>) {
   return this.join (" ", other);
 }
-
-const unsupported = unimplemented ("SQLTag");
 
 const truePred = () => true;
 

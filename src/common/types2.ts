@@ -47,7 +47,16 @@ export interface RefInfo<As extends string> {
 export type UnionToIntersection<U> =
   (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
-export type SQLTag2Objects<T, S, Props extends OnlyProps<S> = OnlyProps<S>> = T extends (infer U)[]
+export type AllSign = "*";
+
+export type Selectable<T> =
+  | AllSign
+  | keyof OnlyProps<T>
+  | OnlyProps<T>[keyof OnlyProps<T>]
+  | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any>
+  | SQLTag;
+
+export type SQLTagObjects<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>> = T extends (infer U)[]
   ? (U extends SQLTag
     ? U
     : U extends Prop
@@ -61,16 +70,7 @@ export type SQLTag2Objects<T, S, Props extends OnlyProps<S> = OnlyProps<S>> = T 
         : never)[]
   : never;
 
-export type Params<T, S> = UnionToIntersection<SQLTag2Objects<T, S>[number]["params"]>;
-
-export type AllSign = "*";
-
-export type Selectable<T> =
-  | AllSign
-  | keyof OnlyProps<T>
-  | OnlyProps<T>[keyof OnlyProps<T>]
-  | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any>
-  | SQLTag;
+export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<SQLTagObjects<S, T>[number]["params"]>;
 
 export type IsAllSignSelected<S, Components extends Selectable<S>[]> = AllSign extends Components[number] ? true : false;
 

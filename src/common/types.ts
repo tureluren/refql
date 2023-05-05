@@ -1,7 +1,5 @@
 import { ASTNode } from "../nodes";
-import RefNode from "../nodes/RefNode";
 import RefField from "../RefField";
-import { RQLTag } from "../RQLTag";
 import { SQLTag } from "../SQLTag";
 import Table from "../Table";
 
@@ -44,41 +42,14 @@ export interface RefInput {
   rxRef?: string;
 }
 
-export type TagFunctionVariable<Params, Return = ValueType> =
-  (params: Params) => Return;
+export type TagFunctionVariable<Params> =
+  (params: Params) => any;
 
 export type SQLTagVariable<Params, Output> =
-  // | SQLTag<Params, Output>
   | ASTNode<Params, Output>
-  // | Table
-  | TagFunctionVariable<Params>
-  | ValueType;
-
-export type RQLTagVariable<Params, Output> =
-  // | RQLTag<Params, Output>
-  | SQLTag<Params, Output>
-  | ASTNode<Params, Output>
-  | ASTNode<Params, Output>[]
-  // | Table
   | TagFunctionVariable<Params>
   | ValueType;
 
 export interface RefQLRows {
   refQLRows: any[];
 }
-
-export type RefMaker =
-  <Params, Output>(parent: Table, tag: RQLTag<any, Params, Output>, as?: string, single?: boolean) => RefNode<Params, Output>;
-
-export type Runnable<Params, Output> =
-  Params extends Record<string, never>
-    ? (params?: Params, querier?: Querier) => Output
-    : Params extends StringMap
-      ? (params: Params, querier?: Querier) => Output
-      : (params?: Params, querier?: Querier) => Output;
-
-
-export type Ref = [
-  Table,
-  RefMaker
-];
