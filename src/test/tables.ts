@@ -7,6 +7,7 @@ import stringProp from "../Table/stringProp";
 import hasOne from "../Table/hasOne";
 import belongsToMany from "../Table/belongsToMany";
 import booleanProp from "../Table/booleanField";
+import sql from "../SQLTag/sql";
 
 const id = numberProp ("id");
 const name = numberProp ("name");
@@ -37,7 +38,7 @@ const League = Table ("league", [
 const Team = Table ("public.team", [
   id,
   name,
-  hasMany ("player", "player"),
+  hasMany ("players", "player"),
   belongsTo ("league", "league", {
     lRef: "league_id",
     rRef: "id"
@@ -60,6 +61,13 @@ const Player = Table ("player", [
   id,
   stringProp ("firstName", "first_name"),
   stringProp ("lastName", "last_name"),
+  stringProp ("fullName", sql<{}>`
+    concat (player.first_name, ' ', player.last_name)
+  `),
+  numberProp ("goalCount", sql<{}>`
+    select count (*)::int from goal
+    where goal.player_id = player.id
+  `),
   stringProp ("birthday"),
   numberProp ("teamId", "team_id"),
   belongsTo ("team", "public.team", {
@@ -76,7 +84,7 @@ const Player = Table ("player", [
     lRef: "id",
     rRef: "player_id"
   }),
-  belongsToMany ("game", "game")
+  belongsToMany ("games", "game")
 ]);
 
 const Game = Table ("game", [

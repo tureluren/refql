@@ -102,9 +102,8 @@ function equals<Name extends string, S>(this: Table<Name, S>, other: Table<Name,
   );
 }
 
-// Revisit
 function empty<Name extends string, S>(this: Table<Name, S>) {
-  // return this``;
+  return this ([]);
 }
 
 Table.isTable = function<Name extends string, S> (x: any): x is Table<Name, S> {

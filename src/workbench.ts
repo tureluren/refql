@@ -11,6 +11,7 @@ import hasMany from "./Table/hasMany";
 import hasOne from "./Table/hasOne";
 import numberProp from "./Table/numberProp";
 import stringProp from "./Table/stringProp";
+import { Game, League, Player, Rating, Team } from "./test/tables";
 import Task, { promiseToTask } from "./test/Task";
 
 
@@ -39,84 +40,99 @@ const querier = async (query: string, values: any[]) => {
 // type IBUh2 = typeof buh2.col;
 
 
-const Game = Table ("game", [
-  numberProp ("id", "id"),
-  stringProp ("result", "result"),
-  belongsTo ("homeTeam", () => Team, { lRef: "home_team_id" }),
-  belongsTo ("awayTeam", () => Team, { lRef: "away_team_id" })
-]);
-
-const Player = Table ("player", [
-  numberProp ("id").arrayOf (),
-  dateProp ("birthday", "birthday").nullable (),
-  stringProp ("fullName", sql<{}>`
-    concat (first_name, ' ', last_name)
-  `),
-  // stringProp ("firstName", "first_name"),
-  // // ids: "foemp",
-  // // firstName: varchar ("first_name"),
-  belongsTo ("team", () => Team),
-  belongsToMany ("games", () => Game),
-  hasMany ("goals", "goal"),
-  hasOne ("rating", "rating")
-]);
-
-const Rating = Table ("rating", [
-  numberProp ("playerId", "player_id"),
-  numberProp ("acceleration", "acceleration")
-  // belongsTo ("league", "league")
-]);
-
-const Team = Table ("public.team", [
-  numberProp ("id", "id"),
-  stringProp ("name", "name")
-  // belongsTo ("league", "league")
-]);
-
-// const League = Table ("league", [
-//   numberProp ("id", "id")
-//   // ids: "foemp",
-//   // leagueName: varchar ("name")
+// const Game = Table ("game", [
+//   numberProp ("id", "id"),
+//   stringProp ("result", "result"),
+//   belongsTo ("homeTeam", () => Team, { lRef: "home_team_id" }),
+//   belongsTo ("awayTeam", () => Team, { lRef: "away_team_id" })
 // ]);
 
-const Goal = Table ("goal", [
-  numberProp ("id", "id"),
-  stringProp ("minute", "minute")
-]);
+// const Player = Table ("player", [
+//   numberProp ("id").arrayOf (),
+//   dateProp ("birthday", "birthday").nullable (),
+//   stringProp ("fullName", sql<{}>`
+//     concat (first_name, ' ', last_name)
+//   `),
+//   // stringProp ("firstName", "first_name"),
+//   // // ids: "foemp",
+//   // // firstName: varchar ("first_name"),
+//   belongsTo ("team", () => Team),
+//   belongsToMany ("games", () => Game),
+//   hasMany ("goals", "goal"),
+//   hasOne ("rating", "rating")
+// ]);
+
+// const Rating = Table ("rating", [
+//   numberProp ("playerId", "player_id"),
+//   numberProp ("acceleration", "acceleration")
+//   // belongsTo ("league", "league")
+// ]);
+
+// const Team = Table ("public.team", [
+//   numberProp ("id", "id"),
+//   stringProp ("name", "name")
+//   // belongsTo ("league", "league")
+// ]);
+
+// // const League = Table ("league", [
+// //   numberProp ("id", "id")
+// //   // ids: "foemp",
+// //   // leagueName: varchar ("name")
+// // ]);
+
+// const Goal = Table ("goal", [
+//   numberProp ("id", "id"),
+//   stringProp ("minute", "minute")
+// ]);
 
 
-// // // const uuid = numberField ("uuid") ("uuiid");
+// // // // const uuid = numberField ("uuid") ("uuiid");
 
-// // // const lastName = Field<"lastName", string> ("lastName", "last_name");
+// // // // const lastName = Field<"lastName", string> ("lastName", "last_name");
 
-const { id, birthday, fullName } = Player.props;
+// const { id, birthday, fullName } = Player.props;
 
 
-const byId = sql<{ id: number }>`
-  and id = ${p => p.id}
-`;
+// const byId = sql<{ id: number }>`
+//   and id = ${p => p.id}
+// `;
 
-// // const andName = sql<{ name: string }>`
-// //   and name = ${p => p.name}
-// // `;
+// // // const andName = sql<{ name: string }>`
+// // //   and name = ${p => p.name}
+// // // `;
 
-const playerById = Player ([
+// const playerById = Player ([
+//   "id",
+//   // Game (["result"]),
+//   Team (["id"]),
+//   Goal (["*"]),
+//   Rating (["*"]),
+//   Game ([Team (["name"])]),
+//   byId
+// ]);
+
+// const playerTeam = Player ([
+//   "*",
+//   Team ([
+//     "name"
+//   ])
+// ]);
+
+const tag = Player ([
   "id",
-  // Game (["result"]),
-  Team (["id"]),
-  Goal (["*"]),
-  Rating (["*"]),
-  Game ([Team (["name"])]),
-  byId
-]);
-
-const playerTeam = Player ([
-  "*",
+  "firstName",
+  "lastName",
   Team ([
-    "name"
-  ])
+    "name",
+    League (["name"]),
+    Player (["lastName", sql`limit 5`])
+  ]),
+  Game (["result"]),
+  Rating (["acceleration", "stamina"]),
+  sql`
+    limit 30
+      `
 ]);
-
 // const playerAndTeam = playerById.concat (playerTeam);
 
 // // const playerRes = Player ([
@@ -128,7 +144,7 @@ const playerTeam = Player ([
 // // // const concatted = playerById.concat (playerRes);
 
 
-playerById ({ id: 9 }, querier).then (res => console.log (res[0].games));
+tag ({}, querier).then (res => console.log (res[2]));
 // // natural transformation
 
 // declare module "./SQLTag" {

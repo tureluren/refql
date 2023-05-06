@@ -1,47 +1,18 @@
 import { flMap } from "../common/consts";
 import sql from "../SQLTag/sql";
 import { Dummy, dummyRefInfo } from "../test/tables";
-import All from "./All";
-import { isASTNode } from "./ASTNode";
-import BelongsToMany, { belongsToMany } from "./BelongsToMany";
-import Call from "./Call";
-import Identifier from "./Identifier";
-import Literal from "./Literal";
+import isSQLNode from "./isSQLNode";
 import Raw from "./Raw";
-import RefNode, { belongsTo } from "./RefNode";
-import StringLiteral from "./StringLiteral";
+import RefNode from "./RefNode";
 import Value from "./Value";
 import Values from "./Values";
 import Values2D from "./Values2D";
 import When from "./When";
 
 describe ("Nodes", () => {
-  test ("is All", () => {
-    expect (All.isAll (All ("*"))).toBe (true);
-    expect (All.isAll ("All")).toBe (false);
-  });
-
-  test ("is ASTNode", () => {
-    expect (isASTNode (All ("*"))).toBe (true);
-    expect (isASTNode ("All")).toBe (false);
-  });
-
-  test ("is Call", () => {
-    expect (Call.isCall (Call ("concat", []))).toBe (true);
-    expect (Call.isCall ("Call")).toBe (false);
-  });
-
-  test ("is Identifier", () => {
-    expect (Identifier.isIdentifier (Identifier ("id"))).toBe (true);
-    expect (Identifier.isIdentifier ("Identifier")).toBe (false);
-  });
-
-  test ("is Literal", () => {
-    expect (Literal.isLiteral (Literal (true))).toBe (true);
-    expect (Literal.isLiteral (Literal (null))).toBe (true);
-    expect (Literal.isLiteral (Literal (1))).toBe (true);
-    expect (Literal.isLiteral (StringLiteral ("one"))).toBe (true);
-    expect (Literal.isLiteral ("Literal")).toBe (false);
+  test ("is SQLNode", () => {
+    expect (isSQLNode (Raw ("*"))).toBe (true);
+    expect (isSQLNode ("All")).toBe (false);
   });
 
   test ("is Raw", () => {
@@ -50,8 +21,7 @@ describe ("Nodes", () => {
   });
 
   test ("is RefNode", () => {
-    expect (RefNode.isRefNode (RefNode (dummyRefInfo, Dummy`*`, true))).toBe (true);
-    expect (RefNode.isRefNode (BelongsToMany (dummyRefInfo, Dummy`*`, true))).toBe (true);
+    expect (RefNode.isRefNode (RefNode (Dummy (["*"]), Dummy))).toBe (true);
     expect (RefNode.isRefNode ("RefNode")).toBe (false);
   });
 
@@ -100,10 +70,5 @@ describe ("Nodes", () => {
     const raw4 = raw[flMap] (limit)[flMap] (offset);
 
     expect (raw3.run ({})).toEqual (raw4.run ({}));
-  });
-
-  test ("Invalid RefNode creation", () => {
-    expect (() => belongsTo (["goal"] as any)).toThrow ("Invalid table: goal, expected a string");
-    expect (() => belongsToMany (["games"] as any)).toThrow ("Invalid table: games, expected a string");
   });
 });

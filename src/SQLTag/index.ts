@@ -19,7 +19,7 @@ interface InterpretedSQLTag<Params> {
 }
 
 export interface SQLTag<Params = any, Output = any> {
-  (params: Params, querier?: Querier): Promise<Output>;
+  (params?: Params, querier?: Querier): Promise<Output>;
   params: Params;
   nodes: SQLNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
