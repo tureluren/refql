@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { Querier } from "./common/types";
-import { Raw } from "./nodes";
+import { Raw, When } from "./nodes";
 import { convertSQLTagResult } from "./SQLTag";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
@@ -118,6 +118,8 @@ const querier = async (query: string, values: any[]) => {
 //   ])
 // ]);
 
+const whenie = When (p => p.query != null, sql<{ query: string }>` and last_name = '${p => p.query}'`);
+
 const tag = Player ([
   "id",
   "firstName",
@@ -129,7 +131,8 @@ const tag = Player ([
   ]),
   Game (["result"]),
   Rating (["acceleration", "stamina"]),
-  sql`
+  whenie,
+  sql<{}>`
     limit 30
       `
 ]);

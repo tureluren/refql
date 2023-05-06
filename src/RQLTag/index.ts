@@ -2,7 +2,7 @@ import { flConcat, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows } from "../common/types";
 import { RQLNode } from "../common/types2";
-import { Raw, RefNode } from "../nodes";
+import { Raw, RefNode, When } from "../nodes";
 import { isSQLTag, SQLTag } from "../SQLTag";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -135,6 +135,8 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
       extra = extra.concat (node);
     } else if (RefNode.isRefNode (node)) {
       caseOfRef (node.joinLateral () as any, node.info, node.single);
+    } else if (When.isWhen (node)) {
+      extra = extra.concat (sql<Params, Output>`${node}`);
     }
   }
 

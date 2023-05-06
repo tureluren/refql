@@ -418,46 +418,46 @@ describe ("RQLTag type", () => {
   //   expect (game1.away_team.id).toBe (2);
   // });
 
-  // test ("when", () => {
-  //   const tag = Player<{limit?: number; offset?: number}, any>`
-  //     id
-  //     ${When (p => !!p.limit, sql`
-  //       limit ${p => p.limit}
-  //     `)}
-  //     ${When (p => !!p.offset, sql`
-  //       offset ${p => p.offset}
-  //     `)}
-  //   `;
+  test ("when", () => {
+    const tag = Player ([
+      "id",
+      When (p => !!p.limit, sql<{ limit?: number }>`
+        limit ${p => p.limit}
+      `),
+      When (p => !!p.offset, sql<{ offset?: number }>`
+        offset ${p => p.offset}
+      `)
+    ]);
 
-  //   const [query, values] = tag.compile ({ limit: 5 });
+    const [query, values] = tag.compile ({ limit: 5 });
 
-  //   expect (query).toBe (format (`
-  //     select player.id from player
-  //     where 1 = 1
-  //     limit $1
-  //   `));
+    expect (query).toBe (format (`
+      select player.id "id" from player
+      where 1 = 1
+      limit $1
+    `));
 
-  //   expect (values).toEqual ([5]);
+    expect (values).toEqual ([5]);
 
-  //   const [query2, values2] = tag.compile ({ offset: 10 });
+    const [query2, values2] = tag.compile ({ offset: 10 });
 
-  //   expect (query2).toBe (format (`
-  //     select player.id from player
-  //     where 1 = 1
-  //     offset $1
-  //   `));
+    expect (query2).toBe (format (`
+      select player.id "id" from player
+      where 1 = 1
+      offset $1
+    `));
 
-  //   expect (values2).toEqual ([10]);
+    expect (values2).toEqual ([10]);
 
-  //   const [query3, values3] = tag.compile ({ limit: 5, offset: 10 });
+    const [query3, values3] = tag.compile ({ limit: 5, offset: 10 });
 
-  //   expect (query3).toBe (format (`
-  //     select player.id from player
-  //     where 1 = 1
-  //     limit $1
-  //     offset $2
-  //   `));
+    expect (query3).toBe (format (`
+      select player.id "id" from player
+      where 1 = 1
+      limit $1
+      offset $2
+    `));
 
-  //   expect (values3).toEqual ([5, 10]);
-  // });
+    expect (values3).toEqual ([5, 10]);
+  });
 });

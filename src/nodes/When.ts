@@ -24,7 +24,7 @@ function When<Params>(pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Pa
   return when;
 }
 
-When.isWhen = function <Params, Output> (x: any): x is When<Params> {
+When.isWhen = function <Params> (x: any): x is When<Params> {
   return x != null && x[refqlType] === type;
 };
 

@@ -1,4 +1,4 @@
-import { RefNode } from "../nodes";
+import { RefNode, When } from "../nodes";
 import RefField from "../RefField";
 import { RQLTag } from "../RQLTag";
 import { SQLTag } from "../SQLTag";
@@ -54,7 +54,8 @@ export type Selectable<T> =
   | keyof OnlyProps<T>
   | OnlyProps<T>[keyof OnlyProps<T>]
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any>
-  | SQLTag;
+  | SQLTag
+  | When<any>;
 
 export type SQLTagObjects<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>> = T extends (infer U)[]
   ? (U extends SQLTag
@@ -67,7 +68,9 @@ export type SQLTagObjects<S, T extends Selectable<S>[], Props extends OnlyProps<
         ? Props[U]["col"] extends SQLTag
           ? Props[U]["col"]
           : never
-        : never)[]
+        : U extends When<any>
+          ? U["tag"]
+          : never)[]
   : never;
 
 export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<SQLTagObjects<S, T>[number]["params"]>;
@@ -93,4 +96,4 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
         : never)[]
   : never;
 
-export type RQLNode = Prop | SQLTag | RefNode<any, any>;
+export type RQLNode = Prop | SQLTag | RefNode<any, any> | When<any>;

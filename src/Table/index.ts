@@ -1,8 +1,8 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Querier } from "../common/types";
-import { OnlyStringColProps, Output, Params, RQLNode, Selectable } from "../common/types2";
+import { Output, Params, RQLNode, Selectable } from "../common/types2";
 import validateTable from "../common/validateTable";
-import { RefNode } from "../nodes";
+import { RefNode, When } from "../nodes";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import { isSQLTag } from "../SQLTag";
 import Prop from "./Prop";
@@ -64,6 +64,8 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
         nodes.push (comp);
       } else if (isRQLTag (comp)) {
         nodes.push (RefNode (comp, table as unknown as Table));
+      } else if (When.isWhen (comp)) {
+        nodes.push (comp);
       } else {
         throw new Error ("errorke");
       }
