@@ -147,7 +147,7 @@ const tag = Player ([
 // // // const concatted = playerById.concat (playerRes);
 
 
-tag ({}, querier).then (res => console.log (res[2]));
+tag ({ query: "" }, querier).then (res => console.log (res[2]));
 // // natural transformation
 
 // declare module "./SQLTag" {

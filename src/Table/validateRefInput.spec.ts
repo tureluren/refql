@@ -1,10 +1,9 @@
 import { RefInput } from "../common/types";
-import { validateRefInput } from "./RefNode";
+import validateRefInput from "./validateRefInput";
 
 describe ("validateRefInput", () => {
   test ("valid input object", () => {
     const input = {
-      as: "goals",
       lRef: "id"
     };
 
@@ -17,18 +16,8 @@ describe ("validateRefInput", () => {
     expect (() => validateRefInput (input)).toThrow ("Invalid input: input is not an object");
   });
 
-  test ("as is not a string", () => {
-    const input = {
-      as: ["goals"],
-      lRef: "id"
-    };
-
-    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: as is not a string");
-  });
-
   test ("lRef is not a string", () => {
     const input = {
-      as: "goals",
       lRef: ["id"]
     };
 
@@ -37,7 +26,6 @@ describe ("validateRefInput", () => {
 
   test ("rRef is not a string", () => {
     const input = {
-      as: "goals",
       lRef: "id",
       rRef: 123
     };
@@ -47,7 +35,6 @@ describe ("validateRefInput", () => {
 
   test ("xTable is not a string", () => {
     const input = {
-      as: "games",
       lRef: "id",
       rRef: "id",
       xTable: {}
@@ -58,7 +45,6 @@ describe ("validateRefInput", () => {
 
   test ("lxRef is not a string", () => {
     const input = {
-      as: "games",
       lRef: "id",
       rRef: "id",
       xTable: "game_player",
@@ -70,7 +56,6 @@ describe ("validateRefInput", () => {
 
   test ("rxRef is not a string", () => {
     const input = {
-      as: "games",
       lRef: "id",
       rRef: "id",
       xTable: "game_player",
