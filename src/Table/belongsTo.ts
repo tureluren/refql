@@ -5,7 +5,7 @@ import RefField from "../RefField";
 import RefProp from "./RefProp";
 import validateRefInput from "./validateRefInput";
 
-const belongsTo = <As extends string, TableId extends (string | (() => Table<any, any>))>(as: As, tableId: TableId, input: RefNodeInput = {}) => {
+const belongsTo = <As extends string, TableId extends string>(as: As, tableId: TableId, input: RefNodeInput = {}) => {
   // validateTable (tableId);
 
   validateRefInput (input);

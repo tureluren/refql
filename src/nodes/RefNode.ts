@@ -23,27 +23,8 @@ export const refNodePrototype = {
   joinLateral
 };
 
-function RefNode<Params, Output>(tag: RQLTag<any, Params, Output>, parent: Table) {
+function RefNode<Params, Output>(tag: RQLTag<any, Params, Output>, refProp: RefProp, parent: Table) {
   let refNode: RefNode<Params, Output> = Object.create (refNodePrototype);
-
-  const refProp = Object.keys (parent.props)
-    .map (key => parent.props[key as keyof typeof parent.props])
-    .filter (prop => RefProp.isRefProp (prop))
-    .map ((prop: RefProp) => {
-      const rpChild = typeof prop.child === "string" ? Table (prop.child, []) : prop.child ();
-      return {
-        ...prop,
-        child: rpChild
-      };
-    })
-    .find (prop => {
-      return tag.table.equals (prop.child);
-    });
-
-  if (typeof refProp === "undefined") {
-    throw Error ("wrong");
-  }
-
 
   const { as, rel, child, refInput } = refProp;
 
@@ -85,11 +66,7 @@ function RefNode<Params, Output>(tag: RQLTag<any, Params, Output>, parent: Table
     if (typeof btmInput.xTable === "undefined") {
       xTable = Table (parent.name < child.name ? `${parent.name}_${child.name}` : `${child.name}_${parent.name}`, []);
     } else {
-      if (typeof btmInput.xTable === "string") {
-        xTable = Table (btmInput.xTable, []);
-      } else {
-        xTable = btmInput.xTable ();
-      }
+      xTable = Table (btmInput.xTable, []);
     }
 
     refNode.info = {
@@ -131,9 +108,9 @@ function joinLateral<Params, Output>(this: RefNode<Params, Output>) {
       .concat (extra);
 
     const joined = sql<Params, Output>`
-    select * from (${l1}) refqll1,
-    lateral (${l2}) refqll2
-  `;
+      select * from (${l1}) refqll1,
+      lateral (${l2}) refqll2
+    `;
 
     this.tag.interpreted = { tag: joined as any, next };
 
@@ -144,22 +121,22 @@ function joinLateral<Params, Output>(this: RefNode<Params, Output>) {
     const { rRef, lRef, parent } = this.info;
 
     const l1 = sql<Params & RefQLRows, Output>`
-    select distinct ${Raw (lRef)}
-    from ${Raw (parent)}
-    where ${Raw (lRef.name)}
-    in ${Values (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
-  `;
+      select distinct ${Raw (lRef)}
+      from ${Raw (parent)}
+      where ${Raw (lRef.name)}
+      in ${Values (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
+    `;
 
     const l2 = tag
       .concat (sql`
-      where ${Raw (`${rRef.name} = refqll1.${lRef.as}`)}
-    `)
+        where ${Raw (`${rRef.name} = refqll1.${lRef.as}`)}
+      `)
       .concat (extra);
 
     const joined = sql<Params, Output>`
-    select * from (${l1}) refqll1,
-    lateral (${l2}) refqll2
-  `;
+      select * from (${l1}) refqll1,
+      lateral (${l2}) refqll2
+    `;
 
     this.tag.interpreted = { tag: joined as any, next };
 

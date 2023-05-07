@@ -27,7 +27,7 @@ export type TableIdMap<T extends { [key: string]: { tableId: string }}> = {
 export interface RefInput {
   lRef?: string;
   rRef?: string;
-  xTable?: string | (() => Table);
+  xTable?: string;
   lxRef?: string;
   rxRef?: string;
 }

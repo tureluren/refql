@@ -63,7 +63,16 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
       } else if (isSQLTag (comp)) {
         nodes.push (comp);
       } else if (isRQLTag (comp)) {
-        nodes.push (RefNode (comp, table as unknown as Table));
+        const refNodes = Object.keys (properties)
+          .map (key => properties[key as keyof typeof properties])
+          .filter (prop => RefProp.isRefProp (prop) && comp.table.equals (prop.child))
+          .map (refProp => RefNode (createRQLTag (comp.table, comp.nodes), refProp, table as unknown as Table));
+
+        if (!refNodes.length) {
+          throw Error ("wrong");
+        }
+
+        nodes.push (...refNodes);
       } else if (When.isWhen (comp)) {
         nodes.push (comp);
       } else {

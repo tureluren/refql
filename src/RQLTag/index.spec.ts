@@ -390,33 +390,34 @@ describe ("RQLTag type", () => {
     }
   });
 
-  // test ("multiple refs to same table", async () => {
-  //   const tag = Game<{}, any>`
-  //     ${Team}
-  //     ${sql`
-  //       and home_team_id = 1
-  //       and away_team_id = 2
-  //       limit 1
-  //     `}
-  //   `;
+  test ("multiple refs to same table", async () => {
+    const tag = Game ([
+      "id",
+      Team (["id", "name"]),
+      sql`
+        and home_team_id = 1
+        and away_team_id = 2
+        limit 1
+      `
+    ]);
 
-  //   const [query] = tag.compile ({});
+    const [query] = tag.compile ({});
 
-  //   expect (query).toBe (format (`
-  //     select game.home_team_id hometeamlref,
-  //     game.away_team_id awayteamlref, game.*
-  //     from game where 1 = 1
-  //     and home_team_id = 1
-  //     and away_team_id = 2
-  //     limit 1
-  //   `));
+    expect (query).toBe (format (`
+      select game.id "id", game.home_team_id hometeamlref,
+        game.away_team_id awayteamlref
+      from game where 1 = 1
+      and home_team_id = 1
+      and away_team_id = 2
+      limit 1
+    `));
 
-  //   const games = await tag ({}, querier);
-  //   const game1 = games[0];
+    const games = await tag ({}, querier);
+    const game1 = games[0];
 
-  //   expect (game1.home_team.id).toBe (1);
-  //   expect (game1.away_team.id).toBe (2);
-  // });
+    expect (game1.homeTeam.id).toBe (1);
+    expect (game1.awayTeam.id).toBe (2);
+  });
 
   test ("when", () => {
     const tag = Player ([

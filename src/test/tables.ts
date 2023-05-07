@@ -45,18 +45,6 @@ const Team = Table ("public.team", [
   })
 ]);
 
-// implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
-// const Team = Table ("public.team", [
-//   id,
-//   name,
-//   hasMany ("player", () => Player),
-//   belongsTo ("league", "league", {
-//     lRef: "league_id",
-//     rRef: "id"
-//   })
-// ]);
-
-
 const Player = Table ("player", [
   id,
   stringProp ("firstName", "first_name"),

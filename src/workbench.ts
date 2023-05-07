@@ -26,6 +26,7 @@ const pool = new Pool ({
 const querier = async (query: string, values: any[]) => {
   console.log (query);
   const { rows } = await pool.query (query, values);
+  console.log (rows);
 
   return rows;
 };
@@ -120,22 +121,22 @@ const querier = async (query: string, values: any[]) => {
 
 const whenie = When (p => p.query != null, sql<{ query: string }>` and last_name = '${p => p.query}'`);
 
-const tag = Player ([
-  "id",
-  "firstName",
-  "lastName",
-  Team ([
-    "name",
-    League (["name"]),
-    Player (["lastName", sql`limit 5`])
-  ]),
-  Game (["result"]),
-  Rating (["acceleration", "stamina"]),
-  whenie,
-  sql<{}>`
-    limit 30
-      `
-]);
+// const tag = Player ([
+//   "id",
+//   "firstName",
+//   "lastName",
+//   Team ([
+//     "name",
+//     League (["name"]),
+//     Player (["lastName", sql`limit 5`])
+//   ]),
+//   Game (["result"]),
+//   Rating (["acceleration", "stamina"]),
+//   whenie,
+//   sql<{}>`
+//     limit 30
+//       `
+// ]);
 // const playerAndTeam = playerById.concat (playerTeam);
 
 // // const playerRes = Player ([
@@ -147,7 +148,7 @@ const tag = Player ([
 // // // const concatted = playerById.concat (playerRes);
 
 
-tag ({ query: "" }, querier).then (res => console.log (res[2]));
+// tag ({ query: "" }, querier).then (res => console.log (res[2]));
 // // natural transformation
 
 // declare module "./SQLTag" {
@@ -177,3 +178,15 @@ tag ({ query: "" }, querier).then (res => console.log (res[2]));
 
 
 // combined ({ firstNameField: "first_name", limit: 2 }, querier).fork (console.log, console.log);
+
+const tag2 = Game ([
+  "id",
+  Team (["id", "name"]),
+  sql`
+    and home_team_id = 1
+    and away_team_id = 2
+    limit 1
+  `
+]);
+
+tag2 ({}, querier).then (console.log);

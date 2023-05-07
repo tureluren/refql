@@ -97,7 +97,7 @@ function interpret<Params, Output>(this: SQLTag<Params, Output>): InterpretedSQL
         pred: truePred,
         run: (p, _i) => {
           let s = run (p);
-          if (When.isWhen<Params, Output> (nextNode) && !nextNode.pred (p)) {
+          if (When.isWhen<Params> (nextNode) && !nextNode.pred (p)) {
             s = s.trimEnd ();
           }
           return [s, 0];
