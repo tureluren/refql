@@ -3,6 +3,7 @@ import RefField from "../RefField";
 import { RQLTag } from "../RQLTag";
 import { SQLTag } from "../SQLTag";
 import Table from "../Table";
+import Eq from "../Table/Eq";
 import Prop from "../Table/Prop";
 import RefProp from "../Table/RefProp";
 
@@ -55,10 +56,11 @@ export type Selectable<T> =
   | OnlyProps<T>[keyof OnlyProps<T>]
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any>
   | SQLTag
-  | When<any>;
+  | When<any>
+  | Eq<any, any>;
 
 export type SQLTagObjects<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>> = T extends (infer U)[]
-  ? (U extends SQLTag
+  ? (U extends (SQLTag | Eq<any, any>)
     ? U
     : U extends Prop
       ? U["col"] extends SQLTag

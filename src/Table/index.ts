@@ -1,12 +1,15 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Querier } from "../common/types";
-import { Output, Params, RQLNode, Selectable } from "../common/types2";
+import { Querier, TagFunctionVariable } from "../common/types";
+import { OnlyStringColProps, Output, Params, RQLNode, Selectable } from "../common/types2";
 import validateTable from "../common/validateTable";
-import { RefNode, When } from "../nodes";
+import { Raw, RefNode, When } from "../nodes";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import { isSQLTag } from "../SQLTag";
+import sql from "../SQLTag/sql";
+import Eq from "./Eq";
 import Prop from "./Prop";
 import RefProp from "./RefProp";
+
 
 interface Table<TableId extends string = any, Props = {}> {
   <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Props, Components>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;
@@ -19,6 +22,7 @@ interface Table<TableId extends string = any, Props = {}> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
+  eq<P extends keyof OnlyStringColProps<Props>>(prop: P): <Params>(run: TagFunctionVariable<Params, OnlyStringColProps<Props>[P]["type"]> | OnlyStringColProps<Props>[P]["type"]) => Eq<Props, Params>;
 }
 
 const type = "refql/Table";
@@ -28,7 +32,8 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   [refqlType]: type,
   equals, [flEquals]: equals,
   empty, [flEmpty]: empty,
-  toString
+  toString,
+  eq
 });
 
 function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
@@ -75,6 +80,10 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
         nodes.push (...refNodes);
       } else if (When.isWhen (comp)) {
         nodes.push (comp);
+      } else if (Eq.isEq (comp)) {
+        nodes.push (sql`
+          and ${Raw (`${table.name}.${comp.prop}`)} = ${comp.run}
+        `);
       } else {
         throw new Error ("errorke");
       }
@@ -98,6 +107,12 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
   table.props = properties;
 
   return table;
+}
+
+function eq<Name extends string, S, P extends keyof OnlyStringColProps<S>>(this: Table<Name, S>, prop: P) {
+  return <Params>(run: TagFunctionVariable<Params, OnlyStringColProps<S>[P]["type"]>) => {
+    return Eq<S, Params, P> (prop, run);
+  };
 }
 
 function toString<Name extends string, S>(this: Table<Name, S>) {
