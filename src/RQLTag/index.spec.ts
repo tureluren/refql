@@ -14,7 +14,7 @@ import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import {
   Game, Goal, League,
-  Player, Rating, Team
+  Player, Player2, Rating, Team, XGame
 } from "../test/tables";
 import userConfig from "../test/userConfig";
 
@@ -246,6 +246,85 @@ describe ("RQLTag type", () => {
     expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "team"]);
     expect (Object.keys (playerTeam)).toEqual (["name"]);
     expect (players.length).toBe (30);
+  });
+
+  test ("aggregate - provided refs", async () => {
+    const tag = Player2 ([
+      "id",
+      Team (["name"]),
+      Game (["result"]),
+      XGame (["result"]),
+      Rating (["acceleration", "stamina"]),
+      sql`
+        limit 30
+      `
+    ]);
+
+    const [query, _values, next] = tag.compile ({});
+
+    // player
+    expect (query).toBe (format (`
+      select player.id "id",
+        player.TEAM_ID teamlref, player.id gameslref, player.ID xgameslref, player.ID ratinglref
+      from player where 1 = 1
+      limit 30
+    `));
+
+    // team
+    const teamTag = next[0].tag;
+
+    const [teamQuery] = teamTag.compile ({ refQLRows: [{ teamlref: 1 }, { teamlref: 1 }, { teamlref: 2 }] });
+
+    expect (teamQuery).toBe (format (`
+      select * from (
+        select distinct player.TEAM_ID teamlref from player where player.TEAM_ID in ($1, $2)
+      ) refqll1,
+      lateral (
+        select team.name "name" from public.team where team.ID = refqll1.teamlref
+      ) refqll2
+    `));
+
+    // game
+    const gamesTag = next[1].tag;
+
+    const [gamesQuery] = gamesTag.compile ({ refQLRows: [{ gameslref: 1 }, { gameslref: 2 }] });
+
+    expect (gamesQuery).toBe (format (`
+      select * from (
+        select distinct player.id gameslref from player where player.id in ($1, $2)
+      ) refqll1,
+      lateral (
+        select game.result "result" from game join GAME_PLAYER on GAME_PLAYER.game_id = game.id where GAME_PLAYER.player_id = refqll1.gameslref
+      ) refqll2
+    `));
+
+    // xgame
+    const xgamesTag = next[2].tag;
+
+    const [xgamesQuery] = xgamesTag.compile ({ refQLRows: [{ xgameslref: 1 }, { xgameslref: 2 }] });
+
+    expect (xgamesQuery).toBe (format (`
+      select * from (
+        select distinct player.ID xgameslref from player where player.ID in ($1, $2)
+      ) refqll1,
+      lateral (
+        select xgame.result "result" from xgame join player_xgame on player_xgame.XGAME_ID = xgame.ID where player_xgame.PLAYER_ID = refqll1.xgameslref
+      ) refqll2
+    `));
+
+    // rating
+    const ratingTag = next[3].tag;
+
+    const [ratingQuery] = ratingTag.compile ({ refQLRows: [{ ratinglref: 1 }, { ratinglref: 2 }] });
+
+    expect (ratingQuery).toBe (format (`
+      select * from (
+        select distinct player.ID ratinglref from player where player.ID in ($1, $2)
+      ) refqll1,
+      lateral (
+        select rating.acceleration "acceleration", rating.stamina "stamina" from rating where rating.PLAYER_ID = refqll1.ratinglref
+      ) refqll2
+    `));
   });
 
   test ("deep concat", async () => {

@@ -39,10 +39,7 @@ const Team = Table ("public.team", [
   id,
   name,
   hasMany ("players", "player"),
-  belongsTo ("league", "league", {
-    lRef: "league_id",
-    rRef: "id"
-  })
+  belongsTo ("league", "league")
 ]);
 
 const Player = Table ("player", [
@@ -58,21 +55,53 @@ const Player = Table ("player", [
   `),
   stringProp ("birthday"),
   numberProp ("teamId", "team_id"),
-  belongsTo ("team", "public.team", {
-    lRef: "team_id",
-    rRef: "id"
-  }),
+  belongsTo ("team", "public.team"),
   numberProp ("positionId", "position_id"),
   belongsTo ("position", "position"),
+  hasOne ("rating", "rating"),
+  hasMany ("goals", "goal"),
+  belongsToMany ("games", "game")
+]);
+
+const Player2 = Table ("player", [
+  id,
+  stringProp ("firstName", "first_name"),
+  stringProp ("lastName", "last_name"),
+  stringProp ("birthday"),
+  numberProp ("teamId", "team_id"),
+  belongsTo ("team", "public.team", {
+    lRef: "TEAM_ID",
+    rRef: "ID"
+  }),
+  numberProp ("positionId", "position_id"),
   hasOne ("rating", "rating", {
-    lRef: "id",
-    rRef: "player_id"
+    lRef: "ID",
+    rRef: "PLAYER_ID"
   }),
   hasMany ("goals", "goal", {
-    lRef: "id",
-    rRef: "player_id"
+    lRef: "ID",
+    rRef: "PLAYER_ID"
   }),
-  belongsToMany ("games", "game")
+  belongsToMany ("games", "game", {
+    xTable: "GAME_PLAYER"
+  }),
+  belongsToMany ("xgames", "xgame", {
+    lRef: "ID",
+    lxRef: "PLAYER_ID",
+    rxRef: "XGAME_ID",
+    rRef: "ID"
+  })
+]);
+
+const XGame = Table ("xgame", [
+  id,
+  stringProp ("result"),
+  numberProp ("homeTeamId", "home_team_id"),
+  numberProp ("awayTeamId", "away_team_id"),
+  belongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
+  belongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
+  numberProp ("leagueId", "league_id"),
+  belongsTo ("league", "league")
 ]);
 
 const Game = Table ("game", [
@@ -109,22 +138,8 @@ const Assist = Table ("assist", [
 
 const GamePlayer = Table ("game_player", []);
 
-const Dummy = Table ("dummy", []);
-
-const dummyRefInfo = {
-  parent: Player,
-  as: "dummy",
-  lRef: RefField ("player.id", "dummylref"),
-  rRef: RefField ("game.id", "dummyrref"),
-  lxRef: RefField ("dummy_player.player_id", "dummylxref"),
-  rxRef: RefField ("dummy_player.dummy_id", "dummyrxref"),
-  xTable: Table ("dummy_player", [])
-};
-
 export {
   Assist,
-  Dummy,
-  dummyRefInfo,
   Game,
   GamePlayer,
   Goal,
@@ -132,5 +147,7 @@ export {
   Position,
   Player,
   Rating,
-  Team
+  Team,
+  Player2,
+  XGame
 };
