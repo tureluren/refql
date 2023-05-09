@@ -1,5 +1,5 @@
 import Table from ".";
-import { RefNodeInput } from "../common/types2";
+import { RefNodeInput } from "../common/types";
 import validateTable from "../common/validateTable";
 import RefField from "../RefField";
 import RefProp from "./RefProp";

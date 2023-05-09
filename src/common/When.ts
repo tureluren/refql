@@ -1,7 +1,7 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
-import { sqlNodePrototype } from "./isSQLNode";
+import { sqlNodePrototype } from "../SQLTag/isSQLNode";
 
 interface When<Params> {
   pred: TagFunctionVariable<Params, boolean>;
@@ -27,5 +27,8 @@ function When<Params>(pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Pa
 When.isWhen = function <Params> (x: any): x is When<Params> {
   return x != null && x[refqlType] === type;
 };
+
+export const when = <Params>(pred: TagFunctionVariable<Params, boolean>) => (tag: SQLTag<Params>) =>
+  When (pred, tag);
 
 export default When;

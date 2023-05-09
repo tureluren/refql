@@ -1,4 +1,4 @@
-import { RefInput } from "../common/types2";
+import { RefInput } from "../common/types";
 
 const validateRefInput = (input: RefInput) => {
   if (!(toString.call (input) === "[object Object]")) {

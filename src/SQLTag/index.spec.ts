@@ -3,9 +3,8 @@ import mySQL from "mysql2";
 import pg from "pg";
 import { createSQLTag, isSQLTag } from ".";
 import { flConcat } from "../common/consts";
-import { Querier, StringMap } from "../common/types";
-import { OnlyStringColProps } from "../common/types2";
-import { Raw, Values, Values2D, When } from "../nodes";
+import { OnlyStringColProps, Querier, StringMap } from "../common/types";
+import When from "../common/When";
 import Table from "../Table";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
@@ -13,7 +12,10 @@ import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import { Player } from "../test/tables";
 import userConfig from "../test/userConfig";
+import Raw from "./Raw";
 import sql from "./sql";
+import Values from "./Values";
+import Values2D from "./Values2D";
 
 describe ("SQLTag type", () => {
   let pool: any;
@@ -185,7 +187,7 @@ describe ("SQLTag type", () => {
       data: { first_name: "John", last_name: "Doe", cars }
     };
 
-    const [query, values] = insert.compile (params);
+    const [query, values] = insert.compile (params as any);
 
     expect (query).toBe (format (`
       insert into player (first_name, last_name, cars)
@@ -194,7 +196,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", cars]);
 
-    await insert (params, querier);
+    await insert (params as any, querier);
 
     let returning = sql<{}, any>`
       select * from player
@@ -235,7 +237,7 @@ describe ("SQLTag type", () => {
       ]
     };
 
-    const [query, values] = insert.compile (params);
+    const [query, values] = insert.compile (params as any);
 
     expect (query).toBe (format (`
       insert into player (first_name, last_name)
@@ -244,7 +246,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", "Jane", "Doe", "Jimmy", "Doe"]);
 
-    await insert (params, querier);
+    await insert (params as any, querier);
 
     const returning = sql<{}, any>`
       select * from player

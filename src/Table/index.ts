@@ -1,15 +1,15 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Querier, TagFunctionVariable } from "../common/types";
-import { OnlyStringColProps, Output, Params, RQLNode, Selectable } from "../common/types2";
+import { OnlyStringColProps, Output, Params, Querier, RQLNode, Selectable, TagFunctionVariable } from "../common/types";
 import validateTable from "../common/validateTable";
-import { Raw, RefNode, When } from "../nodes";
+import When from "../common/When";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
+import RefNode from "../RQLTag/RefNode";
 import { isSQLTag } from "../SQLTag";
+import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Eq from "./Eq";
 import Prop from "./Prop";
 import RefProp from "./RefProp";
-
 
 interface Table<TableId extends string = any, Props = {}> {
   <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Props, Components>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;

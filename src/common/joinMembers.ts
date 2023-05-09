@@ -1,5 +1,5 @@
-import { Raw } from "../nodes";
 import { SQLTag } from "../SQLTag";
+import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 
 const joinMembers = <Params, Output>(members: (Raw<Params> | SQLTag<Params, Output>)[]) =>

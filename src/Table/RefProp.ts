@@ -1,6 +1,6 @@
 import Table from ".";
 import { refqlType } from "../common/consts";
-import { RefInput, RefNodeInput, RelType } from "../common/types2";
+import { RefInput, RefNodeInput, RelType } from "../common/types";
 
 interface RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any> {
   rel: Rel;

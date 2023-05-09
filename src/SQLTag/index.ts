@@ -1,7 +1,11 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import { Querier, SQLNode, TagFunctionVariable } from "../common/types";
-import { Raw, Value, Values, Values2D, When } from "../nodes";
+import When from "../common/When";
+import Raw from "./Raw";
+import Value from "./Value";
+import Values from "./Values";
+import Values2D from "./Values2D";
 
 type InterpretedString<Params> = {
   pred: TagFunctionVariable<Params, boolean>;

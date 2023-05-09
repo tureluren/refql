@@ -1,4 +1,4 @@
-import { RefNodeInput } from "../common/types2";
+import { RefNodeInput } from "../common/types";
 import RefProp from "./RefProp";
 
 const hasMany = <As extends string, TableId extends string>(as: As, tableId: TableId, input: RefNodeInput = {}) =>

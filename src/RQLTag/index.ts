@@ -1,12 +1,13 @@
 import { flConcat, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows } from "../common/types";
-import { RQLNode } from "../common/types2";
-import { Raw, RefNode, When } from "../nodes";
+import { Querier, RefInfo, RefQLRows, RQLNode } from "../common/types";
+import When from "../common/When";
 import { isSQLTag, SQLTag } from "../SQLTag";
+import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import Prop from "../Table/Prop";
+import RefNode from "./RefNode";
 
 export interface Next<TableId, Params, Output> {
   tag: RQLTag<TableId, Params & RefQLRows, Output>;
@@ -114,7 +115,7 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
 
   let extra = sql<Params, Output>``;
 
-  const caseOfRef = (tag: RQLTag<As, Params & RefQLRows, Output>, info: RefInfo, single: boolean) => {
+  const caseOfRef = (tag: RQLTag<As, Params & RefQLRows, Output>, info: RefInfo<any>, single: boolean) => {
     members.push (Raw (info.lRef));
 
     next.push ({ tag, link: [info.as, info.lRef.as], single });

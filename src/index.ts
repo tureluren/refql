@@ -4,7 +4,6 @@ import { SQLTag } from "./SQLTag";
 import sql, { parse } from "./SQLTag/sql";
 import Table from "./Table";
 
-export * from "./nodes";
 export * from "./common/types";
 
 export {

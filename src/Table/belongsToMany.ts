@@ -1,5 +1,4 @@
-import Table from ".";
-import { RefInput } from "../common/types2";
+import { RefInput } from "../common/types";
 import RefProp from "./RefProp";
 
 const belongsToMany = <As extends string, TableId extends string>(as: As, tableId: TableId, input: RefInput = {}) => {

@@ -1,7 +1,6 @@
 import Table from ".";
 import { refqlType } from "../common/consts";
-import { TagFunctionVariable } from "../common/types";
-import { OnlyStringColProps } from "../common/types2";
+import { OnlyStringColProps, TagFunctionVariable } from "../common/types";
 
 interface Eq<Props, Params> {
   params: Params;

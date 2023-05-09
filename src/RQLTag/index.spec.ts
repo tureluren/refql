@@ -4,7 +4,8 @@ import pg from "pg";
 import { createRQLTag, isRQLTag } from ".";
 import { flConcat, flEmpty } from "../common/consts";
 import { Querier } from "../common/types";
-import { Raw, RefNode, Value, Values, Values2D, When } from "../nodes";
+import When from "../common/When";
+import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import format from "../test/format";
@@ -12,8 +13,8 @@ import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import {
-  Dummy, dummyRefInfo, Game, Goal, League,
-  Player, Position, Rating, Team
+  Game, Goal, League,
+  Player, Rating, Team
 } from "../test/tables";
 import userConfig from "../test/userConfig";
 
@@ -319,15 +320,30 @@ describe ("RQLTag type", () => {
   test ("By id", async () => {
     const tag = Player ([
       "*",
-      sql`
-        and ${Raw (Player.name)}.id = 1
+      sql<{ id: number }>`
+        and ${Raw (Player.name)}.id = ${p => p.id}
       `
     ]);
 
-    const players = await tag ({}, querier);
+    const players = await tag ({ id: 9 }, querier);
     const player = players[0];
 
-    expect (player.id).toBe (1);
+    expect (player.id).toBe (9);
+    expect (players.length).toBe (1);
+  });
+
+  test ("By id - using Eq", async () => {
+    const { eq } = Player;
+
+    const tag = Player ([
+      "*",
+      eq ("id")<{ id: number }> (p => p.id)
+    ]);
+
+    const players = await tag ({ id: 9 }, querier);
+    const player = players[0];
+
+    expect (player.id).toBe (9);
     expect (players.length).toBe (1);
   });
 
