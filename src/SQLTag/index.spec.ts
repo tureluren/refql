@@ -1,7 +1,7 @@
 import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
-import { createSQLTag, isSQLTag } from ".";
+import { convertSQLTagResult, createSQLTag, isSQLTag } from ".";
 import { flConcat } from "../common/consts";
 import { OnlyStringColProps, Querier, StringMap } from "../common/types";
 import When from "../common/When";
@@ -10,7 +10,7 @@ import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { Player } from "../test/tables";
+import { Player, Team } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Raw from "./Raw";
 import sql from "./sql";
@@ -47,31 +47,6 @@ describe ("SQLTag type", () => {
     expect (isSQLTag (tag)).toBe (true);
     expect (isSQLTag ({})).toBe (false);
   });
-
-  // test ("create sql with default querier that returns Task", async () => {
-  //   const sql2 = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
-  //     const nodes = parse <Params, Output, "Task"> (strings, variables);
-  //     return SQLTag (nodes, querier, promiseToTask);
-  //   };
-
-  //   const tag = sql2<{}, { id: number; first_name: string }[]>`
-  //     select id, first_name,
-  //   `;
-
-  //   const tag2 = sql2<{}, { last_name: string }[]>`
-  //     last_name
-  //     from player
-  //     limit 1
-  //   `;
-
-  //   const tag3 = tag.concat (tag2);
-
-  //   const players = await fork (tag3 ());
-
-  //   expect (players.length).toBe (1);
-
-  //   expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
-  // });
 
   test ("Semigroup", () => {
     const tag = sql`
@@ -111,23 +86,23 @@ describe ("SQLTag type", () => {
     expect (Object.keys (firstPlayer)).toEqual (["id", "first_name"]);
   });
 
-  // test ("Dynamic Table with schema", async () => {
-  //   const teamById = sql<{ id: number }, Player[]>`
-  //     select id, name from ${Team}
-  //     where id = ${p => p.id}
-  //   `;
+  test ("Dynamic Table with schema", async () => {
+    const teamById = sql<{ id: number }, any[]>`
+      select id, name from ${Team}
+      where id = ${p => p.id}
+    `;
 
-  //   const [query] = teamById.compile ({ id: 1 });
+    const [query] = teamById.compile ({ id: 1 });
 
-  //   expect (query).toBe (format (`
-  //     select id, name
-  //     from public.team
-  //     where id = $1
-  //   `));
-  //   const [firstTeam] = await teamById ({ id: 1 }, querier);
+    expect (query).toBe (format (`
+      select id, name
+      from public.team
+      where id = $1
+    `));
+    const [firstTeam] = await teamById ({ id: 1 }, querier);
 
-  //   expect (Object.keys (firstTeam)).toEqual (["id", "name"]);
-  // });
+    expect (Object.keys (firstTeam)).toEqual (["id", "name"]);
+  });
 
   test ("Values", async () => {
     const tag = sql<{ids: number[]}, OnlyStringColProps<typeof Player["props"]>[]>`
@@ -391,5 +366,21 @@ describe ("SQLTag type", () => {
   test ("compile errors", () => {
     expect (() => sql`select ${Player (["*"])}`.compile ({}))
       .toThrowError (new Error ("U can't use RQLTags inside SQLTags"));
+  });
+
+  test ("convert result", async () => {
+    const convert = jest.fn ();
+
+    const id = (x: Promise<any>) => {
+      convert ();
+      return x;
+    };
+
+    convertSQLTagResult (id);
+    const tag = sql`select * from player limit 1`;
+
+    await tag ({}, querier);
+
+    expect (convert).toBeCalledTimes (1);
   });
 });

@@ -13,7 +13,6 @@ import hasOne from "./Table/hasOne";
 import numberProp from "./Table/numberProp";
 import stringProp from "./Table/stringProp";
 import { Game, League, Player, Rating, Team } from "./test/tables";
-import Task, { promiseToTask } from "./test/Task";
 
 
 const pool = new Pool ({
@@ -44,15 +43,6 @@ const tag = Player ([
 ]);
 
 tag ({ id: 10 }, querier).then (res => console.log (res));
-// // natural transformation
-
-// declare module "./SQLTag" {
-//   interface SQLTag<Params, Output> {
-//     (params: Params, querier?: Querier): Task<Output>;
-//   }
-// }
-
-// convertSQLTagResult (promiseToTask);
 
 // const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
 //   select id, ${Raw (p => p.firstNameField)}

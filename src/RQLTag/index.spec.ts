@@ -1,7 +1,7 @@
 import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
-import { createRQLTag, isRQLTag } from ".";
+import { convertRQLTagResult, createRQLTag, isRQLTag } from ".";
 import { flConcat, flEmpty } from "../common/consts";
 import { Querier } from "../common/types";
 import When from "../common/When";
@@ -384,6 +384,9 @@ describe ("RQLTag type", () => {
   test ("errors", () => {
     expect (() => Player (["id", "lastName"]).concat (Team (["id", "name"]) as any))
       .toThrowError (new Error ("U can't concat RQLTags that come from different tables"));
+
+    expect (() => Table (1 as any, []))
+      .toThrowError (new Error ("Invalid table: 1, expected a string"));
   });
 
   test ("database error", async () => {
@@ -476,5 +479,21 @@ describe ("RQLTag type", () => {
     `));
 
     expect (values3).toEqual ([5, 10]);
+  });
+
+  test ("convert result", async () => {
+    const convert = jest.fn ();
+
+    const id = (x: Promise<any>) => {
+      convert ();
+      return x;
+    };
+
+    convertRQLTagResult (id);
+    const tag = Player (["*"]);
+
+    await tag ({}, querier);
+
+    expect (convert).toBeCalledTimes (1);
   });
 });
