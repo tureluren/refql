@@ -49,6 +49,10 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
   );
 
   const table = (components => {
+    if (!Array.isArray (components)) {
+      // empty array is allowed because `select from player` is valid SQL
+      throw new Error ("Invalid components: not an Array");
+    }
 
     const nodes: RQLNode[] = [];
 
@@ -74,7 +78,9 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
           .map (refProp => RefNode (createRQLTag (comp.table, comp.nodes), refProp, table as unknown as Table));
 
         if (!refNodes.length) {
-          throw Error ("wrong");
+          throw new Error (
+            `${table.tableId} has no ref defined for: ${comp.table.tableId}`
+          );
         }
 
         nodes.push (...refNodes);
@@ -85,7 +91,7 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
           and ${Raw (`${table.name}.${comp.prop}`)} = ${comp.run}
         `);
       } else {
-        throw new Error ("errorke");
+        throw new Error (`Unknown Selectable Type: "${String (comp)}"`);
       }
     }
 

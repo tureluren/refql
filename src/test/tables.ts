@@ -10,7 +10,7 @@ import booleanProp from "../Table/booleanField";
 import sql from "../SQLTag/sql";
 
 const id = numberProp ("id");
-const name = numberProp ("name");
+const name = stringProp ("name");
 
 const Position = Table ("game", [
   id,

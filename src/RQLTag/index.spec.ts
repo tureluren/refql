@@ -96,8 +96,10 @@ describe ("RQLTag type", () => {
   });
 
   test ("aggregate", async () => {
+    const { props } = Player;
+
     const tag = Player ([
-      "id",
+      props.id,
       "firstName",
       "lastName",
       Team ([
@@ -464,8 +466,14 @@ describe ("RQLTag type", () => {
     expect (() => Player (["id", "lastName"]).concat (Team (["id", "name"]) as any))
       .toThrowError (new Error ("U can't concat RQLTags that come from different tables"));
 
-    expect (() => Table (1 as any, []))
-      .toThrowError (new Error ("Invalid table: 1, expected a string"));
+    expect (() => Player (["id", "lastName", League (["*"]) as any]))
+      .toThrowError (new Error ("player has no ref defined for: league"));
+
+    expect (() => Player (["id", "lastName", 1 as any]))
+      .toThrowError (new Error ('Unknown Selectable Type: "1"'));
+
+    expect (() => Player ({} as any))
+      .toThrowError (new Error ("Invalid components: not an Array"));
   });
 
   test ("database error", async () => {

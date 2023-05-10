@@ -35,9 +35,7 @@ const whenie = when<{ query: string }> (p => p.query != null) (sql`and last_name
 const { eq } = Player;
 
 const tag = Player ([
-  "id",
-  "firstName",
-  "lastName",
+  "*",
   Team (["*"]),
   eq ("id")<{id: number}> (p => p.id)
 ]);
