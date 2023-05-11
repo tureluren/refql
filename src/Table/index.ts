@@ -1,7 +1,6 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { OnlyStringColProps, Output, Params, Querier, RQLNode, Selectable, TagFunctionVariable } from "../common/types";
 import validateTable from "../common/validateTable";
-import When from "../common/When";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import Eq from "../RQLTag/Eq";
 import isRQLNode from "../RQLTag/isRQLNode";
@@ -21,7 +20,7 @@ interface Table<TableId extends string = any, Props = {}> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
-  eq<P extends keyof OnlyStringColProps<Props>>(prop: P): <Params>(run: TagFunctionVariable<Params, OnlyStringColProps<Props>[P]["type"]> | OnlyStringColProps<Props>[P]["type"]) => Eq<Props, Params>;
+  eq<P extends keyof OnlyStringColProps<Props>>(prop: P): <Params>(run: TagFunctionVariable<Params, OnlyStringColProps<Props>[P]["type"]> | OnlyStringColProps<Props>[P]["type"]) => Eq<Props, P, Params>;
 }
 
 const type = "refql/Table";
@@ -110,7 +109,7 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
 
 function eq<Name extends string, S, P extends keyof OnlyStringColProps<S>>(this: Table<Name, S>, prop: P) {
   return <Params>(run: TagFunctionVariable<Params, OnlyStringColProps<S>[P]["type"]>) => {
-    return Eq<S, Params, P> (prop, run);
+    return Eq<S, P, Params> (prop, run);
   };
 }
 

@@ -366,7 +366,7 @@ describe ("RQLTag type", () => {
     const players = await tag (null as any, querier);
     const player = players[0];
 
-    expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "birthday", "teamId", "positionId"]);
+    expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "cars", "birthday", "teamId", "positionId"]);
   });
 
 
@@ -426,6 +426,21 @@ describe ("RQLTag type", () => {
 
     expect (player.id).toBe (9);
     expect (players.length).toBe (1);
+  });
+
+  test ("By team-id - using Eq", async () => {
+    const { eq } = Player;
+
+    const tag = Player ([
+      "*",
+      eq ("teamId") (2)
+    ]);
+
+    const players = await tag ({}, querier);
+    const player = players[0];
+
+    expect (player.teamId).toBe (2);
+    expect (players.length).toBe (11);
   });
 
   test ("No record found", async () => {

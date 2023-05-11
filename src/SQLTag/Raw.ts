@@ -38,7 +38,4 @@ Raw.isRaw = function<Params> (x: any): x is Raw<Params> {
   return x != null && x[refqlType] === type;
 };
 
-export const raw = <Params>(run: ValueType | TagFunctionVariable<Params>) =>
-  Raw (run);
-
 export default Raw;

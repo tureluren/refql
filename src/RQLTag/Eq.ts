@@ -1,12 +1,11 @@
 import { refqlType } from "../common/consts";
 import { OnlyStringColProps, TagFunctionVariable } from "../common/types";
-import Table from "../Table";
 import { rqlNodePrototype } from "./isRQLNode";
 
-interface Eq<Props, Params> {
+interface Eq<Props, P extends keyof OnlyStringColProps<Props>, Params> {
   params: Params;
-  prop: keyof OnlyStringColProps<Props>;
-  run: TagFunctionVariable<Params, OnlyStringColProps<Props>[Eq<Props, Params>["prop"]]["type"]>;
+  prop: P;
+  run: TagFunctionVariable<Params, OnlyStringColProps<Props>[P]["type"]>;
 }
 
 const type = "refql/Eq";
@@ -16,8 +15,8 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   [refqlType]: type
 });
 
-function Eq<Props, Params, P extends keyof OnlyStringColProps<Props>>(prop: P, run: TagFunctionVariable<Params, OnlyStringColProps<Props>[P]["type"]> | OnlyStringColProps<Props>[P]["type"]) {
-  let eq: Eq<Props, Params> = Object.create (prototype);
+function Eq<Props, P extends keyof OnlyStringColProps<Props>, Params>(prop: P, run: TagFunctionVariable<Params, OnlyStringColProps<Props>[P]["type"]> | OnlyStringColProps<Props>[P]["type"]) {
+  let eq: Eq<Props, P, Params> = Object.create (prototype);
 
   eq.prop = prop;
 
@@ -28,7 +27,7 @@ function Eq<Props, Params, P extends keyof OnlyStringColProps<Props>>(prop: P, r
   return eq;
 }
 
-Eq.isEq = function <T extends Table, Params> (x: any): x is Eq<T, Params> {
+Eq.isEq = function <Props, P extends keyof OnlyStringColProps<Props>, Params> (x: any): x is Eq<Props, P, Params> {
   return x != null && x[refqlType] === type;
 };
 

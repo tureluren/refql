@@ -1,9 +1,7 @@
 import { flMap } from "../common/consts";
 import When, { when } from "../common/When";
-import RefNode from "../RQLTag/RefNode";
-import Raw, { raw } from "../SQLTag/Raw";
+import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
-import { Player } from "../test/tables";
 import isSQLNode from "./isSQLNode";
 import Value from "./Value";
 import Values from "./Values";
@@ -12,17 +10,12 @@ import Values2D from "./Values2D";
 describe ("SQLNodes", () => {
   test ("is SQLNode", () => {
     expect (isSQLNode (Raw ("*"))).toBe (true);
-    expect (isSQLNode ("All")).toBe (false);
+    expect (isSQLNode ("*")).toBe (false);
   });
 
   test ("is Raw", () => {
-    expect (Raw.isRaw (raw ("id"))).toBe (true);
+    expect (Raw.isRaw (Raw ("id"))).toBe (true);
     expect (Raw.isRaw ("Raw")).toBe (false);
-  });
-
-  test ("is RefNode", () => {
-    expect (RefNode.isRefNode (RefNode (Player (["*"]), {} as any, Player as any))).toBe (true);
-    expect (RefNode.isRefNode ("RefNode")).toBe (false);
   });
 
   test ("Value", () => {

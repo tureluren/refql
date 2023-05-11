@@ -96,10 +96,10 @@ export type Selectable<T> =
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any>
   | SQLTag
   | When<any>
-  | Eq<any, any>;
+  | Eq<any, any, any>;
 
 export type SQLTagObjects<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>> = T extends (infer U)[]
-  ? (U extends (SQLTag | Eq<any, any>)
+  ? (U extends (SQLTag | Eq<any, any, any>)
     ? U
     : U extends Prop
       ? U["col"] extends SQLTag
@@ -137,4 +137,4 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
         : never)[]
   : never;
 
-export type RQLNode = Prop | SQLTag | RefNode<any, any> | When<any> | Eq<any, any>;
+export type RQLNode = Prop | SQLTag | RefNode<any, any> | When<any> | Eq<any, any, any>;

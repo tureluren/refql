@@ -53,8 +53,9 @@ const Player = Table ("player", [
     select count (*)::int from goal
     where goal.player_id = player.id
   `),
+  stringProp ("cars").arrayOf (),
   stringProp ("birthday"),
-  numberProp ("teamId", "team_id"),
+  numberProp ("teamId", "team_id").nullable (),
   belongsTo ("team", "public.team"),
   numberProp ("positionId", "position_id"),
   belongsTo ("position", "position"),
