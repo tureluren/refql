@@ -1,5 +1,7 @@
 import RefField from "../RefField";
 import { RQLTag } from "../RQLTag";
+import Eq from "../RQLTag/Eq";
+import Prop from "../RQLTag/Prop";
 import RefNode from "../RQLTag/RefNode";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
@@ -7,8 +9,6 @@ import Value from "../SQLTag/Value";
 import Values from "../SQLTag/Values";
 import Values2D from "../SQLTag/Values2D";
 import Table from "../Table";
-import Eq from "../Table/Eq";
-import Prop from "../Table/Prop";
 import RefProp from "../Table/RefProp";
 import When from "./When";
 
@@ -137,4 +137,4 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
         : never)[]
   : never;
 
-export type RQLNode = Prop | SQLTag | RefNode<any, any> | When<any>;
+export type RQLNode = Prop | SQLTag | RefNode<any, any> | When<any> | Eq<any, any>;

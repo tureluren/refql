@@ -3,7 +3,7 @@ import When, { when } from "../common/When";
 import RefNode from "../RQLTag/RefNode";
 import Raw, { raw } from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
-import { Player, Team } from "../test/tables";
+import { Player } from "../test/tables";
 import isSQLNode from "./isSQLNode";
 import Value from "./Value";
 import Values from "./Values";

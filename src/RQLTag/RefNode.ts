@@ -7,6 +7,7 @@ import sql from "../SQLTag/sql";
 import Values from "../SQLTag/Values";
 import Table from "../Table";
 import RefProp from "../Table/RefProp";
+import { rqlNodePrototype } from "./isRQLNode";
 
 interface RefNode<Params, Output> {
   joinLateral(): RQLTag<any, Params, Output>;
@@ -17,13 +18,13 @@ interface RefNode<Params, Output> {
 
 const type = "refql/RefNode";
 
-export const refNodePrototype = {
+const prototype = Object.assign ({}, rqlNodePrototype, {
   [refqlType]: type,
   joinLateral
-};
+});
 
 function RefNode<Params, Output>(tag: RQLTag<any, Params, Output>, refProp: RefProp, parent: Table) {
-  let refNode: RefNode<Params, Output> = Object.create (refNodePrototype);
+  let refNode: RefNode<Params, Output> = Object.create (prototype);
 
   const { as, rel, child, refInput } = refProp;
 

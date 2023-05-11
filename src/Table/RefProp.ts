@@ -1,6 +1,7 @@
 import Table from ".";
 import { refqlType } from "../common/consts";
 import { RefInput, RefNodeInput, RelType } from "../common/types";
+import validateRefInput from "./validateRefInput";
 
 interface RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any> {
   rel: Rel;
@@ -19,6 +20,8 @@ const prototype = {
 };
 
 function RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any>(as: As, tableId: TableId, rel: Rel, refInput: Rel extends "BelongsToMany" ? RefInput : RefNodeInput) {
+  validateRefInput (refInput);
+
   let refProp: RefProp<As, TableId, Rel> = Object.create (prototype);
 
   refProp.rel = rel;

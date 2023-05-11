@@ -3,12 +3,11 @@ import { OnlyStringColProps, Output, Params, Querier, RQLNode, Selectable, TagFu
 import validateTable from "../common/validateTable";
 import When from "../common/When";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
+import Eq from "../RQLTag/Eq";
+import isRQLNode from "../RQLTag/isRQLNode";
+import Prop from "../RQLTag/Prop";
 import RefNode from "../RQLTag/RefNode";
 import { isSQLTag } from "../SQLTag";
-import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
-import Eq from "./Eq";
-import Prop from "./Prop";
 import RefProp from "./RefProp";
 
 interface Table<TableId extends string = any, Props = {}> {
@@ -69,8 +68,6 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
         nodes.push (prop);
       } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
         nodes.push (comp);
-      } else if (isSQLTag (comp)) {
-        nodes.push (comp);
       } else if (isRQLTag (comp)) {
         const refNodes = Object.keys (properties)
           .map (key => properties[key as keyof typeof properties])
@@ -84,12 +81,8 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
         }
 
         nodes.push (...refNodes);
-      } else if (When.isWhen (comp)) {
+      } else if (isRQLNode (comp)) {
         nodes.push (comp);
-      } else if (Eq.isEq (comp)) {
-        nodes.push (sql`
-          and ${Raw (`${table.name}.${comp.prop}`)} = ${comp.run}
-        `);
       } else {
         throw new Error (`Unknown Selectable Type: "${String (comp)}"`);
       }

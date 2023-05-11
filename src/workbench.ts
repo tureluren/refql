@@ -7,7 +7,6 @@ import Table from "./Table";
 import belongsTo from "./Table/belongsTo";
 import belongsToMany from "./Table/belongsToMany";
 import dateProp from "./Table/dateProp";
-import Eq from "./Table/Eq";
 import hasMany from "./Table/hasMany";
 import hasOne from "./Table/hasOne";
 import numberProp from "./Table/numberProp";

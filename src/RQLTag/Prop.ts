@@ -1,5 +1,6 @@
 import { refqlType } from "../common/consts";
 import { SQLTag } from "../SQLTag";
+import { rqlNodePrototype } from "./isRQLNode";
 
 interface Prop<As extends string = any, Type = unknown, Params = any> {
   as: As;
@@ -11,12 +12,12 @@ interface Prop<As extends string = any, Type = unknown, Params = any> {
 
 const type = "refql/Prop";
 
-const prototype = {
+const prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: Prop,
   [refqlType]: type,
   arrayOf,
   nullable
-};
+});
 
 function Prop<As extends string, Type = unknown, Params = any>(as: As, col?: SQLTag<Params> | string) {
   let prop: Prop<As, Type, Params> = Object.create (prototype);

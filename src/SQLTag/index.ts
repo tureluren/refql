@@ -2,6 +2,7 @@ import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import { Querier, SQLNode, TagFunctionVariable } from "../common/types";
 import When from "../common/When";
+import { rqlNodePrototype } from "../RQLTag/isRQLNode";
 import Raw from "./Raw";
 import Value from "./Value";
 import Values from "./Values";
@@ -38,7 +39,7 @@ export interface SQLTag<Params = any, Output = any> {
 
 const type = "refql/SQLTag";
 
-let prototype = {
+const prototype = Object.assign ({}, rqlNodePrototype, {
   [refqlType]: type,
   constructor: createSQLTag,
   concat,
@@ -47,7 +48,7 @@ let prototype = {
   interpret,
   compile,
   convertPromise: <T>(p: Promise<T>) => p
-};
+});
 
 export function createSQLTag<Params, Output>(nodes: SQLNode<Params>[], defaultQuerier?: Querier) {
 

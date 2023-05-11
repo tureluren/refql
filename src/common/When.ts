@@ -1,5 +1,6 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
+import { rqlNodePrototype } from "../RQLTag/isRQLNode";
 import { SQLTag } from "../SQLTag";
 import { sqlNodePrototype } from "../SQLTag/isSQLNode";
 
@@ -10,7 +11,7 @@ interface When<Params> {
 
 const type = "refql/When";
 
-const prototype = Object.assign ({}, sqlNodePrototype, {
+const prototype = Object.assign ({}, sqlNodePrototype, rqlNodePrototype, {
   constructor: When,
   [refqlType]: type
 });

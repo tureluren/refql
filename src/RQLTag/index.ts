@@ -6,7 +6,8 @@ import { isSQLTag, SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
-import Prop from "../Table/Prop";
+import Eq from "./Eq";
+import Prop from "./Prop";
 import RefNode from "./RefNode";
 
 export interface Next<TableId, Params, Output> {
@@ -138,6 +139,10 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
       caseOfRef (node.joinLateral () as any, node.info, node.single);
     } else if (When.isWhen (node)) {
       extra = extra.concat (sql<Params, Output>`${node}`);
+    } else if (Eq.isEq (node)) {
+      extra = extra.concat (sql`
+        and ${Raw (`${table.name}.${node.prop}`)} = ${node.run}
+      `);
     }
   }
 
