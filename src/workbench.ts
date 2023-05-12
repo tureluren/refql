@@ -1,17 +1,7 @@
 import { Pool } from "pg";
-import { Querier } from "./common/types";
 import { when } from "./common/When";
-import { convertSQLTagResult } from "./SQLTag";
 import sql from "./SQLTag/sql";
-import Table from "./Table";
-import belongsTo from "./Table/belongsTo";
-import belongsToMany from "./Table/belongsToMany";
-import dateProp from "./Table/dateProp";
-import hasMany from "./Table/hasMany";
-import hasOne from "./Table/hasOne";
-import numberProp from "./Table/numberProp";
-import stringProp from "./Table/stringProp";
-import { Game, Goal, League, Player, Rating, Team } from "./test/tables";
+import { Goal, Player, Team } from "./test/tables";
 
 
 const pool = new Pool ({

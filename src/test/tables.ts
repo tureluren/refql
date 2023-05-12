@@ -1,14 +1,13 @@
+import Raw from "../SQLTag/Raw";
+import sql from "../SQLTag/sql";
 import Table from "../Table";
-import RefField from "../RefField";
-import numberProp from "../Table/numberProp";
-import hasMany from "../Table/hasMany";
 import belongsTo from "../Table/belongsTo";
-import stringProp from "../Table/stringProp";
-import hasOne from "../Table/hasOne";
 import belongsToMany from "../Table/belongsToMany";
 import booleanProp from "../Table/booleanField";
-import sql from "../SQLTag/sql";
-import Raw from "../SQLTag/Raw";
+import hasMany from "../Table/hasMany";
+import hasOne from "../Table/hasOne";
+import numberProp from "../Table/numberProp";
+import stringProp from "../Table/stringProp";
 
 const id = numberProp ("id");
 const name = stringProp ("name");
