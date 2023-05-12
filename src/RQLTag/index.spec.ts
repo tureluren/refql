@@ -55,7 +55,7 @@ describe ("RQLTag type", () => {
       `
     ]);
 
-    const [query, values] = tag.compile ({ id: 9 });
+    const [query, values] = tag.compile ({ id: 9, delimiter: " " });
 
     expect (query).toBe (format (`
       select
@@ -68,7 +68,7 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([9]);
 
-    const [player] = await tag ({ id: 9 }, querier);
+    const [player] = await tag ({ id: 9, delimiter: " " }, querier);
 
     expect (player.goalCount).toBeGreaterThan (0);
     expect (Object.keys (player)).toEqual (["fullName", "goalCount"]);
@@ -414,11 +414,11 @@ describe ("RQLTag type", () => {
   });
 
   test ("By id - using Eq", async () => {
-    const { eq } = Player;
+    const { id } = Player.props;
 
     const tag = Player ([
       "*",
-      eq ("id")<{ id: number }> (p => p.id)
+      id.eq<{ id: number }> (p => p.id)
     ]);
 
     const players = await tag ({ id: 9 }, querier);
@@ -429,11 +429,11 @@ describe ("RQLTag type", () => {
   });
 
   test ("By team-id - using Eq", async () => {
-    const { eq } = Player;
+    const { teamId } = Player.props;
 
     const tag = Player ([
       "*",
-      eq ("teamId") (2)
+      teamId.eq (2)
     ]);
 
     const players = await tag ({}, querier);
@@ -441,6 +441,26 @@ describe ("RQLTag type", () => {
 
     expect (player.teamId).toBe (2);
     expect (players.length).toBe (11);
+  });
+
+  test ("By full-name - using Eq", async () => {
+    const { fullName } = Player.props;
+
+    const tag = Player ([
+      "id",
+      fullName.eq<{ name: string }> (p => p.name)
+    ]);
+
+    const [query, values] = await tag.compile ({ name: "John Doe", delimiter: " " });
+
+    expect (query).toBe (format (`
+      select player.id "id"
+      from player
+      where 1 = 1
+      and concat (player.first_name, ' ', player.last_name) = $1
+    `));
+
+    expect (values).toEqual (["John Doe"]);
   });
 
   test ("No record found", async () => {
@@ -453,7 +473,7 @@ describe ("RQLTag type", () => {
       `
     ]);
 
-    const players = await tag ({}, querier);
+    const players = await tag (undefined as any, querier);
 
     expect (players.length).toBe (0);
   });
@@ -489,6 +509,12 @@ describe ("RQLTag type", () => {
 
     expect (() => Player ({} as any))
       .toThrowError (new Error ("Invalid components: not an Array"));
+
+    let tag = Player (["*"]);
+    tag.nodes = [1] as any;
+
+    expect (() => tag.compile ({}))
+      .toThrowError (new Error ('Unknown RQLNode Type: "1"'));
   });
 
   test ("database error", async () => {

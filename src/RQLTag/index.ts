@@ -140,9 +140,17 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
     } else if (When.isWhen (node)) {
       extra = extra.concat (sql<Params, Output>`${node}`);
     } else if (Eq.isEq (node)) {
-      extra = extra.concat (sql`
-        and ${Raw (`${table.name}.${node.prop}`)} = ${node.run}
-      `);
+      if (isSQLTag (node.prop)) {
+        extra = extra.concat (sql`
+          and ${node.prop} = ${node.run}
+        `);
+      } else {
+        extra = extra.concat (sql`
+          and ${Raw (`${table.name}.${node.prop}`)} = ${node.run}
+        `);
+      }
+    } else {
+      throw new Error (`Unknown RQLNode Type: "${String (node)}"`);
     }
   }
 

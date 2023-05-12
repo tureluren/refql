@@ -13,7 +13,7 @@ describe ("RQLNodes", () => {
   });
 
   test ("is Eq", () => {
-    expect (Eq.isEq (Eq<typeof Player["props"], "id", {}> ("id", 1))).toBe (true);
+    expect (Eq.isEq (Eq ("id", 1))).toBe (true);
     expect (Eq.isEq ("Eq")).toBe (false);
   });
 

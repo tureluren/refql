@@ -1,8 +1,7 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { OnlyStringColProps, Output, Params, Querier, RQLNode, Selectable, TagFunctionVariable } from "../common/types";
+import { Output, Params, Querier, RQLNode, Selectable } from "../common/types";
 import validateTable from "../common/validateTable";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
-import Eq from "../RQLTag/Eq";
 import isRQLNode from "../RQLTag/isRQLNode";
 import Prop from "../RQLTag/Prop";
 import RefNode from "../RQLTag/RefNode";
@@ -20,7 +19,6 @@ interface Table<TableId extends string = any, Props = {}> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
-  eq<P extends keyof OnlyStringColProps<Props>>(prop: P): <Params>(run: TagFunctionVariable<Params, OnlyStringColProps<Props>[P]["type"]> | OnlyStringColProps<Props>[P]["type"]) => Eq<Props, P, Params>;
 }
 
 const type = "refql/Table";
@@ -30,8 +28,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   [refqlType]: type,
   equals, [flEquals]: equals,
   empty, [flEmpty]: empty,
-  toString,
-  eq
+  toString
 });
 
 function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
@@ -105,12 +102,6 @@ function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = [
   table.props = properties;
 
   return table;
-}
-
-function eq<Name extends string, S, P extends keyof OnlyStringColProps<S>>(this: Table<Name, S>, prop: P) {
-  return <Params>(run: TagFunctionVariable<Params, OnlyStringColProps<S>[P]["type"]>) => {
-    return Eq<S, P, Params> (prop, run);
-  };
 }
 
 function toString<Name extends string, S>(this: Table<Name, S>) {

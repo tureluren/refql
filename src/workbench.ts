@@ -31,15 +31,19 @@ const querier = async (query: string, values: any[]) => {
 
 const whenie = when<{ query: string }> (p => p.query != null) (sql`and last_name = '${p => p.query}'`);
 
-const { eq } = Player;
+const { id, fullName } = Player.props;
+
+// id
 
 const tag = Player ([
   "*",
   Team (["*"]),
-  eq ("id")<{id: number}> (p => p.id)
+  fullName.eq<{fullName: string}> (p => p.fullName)
 ]);
 
-tag ({ id: 10 }, querier).then (res => console.log (res));
+
+// eq ("id");
+tag ({ fullName: "Gussie Dainelli", delimiter: " " }, querier).then (res => console.log (res));
 
 // const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
 //   select id, ${Raw (p => p.firstNameField)}

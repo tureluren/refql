@@ -176,6 +176,8 @@ function interpret<Params, Output>(this: SQLTag<Params, Output>): InterpretedSQL
         pred: (p: Params) => pred2 (p) && pred (p),
         run
       })));
+    } else {
+      throw new Error (`Unknown SQLNode Type: "${String (node)}"`);
     }
   }
 

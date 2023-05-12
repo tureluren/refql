@@ -8,6 +8,7 @@ import hasOne from "../Table/hasOne";
 import belongsToMany from "../Table/belongsToMany";
 import booleanProp from "../Table/booleanField";
 import sql from "../SQLTag/sql";
+import Raw from "../SQLTag/Raw";
 
 const id = numberProp ("id");
 const name = stringProp ("name");
@@ -46,8 +47,8 @@ const Player = Table ("player", [
   id,
   stringProp ("firstName", "first_name"),
   stringProp ("lastName", "last_name"),
-  stringProp ("fullName", sql<{}>`
-    concat (player.first_name, ' ', player.last_name)
+  stringProp ("fullName", sql<{ delimiter: string }>`
+    concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
   `),
   numberProp ("goalCount", sql<{}>`
     select count (*)::int from goal

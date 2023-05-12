@@ -3,7 +3,7 @@ import mySQL from "mysql2";
 import pg from "pg";
 import { convertSQLTagResult, createSQLTag, isSQLTag } from ".";
 import { flConcat } from "../common/consts";
-import { OnlyStringColProps, Querier, StringMap } from "../common/types";
+import { OnlyStringColProps, Querier, SQLTagVariable, StringMap } from "../common/types";
 import When from "../common/When";
 import Table from "../Table";
 import format from "../test/format";
@@ -13,7 +13,7 @@ import pgQuerier from "../test/pgQuerier";
 import { Player, Team } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Raw from "./Raw";
-import sql from "./sql";
+import sql, { parse } from "./sql";
 import Values from "./Values";
 import Values2D from "./Values2D";
 
@@ -46,6 +46,31 @@ describe ("SQLTag type", () => {
     expect (tag.interpreted).toBe (undefined);
     expect (isSQLTag (tag)).toBe (true);
     expect (isSQLTag ({})).toBe (false);
+  });
+
+  test ("create sql with default querier", async () => {
+    const sql2 = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) => {
+      const nodes = parse <Params, Output> (strings, variables);
+      return createSQLTag<Params, Output> (nodes, querier);
+    };
+
+    const tag = sql2<{}, { id: number; first_name: string }[]>`
+      select id, first_name,
+    `;
+
+    const tag2 = sql2<{}, { last_name: string }[]>`
+      last_name
+      from player
+      limit 1
+    `;
+
+    const tag3 = tag.concat (tag2);
+
+    const players = await tag3 ();
+
+    expect (players.length).toBe (1);
+
+    expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
   });
 
   test ("Semigroup", () => {
@@ -366,6 +391,12 @@ describe ("SQLTag type", () => {
   test ("compile errors", () => {
     expect (() => sql`select ${Player (["*"])}`.compile ({}))
       .toThrowError (new Error ("U can't use RQLTags inside SQLTags"));
+
+    let tag = sql`select * from player`;
+    tag.nodes = [1] as any;
+
+    expect (() => tag.compile ({}))
+      .toThrowError (new Error ('Unknown SQLNode Type: "1"'));
   });
 
   test ("convert result", async () => {
