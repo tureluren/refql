@@ -57,7 +57,7 @@ const Player = Table ("player", [
   stringProp ("cars").arrayOf (),
   stringProp ("birthday"),
   numberProp ("teamId", "team_id").nullable (),
-  belongsTo ("team", "public.team"),
+  belongsTo ("team", "public.team").nullable (),
   numberProp ("positionId", "position_id"),
   belongsTo ("position", "position"),
   hasOne ("rating", "rating"),

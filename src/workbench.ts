@@ -11,7 +11,7 @@ import hasMany from "./Table/hasMany";
 import hasOne from "./Table/hasOne";
 import numberProp from "./Table/numberProp";
 import stringProp from "./Table/stringProp";
-import { Game, League, Player, Rating, Team } from "./test/tables";
+import { Game, Goal, League, Player, Rating, Team } from "./test/tables";
 
 
 const pool = new Pool ({
@@ -38,12 +38,13 @@ const { id, fullName } = Player.props;
 const tag = Player ([
   "*",
   Team (["*"]),
+  Goal (["*"]),
   fullName.eq<{fullName: string}> (p => p.fullName)
 ]);
 
 
 // eq ("id");
-tag ({ fullName: "Gussie Dainelli", delimiter: " " }, querier).then (res => console.log (res));
+tag ({ fullName: "Gussie Dainelli", delimiter: " " }, querier).then (res => console.log (res[0]));
 
 // const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
 //   select id, ${Raw (p => p.firstNameField)}

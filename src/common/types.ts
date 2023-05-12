@@ -58,7 +58,7 @@ export type OnlyStringColProps<T> = {
   [K in keyof T as T[K] extends Prop ? T[K]["col"] extends SQLTag ? never : K : never]: T[K] extends Prop ? T[K]["col"] extends SQLTag ? never : T[K] : never
 };
 
-export type OnlyRefProps<T> = Only<T, RefProp>;
+export type OnlyRefProps<T> = Only<T, RefProp<any, any, any, true | false>>;
 
 export type TableIdMap<T extends { [key: string]: { tableId: string }}> = {
   [K in keyof T as T[K]["tableId"]]: T[K]
@@ -129,10 +129,10 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
     : U extends Props[keyof Props]
       ? {as: U["as"]; type: U["type"]}
       : U extends RQLTag<RefProps[keyof RefProps]["tableId"], any, any>
-        ? TableIds[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne">
-          ? {as: TableIds[U["tableId"]]["as"]; type: U["type"][0]}
-          : TableIds[U["tableId"]] extends RefProp<any, any, "HasMany" | "BelongsToMany">
-            ? {as: TableIds[U["tableId"]]["as"]; type: U["type"]}
+        ? TableIds[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne", true | false>
+          ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["type"][0] | null : U["type"][0]}
+          : TableIds[U["tableId"]] extends RefProp<any, any, "HasMany" | "BelongsToMany", true | false>
+            ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["type"] | null : U["type"]}
             : never
         : never)[]
   : never;

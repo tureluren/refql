@@ -31,7 +31,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table<TableId extends string = any, Props extends(Prop | RefProp)[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
+function Table<TableId extends string = any, Props extends(Prop | RefProp<any, any, any, true | false>)[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
   validateTable (name);
 
   if (!Array.isArray (props)) {
