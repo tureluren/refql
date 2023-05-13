@@ -23,18 +23,17 @@ const whenie = when<{ query: string }> (p => p.query != null) (sql`and last_name
 
 const { id, fullName } = Player.props;
 
-// id
 
 const tag = Player ([
   "*",
   Team (["*"]),
   Goal (["*"]),
-  fullName.eq<{fullName: string}> (p => p.fullName)
+  id.eq<{ id: number }> (p => p.id)
 ]);
 
 
 // eq ("id");
-tag ({ fullName: "Gussie Dainelli", delimiter: " " }, querier).then (res => console.log (res[0]));
+tag ({ }, querier).then (res => console.log (res[0]));
 
 // const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
 //   select id, ${Raw (p => p.firstNameField)}
@@ -55,3 +54,15 @@ tag ({ fullName: "Gussie Dainelli", delimiter: " " }, querier).then (res => cons
 
 
 // combined ({ firstNameField: "first_name", limit: 2 }, querier).fork (console.log, console.log);
+
+// const tag1 = sql`
+//   select * from player
+// `;
+
+// const tag2 = sql<{ id: number }>`
+//   where id = 1
+// `;
+
+// const tag3 = tag1.concat (tag2);
+
+// tag3 ({ id: 1 }, querier).then (res => console.log (res));

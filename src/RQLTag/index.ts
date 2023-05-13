@@ -167,7 +167,7 @@ function compile<As, Params, Output>(this: RQLTag<As, Params, Output>, params: P
     const { tag, extra, next } = this.interpret ();
 
     this.interpreted = {
-      tag: tag.concat (sql`where 1 = 1`).concat (extra),
+      tag: tag.concat (sql`where 1 = 1`).concat (extra) as any,
       next
     };
   }

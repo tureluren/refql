@@ -10,7 +10,7 @@ interface Prop<As extends string = any, Type = unknown, Params = any> {
   type: Type;
   arrayOf(): Prop<As, Type[]>;
   nullable(): Prop<As, Type | null>;
-  eq<Params2>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Type, Params extends Record<any, any> ? Params & Params2 : Params>;
+  eq<Params2>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Type, Params extends Record<any, any> ? Params & Params2 : Params2>;
 }
 
 const type = "refql/Prop";
