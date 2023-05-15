@@ -3,6 +3,7 @@ import { RQLTag } from "../RQLTag";
 import Eq from "../RQLTag/Eq";
 import Prop from "../RQLTag/Prop";
 import RefNode from "../RQLTag/RefNode";
+import SQLProp from "../RQLTag/SQLProp";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import Value from "../SQLTag/Value";
@@ -54,9 +55,9 @@ export type Only<T, S> = {
 
 export type OnlyProps<T> = Only<T, Prop>;
 
-export type OnlyStringColProps<T> = {
-  [K in keyof T as T[K] extends Prop ? T[K]["col"] extends SQLTag ? never : K : never]: T[K] extends Prop ? T[K]["col"] extends SQLTag ? never : T[K] : never
-};
+export type OnlySQLProps<T> = Only<T, SQLProp>;
+
+export type OnlyPropsOrSQLProps<T> = Only<T, Prop | SQLProp>;
 
 export type OnlyRefProps<T> = Only<T, RefProp<any, any, any, true | false>>;
 
@@ -91,38 +92,34 @@ export type AllSign = "*";
 
 export type Selectable<T> =
   | AllSign
-  | keyof OnlyProps<T>
-  | OnlyProps<T>[keyof OnlyProps<T>]
-  | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any>
+  | keyof OnlyPropsOrSQLProps<T>
+  | OnlyPropsOrSQLProps<T>[keyof OnlyPropsOrSQLProps<T>]
+  | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
   | SQLTag
   | When<any>
   | Eq<any>;
 
-export type SQLTagObjects<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>> = T extends (infer U)[]
-  ? (U extends (SQLTag | Eq<any>)
+export type SQLTagObjects<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
+  ? (U extends (SQLTag | Eq<any> | RQLTag<any, any, any>)
     ? U
-    : U extends Prop
-      ? U["col"] extends SQLTag
-        ? U["col"]
-        : never
-      : U extends keyof Props
-        ? Props[U]["col"] extends SQLTag
-          ? Props[U]["col"]
-          : never
+    : U extends SQLProp
+      ? U["col"]
+      : U extends keyof SQLProps
+        ? SQLProps[U]["col"]
         : U extends When<any>
           ? U["tag"]
-          : never)[]
-  : never;
+          : { params: {}})[]
+  : {params: {}};
 
 export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<SQLTagObjects<S, T>[number]["params"]>;
 
 export type IsAllSignSelected<S, Components extends Selectable<S>[]> = AllSign extends Components[number] ? true : false;
 
 export type FinalComponents<Props, Components extends Selectable<Props>[], > = IsAllSignSelected<Props, Components> extends true
-  ? [keyof OnlyStringColProps<Props>, ...Components]
+  ? [keyof OnlyProps<Props>, ...Components]
   : Components;
 
-export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
+export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLProps<S> = OnlyPropsOrSQLProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
   FinalComponents<S, T> extends (infer U)[]
   ? (U extends keyof Props
     ? {as: U; type: Props[U]["type"]}
@@ -137,4 +134,4 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
         : never)[]
   : never;
 
-export type RQLNode = Prop | SQLTag | RefNode<any, any> | When<any> | Eq<any>;
+export type RQLNode = Prop | SQLProp | SQLTag | RefNode<any, any> | When<any> | Eq<any>;

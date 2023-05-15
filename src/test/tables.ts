@@ -3,7 +3,7 @@ import sql from "../SQLTag/sql";
 import Table from "../Table";
 import belongsTo from "../Table/belongsTo";
 import belongsToMany from "../Table/belongsToMany";
-import booleanProp from "../Table/booleanField";
+import booleanProp from "../Table/booleanProp";
 import hasMany from "../Table/hasMany";
 import hasOne from "../Table/hasOne";
 import numberProp from "../Table/numberProp";
@@ -49,7 +49,7 @@ const Player = Table ("player", [
   stringProp ("fullName", sql<{ delimiter: string }>`
     concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
   `),
-  numberProp ("goalCount", sql<{}>`
+  numberProp ("goalCount", sql`
     select count (*)::int from goal
     where goal.player_id = player.id
   `),

@@ -9,6 +9,7 @@ import Table from "../Table";
 import Eq from "./Eq";
 import Prop from "./Prop";
 import RefNode from "./RefNode";
+import SQLProp from "./SQLProp";
 
 export interface Next<TableId, Params, Output> {
   tag: RQLTag<TableId, Params & RefQLRows, Output>;
@@ -25,9 +26,10 @@ interface Extra<Params, Output> {
   extra: SQLTag<Params, Output>;
 }
 
-export interface RQLTag<TableId, Params, Output> {
+export interface RQLTag<TableId, Params = any, Output = any> {
   (params: Params, querier?: Querier): Promise<Output>;
   tableId: TableId;
+  params: Params;
   type: Output;
   table: Table<any, any>;
   nodes: RQLNode[];
@@ -56,7 +58,7 @@ let prototype = {
 
 export function createRQLTag<TableId extends string, Params, Output>(table: Table<TableId, any>, nodes: RQLNode[], defaultQuerier?: Querier) {
 
-  const tag = ((params: Params = {} as Params, querier?: Querier) => {
+  const tag = ((params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
     }
@@ -124,15 +126,13 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
 
   for (const node of nodes) {
     if (Prop.isProp (node)) {
-      if (isSQLTag (node.col)) {
-        members.push (sql`
-          (${node.col as any}) ${Raw (`"${node.as}"`)}
-        ` as any);
-      } else {
         members.push (
           Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
         );
-      }
+    } else if (SQLProp.isSQLProp (node)) {
+      members.push (sql`
+        (${node.col as any}) ${Raw (`"${node.as}"`)}` as any
+      );
     } else if (isSQLTag (node)) {
       extra = extra.concat (node);
     } else if (RefNode.isRefNode (node)) {

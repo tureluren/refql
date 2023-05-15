@@ -1,16 +1,18 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
-import { SQLTag } from "../SQLTag";
 import Eq from "./Eq";
 import { rqlNodePrototype } from "./isRQLNode";
+import PropType from "./PropType";
 
-interface Prop<As extends string = any, Type = unknown, Params = any> {
+
+interface Prop<As extends string = any, Type = unknown> {
   as: As;
-  col: Params extends Record<any, any> ? SQLTag<Params> : string | undefined;
+  col?: string;
   type: Type;
   arrayOf(): Prop<As, Type[]>;
   nullable(): Prop<As, Type | null>;
-  eq<Params2>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Type, Params extends Record<any, any> ? Params & Params2 : Params2>;
+  eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Type, Params2>;
+  [PropType]: true;
 }
 
 const type = "refql/Prop";
@@ -18,29 +20,26 @@ const type = "refql/Prop";
 const prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: Prop,
   [refqlType]: type,
-  arrayOf,
+  arrayOf: nullable,
   nullable,
-  eq
+  eq,
+  [PropType]: true
 });
 
-function Prop<As extends string, Type = unknown, Params = any>(as: As, col?: SQLTag<Params> | string) {
-  let prop: Prop<As, Type, Params> = Object.create (prototype);
+function Prop<As extends string, Type = unknown>(as: As, col?: string) {
+  let prop: Prop<As, Type> = Object.create (prototype);
 
   prop.as = as;
-  prop.col = col as Params extends Record<any, any> ? SQLTag<Params> : string;
+  prop.col = col;
 
   return prop;
 }
 
-function arrayOf<As extends string, Type = unknown, Params = any>(this: Prop<As, Type, Params>) {
-  return Prop<As, Type[], Params> (this.as, this.col);
+function nullable(this: Prop) {
+  return Prop (this.as, this.col);
 }
 
-function nullable<As extends string, Type = unknown, Params = any>(this: Prop<As, Type, Params>) {
-  return Prop<As, Type | null, Params> (this.as, this.col);
-}
-
-function eq<As extends string, Type = unknown, Params = any, Params2 = any>(this: Prop<As, Type, Params>, run: TagFunctionVariable<Params2, Type> | Type) {
+function eq(this: Prop, run: any) {
   return Eq<any> (this.col || this.as, run);
 }
 

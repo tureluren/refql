@@ -4,6 +4,7 @@ import validateTable from "../common/validateTable";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import isRQLNode from "../RQLTag/isRQLNode";
 import Prop from "../RQLTag/Prop";
+import PropType from "../RQLTag/PropType";
 import RefNode from "../RQLTag/RefNode";
 import { isSQLTag } from "../SQLTag";
 import RefProp from "./RefProp";
@@ -31,7 +32,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table<TableId extends string = any, Props extends(Prop | RefProp<any, any, any, true | false>)[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
+function Table<TableId extends string = any, Props extends { [PropType]: true; as: string }[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
   validateTable (name);
 
   if (!Array.isArray (props)) {

@@ -233,7 +233,7 @@ class Task<Output> {
 const promiseToTask = <Output>(p: Promise<Output>) =>
   new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
-const sql = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
+const sql = <Params = {}, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
   const nodes = parse <Params, Output, "Task"> (strings, variables);
   return SQLTag (nodes, defaultQuerier, promiseToTask);
 };

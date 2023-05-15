@@ -1,7 +1,8 @@
 import { Pool } from "pg";
 import { when } from "./common/When";
+import PropType from "./RQLTag/PropType";
 import sql from "./SQLTag/sql";
-import { Goal, Player, Team } from "./test/tables";
+import { Goal, League, Player, Team } from "./test/tables";
 
 
 const pool = new Pool ({
@@ -21,19 +22,26 @@ const querier = async (query: string, values: any[]) => {
 
 const whenie = when<{ query: string }> (p => p.query != null) (sql`and last_name = '${p => p.query}'`);
 
-const { id, fullName } = Player.props;
+const { id, lastName, fullName, goalCount } = Player.props;
 
+const teamie = Team (["*",
+    Team.props.name.eq<{ name: string }> (p => p.name)
+]);
+
+const goals = Goal (["*"]);
 
 const tag = Player ([
-  "*",
-  Team (["*"]),
-  Goal (["*"]),
-  id.eq<{ id: number }> (p => p.id)
+  "firstName",
+  "goalCount",
+  sql<{id: number }>``,
+  teamie
+
+  // teamie
 ]);
 
 
 // eq ("id");
-tag ({ }, querier).then (res => console.log (res[0]));
+tag ({ id: 2, name: "any" }, querier).then (res => console.log (res[0]));
 
 // const simpleTag = sql<{firstNameField: string}, { id: number; first_name: string}[]>`
 //   select id, ${Raw (p => p.firstNameField)}

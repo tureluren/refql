@@ -1,7 +1,14 @@
 import Prop from "../RQLTag/Prop";
-import { SQLTag } from "../SQLTag";
+import SQLProp from "../RQLTag/SQLProp";
+import { isSQLTag, SQLTag } from "../SQLTag";
 
-const stringProp = <As extends string, Params> (as: As, col?: string | SQLTag<Params>) =>
-  Prop<As, string, Params> (as, col);
+function stringProp <As extends string, Params>(as: As, col: SQLTag<Params>): SQLProp<As, string, Params>;
+function stringProp <As extends string>(as: As, col?: string): Prop<As, string>;
+function stringProp <As extends string>(as: As, col?: unknown): unknown {
+  if (isSQLTag (col)) {
+    return SQLProp (as, col as any);
+  }
+  return Prop (as, col as any);
+}
 
 export default stringProp;

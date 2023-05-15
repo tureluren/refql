@@ -3,7 +3,7 @@ import mySQL from "mysql2";
 import pg from "pg";
 import { convertSQLTagResult, createSQLTag, isSQLTag } from ".";
 import { flConcat } from "../common/consts";
-import { OnlyStringColProps, Querier, SQLTagVariable, StringMap } from "../common/types";
+import { OnlyProps, Querier, SQLTagVariable, StringMap } from "../common/types";
 import When from "../common/When";
 import Table from "../Table";
 import format from "../test/format";
@@ -49,7 +49,7 @@ describe ("SQLTag type", () => {
   });
 
   test ("create sql with default querier", async () => {
-    const sql2 = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) => {
+    const sql2 = <Params = {}, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) => {
       const nodes = parse <Params, Output> (strings, variables);
       return createSQLTag<Params, Output> (nodes, querier);
     };
@@ -130,7 +130,7 @@ describe ("SQLTag type", () => {
   });
 
   test ("Values", async () => {
-    const tag = sql<{ids: number[]}, OnlyStringColProps<typeof Player["props"]>[]>`
+    const tag = sql<{ids: number[]}, OnlyProps<typeof Player["props"]>[]>`
       select id, first_name "firstName", ${rawLastName}
       from player
       where id in ${Values (p => p.ids)}

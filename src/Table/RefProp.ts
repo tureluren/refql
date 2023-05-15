@@ -1,6 +1,7 @@
 import Table from ".";
 import { refqlType } from "../common/consts";
 import { RefInput, RefNodeInput, RelType } from "../common/types";
+import PropType from "../RQLTag/PropType";
 import validateRefInput from "./validateRefInput";
 
 interface RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any, Nullable extends boolean = false> {
@@ -11,6 +12,7 @@ interface RefProp<As extends string = any, TableId extends string = any, Rel ext
   child: Table;
   isNullable: Nullable;
   nullable(): RefProp<As, TableId, Rel, true>;
+  [PropType]: true;
 }
 
 const type = "refql/RefProp";
@@ -18,7 +20,8 @@ const type = "refql/RefProp";
 const prototype = {
   constructor: RefProp,
   [refqlType]: type,
-  nullable
+  nullable,
+  [PropType]: true
 };
 
 function RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any, Nullable extends boolean = false>(as: As, tableId: TableId, rel: Rel, refInput: Rel extends "BelongsToMany" ? RefInput : RefNodeInput, isNullable: Nullable) {

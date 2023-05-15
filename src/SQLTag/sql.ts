@@ -47,7 +47,7 @@ export function parse<Params, Output>(strings: TemplateStringsArray, variables: 
   return nodes;
 }
 
-function sql <Params = unknown, Output = unknown>(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) {
+function sql <Params = {}, Output = unknown>(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) {
   const nodes = parse<Params, Output> (strings, variables);
   return createSQLTag<Params, Output> (nodes);
 }
