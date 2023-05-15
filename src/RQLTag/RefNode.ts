@@ -9,7 +9,7 @@ import Table from "../Table";
 import RefProp from "../Table/RefProp";
 import { rqlNodePrototype } from "./isRQLNode";
 
-interface RefNode<Params, Output> {
+interface RefNode<Params = any, Output = any> {
   joinLateral(): RQLTag<any, Params, Output>;
   tag: RQLTag<any, Params, Output>;
   info: RefInfo<any>;
@@ -87,13 +87,13 @@ function RefNode<Params, Output>(tag: RQLTag<any, Params, Output>, refProp: RefP
   return refNode;
 }
 
-function joinLateral<Params, Output>(this: RefNode<Params, Output>) {
+function joinLateral(this: RefNode) {
 
   if (this.info.xTable) {
     const { tag, next, extra } = this.tag.interpret ();
     const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info as Required<RefInfo<any>>;
 
-    const l1 = sql<Params & RefQLRows, Output>`
+    const l1 = sql<RefQLRows>`
       select distinct ${Raw (lRef)}
       from ${Raw (parent)}
       where ${Raw (lRef.name)}
@@ -101,13 +101,13 @@ function joinLateral<Params, Output>(this: RefNode<Params, Output>) {
     `;
 
     const l2 = tag
-      .concat (sql<Params, Output>`
+      .concat (sql`
         join ${Raw (`${xTable} on ${rxRef.name} = ${rRef.name}`)}
         where ${Raw (`${lxRef.name} = refqll1.${lRef.as}`)}
       `)
       .concat (extra);
 
-    const joined = sql<Params, Output>`
+    const joined = sql`
       select * from (${l1}) refqll1,
       lateral (${l2}) refqll2
     `;
@@ -120,7 +120,7 @@ function joinLateral<Params, Output>(this: RefNode<Params, Output>) {
     const { tag, next, extra } = this.tag.interpret ();
     const { rRef, lRef, parent } = this.info;
 
-    const l1 = sql<Params & RefQLRows, Output>`
+    const l1 = sql<RefQLRows>`
       select distinct ${Raw (lRef)}
       from ${Raw (parent)}
       where ${Raw (lRef.name)}
@@ -133,7 +133,7 @@ function joinLateral<Params, Output>(this: RefNode<Params, Output>) {
       `)
       .concat (extra);
 
-    const joined = sql<Params, Output>`
+    const joined = sql`
       select * from (${l1}) refqll1,
       lateral (${l2}) refqll2
     `;

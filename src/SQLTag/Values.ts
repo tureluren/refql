@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { TagFunctionVariable, ValueType } from "../common/types";
 import { sqlNodePrototype } from "./isSQLNode";
 
-interface Values<Params> {
+interface Values<Params = any> {
   run: TagFunctionVariable<Params, ValueType[]>;
 }
 
@@ -23,5 +23,8 @@ function Values<Params>(run: ValueType[] | TagFunctionVariable<Params, any[]>) {
 Values.isValues = function <Params> (x: any): x is Values<Params> {
   return x != null && x[refqlType] === type;
 };
+
+export const values = <Params>(run: ValueType[] | TagFunctionVariable<Params, any[]>) =>
+  Values (run);
 
 export default Values;

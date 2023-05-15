@@ -1,6 +1,6 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
-import { Querier, SQLNode, TagFunctionVariable } from "../common/types";
+import { Querier, SQLNode, StringMap, TagFunctionVariable } from "../common/types";
 import When from "../common/When";
 import { rqlNodePrototype } from "../RQLTag/isRQLNode";
 import Raw from "./Raw";
@@ -8,17 +8,17 @@ import Value from "./Value";
 import Values from "./Values";
 import Values2D from "./Values2D";
 
-type InterpretedString<Params> = {
+type InterpretedString<Params = any> = {
   pred: TagFunctionVariable<Params, boolean>;
   run: (params: Params, idx: number) => [string, number];
 };
 
-type InterpretedValue<Params> = {
+type InterpretedValue<Params = any> = {
   pred: TagFunctionVariable<Params, boolean>;
   run: TagFunctionVariable<Params>;
 };
 
-interface InterpretedSQLTag<Params> {
+interface InterpretedSQLTag<Params = any> {
   strings: InterpretedString<Params>[];
   values: InterpretedValue<Params>[];
 }
@@ -73,25 +73,25 @@ export function createSQLTag<Params, Output>(nodes: SQLNode<Params>[], defaultQu
   return tag;
 }
 
-function join<Params, Output>(this: SQLTag<Params, Output>, delimiter: string, other: SQLTag<Params, Output>) {
+function join(this: SQLTag, delimiter: string, other: SQLTag) {
   if (isEmptyTag (this)) return other;
   if (isEmptyTag (other)) return this;
 
   return createSQLTag (
-    this.nodes.concat (Raw<Params> (delimiter), ...other.nodes),
+    this.nodes.concat (Raw (delimiter), ...other.nodes),
     this.defaultQuerier
   );
 }
 
-function concat<Params, Output>(this: SQLTag<Params, Output>, other: SQLTag<Params, Output>) {
+function concat(this: SQLTag, other: SQLTag) {
   return this.join (" ", other);
 }
 
 const truePred = () => true;
 
-function interpret<Params, Output>(this: SQLTag<Params, Output>): InterpretedSQLTag<Params> {
-  const strings = [] as InterpretedString<Params>[],
-    values = [] as InterpretedValue<Params>[];
+function interpret(this: SQLTag): InterpretedSQLTag {
+  const strings = [] as InterpretedString[],
+    values = [] as InterpretedValue[];
 
   for (const [idx, node] of this.nodes.entries ()) {
     if (Raw.isRaw (node)) {
@@ -102,7 +102,7 @@ function interpret<Params, Output>(this: SQLTag<Params, Output>): InterpretedSQL
         pred: truePred,
         run: (p, _i) => {
           let s = run (p);
-          if (When.isWhen<Params> (nextNode) && !nextNode.pred (p)) {
+          if (When.isWhen (nextNode) && !nextNode.pred (p)) {
             s = s.trimEnd ();
           }
           return [s, 0];
@@ -168,12 +168,12 @@ function interpret<Params, Output>(this: SQLTag<Params, Output>): InterpretedSQL
       const { strings: strings2, values: values2 } = tag.interpret ();
 
       strings.push (...strings2.map (({ run, pred }) => ({
-        pred: (p: Params) => pred2 (p) && pred (p),
+        pred: (p: StringMap) => pred2 (p) && pred (p),
         run
       })));
 
       values.push (...values2.map (({ run, pred }) => ({
-        pred: (p: Params) => pred2 (p) && pred (p),
+        pred: (p: StringMap) => pred2 (p) && pred (p),
         run
       })));
     } else {
@@ -184,7 +184,7 @@ function interpret<Params, Output>(this: SQLTag<Params, Output>): InterpretedSQL
   return { strings, values };
 }
 
-function compile<Params, Output>(this: SQLTag<Params, Output>, params: Params) {
+function compile(this: SQLTag, params: StringMap) {
   if (!this.interpreted) {
     this.interpreted = this.interpret ();
   }

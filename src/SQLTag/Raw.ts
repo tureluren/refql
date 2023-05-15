@@ -3,7 +3,7 @@ import { TagFunctionVariable, ValueType } from "../common/types";
 import Table from "../Table";
 import { sqlNodePrototype } from "./isSQLNode";
 
-interface Raw<Params> {
+interface Raw<Params = any> {
   run: TagFunctionVariable<Params, string>;
   map(f: (x: ValueType) => ValueType): Raw<Params>;
   [flMap]: Raw<Params>["map"];
@@ -28,8 +28,8 @@ function Raw<Params>(run: ValueType | TagFunctionVariable<Params>) {
   return raw;
 }
 
-function map<Params>(this: Raw<Params>, f: (x: ValueType) => ValueType) {
-  return Raw<Params> (p => {
+function map(this: Raw, f: (x: ValueType) => ValueType) {
+  return Raw (p => {
     return f (this.run (p));
   });
 }
@@ -37,5 +37,8 @@ function map<Params>(this: Raw<Params>, f: (x: ValueType) => ValueType) {
 Raw.isRaw = function<Params> (x: any): x is Raw<Params> {
   return x != null && x[refqlType] === type;
 };
+
+export const raw = <Params>(run: ValueType | TagFunctionVariable<Params>) =>
+  Raw (run);
 
 export default Raw;

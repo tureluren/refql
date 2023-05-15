@@ -16,7 +16,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   [refqlType]: type
 });
 
-function Eq<Prop extends string, Type = unknown, Params = any>(prop: Prop, run: TagFunctionVariable<Params, Type> | Type) {
+function Eq<Prop extends string, Type, Params>(prop: Prop, run: TagFunctionVariable<Params, Type> | Type) {
   let eq: Eq<Prop, Type, Params> = Object.create (prototype);
 
   eq.prop = prop;
@@ -28,7 +28,7 @@ function Eq<Prop extends string, Type = unknown, Params = any>(prop: Prop, run: 
   return eq;
 }
 
-Eq.isEq = function <Prop extends string, Type = unknown, Params = any> (x: any): x is Eq<Prop, Type, Params> {
+Eq.isEq = function <Prop extends string, Type, Params> (x: any): x is Eq<Prop, Type, Params> {
   return x != null && x[refqlType] === type;
 };
 

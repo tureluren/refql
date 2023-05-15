@@ -1,6 +1,6 @@
 import { flConcat, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows, RQLNode } from "../common/types";
+import { Querier, RefInfo, RefQLRows, RQLNode, StringMap } from "../common/types";
 import When from "../common/When";
 import { isSQLTag, SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
@@ -11,22 +11,22 @@ import Prop from "./Prop";
 import RefNode from "./RefNode";
 import SQLProp from "./SQLProp";
 
-export interface Next<TableId, Params, Output> {
+export interface Next<TableId = any, Params = any, Output = any> {
   tag: RQLTag<TableId, Params & RefQLRows, Output>;
   link: [string, string];
   single: boolean;
 }
 
-interface InterpretedRQLTag<TableId, Params, Output> {
+interface InterpretedRQLTag<TableId = any, Params = any, Output = any> {
   tag: SQLTag<Params, Output>;
   next: Next<TableId, Params, Output>[];
 }
 
-interface Extra<Params, Output> {
+interface Extra<Params = any, Output = any> {
   extra: SQLTag<Params, Output>;
 }
 
-export interface RQLTag<TableId, Params = any, Output = any> {
+export interface RQLTag<TableId = any, Params = any, Output = any> {
   (params: Params, querier?: Querier): Promise<Output>;
   tableId: TableId;
   params: Params;
@@ -77,11 +77,11 @@ export function createRQLTag<TableId extends string, Params, Output>(table: Tabl
   return tag;
 }
 
-type Deep<Params, Output> = { [tableId: string]: RefNode<Params, Output>} & { nodes: RQLNode[]};
+type Deep = { [tableId: string]: RefNode } & { nodes: RQLNode[]};
 
-const concatDeep = <Params, Output>(nodes: RQLNode[]): Deep<Params, Output> => {
+const concatDeep = (nodes: RQLNode[]): Deep => {
   return nodes.reduce ((acc, node) => {
-    if (RefNode.isRefNode<Params, Output> (node)) {
+    if (RefNode.isRefNode (node)) {
       const { table } = node.tag;
       const id = table.toString ();
 
@@ -94,10 +94,10 @@ const concatDeep = <Params, Output>(nodes: RQLNode[]): Deep<Params, Output> => {
       acc.nodes.push (node);
     }
     return acc;
-  }, { nodes: [] as RQLNode[] } as Deep<Params, Output>);
+  }, { nodes: [] as RQLNode[] } as Deep);
 };
 
-function concat<As, Params, Output>(this: RQLTag<As, Params, Output>, other: RQLTag<As, Params, Output>) {
+function concat(this: RQLTag, other: RQLTag) {
   if (!this.table.equals (other.table)) {
     throw new Error ("U can't concat RQLTags that come from different tables");
   }
@@ -111,14 +111,14 @@ function concat<As, Params, Output>(this: RQLTag<As, Params, Output>, other: RQL
   );
 }
 
-function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): InterpretedRQLTag<As, Params, Output> & Extra<Params, Output> {
+function interpret(this: RQLTag): InterpretedRQLTag & Extra {
   const { nodes, table } = this,
-    next = [] as Next<As, Params, Output>[],
-    members = [] as (Raw<Params> | SQLTag<Params, Output>)[];
+    next = [] as Next[],
+    members = [] as (Raw | SQLTag)[];
 
-  let extra = sql<Params, Output>``;
+  let extra = sql``;
 
-  const caseOfRef = (tag: RQLTag<As, Params & RefQLRows, Output>, info: RefInfo<any>, single: boolean) => {
+  const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     members.push (Raw (info.lRef));
 
     next.push ({ tag, link: [info.as, info.lRef.as], single });
@@ -138,7 +138,7 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
     } else if (RefNode.isRefNode (node)) {
       caseOfRef (node.joinLateral () as any, node.info, node.single);
     } else if (When.isWhen (node)) {
-      extra = extra.concat (sql<Params, Output>`${node}`);
+      extra = extra.concat (sql`${node}`);
     } else if (Eq.isEq (node)) {
       if (isSQLTag (node.prop)) {
         extra = extra.concat (sql`
@@ -154,15 +154,14 @@ function interpret<As, Params, Output>(this: RQLTag<As, Params, Output>): Interp
     }
   }
 
-  let tag = sql<Params, Output>`
+  let tag = sql`
     select ${joinMembers (members as any)}
     from ${Raw (table)}
   `;
   return { next, tag: tag as any, extra: extra as any };
 }
 
-// make compile async to lazy resolve table
-function compile<As, Params, Output>(this: RQLTag<As, Params, Output>, params: Params) {
+function compile(this: RQLTag, params: StringMap) {
   if (!this.interpreted) {
     const { tag, extra, next } = this.interpret ();
 
@@ -178,7 +177,7 @@ function compile<As, Params, Output>(this: RQLTag<As, Params, Output>, params: P
   ];
 }
 
-async function aggregate<As, Params, Output>(this: RQLTag<As, Params, Output>, params: Params, querier: Querier): Promise<any[]> {
+async function aggregate(this: RQLTag, params: StringMap, querier: Querier): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
   const refQLRows = await querier<any> (query, values);

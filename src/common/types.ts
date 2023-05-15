@@ -75,7 +75,7 @@ export interface RefInput {
 
 export type RefNodeInput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;
 
-export interface RefInfo<As extends string> {
+export interface RefInfo<As extends string = any> {
   parent: Table;
   lRef: RefField;
   rRef: RefField;

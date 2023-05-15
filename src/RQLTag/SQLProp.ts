@@ -26,7 +26,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   [PropType]: true
 });
 
-function SQLProp<As extends string, Type = unknown, Params = any>(as: As, col: SQLTag<Params>) {
+function SQLProp<As extends string, Type, Params>(as: As, col: SQLTag<Params>) {
   let sqlProp: SQLProp<As, Type, Params> = Object.create (prototype);
 
   sqlProp.as = as;
