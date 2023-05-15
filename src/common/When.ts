@@ -4,7 +4,7 @@ import { rqlNodePrototype } from "../RQLTag/isRQLNode";
 import { SQLTag } from "../SQLTag";
 import { sqlNodePrototype } from "../SQLTag/isSQLNode";
 
-interface When<Params> {
+interface When<Params = any> {
   pred: TagFunctionVariable<Params, boolean>;
   tag: SQLTag<Params>;
 }

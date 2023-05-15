@@ -96,8 +96,8 @@ export type Selectable<T> =
   | OnlyPropsOrSQLProps<T>[keyof OnlyPropsOrSQLProps<T>]
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
   | SQLTag
-  | When<any>
-  | Eq<any>;
+  | When
+  | Eq;
 
 export type SQLTagObjects<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
   ? (U extends (SQLTag | Eq<any> | RQLTag<any, any, any>)
@@ -125,7 +125,7 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLPro
     ? {as: U; type: Props[U]["type"]}
     : U extends Props[keyof Props]
       ? {as: U["as"]; type: U["type"]}
-      : U extends RQLTag<RefProps[keyof RefProps]["tableId"], any, any>
+      : U extends RQLTag<RefProps[keyof RefProps]["tableId"]>
         ? TableIds[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne", true | false>
           ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["type"][0] | null : U["type"][0]}
           : TableIds[U["tableId"]] extends RefProp<any, any, "HasMany" | "BelongsToMany", true | false>
@@ -134,4 +134,4 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLPro
         : never)[]
   : never;
 
-export type RQLNode = Prop | SQLProp | SQLTag | RefNode<any, any> | When<any> | Eq<any>;
+export type RQLNode = Prop | SQLProp | SQLTag | RefNode | When | Eq;

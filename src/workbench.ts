@@ -34,7 +34,8 @@ const tag = Player ([
   "firstName",
   "goalCount",
   sql<{id: number }>``,
-  teamie
+  teamie,
+  Goal (["*"])
 
   // teamie
 ]);

@@ -40,7 +40,7 @@ function nullable(this: SQLProp) {
 }
 
 function eq(this: SQLProp, run: any) {
-  return Eq<any> (this.col, run);
+  return Eq (this.col, run);
 }
 
 SQLProp.isSQLProp = function (x: any): x is SQLProp {
