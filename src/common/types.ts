@@ -27,7 +27,7 @@ export type ValueType =
   | StringMap;
 
 export type Querier =
-  <T>(query: string, values: ValueType[]) => Promise<T[]>;
+  <T = any>(query: string, values: ValueType[]) => Promise<T[]>;
 
 export interface RefQLRows {
   refQLRows: any[];

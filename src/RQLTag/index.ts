@@ -26,12 +26,12 @@ interface Extra<Params = any, Output = any> {
   extra: SQLTag<Params, Output>;
 }
 
-export interface RQLTag<TableId = any, Params = any, Output = any> {
+export interface RQLTag<TableId extends string = any, Params = any, Output = any> {
   (params?: Params, querier?: Querier): Promise<Output>;
   tableId: TableId;
   params: Params;
   type: Output;
-  table: Table<any, any>;
+  table: Table<TableId>;
   nodes: RQLNode[];
   defaultQuerier?: Querier;
   convertPromise: (p: Promise<Output>) => any;
@@ -180,7 +180,7 @@ function compile(this: RQLTag, params: StringMap) {
 async function aggregate(this: RQLTag, params: StringMap, querier: Querier): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
-  const refQLRows = await querier<any> (query, values);
+  const refQLRows = await querier (query, values);
 
   if (!refQLRows.length) return [];
 

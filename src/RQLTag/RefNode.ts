@@ -88,7 +88,6 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
 }
 
 function joinLateral(this: RefNode) {
-
   if (this.info.xTable) {
     const { tag, next, extra } = this.tag.interpret ();
     const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info as Required<RefInfo<any>>;

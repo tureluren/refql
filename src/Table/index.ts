@@ -32,7 +32,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table<TableId extends string = any, Props extends { [PropType]: true; as: string }[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
+function Table<TableId extends string, Props extends { [PropType]: true; as: string }[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
   validateTable (name);
 
   if (!Array.isArray (props)) {

@@ -4,7 +4,7 @@ import Eq from "./RQLTag/Eq";
 import { isSQLTag } from "./SQLTag";
 import sql from "./SQLTag/sql";
 import numberProp from "./Table/numberProp";
-import { Goal, Player, Team } from "./test/tables";
+import { Goal, League, Player, Team } from "./test/tables";
 
 
 const pool = new Pool ({
