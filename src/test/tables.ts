@@ -53,6 +53,11 @@ const Player = Table ("player", [
     select count (*)::int from goal
     where goal.player_id = player.id
   `),
+  numberProp ("firstGoalId", sql`
+    select id from goal
+    where goal.player_id = player.id
+    limit 1
+  `).nullable (),
   stringProp ("cars").arrayOf (),
   stringProp ("birthday"),
   numberProp ("teamId", "team_id").nullable (),

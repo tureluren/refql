@@ -2,7 +2,6 @@ import RefField from "../RefField";
 import { RQLTag } from "../RQLTag";
 import Eq from "../RQLTag/Eq";
 import Prop from "../RQLTag/Prop";
-import PropType from "../RQLTag/PropType";
 import RefNode from "../RQLTag/RefNode";
 import SelectableType from "../RQLTag/SelectableType";
 import SQLProp from "../RQLTag/SQLProp";
@@ -135,5 +134,3 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLPro
   : never;
 
 export type RQLNode = Prop | SQLProp | SQLTag | RefNode | When | Eq;
-
-export type TablePropType = { [PropType]: true; as: string };

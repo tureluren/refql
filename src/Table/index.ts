@@ -1,9 +1,10 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Output, Params, Querier, RQLNode, Selectable, TablePropType } from "../common/types";
+import { Output, Params, Querier, RQLNode, Selectable } from "../common/types";
 import validateTable from "../common/validateTable";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import isRQLNode from "../RQLTag/isRQLNode";
 import Prop from "../RQLTag/Prop";
+import PropType from "../RQLTag/PropType";
 import RefNode from "../RQLTag/RefNode";
 import { isSQLTag } from "../SQLTag";
 import RefProp from "./RefProp";
@@ -31,7 +32,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table<TableId extends string, Props extends TablePropType[]>(name: TableId, props: Props, defaultQuerier?: Querier) {
+function Table<TableId extends string, Props extends { [PropType]: true; as: string }[]>(name: TableId, props: Props, defaultQuerier?: Querier) {
   validateTable (name);
 
   if (props != null && !Array.isArray (props)) {

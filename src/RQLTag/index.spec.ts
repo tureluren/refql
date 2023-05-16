@@ -50,6 +50,7 @@ describe ("RQLTag type", () => {
     const tag = Player ([
       "fullName",
       "goalCount",
+      "firstGoalId",
       sql<{ id: number }>`
         and id = ${p => p.id}
       `
@@ -60,7 +61,8 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select
         (concat (player.first_name, ' ', player.last_name)) "fullName",
-        (select count (*)::int from goal where goal.player_id = player.id) "goalCount"
+        (select count (*)::int from goal where goal.player_id = player.id) "goalCount",
+        (select id from goal where goal.player_id = player.id limit 1) "firstGoalId"
       from player
       where 1 = 1
       and id = $1
@@ -71,7 +73,7 @@ describe ("RQLTag type", () => {
     const [player] = await tag ({ id: 9, delimiter: " " }, querier);
 
     expect (player.goalCount).toBeGreaterThan (0);
-    expect (Object.keys (player)).toEqual (["fullName", "goalCount"]);
+    expect (Object.keys (player)).toEqual (["fullName", "goalCount", "firstGoalId"]);
   });
 
   test ("Semigroup", () => {

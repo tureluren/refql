@@ -10,4 +10,5 @@ function booleanProp <As extends string>(as: As, col?: unknown): unknown {
   }
   return Prop (as, col as string | undefined);
 }
+
 export default booleanProp;
