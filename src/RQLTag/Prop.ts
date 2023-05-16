@@ -10,7 +10,7 @@ interface Prop<As extends string = any, Type = any> {
   type: Type;
   arrayOf(): Prop<As, Type[]>;
   nullable(): Prop<As, Type | null>;
-  eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Type, Params2>;
+  eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params2, Type>;
   [PropType]: true;
 }
 

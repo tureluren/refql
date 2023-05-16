@@ -187,7 +187,7 @@ describe ("SQLTag type", () => {
       data: { first_name: "John", last_name: "Doe", cars }
     };
 
-    const [query, values] = insert.compile (params as any);
+    const [query, values] = insert.compile (params);
 
     expect (query).toBe (format (`
       insert into player (first_name, last_name, cars)
@@ -196,7 +196,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", cars]);
 
-    await insert (params as any, querier);
+    await insert (params, querier);
 
     let returning = sql<{}, any>`
       select * from player
@@ -237,7 +237,7 @@ describe ("SQLTag type", () => {
       ]
     };
 
-    const [query, values] = insert.compile (params as any);
+    const [query, values] = insert.compile (params);
 
     expect (query).toBe (format (`
       insert into player (first_name, last_name)
@@ -246,7 +246,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", "Jane", "Doe", "Jimmy", "Doe"]);
 
-    await insert (params as any, querier);
+    await insert (params, querier);
 
     const returning = sql<{}, any>`
       select * from player

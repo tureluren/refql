@@ -27,7 +27,7 @@ interface Extra<Params = any, Output = any> {
 }
 
 export interface RQLTag<TableId = any, Params = any, Output = any> {
-  (params: Params, querier?: Querier): Promise<Output>;
+  (params?: Params, querier?: Querier): Promise<Output>;
   tableId: TableId;
   params: Params;
   type: Output;
@@ -131,12 +131,12 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
         );
     } else if (SQLProp.isSQLProp (node)) {
       members.push (sql`
-        (${node.col as any}) ${Raw (`"${node.as}"`)}` as any
+        (${node.col}) ${Raw (`"${node.as}"`)}`
       );
     } else if (isSQLTag (node)) {
       extra = extra.concat (node);
     } else if (RefNode.isRefNode (node)) {
-      caseOfRef (node.joinLateral () as any, node.info, node.single);
+      caseOfRef (node.joinLateral (), node.info, node.single);
     } else if (When.isWhen (node)) {
       extra = extra.concat (sql`${node}`);
     } else if (Eq.isEq (node)) {
@@ -155,10 +155,10 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
   }
 
   let tag = sql`
-    select ${joinMembers (members as any)}
+    select ${joinMembers (members)}
     from ${Raw (table)}
   `;
-  return { next, tag: tag as any, extra: extra as any };
+  return { next, tag, extra: extra };
 }
 
 function compile(this: RQLTag, params: StringMap) {
@@ -166,7 +166,7 @@ function compile(this: RQLTag, params: StringMap) {
     const { tag, extra, next } = this.interpret ();
 
     this.interpreted = {
-      tag: tag.concat (sql`where 1 = 1`).concat (extra) as any,
+      tag: tag.concat (sql`where 1 = 1`).concat (extra),
       next
     };
   }

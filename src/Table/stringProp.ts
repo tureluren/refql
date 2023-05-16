@@ -6,9 +6,9 @@ function stringProp <As extends string, Params>(as: As, col: SQLTag<Params>): SQ
 function stringProp <As extends string>(as: As, col?: string): Prop<As, string>;
 function stringProp <As extends string>(as: As, col?: unknown): unknown {
   if (isSQLTag (col)) {
-    return SQLProp (as, col as any);
+    return SQLProp (as, col);
   }
-  return Prop (as, col as any);
+  return Prop (as, col as string | undefined);
 }
 
 export default stringProp;

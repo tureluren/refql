@@ -241,7 +241,7 @@ describe ("RQLTag type", () => {
       sql`limit 30`
     ]);
 
-    const players = await tag.concat (tag2) (null as any, querier);
+    const players = await tag.concat (tag2) ({}, querier);
     const player = players[0];
     const playerTeam = player.team;
 
@@ -345,7 +345,7 @@ describe ("RQLTag type", () => {
       sql`limit 30`
     ]);
 
-    const players = await tag.concat (tag2) (null as any, querier);
+    const players = await tag.concat (tag2) ({}, querier);
     const player = players[0];
     const playerTeam = player.team;
     const teamLeague = player.team!.league;
@@ -363,7 +363,7 @@ describe ("RQLTag type", () => {
     ]);
 
 
-    const players = await tag (null as any, querier);
+    const players = await tag ({}, querier);
     const player = players[0];
 
     expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "cars", "birthday", "teamId", "positionId"]);
@@ -473,7 +473,7 @@ describe ("RQLTag type", () => {
       `
     ]);
 
-    const players = await tag (undefined as any, querier);
+    const players = await tag ({}, querier);
 
     expect (players.length).toBe (0);
   });

@@ -1,6 +1,7 @@
 import When from "../common/When";
 import sql from "../SQLTag/sql";
-import { Player } from "../test/tables";
+import RefProp from "../Table/RefProp";
+import { Player, Team } from "../test/tables";
 import Eq from "./Eq";
 import isRQLNode from "./isRQLNode";
 import Prop from "./Prop";
@@ -23,7 +24,12 @@ describe ("RQLNodes", () => {
   });
 
   test ("is RefNode", () => {
-    expect (RefNode.isRefNode (RefNode (Player (["*"]), {} as any, Player as any))).toBe (true);
+    expect (RefNode.isRefNode (RefNode (
+      Team (["*"]),
+      RefProp ("team", "public.team", "BelongsTo", { lRef: "team_id", rRef: "id" }, false),
+      Player
+    ))).toBe (true);
+
     expect (RefNode.isRefNode ("RefNode")).toBe (false);
   });
 

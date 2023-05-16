@@ -112,7 +112,7 @@ function joinLateral(this: RefNode) {
       lateral (${l2}) refqll2
     `;
 
-    this.tag.interpreted = { tag: joined as any, next };
+    this.tag.interpreted = { tag: joined, next };
 
     return this.tag;
 
@@ -138,7 +138,7 @@ function joinLateral(this: RefNode) {
       lateral (${l2}) refqll2
     `;
 
-    this.tag.interpreted = { tag: joined as any, next };
+    this.tag.interpreted = { tag: joined, next };
 
     return this.tag;
   }
