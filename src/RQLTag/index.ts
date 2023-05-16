@@ -11,13 +11,13 @@ import Prop from "./Prop";
 import RefNode from "./RefNode";
 import SQLProp from "./SQLProp";
 
-export interface Next<TableId = any, Params = any, Output = any> {
+export interface Next<TableId extends string = any, Params = any, Output = any> {
   tag: RQLTag<TableId, Params & RefQLRows, Output>;
   link: [string, string];
   single: boolean;
 }
 
-interface InterpretedRQLTag<TableId = any, Params = any, Output = any> {
+interface InterpretedRQLTag<TableId extends string = any, Params = any, Output = any> {
   tag: SQLTag<Params, Output>;
   next: Next<TableId, Params, Output>[];
 }
@@ -218,6 +218,6 @@ export const convertRQLTagResult = (f: <T>(p: Promise<T>) => any) => {
   prototype.convertPromise = f;
 };
 
-export const isRQLTag = function <As = any, Params = any, Output = any> (x: any): x is RQLTag<As, Params, Output> {
+export const isRQLTag = function <As extends string = any, Params = any, Output = any> (x: any): x is RQLTag<As, Params, Output> {
   return x != null && x[refqlType] === type;
 };

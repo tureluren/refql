@@ -12,7 +12,7 @@ import { rqlNodePrototype } from "./isRQLNode";
 interface RefNode {
   joinLateral(): RQLTag;
   tag: RQLTag;
-  info: RefInfo<any>;
+  info: RefInfo;
   single: boolean;
 }
 
@@ -90,7 +90,7 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
 function joinLateral(this: RefNode) {
   if (this.info.xTable) {
     const { tag, next, extra } = this.tag.interpret ();
-    const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info as Required<RefInfo<any>>;
+    const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info as Required<RefInfo>;
 
     const l1 = sql<RefQLRows>`
       select distinct ${Raw (lRef)}

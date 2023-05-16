@@ -1,15 +1,14 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Output, Params, Querier, RQLNode, Selectable } from "../common/types";
+import { Output, Params, Querier, RQLNode, Selectable, TablePropType } from "../common/types";
 import validateTable from "../common/validateTable";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import isRQLNode from "../RQLTag/isRQLNode";
 import Prop from "../RQLTag/Prop";
-import PropType from "../RQLTag/PropType";
 import RefNode from "../RQLTag/RefNode";
 import { isSQLTag } from "../SQLTag";
 import RefProp from "./RefProp";
 
-interface Table<TableId extends string = any, Props = {}> {
+interface Table<TableId extends string = any, Props = any> {
   <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Props, Components>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;
   tableId: TableId;
   name: string;
@@ -32,10 +31,10 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   toString
 });
 
-function Table<TableId extends string, Props extends { [PropType]: true; as: string }[] = []>(name: TableId, props: Props, defaultQuerier?: Querier) {
+function Table<TableId extends string, Props extends TablePropType[]>(name: TableId, props: Props, defaultQuerier?: Querier) {
   validateTable (name);
 
-  if (!Array.isArray (props)) {
+  if (props != null && !Array.isArray (props)) {
     throw new Error ("Invalid props: not an Array");
   }
 
@@ -69,7 +68,7 @@ function Table<TableId extends string, Props extends { [PropType]: true; as: str
         const refNodes = Object.keys (properties)
           .map (key => properties[key as keyof typeof properties])
           .filter (prop => RefProp.isRefProp (prop) && comp.table.equals (prop.child))
-          .map (refProp => RefNode (createRQLTag (comp.table, comp.nodes), refProp, table as unknown as Table));
+          .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes), refProp as any, table as any)));
 
         if (!refNodes.length) {
           throw new Error (

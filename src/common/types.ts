@@ -2,6 +2,7 @@ import RefField from "../RefField";
 import { RQLTag } from "../RQLTag";
 import Eq from "../RQLTag/Eq";
 import Prop from "../RQLTag/Prop";
+import PropType from "../RQLTag/PropType";
 import RefNode from "../RQLTag/RefNode";
 import SelectableType from "../RQLTag/SelectableType";
 import SQLProp from "../RQLTag/SQLProp";
@@ -76,11 +77,11 @@ export interface RefInput {
 
 export type RefNodeInput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;
 
-export interface RefInfo<As extends string = any> {
+export interface RefInfo {
   parent: Table;
   lRef: RefField;
   rRef: RefField;
-  as: As;
+  as: string;
   xTable?: Table;
   lxRef?: RefField;
   rxRef?: RefField;
@@ -134,3 +135,5 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLPro
   : never;
 
 export type RQLNode = Prop | SQLProp | SQLTag | RefNode | When | Eq;
+
+export type TablePropType = { [PropType]: true; as: string };

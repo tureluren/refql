@@ -3,6 +3,7 @@ import When from "./common/When";
 import Eq from "./RQLTag/Eq";
 import { isSQLTag } from "./SQLTag";
 import sql from "./SQLTag/sql";
+import Table from "./Table";
 import numberProp from "./Table/numberProp";
 import { Goal, League, Player, Team } from "./test/tables";
 
@@ -101,3 +102,5 @@ if (isSQLTag (tag11)) {
 }
 
 const Eqie = Eq ("string", (p: { id: number }) => p.id);
+
+const tabie = Table ("buh", [id]);
