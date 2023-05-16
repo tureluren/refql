@@ -13,7 +13,7 @@ const prototype = Object.assign ({}, sqlNodePrototype, {
   [refqlType]: type
 });
 
-function Values<Params = any>(run: ValueType[] | TagFunctionVariable<Params, any[]>) {
+function Values<Params>(run: ValueType[] | TagFunctionVariable<Params, any[]>) {
   let values: Values<Params> = Object.create (prototype);
   values.run = typeof run === "function" ? run : () => run;
 

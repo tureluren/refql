@@ -24,7 +24,7 @@ const prototype = {
   [PropType]: true
 };
 
-function RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any, Nullable extends boolean = false>(as: As, tableId: TableId, rel: Rel, refInput: Rel extends "BelongsToMany" ? RefInput : RefNodeInput, isNullable: Nullable) {
+function RefProp<As extends string, TableId extends string, Rel extends RelType, Nullable extends boolean>(as: As, tableId: TableId, rel: Rel, refInput: Rel extends "BelongsToMany" ? RefInput : RefNodeInput, isNullable: Nullable) {
   validateRefInput (refInput);
 
   let refProp: RefProp<As, TableId, Rel, Nullable> = Object.create (prototype);

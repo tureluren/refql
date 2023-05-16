@@ -53,7 +53,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   [SelectableType]: true
 });
 
-export function createSQLTag<Params = any, Output = any>(nodes: SQLNode<Params>[], defaultQuerier?: Querier) {
+export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[], defaultQuerier?: Querier) {
 
   const tag = ((params = {} as Params, querier?) => {
     if (!querier && !defaultQuerier) {

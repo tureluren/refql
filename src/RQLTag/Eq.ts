@@ -4,7 +4,7 @@ import { SQLTag } from "../SQLTag";
 import { rqlNodePrototype } from "./isRQLNode";
 import SelectableType from "./SelectableType";
 
-interface Eq<Prop extends SQLTag | string = any, Type = any, Params = any> {
+interface Eq<Prop extends SQLTag | string = any, Params = any, Type = any> {
   params: Params;
   prop: Prop;
   run: TagFunctionVariable<Params, Type>;
@@ -19,8 +19,8 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   [SelectableType]: true
 });
 
-function Eq<Prop extends SQLTag | string, Type, Params>(prop: Prop, run: TagFunctionVariable<Params, Type> | Type) {
-  let eq: Eq<Prop, Type, Params> = Object.create (prototype);
+function Eq<Prop extends SQLTag | string, Params, Type>(prop: Prop, run: TagFunctionVariable<Params, Type> | Type) {
+  let eq: Eq<Prop, Params, Type> = Object.create (prototype);
 
   eq.prop = prop;
 
@@ -31,7 +31,7 @@ function Eq<Prop extends SQLTag | string, Type, Params>(prop: Prop, run: TagFunc
   return eq;
 }
 
-Eq.isEq = function <Prop extends SQLTag | string = any, Type = any, Params = any> (x: any): x is Eq<Prop, Type, Params> {
+Eq.isEq = function <Prop extends SQLTag | string = any, Params = any, Type = any> (x: any): x is Eq<Prop, Params, Type> {
   return x != null && x[refqlType] === type;
 };
 

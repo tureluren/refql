@@ -56,7 +56,7 @@ let prototype = {
   convertPromise: <T>(p: Promise<T>) => p
 };
 
-export function createRQLTag<TableId extends string = any, Params = any, Output = any>(table: Table<TableId, any>, nodes: RQLNode[], defaultQuerier?: Querier) {
+export function createRQLTag<TableId extends string, Params = any, Output = any>(table: Table<TableId>, nodes: RQLNode[], defaultQuerier?: Querier) {
 
   const tag = ((params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {

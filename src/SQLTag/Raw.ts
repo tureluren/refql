@@ -18,7 +18,7 @@ const prototype = Object.assign ({}, sqlNodePrototype, {
   [flMap]: map
 });
 
-function Raw<Params = any>(run: ValueType | TagFunctionVariable<Params>) {
+function Raw<Params>(run: ValueType | TagFunctionVariable<Params>) {
   let raw: Raw<Params> = Object.create (prototype);
 
   raw.run = p => String ((
