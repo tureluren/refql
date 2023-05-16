@@ -23,7 +23,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   joinLateral
 });
 
-function RefNode<Params, Output>(tag: RQLTag<any, Params, Output>, refProp: RefProp, parent: Table) {
+function RefNode<Params = any, Output = any>(tag: RQLTag<any, Params, Output>, refProp: RefProp, parent: Table) {
   let refNode: RefNode<Params, Output> = Object.create (prototype);
 
   const { as, rel, child, refInput } = refProp;
@@ -144,7 +144,7 @@ function joinLateral(this: RefNode) {
   }
 }
 
-RefNode.isRefNode = function <Params, Output> (x: any): x is RefNode<Params, Output> {
+RefNode.isRefNode = function <Params = any, Output = any> (x: any): x is RefNode<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 

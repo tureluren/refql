@@ -13,18 +13,15 @@ const prototype = Object.assign ({}, sqlNodePrototype, {
   [refqlType]: type
 });
 
-function Values2D<Params>(run: ValueType[][] | TagFunctionVariable<Params, any[][]>) {
+function Values2D<Params = any>(run: ValueType[][] | TagFunctionVariable<Params, any[][]>) {
   let values2D: Values2D<Params> = Object.create (prototype);
   values2D.run = typeof run === "function" ? run : () => run;
 
   return values2D;
 }
 
-Values2D.isValues2D = function <Params> (x: any): x is Values2D<Params> {
+Values2D.isValues2D = function <Params = any> (x: any): x is Values2D<Params> {
   return x != null && x[refqlType] === type;
 };
-
-export const values2D = <Params>(run: ValueType[][] | TagFunctionVariable<Params, any[][]>) =>
-  Values2D (run);
 
 export default Values2D;

@@ -1,4 +1,4 @@
-import { when } from "../common/When";
+import When from "../common/When";
 import sql from "../SQLTag/sql";
 import { Player } from "../test/tables";
 import Eq from "./Eq";
@@ -8,7 +8,7 @@ import RefNode from "./RefNode";
 
 describe ("RQLNodes", () => {
   test ("is RQLNode", () => {
-    expect (isRQLNode (when (() => true) (sql``))).toBe (true);
+    expect (isRQLNode (When (() => true, sql``))).toBe (true);
     expect (isRQLNode ("When")).toBe (false);
   });
 

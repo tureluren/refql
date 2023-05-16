@@ -46,7 +46,7 @@ describe ("SQLNodes", () => {
   });
 
   test ("is When", () => {
-    expect (When.isWhen (when (() => true) (sql``))).toBe (true);
+    expect (When.isWhen (When (() => true, sql``))).toBe (true);
     expect (When.isWhen ("When")).toBe (false);
   });
 

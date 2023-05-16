@@ -5,7 +5,7 @@ import Eq from "./Eq";
 import { rqlNodePrototype } from "./isRQLNode";
 import PropType from "./PropType";
 
-interface SQLProp<As extends string = any, Type = unknown, Params = any> {
+interface SQLProp<As extends string = any, Type = any, Params = any> {
   as: As;
   col: SQLTag<Params>;
   type: Type;
@@ -26,7 +26,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   [PropType]: true
 });
 
-function SQLProp<As extends string, Type, Params>(as: As, col: SQLTag<Params>) {
+function SQLProp<As extends string = any, Type = any, Params = any>(as: As, col: SQLTag<Params>) {
   let sqlProp: SQLProp<As, Type, Params> = Object.create (prototype);
 
   sqlProp.as = as;
@@ -43,7 +43,7 @@ function eq(this: SQLProp, run: any) {
   return Eq (this.col, run);
 }
 
-SQLProp.isSQLProp = function (x: any): x is SQLProp {
+SQLProp.isSQLProp = function <As extends string = any, Type = any, Params = any> (x: any): x is SQLProp {
   return x != null && x[refqlType] === type;
 };
 

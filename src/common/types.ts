@@ -3,6 +3,7 @@ import { RQLTag } from "../RQLTag";
 import Eq from "../RQLTag/Eq";
 import Prop from "../RQLTag/Prop";
 import RefNode from "../RQLTag/RefNode";
+import SelectableType from "../RQLTag/SelectableType";
 import SQLProp from "../RQLTag/SQLProp";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
@@ -95,18 +96,16 @@ export type Selectable<T> =
   | keyof OnlyPropsOrSQLProps<T>
   | OnlyPropsOrSQLProps<T>[keyof OnlyPropsOrSQLProps<T>]
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
-  | SQLTag
-  | When
-  | Eq;
+  | { [SelectableType]: true };
 
 export type SQLTagObjects<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
-  ? (U extends (SQLTag | Eq<any> | RQLTag<any, any, any>)
+  ? (U extends (SQLTag | Eq | RQLTag)
     ? U
     : U extends SQLProp
       ? U["col"]
       : U extends keyof SQLProps
         ? SQLProps[U]["col"]
-        : U extends When<any>
+        : U extends When
           ? U["tag"]
           : { params: {}})[]
   : {params: {}};

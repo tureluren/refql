@@ -1,8 +1,10 @@
 import { Pool } from "pg";
-import { when } from "./common/When";
-import PropType from "./RQLTag/PropType";
+import When from "./common/When";
+import Eq from "./RQLTag/Eq";
+import { isSQLTag } from "./SQLTag";
 import sql from "./SQLTag/sql";
-import { Goal, League, Player, Team } from "./test/tables";
+import numberProp from "./Table/numberProp";
+import { Goal, Player, Team } from "./test/tables";
 
 
 const pool = new Pool ({
@@ -20,22 +22,29 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
-const whenie = when<{ query: string }> (p => p.query != null) (sql`and last_name = '${p => p.query}'`);
 
 const { id, lastName, fullName, goalCount } = Player.props;
 
 const teamie = Team (["*",
-    Team.props.name.eq<{ name: string }> (p => p.name)
+    Team.props.name.eq (p => p.name)
 ]);
 
 const goals = Goal (["*"]);
 
+const whenie = When (p => p.query != null, sql`and last_name = '${p => p.query}'`);
+
 const tag = Player ([
   "firstName",
-  "goalCount",
-  sql<{id: number }>``,
-  teamie,
-  Goal (["*"])
+  numberProp ("goalCount", sql`
+    select count (*)::int from goal
+    where goal.player_id = player.id
+  `),
+  "fullName",
+  sql``,
+  // teamie,
+  Goal (["*"]),
+  When (p => p.query != null, sql<{ query: string }>`and last_name = '${p => p.query}'`)
+  // whenie
 
   // teamie
 ]);
@@ -75,3 +84,20 @@ tag ({ id: 2, name: "any" }, querier).then (res => console.log (res[0]));
 // const tag3 = tag1.concat (tag2);
 
 // tag3 ({ id: 1 }, querier).then (res => console.log (res));
+
+
+const tag11 = sql<{}, { name: string }[]>`
+  select id, name
+`;
+
+const tag12 = sql<{}, { id: number }[]>`
+  select id, name
+`;
+
+const tag13 = tag11.concat (tag12);
+
+if (isSQLTag (tag11)) {
+  const buhh = tag11;
+}
+
+const Eqie = Eq ("string", (p: { id: number }) => p.id);

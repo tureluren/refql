@@ -3,6 +3,7 @@ import isEmptyTag from "../common/isEmptyTag";
 import { Querier, SQLNode, StringMap, TagFunctionVariable } from "../common/types";
 import When from "../common/When";
 import { rqlNodePrototype } from "../RQLTag/isRQLNode";
+import SelectableType from "../RQLTag/SelectableType";
 import Raw from "./Raw";
 import Value from "./Value";
 import Values from "./Values";
@@ -35,6 +36,7 @@ export interface SQLTag<Params = any, Output = any> {
   [flConcat]: SQLTag<Params, Output>["concat"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params): [string, any[]];
+  [SelectableType]: true;
 }
 
 const type = "refql/SQLTag";
@@ -47,10 +49,11 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   [flConcat]: concat,
   interpret,
   compile,
-  convertPromise: <T>(p: Promise<T>) => p
+  convertPromise: <T>(p: Promise<T>) => p,
+  [SelectableType]: true
 });
 
-export function createSQLTag<Params, Output>(nodes: SQLNode<Params>[], defaultQuerier?: Querier) {
+export function createSQLTag<Params = any, Output = any>(nodes: SQLNode<Params>[], defaultQuerier?: Querier) {
 
   const tag = ((params = {} as Params, querier?) => {
     if (!querier && !defaultQuerier) {
@@ -210,6 +213,6 @@ export const convertSQLTagResult = (f: <T>(p: Promise<T>) => any) => {
   prototype.convertPromise = f;
 };
 
-export const isSQLTag = function <Params, Output> (x: any): x is SQLTag<Params, Output> {
+export const isSQLTag = function <Params = any, Output = any> (x: any): x is SQLTag<Params, Output> {
   return x != null && x[refqlType] === type;
 };

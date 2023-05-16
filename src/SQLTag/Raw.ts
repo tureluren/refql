@@ -18,7 +18,7 @@ const prototype = Object.assign ({}, sqlNodePrototype, {
   [flMap]: map
 });
 
-function Raw<Params>(run: ValueType | TagFunctionVariable<Params>) {
+function Raw<Params = any>(run: ValueType | TagFunctionVariable<Params>) {
   let raw: Raw<Params> = Object.create (prototype);
 
   raw.run = p => String ((
@@ -34,11 +34,8 @@ function map(this: Raw, f: (x: ValueType) => ValueType) {
   });
 }
 
-Raw.isRaw = function<Params> (x: any): x is Raw<Params> {
+Raw.isRaw = function<Params = any> (x: any): x is Raw<Params> {
   return x != null && x[refqlType] === type;
 };
-
-export const raw = <Params>(run: ValueType | TagFunctionVariable<Params>) =>
-  Raw (run);
 
 export default Raw;

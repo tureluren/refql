@@ -5,7 +5,7 @@ import { rqlNodePrototype } from "./isRQLNode";
 import PropType from "./PropType";
 
 
-interface Prop<As extends string = any, Type = unknown> {
+interface Prop<As extends string = any, Type = any> {
   as: As;
   col?: string;
   type: Type;
@@ -26,7 +26,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   [PropType]: true
 });
 
-function Prop<As extends string, Type = unknown>(as: As, col?: string) {
+function Prop<As extends string = any, Type = any>(as: As, col?: string) {
   let prop: Prop<As, Type> = Object.create (prototype);
 
   prop.as = as;
@@ -40,10 +40,10 @@ function nullable(this: Prop) {
 }
 
 function eq(this: Prop, run: any) {
-  return Eq<any> (this.col || this.as, run);
+  return Eq (this.col || this.as, run);
 }
 
-Prop.isProp = function (x: any): x is Prop {
+Prop.isProp = function <As extends string = any, Type = any> (x: any): x is Prop {
   return x != null && x[refqlType] === type;
 };
 

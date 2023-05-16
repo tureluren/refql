@@ -39,11 +39,11 @@ function RefProp<As extends string = any, TableId extends string = any, Rel exte
   return refProp;
 }
 
-function nullable<As extends string, TableId extends string = any, Rel extends RelType = any>(this: RefProp<As, TableId, Rel>) {
-  return RefProp<As, TableId, Rel, true> (this.as, this.tableId, this.rel, this.refInput, true);
+function nullable(this: RefProp) {
+  return RefProp (this.as, this.tableId, this.rel, this.refInput, true);
 }
 
-RefProp.isRefProp = function (x: any): x is RefProp {
+RefProp.isRefProp = function <As extends string = any, TableId extends string = any, Rel extends RelType = any, Nullable extends boolean = false> (x: any): x is RefProp {
   return x != null && x[refqlType] === type;
 };
 
