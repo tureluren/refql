@@ -3,7 +3,7 @@ import isEmptyTag from "../common/isEmptyTag";
 import { Querier, SQLNode, StringMap, TagFunctionVariable } from "../common/types";
 import When from "../common/When";
 import { rqlNodePrototype } from "../RQLTag/isRQLNode";
-import SelectableType from "../RQLTag/SelectableType";
+import SelectableType from "../Table/SelectableType";
 import Raw from "./Raw";
 import Value from "./Value";
 import Values from "./Values";

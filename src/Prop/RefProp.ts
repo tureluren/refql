@@ -1,7 +1,7 @@
-import Table from ".";
 import { refqlType } from "../common/consts";
 import { RefInput, RefNodeInput, RelType } from "../common/types";
-import PropType from "../RQLTag/PropType";
+import Table from "../Table";
+import PropType from "./PropType";
 import validateRefInput from "./validateRefInput";
 
 interface RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any, Nullable extends boolean = false> {

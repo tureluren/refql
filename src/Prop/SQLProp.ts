@@ -1,8 +1,8 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
+import Eq from "../RQLTag/Eq";
+import { rqlNodePrototype } from "../RQLTag/isRQLNode";
 import { SQLTag } from "../SQLTag";
-import Eq from "./Eq";
-import { rqlNodePrototype } from "./isRQLNode";
 import PropType from "./PropType";
 
 interface SQLProp<As extends string = any, Params = any, Type = any> {

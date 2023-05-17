@@ -1,10 +1,11 @@
 import When from "../common/When";
+import Prop from "../Prop";
+import RefProp from "../Prop/RefProp";
 import sql from "../SQLTag/sql";
-import RefProp from "../Table/RefProp";
 import { Player, Team } from "../test/tables";
 import Eq from "./Eq";
 import isRQLNode from "./isRQLNode";
-import Prop from "./Prop";
+import RefField from "./RefField";
 import RefNode from "./RefNode";
 
 describe ("RQLNodes", () => {
@@ -33,4 +34,8 @@ describe ("RQLNodes", () => {
     expect (RefNode.isRefNode ("RefNode")).toBe (false);
   });
 
+  test ("is RefField", () => {
+    expect (RefField.isRefField (RefField ("player.id", "id"))).toBe (true);
+    expect (RefField.isRefField ("Ref")).toBe (false);
+  });
 });

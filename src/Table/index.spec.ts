@@ -4,6 +4,8 @@ import pg from "pg";
 import Table from ".";
 import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
+import numberProp from "../Prop/numberProp";
+import stringProp from "../Prop/stringProp";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import mariaDBQuerier from "../test/mariaDBQuerier";
@@ -11,8 +13,6 @@ import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import { Player, Team } from "../test/tables";
 import userConfig from "../test/userConfig";
-import numberProp from "./numberProp";
-import stringProp from "./stringProp";
 
 describe ("Table type", () => {
   let pool: any;

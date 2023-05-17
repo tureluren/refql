@@ -1,8 +1,8 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
+import SelectableType from "../Table/SelectableType";
 import { rqlNodePrototype } from "./isRQLNode";
-import SelectableType from "./SelectableType";
 
 interface Eq<Prop extends SQLTag | string = any, Params = any, Type = any> {
   params: Params;

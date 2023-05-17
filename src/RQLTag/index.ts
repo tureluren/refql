@@ -2,14 +2,14 @@ import { flConcat, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, RQLNode, StringMap } from "../common/types";
 import When from "../common/When";
+import Prop from "../Prop";
+import SQLProp from "../Prop/SQLProp";
 import { isSQLTag, SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import Eq from "./Eq";
-import Prop from "./Prop";
 import RefNode from "./RefNode";
-import SQLProp from "./SQLProp";
 
 export interface Next<TableId extends string = any, Params = any, Output = any> {
   tag: RQLTag<TableId, Params & RefQLRows, Output>;

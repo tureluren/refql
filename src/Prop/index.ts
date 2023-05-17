@@ -1,7 +1,7 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
-import Eq from "./Eq";
-import { rqlNodePrototype } from "./isRQLNode";
+import Eq from "../RQLTag/Eq";
+import { rqlNodePrototype } from "../RQLTag/isRQLNode";
 import PropType from "./PropType";
 
 interface Prop<As extends string = any, Type = any> {
