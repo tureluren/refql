@@ -14,28 +14,38 @@ npm install refql
 ## Getting started
 ```ts
 import { Pool } from "pg";
-import { BelongsTo, sql, Table } from "refql";
+import { 
+  BelongsTo, NumberProp, 
+  StringProp, Table 
+} from "refql";
 
-// Table
+// id Prop
+const id = NumberProp ("id");
+
+// Tables
 const Player = Table ("player", [
-  BelongsTo ("team")
+  id,
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  BelongsTo ("team", "team")
 ]);
 
-const Team = Table ("team");
-
-// sql snippet
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
-`;
+const Team = Table ("team", [
+  id,
+  StringProp ("name")
+]);
 
 // composition
-const playerById = Player`
-  id
-  first_name
-  last_name
-  ${Team}
-  ${byId}
-`;
+const playerById = Player ([
+  "id",
+  "firstName",
+  "lastName",
+  Team ([
+    "id",
+    "name"
+  ]),
+  id.eq<{ id: number }> (p => p.id)
+]);
 
 const pool = new Pool ({
   // ...pool options
@@ -52,9 +62,9 @@ playerById ({ id: 1 }, querier).then(console.log);
 //  [
 //    {
 //      id: 1,
-//      first_name: 'David',
-//      last_name: 'Roche',
-//      team: { id: 1, name: 'FC Wezivduk', league_id: 1 }
+//      firstName: 'David',
+//      lastName: 'Roche',
+//      team: { id: 1, name: 'FC Wezivduk' }
 //    }
 //  ]
 ```

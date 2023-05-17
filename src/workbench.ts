@@ -1,5 +1,8 @@
 import { Pool } from "pg";
-import { Player, Team } from "./test/tables";
+import BelongsTo from "./Prop/BelongsTo";
+import NumberProp from "./Prop/NumberProp";
+import StringProp from "./Prop/StringProp";
+import Table from "./Table";
 
 const pool = new Pool ({
   user: "test",
@@ -9,19 +12,38 @@ const pool = new Pool ({
   port: 5432
 });
 
+// id Prop
+const id = NumberProp ("id");
+
+// Tables
+const Player = Table ("player", [
+  id,
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  BelongsTo ("team", "team")
+]);
+
+const Team = Table ("team", [
+  id,
+  StringProp ("name")
+]);
+
+// composition
+const playerById = Player ([
+  "id",
+  "firstName",
+  "lastName",
+  Team ([
+    "id",
+    "name"
+  ]),
+  id.eq<{ id: number }> (p => p.id)
+]);
+
 const querier = async (query: string, values: any[]) => {
-  console.log (query);
   const { rows } = await pool.query (query, values);
 
   return rows;
 };
 
-const tag = Player ([
-  "fullName",
-  "firstName",
-  "lastName",
-  "firstGoalId",
-  Team (["*"])
-]);
-
-tag ({ delimiter: " " }, querier).then (res => console.log (res[9]));
+playerById ({ id: 1 }, querier).then (console.log);
