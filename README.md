@@ -14,11 +14,11 @@ npm install refql
 ## Getting started
 ```ts
 import { Pool } from "pg";
-import { belongsTo, sql, Table } from "refql";
+import { BelongsTo, sql, Table } from "refql";
 
 // Table
 const Player = Table ("player", [
-  belongsTo ("team")
+  BelongsTo ("team")
 ]);
 
 const Team = Table ("team");
@@ -77,8 +77,8 @@ The example below shows how to define tables and describe their references to ot
 ```ts
 import { Pool } from "pg";
 import { 
-  belongsTo, belongsToMany, hasMany,
-  hasOne, sql, Table
+  BelongsTo, BelongsToMany, HasMany,
+  HasOne, sql, Table
 } from "refql";
 
 const pool = new Pool ({
@@ -92,10 +92,10 @@ const querier = async (query: string, values: any[]) => {
 };
 
 const Player = Table ("player", [
-  belongsTo ("public.team"),
-  hasMany ("goal"),
-  hasOne ("rating"),
-  belongsToMany ("game")
+  BelongsTo ("public.team"),
+  HasMany ("goal"),
+  HasOne ("rating"),
+  BelongsToMany ("game")
 ], querier); // You can pass a default querier here
 
 const Team = Table ("public.team");
@@ -176,7 +176,7 @@ fullPlayer ({ limit: 1 }).then(console.log);
 RefQL tries to link 2 tables based on logical column names, using snake case. You can always point RefQL in the right direction if this doesn't work for you.
 
 ```ts
-const playerBelongsToManyGames = belongsToMany ("game", {
+const playerBelongsToManyGames = BelongsToMany ("game", {
   lRef: "id",
   rRef: "id",
   lxRef: "player_id",
@@ -350,7 +350,7 @@ Both `RQLTag` and `SQLTag` are `Semigroup` structures. `RQLTag` is also a `Monoi
 
 ```ts
 const Player = Table ("player", [
-  belongsTo ("team")
+  BelongsTo ("team")
 ], querier);
 
 const Team = Table ("team");
@@ -531,7 +531,7 @@ Some other features of RefQL.
 
 ```ts
 import { Pool } from "pg";
-import { hasMany, sql, Table } from "refql";
+import { HasMany, sql, Table } from "refql";
 
 const pool = new Pool ({
   // ...pool options
@@ -546,7 +546,7 @@ const querier = async (query: string, values: any[]) => {
 const Goal = Table ("goal");
 
 const Player = Table ("player", [
-  hasMany ("goal")
+  HasMany ("goal")
 ], querier);
 
 const byId = sql<{id: number}>`

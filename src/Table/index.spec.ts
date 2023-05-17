@@ -4,8 +4,8 @@ import pg from "pg";
 import Table from ".";
 import { flEquals } from "../common/consts";
 import { Querier } from "../common/types";
-import numberProp from "../Prop/numberProp";
-import stringProp from "../Prop/stringProp";
+import NumberProp from "../Prop/NumberProp";
+import StringProp from "../Prop/StringProp";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import mariaDBQuerier from "../test/mariaDBQuerier";
@@ -46,8 +46,8 @@ describe ("Table type", () => {
 
   test ("default querier", async () => {
     const Player2 = Table ("player", [
-      numberProp ("id"),
-      stringProp ("lastName", "last_name")
+      NumberProp ("id"),
+      StringProp ("lastName", "last_name")
     ], querier);
 
     const firstPlayer = Player2 ([

@@ -365,7 +365,7 @@ describe ("RQLTag type", () => {
     ]);
 
 
-    const players = await tag ({}, querier);
+    const players = await tag (undefined, querier);
     const player = players[0];
 
     expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "cars", "birthday", "teamId", "positionId"]);

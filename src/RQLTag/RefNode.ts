@@ -59,7 +59,9 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
     };
 
     refNode.single = false;
-  } else if (rel === "BelongsToMany") {
+  } else {
+    // rel === "BelongsToMany"
+
     let xTable: Table;
     const btmInput: RefInput = refInput;
 
