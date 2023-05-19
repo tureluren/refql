@@ -1,13 +1,12 @@
 import { RQLNode } from "../common/types";
-
-const rqlNode: symbol = Symbol ("@@RQLNode");
+import RQLNodeType from "./RQLNodeType";
 
 export const rqlNodePrototype = {
-  [rqlNode]: true
+  [RQLNodeType]: true
 };
 
 const isRQLNode = function (x: any): x is RQLNode {
-  return x != null && !!x[rqlNode];
+  return x != null && !!x[RQLNodeType];
 };
 
 export default isRQLNode;

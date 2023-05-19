@@ -1,6 +1,6 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
-import { Querier, SQLNode, StringMap, TagFunctionVariable } from "../common/types";
+import { Querier, RQLNode, SQLNode, StringMap, TagFunctionVariable } from "../common/types";
 import When from "../common/When";
 import { rqlNodePrototype } from "../RQLTag/isRQLNode";
 import SelectableType from "../Table/SelectableType";
@@ -24,7 +24,7 @@ interface InterpretedSQLTag<Params = any> {
   values: InterpretedValue<Params>[];
 }
 
-export interface SQLTag<Params = any, Output = any> {
+export interface SQLTag<Params = any, Output = any> extends RQLNode {
   (params?: Params, querier?: Querier): Promise<Output>;
   params: Params;
   nodes: SQLNode<Params>[];

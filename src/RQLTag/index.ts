@@ -8,6 +8,8 @@ import { isSQLTag, SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
+import Limit from "../Table/Limit";
+import Offset from "../Table/Offset";
 import Eq from "./Eq";
 import RefNode from "./RefNode";
 
@@ -117,6 +119,8 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
     members = [] as (Raw | SQLTag)[];
 
   let extra = sql``;
+  let limit = sql``;
+  let offset = sql``;
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     members.push (Raw (info.lRef));
@@ -149,6 +153,10 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
           and ${Raw (`${table.name}.${node.prop}`)} = ${node.run}
         `);
       }
+    } else if (Limit.isLimit (node)) {
+      limit = sql<typeof node["params"]>`limit ${p => p[node.prop]}`;
+    } else if (Offset.isOffset (node)) {
+      offset = sql<typeof node["params"]>`offset ${p => p[node.prop]}`;
     } else {
       throw new Error (`Unknown RQLNode Type: "${String (node)}"`);
     }
@@ -158,7 +166,14 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
     select ${joinMembers (members)}
     from ${Raw (table)}
   `;
-  return { next, tag, extra: extra };
+
+  return {
+    next,
+    tag,
+    extra: extra
+      .concat (limit)
+      .concat (offset)
+  };
 }
 
 function compile(this: RQLTag, params: StringMap) {

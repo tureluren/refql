@@ -2,7 +2,10 @@ import { Pool } from "pg";
 import BelongsTo from "./Prop/BelongsTo";
 import NumberProp from "./Prop/NumberProp";
 import StringProp from "./Prop/StringProp";
+import sql from "./SQLTag/sql";
 import Table from "./Table";
+import Limit from "./Table/Limit";
+import Offset from "./Table/Offset";
 
 const pool = new Pool ({
   user: "test",
@@ -28,6 +31,9 @@ const Team = Table ("team", [
   StringProp ("name")
 ]);
 
+const lim = Limit ("playerLimit");
+type limParams = typeof lim.params;
+
 // composition
 const playerById = Player ([
   "id",
@@ -37,13 +43,16 @@ const playerById = Player ([
     "id",
     "name"
   ]),
-  id.eq<{ id: number }> (p => p.id)
+  // id.eq<{ id: number }> (p => p.id),
+  lim,
+  Offset ()
 ]);
 
 const querier = async (query: string, values: any[]) => {
+  console.log (query);
   const { rows } = await pool.query (query, values);
 
   return rows;
 };
 
-playerById ({ id: 1 }, querier).then (console.log);
+playerById ({ playerLimit: 1, offset: 10 }, querier).then (res => console.log (res));

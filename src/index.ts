@@ -24,6 +24,8 @@ import Value from "./SQLTag/Value";
 import Values from "./SQLTag/Values";
 import Values2D from "./SQLTag/Values2D";
 import Table from "./Table";
+import Limit from "./Table/Limit";
+import Offset from "./Table/Offset";
 import SelectableType from "./Table/SelectableType";
 
 export * from "./common/types";
@@ -32,8 +34,8 @@ export {
   BelongsTo, BelongsToMany, BooleanProp,
   createRQLTag, createSQLTag, DateProp,
   Eq, HasMany, HasOne, isEmptyTag, isRQLTag,
-  isSQLNode, isSQLTag, NumberProp, parse,
-  Prop, PropType, Raw, RefField, RefNode,
+  isSQLNode, isSQLTag, Limit, NumberProp, Offset,
+  parse, Prop, PropType, Raw, RefField, RefNode,
   RefProp, RQLTag, SelectableType, sql,
   SQLProp, SQLTag, StringProp, Table,
   Value, Values, Values2D, When
