@@ -3,28 +3,25 @@ import { TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import { SQLTag } from "../SQLTag";
-import PropType from "./PropType";
+import PropType, { propTypePrototype } from "./PropType";
 
-interface SQLProp<As extends string = any, Params = any, Type = any> extends RQLNode {
-  as: As;
+interface SQLProp<As extends string = any, Params = any, Type = any> extends RQLNode, PropType<As> {
   params: Params;
   col: SQLTag<Params>;
   type: Type;
   arrayOf(): SQLProp<As, Params, Type[]>;
   nullable(): SQLProp<As, Params, Type | null>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params & Params2, Type>;
-  [PropType]: true;
 }
 
 const type = "refql/SQLProp";
 
-const prototype = Object.assign ({}, rqlNodePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   constructor: SQLProp,
   [refqlType]: type,
   arrayOf: nullable,
   nullable,
-  eq,
-  [PropType]: true
+  eq
 });
 
 function SQLProp<As extends string, Params, Type = any>(as: As, col: SQLTag<Params>) {

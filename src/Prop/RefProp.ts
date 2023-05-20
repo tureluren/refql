@@ -1,28 +1,25 @@
 import { refqlType } from "../common/consts";
 import { RefInput, RefNodeInput, RelType } from "../common/types";
 import Table from "../Table";
-import PropType from "./PropType";
+import PropType, { propTypePrototype } from "./PropType";
 import validateRefInput from "./validateRefInput";
 
-interface RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any, Nullable extends boolean = false> {
+interface RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any, Nullable extends boolean = false> extends PropType<As> {
   rel: Rel;
   tableId: TableId;
-  as: As;
   refInput: Rel extends "BelongsToMany" ? RefInput : RefNodeInput;
   child: Table;
   isNullable: Nullable;
   nullable(): RefProp<As, TableId, Rel, true>;
-  [PropType]: true;
 }
 
 const type = "refql/RefProp";
 
-const prototype = {
+const prototype = Object.assign ({}, propTypePrototype, {
   constructor: RefProp,
   [refqlType]: type,
-  nullable,
-  [PropType]: true
-};
+  nullable
+});
 
 function RefProp<As extends string, TableId extends string, Rel extends RelType, Nullable extends boolean>(as: As, tableId: TableId, rel: Rel, refInput: Rel extends "BelongsToMany" ? RefInput : RefNodeInput, isNullable: Nullable) {
   validateRefInput (refInput);
