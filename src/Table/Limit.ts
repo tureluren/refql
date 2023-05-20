@@ -1,19 +1,17 @@
 import { refqlType } from "../common/consts";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
-import SelectableType from "../Table/SelectableType";
+import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 
-interface Limit<ParameterProp extends string = any> extends RQLNode {
+interface Limit<ParameterProp extends string = any> extends RQLNode, SelectableType {
   prop: ParameterProp;
   params: { [k in ParameterProp]: number };
-  [SelectableType]: true;
 }
 
 const type = "refql/Limit";
 
-const prototype = Object.assign ({}, rqlNodePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   constructor: Limit,
-  [refqlType]: type,
-  [SelectableType]: true
+  [refqlType]: type
 });
 
 function Limit<ParameterProp extends string = "limit">(prop: ParameterProp = "limit" as ParameterProp) {

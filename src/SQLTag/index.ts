@@ -1,10 +1,11 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
-import { Querier, SQLNode, StringMap, TagFunctionVariable } from "../common/types";
+import { Querier, StringMap, TagFunctionVariable } from "../common/types";
 import When from "../common/When";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
-import SelectableType from "../Table/SelectableType";
+import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import Raw from "./Raw";
+import SQLNode from "./SQLNode";
 import Value from "./Value";
 import Values from "./Values";
 import Values2D from "./Values2D";
@@ -24,7 +25,7 @@ interface InterpretedSQLTag<Params = any> {
   values: InterpretedValue<Params>[];
 }
 
-export interface SQLTag<Params = any, Output = any> extends RQLNode {
+export interface SQLTag<Params = any, Output = any> extends RQLNode, SelectableType {
   (params?: Params, querier?: Querier): Promise<Output>;
   params: Params;
   nodes: SQLNode<Params>[];
@@ -36,12 +37,11 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode {
   [flConcat]: SQLTag<Params, Output>["concat"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params): [string, any[]];
-  [SelectableType]: true;
 }
 
 const type = "refql/SQLTag";
 
-const prototype = Object.assign ({}, rqlNodePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   [refqlType]: type,
   constructor: createSQLTag,
   concat,
@@ -49,8 +49,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   [flConcat]: concat,
   interpret,
   compile,
-  convertPromise: <T>(p: Promise<T>) => p,
-  [SelectableType]: true
+  convertPromise: <T>(p: Promise<T>) => p
 });
 
 export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[], defaultQuerier?: Querier) {

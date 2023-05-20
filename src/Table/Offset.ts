@@ -1,19 +1,17 @@
 import { refqlType } from "../common/consts";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
-import SelectableType from "../Table/SelectableType";
+import SelectableType, { selectableTypePrototype } from "./SelectableType";
 
-interface Offset<ParameterProp extends string = any> extends RQLNode {
+interface Offset<ParameterProp extends string = any> extends RQLNode, SelectableType {
   prop: ParameterProp;
   params: { [k in ParameterProp]: number };
-  [SelectableType]: true;
 }
 
 const type = "refql/Offset";
 
-const prototype = Object.assign ({}, rqlNodePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   constructor: Offset,
-  [refqlType]: type,
-  [SelectableType]: true
+  [refqlType]: type
 });
 
 function Offset<ParameterProp extends string = "offset">(prop: ParameterProp = "offset" as ParameterProp) {

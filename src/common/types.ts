@@ -3,14 +3,9 @@ import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
 import RefField from "../RQLTag/RefField";
-import Raw from "../SQLTag/Raw";
 import SQLNode from "../SQLTag/SQLNode";
-import Value from "../SQLTag/Value";
-import Values from "../SQLTag/Values";
-import Values2D from "../SQLTag/Values2D";
 import Table from "../Table";
 import SelectableType from "../Table/SelectableType";
-import When from "./When";
 
 // Array, Function, Date, ...
 export type StringMap = Record<string, any>;
@@ -87,7 +82,7 @@ export type Selectable<T> =
   | keyof OnlyPropsOrSQLProps<T>
   | OnlyPropsOrSQLProps<T>[keyof OnlyPropsOrSQLProps<T>]
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
-  | { [SelectableType]: true };
+  | SelectableType;
 
 export type ParamsType<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
   ? (U extends ({ params: any })

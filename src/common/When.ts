@@ -3,22 +3,20 @@ import { TagFunctionVariable } from "../common/types";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import { SQLTag } from "../SQLTag";
 import SQLNode, { sqlNodePrototype } from "../SQLTag/SQLNode";
-import SelectableType from "../Table/SelectableType";
+import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 
-interface When<Params = any> extends RQLNode, SQLNode<Params> {
+interface When<Params = any> extends RQLNode, SQLNode<Params>, SelectableType {
   params: Params;
   pred: TagFunctionVariable<Params, boolean>;
   tag: SQLTag<Params>;
   whenable: true;
-  [SelectableType]: true;
 }
 
 const type = "refql/When";
 
-const prototype = Object.assign ({}, sqlNodePrototype, rqlNodePrototype, {
+const prototype = Object.assign ({}, sqlNodePrototype, rqlNodePrototype, selectableTypePrototype, {
   constructor: When,
-  [refqlType]: type,
-  [SelectableType]: true
+  [refqlType]: type
 });
 
 // Params is inferred from type of `tag` parameter, so no need to default it to any

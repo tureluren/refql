@@ -1,22 +1,20 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
-import SelectableType from "../Table/SelectableType";
+import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface Eq<Prop extends SQLTag | string = any, Params = any, Type = any> extends RQLNode {
+interface Eq<Prop extends SQLTag | string = any, Params = any, Type = any> extends RQLNode, SelectableType {
   params: Params;
   prop: Prop;
   run: TagFunctionVariable<Params, Type>;
-  [SelectableType]: true;
 }
 
 const type = "refql/Eq";
 
-const prototype = Object.assign ({}, rqlNodePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   constructor: Eq,
-  [refqlType]: type,
-  [SelectableType]: true
+  [refqlType]: type
 });
 
 function Eq<Prop extends SQLTag | string, Params, Type>(prop: Prop, run: TagFunctionVariable<Params, Type> | Type) {
