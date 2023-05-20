@@ -8,6 +8,8 @@ import When from "../common/When";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
+import Limit from "../Table/Limit";
+import Offset from "../Table/Offset";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
@@ -372,25 +374,24 @@ describe ("RQLTag type", () => {
   });
 
 
-  test ("Nested limit and cache", async () => {
+  test ("Nested limit, nested offset and cache", async () => {
     const tag = Team ([
       "*",
-      Player (["*", sql`limit 4`]),
-      sql<{limit: number}, any>`
-        limit ${p => p.limit}
-      `
+      Player (["*", Limit ("playerLimit"), Offset ("playerOffset")]),
+      Limit (),
+      Offset ()
     ]);
 
     const spy = jest.spyOn (tag, "interpret");
 
-    const teams = await tag ({ limit: 2 }, querier);
+    const teams = await tag ({ limit: 2, playerLimit: 4, offset: 3, playerOffset: 5 }, querier);
     tag.nodes = [];
 
     expect (teams.length).toBe (2);
     expect (teams[0].players.length).toBe (4);
     expect (teams[1].players.length).toBe (4);
 
-    const teams2 = await tag ({ limit: 3 }, querier);
+    const teams2 = await tag ({ limit: 3, playerLimit: 4, offset: 3, playerOffset: 5 }, querier);
 
     expect (teams2.length).toBe (3);
     expect (teams2[0].players.length).toBe (4);

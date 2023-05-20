@@ -2,6 +2,8 @@ import When from "../common/When";
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import sql from "../SQLTag/sql";
+import Limit from "../Table/Limit";
+import Offset from "../Table/Offset";
 import { Player, Team } from "../test/tables";
 import Eq from "./Eq";
 import RefField from "./RefField";
@@ -37,5 +39,15 @@ describe ("RQLNodes", () => {
   test ("is RefField", () => {
     expect (RefField.isRefField (RefField ("player.id", "id"))).toBe (true);
     expect (RefField.isRefField ("Ref")).toBe (false);
+  });
+
+  test ("is Limit", () => {
+    expect (Limit.isLimit (Limit ())).toBe (true);
+    expect (Limit.isLimit ("limit")).toBe (false);
+  });
+
+  test ("is Offset", () => {
+    expect (Offset.isOffset (Offset ())).toBe (true);
+    expect (Offset.isOffset ("offset")).toBe (false);
   });
 });
