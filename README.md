@@ -88,7 +88,8 @@ The example below shows how to define tables and describe their references to ot
 import { Pool } from "pg";
 import { 
   BelongsTo, BelongsToMany, HasMany,
-  HasOne, sql, Table
+  HasOne, Limit, NumberProp, Offset,
+  StringProp, Table
 } from "refql";
 
 const pool = new Pool ({
@@ -102,83 +103,56 @@ const querier = async (query: string, values: any[]) => {
 };
 
 const Player = Table ("player", [
-  BelongsTo ("public.team"),
-  HasMany ("goal"),
-  HasOne ("rating"),
-  BelongsToMany ("game")
-], querier); // You can pass a default querier here
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  BelongsTo ("team", "public.team"),
+  HasOne ("rating", "rating"),
+  HasMany ("goals", "goal"),
+  BelongsToMany ("games", "game")
+]);
 
-const Team = Table ("public.team");
-const Goal = Table ("goal");
-const Rating = Table ("rating");
-const Game = Table ("game");
+const Team = Table ("public.team", [
+  StringProp ("name")
+]);
 
-// SQLTag
-const limit = sql<{ limit: number }>`
-  limit ${p => p.limit}
-`;
+const Rating = Table ("rating", [
+  NumberProp ("finishing"),
+  NumberProp ("dribbling"),
+  NumberProp ("tackling")
+]);
 
-// RQLTag
-const fullPlayer = Player`
-  ${Team}
-  ${Goal}
-  ${Rating}
-  ${Game}
-  ${limit}
-`;
+const Game = Table ("game", [
+  StringProp ("result")
+]);
 
-fullPlayer ({ limit: 1 }).then(console.log);
+const Goal = Table ("goal", [
+  NumberProp ("minute")
+]);
+
+const fullPlayer = Player ([
+  "id",
+  "firstName",
+  "lastName",
+  Team (["name"]),
+  Goal (["minute"]),
+  Rating (["*"]),
+  Game (["result"]),
+  Limit ()
+  Offset ()
+]);
+
+fullPlayer ({ limit: 1, offset: 8 }).then(console.log);
 
 // [
 //   {
-//     id: 1,
-//     first_name: "Steve",
-//     last_name: "Short",
-//     cars: null,
-//     birthday: "1995-05-05T22:00:00.000Z",
-//     team_id: 1,
-//     position_id: 1,
-//     team: {
-//       id: 1,
-//       name: "FC Adunupmev",
-//       league_id: 1
-//     },
-//     goals: [],
-//     rating: {
-//       player_id: 1,
-//       acceleration: 9,
-//       finishing: 11,
-//       positioning: 56,
-//       shot_power: 56,
-//       free_kick: 70,
-//       stamina: 88,
-//       dribbling: 52,
-//       tackling: 21
-//     },
-//     games: [
-//       {
-//         id: 1,
-//         home_team_id: 1,
-//         away_team_id: 2,
-//         league_id: 1,
-//         result: "5 - 2"
-//       },
-//       {
-//         id: 2,
-//         home_team_id: 1,
-//         away_team_id: 3,
-//         league_id: 1,
-//         result: "0 - 3"
-//       },
-//       {
-//         id: 3,
-//         home_team_id: 1,
-//         away_team_id: 4,
-//         league_id: 1,
-//         result: "4 - 2"
-//       },
-//       ...
-//     ]
+//     id: 9,
+//     firstName: "Leah",
+//     lastName: "Kennedy",
+//     team: { name: "FC Agecissak" },
+//     goals: [{ minute: 36 }, { minute: 20 }, { minute: 87 }, ...],
+//     rating: { finishing: 82, dribbling: 48, tackling: 47 },
+//     games: [{ result: "5 - 4" }, { result: "4 - 0" }, { result: "4 - 5" }, ...]
 //   }
 // ];
 ```

@@ -1,6 +1,9 @@
 import { Pool } from "pg";
 import When from "./common/When";
 import BelongsTo from "./Prop/BelongsTo";
+import BelongsToMany from "./Prop/BelongsToMany";
+import HasMany from "./Prop/HasMany";
+import HasOne from "./Prop/HasOne";
 import NumberProp from "./Prop/NumberProp";
 import StringProp from "./Prop/StringProp";
 import Raw from "./SQLTag/Raw";
@@ -17,42 +20,37 @@ const pool = new Pool ({
   port: 5432
 });
 
-// id Prop
 const id = NumberProp ("id");
 
-// Tables
 const Player = Table ("player", [
   id,
   StringProp ("firstName", "first_name"),
   StringProp ("lastName", "last_name"),
-  BelongsTo ("team", "team"),
-  StringProp ("fullName", sql<{ delimiter: string }>`
-    concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
-  `)
+  BelongsTo ("team", "public.team"),
+  HasOne ("rating", "rating"),
+  HasMany ("goals", "goal"),
+  BelongsToMany ("games", "game")
 ]);
 
-const Team = Table ("team", [
+const Team = Table ("public.team", [
   id,
   StringProp ("name")
 ]);
 
-const lim = Limit ("playerLimit");
-type limParams = typeof lim.params;
+const Rating = Table ("rating", [
+  NumberProp ("finishing"),
+  NumberProp ("dribbling"),
+  NumberProp ("tackling")
+]);
 
-// composition
-const playerById = Player ([
-  "id",
-  "firstName",
-  "lastName",
-  "fullName",
-  Team ([
-    "id",
-    "name"
-  ]),
-  // id.eq<{ id: number }> (p => p.id),
-  lim,
-  Offset (),
-  When (p => p.q != null, sql<{q: string}>``)
+const Game = Table ("game", [
+  id,
+  StringProp ("result")
+]);
+
+const Goal = Table ("goal", [
+  id,
+  NumberProp ("minute")
 ]);
 
 const querier = async (query: string, values: any[]) => {
@@ -62,4 +60,16 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
-playerById ({ playerLimit: 1, offset: 10, q: "", delimiter: " " }, querier).then (res => console.log (res));
+const fullPlayer = Player ([
+  "id",
+  "firstName",
+  "lastName",
+  Team (["name"]),
+  Goal (["minute"]),
+  Rating (["*"]),
+  Game (["result"]),
+  Limit (),
+  Offset ()
+]);
+
+fullPlayer ({ limit: 1, offset: 8 }, querier).then (res => console.log (JSON.stringify (res)));
