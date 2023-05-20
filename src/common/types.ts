@@ -4,6 +4,7 @@ import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
 import RefField from "../RQLTag/RefField";
 import Raw from "../SQLTag/Raw";
+import SQLNode from "../SQLTag/SQLNode";
 import Value from "../SQLTag/Value";
 import Values from "../SQLTag/Values";
 import Values2D from "../SQLTag/Values2D";
@@ -32,13 +33,6 @@ export interface RefQLRows {
 
 export type TagFunctionVariable<Params, Output = ValueType> =
   (params: Params) => Output;
-
-export type SQLNode<Params> =
-  | Raw<Params>
-  | Value<Params>
-  | Values<Params>
-  | Values2D<Params>
-  | When<Params>;
 
 export type SQLTagVariable<Params> =
   | SQLNode<Params>

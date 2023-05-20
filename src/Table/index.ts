@@ -6,7 +6,7 @@ import PropType from "../Prop/PropType";
 import RefProp from "../Prop/RefProp";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import RefNode from "../RQLTag/RefNode";
-import { isRQLNode, RQLNode } from "../RQLTag/RQLNodeType";
+import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
 import { isSQLTag } from "../SQLTag";
 
 interface Table<TableId extends string = any, Props = any> {

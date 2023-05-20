@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { RQLNode, rqlNodePrototype } from "../RQLTag/RQLNodeType";
+import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import SelectableType from "../Table/SelectableType";
 
 interface Limit<ParameterProp extends string = any> extends RQLNode {

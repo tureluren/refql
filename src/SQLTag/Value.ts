@@ -1,8 +1,8 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable, ValueType } from "../common/types";
-import { sqlNodePrototype } from "./isSQLNode";
+import SQLNode, { sqlNodePrototype } from "./SQLNode";
 
-interface Value<Params = any> {
+interface Value<Params = any> extends SQLNode<Params> {
   run: TagFunctionVariable<Params>;
 }
 

@@ -1,8 +1,8 @@
 import { flMap } from "../common/consts";
-import When, { when } from "../common/When";
+import When from "../common/When";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
-import isSQLNode from "./isSQLNode";
+import { isSQLNode } from "./SQLNode";
 import Value from "./Value";
 import Values from "./Values";
 import Values2D from "./Values2D";

@@ -1,9 +1,9 @@
 import { flMap, refqlType } from "../common/consts";
 import { TagFunctionVariable, ValueType } from "../common/types";
 import Table from "../Table";
-import { sqlNodePrototype } from "./isSQLNode";
+import SQLNode, { sqlNodePrototype } from "./SQLNode";
 
-interface Raw<Params = any> {
+interface Raw<Params = any> extends SQLNode<Params> {
   run: TagFunctionVariable<Params, string>;
   map(f: (x: ValueType) => ValueType): Raw<Params>;
   [flMap]: Raw<Params>["map"];

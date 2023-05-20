@@ -1,10 +1,10 @@
 import { createSQLTag, isSQLTag } from ".";
-import { SQLNode, SQLTagVariable } from "../common/types";
+import { SQLTagVariable } from "../common/types";
 import { isRQLTag } from "../RQLTag";
 import Table from "../Table";
-import isSQLNode from "./isSQLNode";
 import Raw from "./Raw";
 import Value from "./Value";
+import SQLNode, { isSQLNode } from "./SQLNode";
 
 export function parse<Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params>[]) {
   const nodes = [] as SQLNode<Params>[];

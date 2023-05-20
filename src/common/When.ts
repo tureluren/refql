@@ -1,11 +1,11 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
-import { RQLNode, rqlNodePrototype } from "../RQLTag/RQLNodeType";
+import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import { SQLTag } from "../SQLTag";
-import { sqlNodePrototype } from "../SQLTag/isSQLNode";
+import SQLNode, { sqlNodePrototype } from "../SQLTag/SQLNode";
 import SelectableType from "../Table/SelectableType";
 
-interface When<Params = any> extends RQLNode {
+interface When<Params = any> extends RQLNode, SQLNode<Params> {
   params: Params;
   pred: TagFunctionVariable<Params, boolean>;
   tag: SQLTag<Params>;

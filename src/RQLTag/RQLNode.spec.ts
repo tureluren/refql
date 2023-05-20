@@ -4,9 +4,9 @@ import RefProp from "../Prop/RefProp";
 import sql from "../SQLTag/sql";
 import { Player, Team } from "../test/tables";
 import Eq from "./Eq";
-import isRQLNode from "./isRQLNode";
 import RefField from "./RefField";
 import RefNode from "./RefNode";
+import { isRQLNode } from "./RQLNode";
 
 describe ("RQLNodes", () => {
   test ("is RQLNode", () => {

@@ -12,7 +12,7 @@ import Limit from "../Table/Limit";
 import Offset from "../Table/Offset";
 import Eq from "./Eq";
 import RefNode from "./RefNode";
-import { RQLNode } from "./RQLNodeType";
+import RQLNode from "./RQLNode";
 
 export interface Next<TableId extends string = any, Params = any, Output = any> {
   tag: RQLTag<TableId, Params & RefQLRows, Output>;

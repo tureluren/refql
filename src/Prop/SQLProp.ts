@@ -1,7 +1,7 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
-import { RQLNode, rqlNodePrototype } from "../RQLTag/RQLNodeType";
+import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import { SQLTag } from "../SQLTag";
 import PropType from "./PropType";
 

@@ -7,7 +7,7 @@ import sql from "../SQLTag/sql";
 import Values from "../SQLTag/Values";
 import Table from "../Table";
 import RefField from "./RefField";
-import { RQLNode, rqlNodePrototype } from "./RQLNodeType";
+import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
 interface RefNode extends RQLNode {
   joinLateral(): RQLTag;

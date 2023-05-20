@@ -2,7 +2,7 @@ import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import { Querier, SQLNode, StringMap, TagFunctionVariable } from "../common/types";
 import When from "../common/When";
-import { RQLNode, rqlNodePrototype } from "../RQLTag/RQLNodeType";
+import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import SelectableType from "../Table/SelectableType";
 import Raw from "./Raw";
 import Value from "./Value";
