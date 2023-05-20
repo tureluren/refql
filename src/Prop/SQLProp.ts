@@ -7,6 +7,7 @@ import PropType from "./PropType";
 
 interface SQLProp<As extends string = any, Params = any, Type = any> extends RQLNode {
   as: As;
+  params: Params;
   col: SQLTag<Params>;
   type: Type;
   arrayOf(): SQLProp<As, Params, Type[]>;

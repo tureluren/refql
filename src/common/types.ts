@@ -2,18 +2,13 @@ import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
-import Eq from "../RQLTag/Eq";
 import RefField from "../RQLTag/RefField";
-import RefNode from "../RQLTag/RefNode";
 import RQLNodeType from "../RQLTag/RQLNodeType";
-import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import Value from "../SQLTag/Value";
 import Values from "../SQLTag/Values";
 import Values2D from "../SQLTag/Values2D";
 import Table from "../Table";
-import Limit from "../Table/Limit";
-import Offset from "../Table/Offset";
 import SelectableType from "../Table/SelectableType";
 import When from "./When";
 
@@ -104,13 +99,9 @@ export type Selectable<T> =
 export type ParamsType<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
   ? (U extends ({ params: any })
     ? U
-    : U extends SQLProp
-      ? U["col"]
-      : U extends keyof SQLProps
-        ? SQLProps[U]["col"]
-        : U extends When
-          ? U["tag"]
-          : { params: {}})[]
+    : U extends keyof SQLProps
+      ? SQLProps[U]
+      : { params: {}})[]
   : {params: {}};
 
 export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<ParamsType<S, T>[number]["params"]>;

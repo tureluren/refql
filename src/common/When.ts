@@ -6,6 +6,7 @@ import { sqlNodePrototype } from "../SQLTag/isSQLNode";
 import SelectableType from "../Table/SelectableType";
 
 interface When<Params = any> extends RQLNode {
+  params: Params;
   pred: TagFunctionVariable<Params, boolean>;
   tag: SQLTag<Params>;
   whenable: true;
