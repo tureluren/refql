@@ -1,6 +1,6 @@
 import { flConcat, refqlType } from "../common/consts";
 import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows, RQLNode, StringMap } from "../common/types";
+import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import When from "../common/When";
 import Prop from "../Prop";
 import SQLProp from "../Prop/SQLProp";
@@ -12,6 +12,7 @@ import Limit from "../Table/Limit";
 import Offset from "../Table/Offset";
 import Eq from "./Eq";
 import RefNode from "./RefNode";
+import { RQLNode } from "./RQLNodeType";
 
 export interface Next<TableId extends string = any, Params = any, Output = any> {
   tag: RQLTag<TableId, Params & RefQLRows, Output>;

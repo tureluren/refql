@@ -1,6 +1,6 @@
 import { refqlType } from "../common/consts";
-import { RQLNode, TagFunctionVariable } from "../common/types";
-import { rqlNodePrototype } from "../RQLTag/isRQLNode";
+import { TagFunctionVariable } from "../common/types";
+import { RQLNode, rqlNodePrototype } from "../RQLTag/RQLNodeType";
 import { SQLTag } from "../SQLTag";
 import { sqlNodePrototype } from "../SQLTag/isSQLNode";
 import SelectableType from "../Table/SelectableType";

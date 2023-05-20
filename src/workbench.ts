@@ -62,4 +62,4 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
-playerById ({ playerLimit: 1, offset: 10, q: "" }, querier).then (res => console.log (res));
+playerById ({ playerLimit: 1, offset: 10, q: "", delimiter: " " }, querier).then (res => console.log (res));

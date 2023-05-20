@@ -1,13 +1,13 @@
 import { refqlType } from "../common/consts";
-import { RefInfo, RefInput, RefQLRows, RQLNode } from "../common/types";
+import { RefInfo, RefInput, RefQLRows } from "../common/types";
 import RefProp from "../Prop/RefProp";
 import { RQLTag } from "../RQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Values from "../SQLTag/Values";
 import Table from "../Table";
-import { rqlNodePrototype } from "./isRQLNode";
 import RefField from "./RefField";
+import { RQLNode, rqlNodePrototype } from "./RQLNodeType";
 
 interface RefNode extends RQLNode {
   joinLateral(): RQLTag;

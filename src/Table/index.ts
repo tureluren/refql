@@ -1,12 +1,12 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Output, Params, Querier, RQLNode, Selectable } from "../common/types";
+import { Output, Params, Querier, Selectable } from "../common/types";
 import validateTable from "../common/validateTable";
 import Prop from "../Prop";
 import PropType from "../Prop/PropType";
 import RefProp from "../Prop/RefProp";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
-import isRQLNode from "../RQLTag/isRQLNode";
 import RefNode from "../RQLTag/RefNode";
+import { isRQLNode, RQLNode } from "../RQLTag/RQLNodeType";
 import { isSQLTag } from "../SQLTag";
 
 interface Table<TableId extends string = any, Props = any> {

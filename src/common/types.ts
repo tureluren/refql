@@ -3,7 +3,6 @@ import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
 import RefField from "../RQLTag/RefField";
-import RQLNodeType from "../RQLTag/RQLNodeType";
 import Raw from "../SQLTag/Raw";
 import Value from "../SQLTag/Value";
 import Values from "../SQLTag/Values";
@@ -126,7 +125,3 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLPro
             : never
         : never)[]
   : never;
-
-export interface RQLNode {
-  [RQLNodeType]: true;
-}
