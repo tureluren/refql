@@ -14,6 +14,8 @@ import SQLProp from "./Prop/SQLProp";
 import StringProp from "./Prop/StringProp";
 import { createRQLTag, isRQLTag, RQLTag } from "./RQLTag";
 import Eq from "./RQLTag/Eq";
+import Limit from "./RQLTag/Limit";
+import Offset from "./RQLTag/Offset";
 import RefField from "./RQLTag/RefField";
 import RefNode from "./RQLTag/RefNode";
 import { createSQLTag, isSQLTag, SQLTag } from "./SQLTag";
@@ -24,12 +26,9 @@ import Value from "./SQLTag/Value";
 import Values from "./SQLTag/Values";
 import Values2D from "./SQLTag/Values2D";
 import Table from "./Table";
-import Limit from "./Table/Limit";
-import Offset from "./Table/Offset";
 import SelectableType from "./Table/SelectableType";
 
 export * from "./common/types";
-
 export {
   BelongsTo, BelongsToMany, BooleanProp,
   createRQLTag, createSQLTag, DateProp,
@@ -40,3 +39,4 @@ export {
   SQLProp, SQLTag, StringProp, Table,
   Value, Values, Values2D, When
 };
+

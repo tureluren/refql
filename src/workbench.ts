@@ -1,5 +1,4 @@
 import { Pool } from "pg";
-import When from "./common/When";
 import BelongsTo from "./Prop/BelongsTo";
 import BelongsToMany from "./Prop/BelongsToMany";
 import HasMany from "./Prop/HasMany";
@@ -9,8 +8,6 @@ import StringProp from "./Prop/StringProp";
 import Raw from "./SQLTag/Raw";
 import sql from "./SQLTag/sql";
 import Table from "./Table";
-import Limit from "./Table/Limit";
-import Offset from "./Table/Offset";
 
 const pool = new Pool ({
   user: "test",

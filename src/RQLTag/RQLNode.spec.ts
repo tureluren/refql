@@ -2,10 +2,12 @@ import When from "../common/When";
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import sql from "../SQLTag/sql";
-import Limit from "../Table/Limit";
-import Offset from "../Table/Offset";
 import { Player, Team } from "../test/tables";
 import Eq from "./Eq";
+import In from "./In";
+import Limit from "./Limit";
+import Offset from "./Offset";
+import OrderBy from "./OrderBy";
 import RefField from "./RefField";
 import RefNode from "./RefNode";
 import { isRQLNode } from "./RQLNode";
@@ -19,6 +21,16 @@ describe ("RQLNodes", () => {
   test ("is Eq", () => {
     expect (Eq.isEq (Eq ("id", 1))).toBe (true);
     expect (Eq.isEq ("Eq")).toBe (false);
+  });
+
+  test ("is In", () => {
+    expect (In.isIn (In ("id", [1, 2, 3, 4]))).toBe (true);
+    expect (In.isIn ("In")).toBe (false);
+  });
+
+  test ("order By", () => {
+    expect (OrderBy.isOrderBy (OrderBy ("id", true))).toBe (true);
+    expect (In.isIn ("order by")).toBe (false);
   });
 
   test ("is Prop", () => {

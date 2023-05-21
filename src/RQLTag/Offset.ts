@@ -1,6 +1,6 @@
 import { refqlType } from "../common/consts";
-import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
-import SelectableType, { selectableTypePrototype } from "./SelectableType";
+import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
+import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
 interface Offset<ParameterProp extends string = any> extends RQLNode, SelectableType {
   prop: ParameterProp;

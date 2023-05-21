@@ -10,23 +10,23 @@ import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Values from "../SQLTag/Values";
 import Table from "../Table";
-import Limit from "../Table/Limit";
-import Offset from "../Table/Offset";
 import Eq from "./Eq";
 import In from "./In";
+import Limit from "./Limit";
+import Offset from "./Offset";
 import OrderBy from "./OrderBy";
 import RefNode from "./RefNode";
 import RQLNode from "./RQLNode";
 
-export interface Next<TableId extends string = any, Params = any, Output = any> {
-  tag: RQLTag<TableId, Params & RefQLRows, Output>;
+export interface Next {
+  tag: RQLTag<any, RefQLRows>;
   link: [string, string];
   single: boolean;
 }
 
-interface InterpretedRQLTag<TableId extends string = any, Params = any, Output = any> {
+interface InterpretedRQLTag<Params = any, Output = any> {
   tag: SQLTag<Params, Output>;
-  next: Next<TableId, Params, Output>[];
+  next: Next[];
 }
 
 interface Extra<Params = any, Output = any> {
@@ -42,11 +42,11 @@ export interface RQLTag<TableId extends string = any, Params = any, Output = any
   nodes: RQLNode[];
   defaultQuerier?: Querier;
   convertPromise: (p: Promise<Output>) => any;
-  interpreted: InterpretedRQLTag<TableId, Params, Output>;
+  interpreted: InterpretedRQLTag<Params, Output>;
   concat<Params2, Output2>(other: RQLTag<TableId, Params2, Output2>): RQLTag<TableId, Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<TableId, Params, Output>["concat"];
-  interpret(): InterpretedRQLTag<TableId, Params, Output> & Extra<Params, Output>;
-  compile(params: Params): [string, any[], Next<TableId, Params, Output>[]];
+  interpret(): InterpretedRQLTag<Params, Output> & Extra<Params, Output>;
+  compile(params: Params): [string, any[], Next[]];
   aggregate(params: Params, querier: Querier): Promise<Output>;
 }
 

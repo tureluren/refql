@@ -8,8 +8,6 @@ import When from "../common/When";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
-import Limit from "../Table/Limit";
-import Offset from "../Table/Offset";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
@@ -19,6 +17,8 @@ import {
   Player, Player2, Rating, Team, XGame
 } from "../test/tables";
 import userConfig from "../test/userConfig";
+import Limit from "./Limit";
+import Offset from "./Offset";
 
 describe ("RQLTag type", () => {
   let pool: any;
@@ -113,12 +113,12 @@ describe ("RQLTag type", () => {
       ]),
       Game (["result"]),
       Rating (["acceleration", "stamina"]),
-      sql`
-        limit 30
-      `
+      Limit (),
+      props.fullName.asc (),
+      props.id.desc ()
     ]);
 
-    const [query, values, next] = tag.compile ({});
+    const [query, values, next] = tag.compile ({ limit: 30, delimiter: " " });
 
     // player
     expect (query).toBe (format (`
@@ -126,10 +126,11 @@ describe ("RQLTag type", () => {
         player.team_id teamlref, player.id gameslref, player.id ratinglref
       from player
       where 1 = 1
-      limit 30
+      order by concat (player.first_name, ' ', player.last_name) asc, player.id desc
+      limit $1
     `));
 
-    expect (values).toEqual ([]);
+    expect (values).toEqual ([30]);
 
     // team
     const teamTag = next[0].tag;
@@ -219,7 +220,7 @@ describe ("RQLTag type", () => {
     expect (ratingNext).toEqual ([]);
 
     // db results
-    const players = await tag ({}, querier);
+    const players = await tag ({ limit: 30, delimiter: " " }, querier);
     const player = players[0];
     const playerTeam = player.team;
     const defender = playerTeam!.players[0];
