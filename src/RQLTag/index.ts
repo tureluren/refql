@@ -171,9 +171,9 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
       }
     } else if (OrderBy.isOrderBy (node)) {
       if (isSQLTag (node.prop)) {
-        // extra = extra.concat (sql`
-        //   and ${node.prop} = ${Values (node.run)}
-        // `);
+        orderBy = orderBy.join (", ", sql`
+          ${node.prop} ${Raw (node.descending ? "desc" : "asc")}
+        `);
       } else {
         orderBy = orderBy.join (", ", sql`
           ${Raw (`${table.name}.${node.prop} ${node.descending ? "desc" : "asc"}`)}

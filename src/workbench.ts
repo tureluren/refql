@@ -26,6 +26,9 @@ const Player = Table ("player", [
   id,
   StringProp ("firstName", "first_name"),
   StringProp ("lastName", "last_name"),
+  StringProp ("fullName", sql<{ delimiter: string }>`
+    concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
+  `),
   BelongsTo ("team", "public.team"),
   HasOne ("rating", "rating"),
   HasMany ("goals", "goal"),
@@ -65,8 +68,8 @@ const fullPlayer = Player ([
   "firstName",
   "lastName",
   id.in ([1, 2, 3]),
-  id.asc (),
-  Limit ()
+  Player.props.id.desc (),
+  Player.props.fullName.desc ()
 ]);
 
-fullPlayer ({ limit: 2 }, querier).then (res => console.log (res));
+fullPlayer ({ delimiter: " " }, querier).then (res => console.log (res));

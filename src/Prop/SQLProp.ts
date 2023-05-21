@@ -2,6 +2,7 @@ import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
+import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import { SQLTag } from "../SQLTag";
 import PropType, { propTypePrototype } from "./PropType";
@@ -14,6 +15,8 @@ interface SQLProp<As extends string = any, Params = any, Type = any> extends RQL
   nullable(): SQLProp<As, Params, Type | null>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params & Params2, Type>;
   in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): In<As, Params & Params2, Type>;
+  asc(): OrderBy<As, false, Params>;
+  desc(): OrderBy<As, true, Params>;
 }
 
 const type = "refql/SQLProp";
@@ -24,7 +27,9 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   arrayOf: nullable,
   nullable,
   eq,
-  in: whereIn
+  in: whereIn,
+  asc,
+  desc
 });
 
 function SQLProp<As extends string, Params, Type = any>(as: As, col: SQLTag<Params>) {
@@ -46,6 +51,14 @@ function eq(this: SQLProp, run: any) {
 
 function whereIn(this: SQLProp, run: any) {
   return In (this.col, run);
+}
+
+function asc(this: SQLProp) {
+  return OrderBy (this.col, false);
+}
+
+function desc(this: SQLProp) {
+  return OrderBy (this.col, true);
 }
 
 SQLProp.isSQLProp = function <As extends string = any, Params = any, Type = any> (x: any): x is SQLProp {

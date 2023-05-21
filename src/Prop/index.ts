@@ -13,8 +13,8 @@ interface Prop<As extends string = any, Type = any> extends RQLNode, PropType<As
   nullable(): Prop<As, Type | null>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params2, Type>;
   in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): In<As, Params2, Type>;
-  asc(): OrderBy<As, false>;
-  desc(): OrderBy<As, true>;
+  asc(): OrderBy<As, false, {}>;
+  desc(): OrderBy<As, true, {}>;
 }
 
 const type = "refql/Prop";
