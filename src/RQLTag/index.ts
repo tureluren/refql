@@ -1,4 +1,5 @@
 import { flConcat, refqlType } from "../common/consts";
+import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import When from "../common/When";
@@ -7,10 +8,13 @@ import SQLProp from "../Prop/SQLProp";
 import { isSQLTag, SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
+import Values from "../SQLTag/Values";
 import Table from "../Table";
 import Limit from "../Table/Limit";
 import Offset from "../Table/Offset";
 import Eq from "./Eq";
+import In from "./In";
+import OrderBy from "./OrderBy";
 import RefNode from "./RefNode";
 import RQLNode from "./RQLNode";
 
@@ -120,6 +124,7 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
     members = [] as (Raw | SQLTag)[];
 
   let extra = sql``;
+  let orderBy = sql``;
   let limit = sql``;
   let offset = sql``;
 
@@ -154,6 +159,26 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
           and ${Raw (`${table.name}.${node.prop}`)} = ${node.run}
         `);
       }
+    } else if (In.isIn (node)) {
+      if (isSQLTag (node.prop)) {
+        extra = extra.concat (sql`
+          and ${node.prop} = ${Values (node.run)}
+        `);
+      } else {
+        extra = extra.concat (sql`
+          and ${Raw (`${table.name}.${node.prop}`)} in ${Values (node.run)}
+        `);
+      }
+    } else if (OrderBy.isOrderBy (node)) {
+      if (isSQLTag (node.prop)) {
+        // extra = extra.concat (sql`
+        //   and ${node.prop} = ${Values (node.run)}
+        // `);
+      } else {
+        orderBy = orderBy.join (", ", sql`
+          ${Raw (`${table.name}.${node.prop} ${node.descending ? "desc" : "asc"}`)}
+        `);
+      }
     } else if (Limit.isLimit (node)) {
       limit = sql<typeof node["params"]>`limit ${p => p[node.prop]}`;
     } else if (Offset.isOffset (node)) {
@@ -168,12 +193,24 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
     from ${Raw (table)}
   `;
 
+  if (!isEmptyTag (orderBy)) {
+    extra = extra.concat (sql`
+      order by ${orderBy} 
+    `);
+  }
+
+  if (!isEmptyTag (limit)) {
+    extra = extra.concat (limit);
+  }
+
+  if (!isEmptyTag (offset)) {
+    extra = extra.concat (offset);
+  }
+
   return {
     next,
     tag,
-    extra: extra
-      .concat (limit)
-      .concat (offset)
+    extra
   };
 }
 

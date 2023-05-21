@@ -64,12 +64,9 @@ const fullPlayer = Player ([
   "id",
   "firstName",
   "lastName",
-  Team (["name"]),
-  Goal (["minute"]),
-  Rating (["*"]),
-  Game (["result"]),
-  Limit (),
-  Offset ()
+  id.in ([1, 2, 3]),
+  id.asc (),
+  Limit ()
 ]);
 
-fullPlayer ({ limit: 1, offset: 8 }, querier).then (res => console.log (JSON.stringify (res)));
+fullPlayer ({ limit: 2 }, querier).then (res => console.log (res));
