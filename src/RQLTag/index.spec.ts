@@ -126,7 +126,7 @@ describe ("RQLTag type", () => {
         player.team_id teamlref, player.id gameslref, player.id ratinglref
       from player
       where 1 = 1
-      order by concat (player.first_name, ' ', player.last_name) asc, player.id desc
+      order by (concat (player.first_name, ' ', player.last_name)) asc, player.id desc
       limit $1
     `));
 
@@ -461,10 +461,43 @@ describe ("RQLTag type", () => {
       select player.id "id"
       from player
       where 1 = 1
-      and concat (player.first_name, ' ', player.last_name) = $1
+      and (concat (player.first_name, ' ', player.last_name)) = $1
     `));
 
     expect (values).toEqual (["John Doe"]);
+  });
+
+  test ("Where in and order by", async () => {
+    const { id, fullName, teamId, goalCount } = Player.props;
+
+    const tag = Player ([
+      "id",
+      "firstName",
+      "lastName",
+      id.in<{ ids: number[] }> (p => p.ids),
+      goalCount.in ([0]),
+      teamId.in ([1, 2]),
+      fullName.desc (),
+      id.asc ()
+    ]);
+
+    const [query, values] = await tag.compile ({ ids: [1, 2, 3], delimiter: " " });
+
+    expect (query).toBe (format (`
+      select player.id "id", player.first_name "firstName", player.last_name "lastName"
+      from player
+      where 1 = 1 
+      and player.id in ($1, $2, $3)
+      and (select count (*)::int from goal where goal.player_id = player.id) in ($4)
+      and player.team_id in ($5, $6)
+      order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
+    `));
+
+    expect (values).toEqual ([1, 2, 3, 0, 1, 2]);
+
+    const players = await tag ({ ids: [1, 2, 3], delimiter: " " }, querier);
+
+    expect (players.length).toBe (3);
   });
 
   test ("No record found", async () => {

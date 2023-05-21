@@ -152,7 +152,7 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
     } else if (Eq.isEq (node)) {
       if (isSQLTag (node.prop)) {
         extra = extra.concat (sql`
-          and ${node.prop} = ${node.run}
+          and (${node.prop}) = ${node.run}
         `);
       } else {
         extra = extra.concat (sql`
@@ -162,7 +162,7 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
     } else if (In.isIn (node)) {
       if (isSQLTag (node.prop)) {
         extra = extra.concat (sql`
-          and ${node.prop} = ${Values (node.run)}
+          and (${node.prop}) in ${Values (node.run)}
         `);
       } else {
         extra = extra.concat (sql`
@@ -172,7 +172,7 @@ function interpret(this: RQLTag): InterpretedRQLTag & Extra {
     } else if (OrderBy.isOrderBy (node)) {
       if (isSQLTag (node.prop)) {
         orderBy = orderBy.join (", ", sql`
-          ${node.prop} ${Raw (node.descending ? "desc" : "asc")}
+          (${node.prop}) ${Raw (node.descending ? "desc" : "asc")}
         `);
       } else {
         orderBy = orderBy.join (", ", sql`
