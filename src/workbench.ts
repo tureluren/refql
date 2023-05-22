@@ -1,7 +1,8 @@
 import { Pool } from "pg";
 import {
-  BelongsTo, NumberProp, setDefaultQuerier, StringProp, Table
+  BelongsTo, Limit, NumberProp, setDefaultQuerier, StringProp, Table
 } from ".";
+import { Player, Team } from "./test/tables";
 
 const querier = async (query: string, values: any[]) => {
   console.log (query);
@@ -22,32 +23,17 @@ const pool = new Pool ({
 });
 
 
-// id Prop
-const id = NumberProp ("id");
-
-// Tables
-const Player = Table ("player", [
-  id,
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  BelongsTo ("team", "team")
-]);
-
-const Team = Table ("team", [
-  id,
-  StringProp ("name")
-]);
-
-// query composition
-const playerById = Player ([
-  id,
+// select components
+const playerLtd = Player ([
+  "id",
   "firstName",
   "lastName",
   Team ([
-    id,
+    "id",
     "name"
   ]),
-  id.eq<{ id: number }> (p => p.id)
+  Limit ()
 ]);
 
-playerById ({ id: 9 }).then (console.log);
+// and run
+playerLtd ({ limit: 5 });

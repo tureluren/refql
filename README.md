@@ -1,7 +1,7 @@
 # RefQL
 A Node.js and Deno library for composing and running SQL queries.
 
-<img height="358" width="452" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
+<img height="358" width="452" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/safe-table/example.gif">
 
 
 ## Installation
@@ -35,7 +35,7 @@ const Team = Table ("team", [
   StringProp ("name")
 ]);
 
-// query composition
+// select components
 const playerById = Player ([
   id,
   "firstName",
