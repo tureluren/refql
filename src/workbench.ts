@@ -1,5 +1,7 @@
 import { Pool } from "pg";
-import { Limit, setDefaultQuerier } from ".";
+import {
+  BelongsTo, Limit, NumberProp, setDefaultQuerier, StringProp, Table
+} from ".";
 import { Player, Team } from "./test/tables";
 
 const querier = async (query: string, values: any[]) => {
@@ -22,7 +24,7 @@ const pool = new Pool ({
 
 
 // select components
-const playerLtd = Player ([
+const eleven = Player ([
   "id",
   "firstName",
   "lastName",
@@ -34,4 +36,4 @@ const playerLtd = Player ([
 ]);
 
 // and run
-playerLtd ({ limit: 5 });
+eleven ({ limit: 5 });
