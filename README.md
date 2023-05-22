@@ -274,8 +274,8 @@ Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures. `RQLTag` is al
 ```ts
 const part1 = Player ([
   id,
-  Team (["id"]),
-  "firstName"
+  "firstName",
+  Team (["id"])
 ]);
 
 const part2 = Player ([
@@ -464,13 +464,13 @@ topScorers ().then (console.log);
 With the Raw data type it's possible to inject values as raw text into the query.
 
 ```ts
-import { Raw } from "refql";
+import { Raw, sql, Table } from "refql";
 
 // dynamic properties
 const idField = "id";
 const bdField = "birthday";
 
-const Player = Table ("player");
+const Player = Table ("player", []);
 
 const playerById = sql<{ id: number }>`
   select id, last_name, age (${Raw (bdField)})::text
@@ -482,16 +482,16 @@ const playerById = sql<{ id: number }>`
 
 playerById ({ id: 1 }).then (console.log);
 
-// [ { id: 1, last_name: 'Short', age: '27 years 9 mons 1 day' } ]
+// [ { id: 1, last_name: "Hubbard", age: "26 years 1 mon 15 days" } ];
 ```
 
 ### Values
 Useful when you want to create dynamic queries, such as inserts or queries with the `in` operator.
 
 ```ts
-import { Values } from "refql";
+import { sql, Table, Values } from "refql";
 
-const Player = Table ("player");
+const Player = Table ("player", []);
 
 // select id, last_name from player where id in ($1, $2, $3)
 const selectPlayers = sql<{ ids: number[]}>`
@@ -503,10 +503,10 @@ const selectPlayers = sql<{ ids: number[]}>`
 selectPlayers ({ ids: [1, 2, 3] }).then (console.log);
 
 // [
-//   { id: 1, last_name: 'Short' },
-//   { id: 2, last_name: 'Owens' },
-//   { id: 3, last_name: 'Sbolci' }
-// ]
+//   { id: 1, last_name: "Hubbard" },
+//   { id: 2, last_name: "Mendez" },
+//   { id: 3, last_name: "Kubo" }
+// ];
 
 ```
 
@@ -514,14 +514,14 @@ selectPlayers ({ ids: [1, 2, 3] }).then (console.log);
 Useful for batch inserts.
 
 ```ts
-import { Values2D } from "refql";
+import { Table, Raw, sql, Values2D } from "refql";
 
 interface Player {
   first_name: string;
   last_name: string;
 }
 
-const Player = Table ("player", [], querier);
+const Player = Table ("player", []);
 
 const insertBatch = sql<{ fields: (keyof Player)[]; data: Player[] }, Player[]>`
   insert into ${Player} (${Raw (p => p.fields.join (", "))})
@@ -536,23 +536,11 @@ insertBatch ({
     { first_name: "Jane", last_name: "Doe" },
     { first_name: "Jimmy", last_name: "Doe" }
   ]
-}, querier).then (console.log);
+}).then (console.log);
 
 // [
-//   {
-//     id: 733,
-//     first_name: 'John',
-//     last_name: 'Doe'
-//   },
-//   {
-//     id: 734,
-//     first_name: 'Jane',
-//     last_name: 'Doe'
-//   },
-//   {
-//     id: 735,
-//     first_name: 'Jimmy',
-//     last_name: 'Doe'
-//   }
-// ]
+//   { id: 1020, first_name: "John", last_name: "Doe" },
+//   { id: 1021, first_name: "Jane", last_name: "Doe" },
+//   { id: 1022, first_name: "Jimmy", last_name: "Doe" }
+// ];
 ```
