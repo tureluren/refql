@@ -73,11 +73,11 @@ playerById ({ id: 1 }, querier).then(console.log);
 * [Tables and References](#tables-and-references)
 * [Querier](#querier)
 * [Fantasy Land Interoperability](#fantasy-land-interoperability)
+* [SQLTag](#sqltag)
 * [Raw](#raw)
 * [When](#when)
 * [Values](#values)
 * [Values2D](#values2d)
-* [Comments](#comments)
 * [Functions, subselects, aliases, casts, literals, :1](#functions-subselects-aliases-casts-literals-1)
 
 ## Tables and References
@@ -141,7 +141,7 @@ const fullPlayer = Player ([
   Offset ()
 ]);
 
-fullPlayer ({ limit: 1, offset: 8 }, querier).then(console.log);
+fullPlayer ({ limit: 1, offset: 8 }, querier).then (console.log);
 
 // [
 //   {
@@ -249,7 +249,6 @@ const firstTeam = Player ([
   id.asc ()
 ]);
 
-
 // `fork` instead of `then`
 firstTeam ({ limit: 10 }).fork (console.error, console.log);
 
@@ -271,29 +270,19 @@ firstTeam ({ limit: 10 }).fork (console.error, console.log);
 ## Fantasy Land Interoperability
 <a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
 
-Both `RQLTag` and `SQLTag` are `Semigroup` structures. `RQLTag` is also a `Monoid` and `Table` is a `Setoid`.
+Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures. `RQLTag` is also a `Monoid` and `Table` is a `Setoid`.
 
 ```ts
-const Player = Table ("player", [
-  BelongsTo ("team")
-], querier);
+const idAndFirstName = Player ([
+  id,
+  "firstName"
+]);
 
-const Team = Table ("team");
-
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
-`;
-
-const idAndFirstName = Player<{}, { id: number; first_name: string }[]>`
-  id
-  first_name
-`;
-
-const lastNameAndTeam = Player<{ id: number }, { last_name: string; team: { name: string } }[]>`
-  last_name
-  ${Team`name`}
-  ${byId}
-`;
+const lastNameAndTeam = Player ([
+  "lastName",
+  Team (["name"]),
+  id.eq<{ id: number }> (p => p.id)
+]);
 
 const playerById = idAndFirstName
   .concat (lastNameAndTeam);
@@ -303,13 +292,13 @@ playerById ({ id: 1 }).then (console.log);
 // [
 //   {
 //     id: 1,
-//     first_name: 'Georgia',
-//     last_name: 'Marquez',
-//     team: { name: 'FC Evatelo' }
+//     firstName: "Christine",
+//     lastName: "Hubbard",
+//     team: { name: "FC Agecissak" }
 //   }
-// ]
+// ];
 ```
-
+## SQLTag
 ## Raw
 With the Raw data type it's possible to inject values as raw text into the query.
 
@@ -336,29 +325,27 @@ playerById ({ id: 1 }).then (console.log);
 ```
 
 ## When
-`When` takes a predicate and a `SQLTag`. If the predicate returns true, the tag is added to `searchPlayer`.
+`When` takes a predicate and a [`SQLTag`](#sqltag). If the predicate returns true, the tag is added to `searchPlayer`.
 ```ts
 import { When } from "refql";
 
-const searchPlayer = Player<{ q?: string; limit?: number }>`
-  id
-  last_name
-  ${When (p => p.q != null, sql`
+const searchPlayer = Player ([
+  "id",
+  "lastName",
+  When<{ q: string }> (p => p.q != null, sql`
     and last_name like ${p => `%${p.q}%`}
-  `)}
-  ${When (p => p.limit != null, sql`
+  `),
+  When<{ limit: number }> (p => p.limit != null, sql`
     limit ${p => p.limit} 
-  `)}
-`;
+  `)
+]);
 
 searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
 
 // [
-//   { id: 25, last_name: 'Ibanez' },
-//   { id: 355, last_name: 'Lombardi' },
-//   { id: 409, last_name: 'Gambacciani' },
-//   { id: 546, last_name: 'Caballero' }
-// ]
+//   { id: 1, lastName: "Hubbard" },
+//   { id: 341, lastName: "Lombardi" }
+// ];
 ```
 
 ## Values
@@ -430,25 +417,6 @@ insertBatch ({
 //     last_name: 'Doe'
 //   }
 // ]
-```
-
-## Comments
-Just use `//` to comment out a line.
-
-```ts
-const playerById = Player`
-  id
-  // first_name
-  // last_name
-  concat: full_name(first_name, ' ', last_name)
-  ${sql`
-    and id = 1 
-  `}
-`;
-
-playerById ({ id: 1 }).then (console.log);
-
-// [ { id: 1, full_name: 'Steve Short' } ]
 ```
 
 ## Functions, subselects, aliases, casts, literals, :1
