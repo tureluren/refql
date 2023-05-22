@@ -1,3 +1,5 @@
+import setConvertPromise from "./common/convertPromise";
+import { setDefaultQuerier } from "./common/defaultQuerier";
 import isEmptyTag from "./common/isEmptyTag";
 import When from "./common/When";
 import Prop from "./Prop";
@@ -35,8 +37,7 @@ export {
   Eq, HasMany, HasOne, isEmptyTag, isRQLTag,
   isSQLNode, isSQLTag, Limit, NumberProp, Offset,
   parse, Prop, PropType, Raw, RefField, RefNode,
-  RefProp, RQLTag, SelectableType, sql,
-  SQLProp, SQLTag, StringProp, Table,
-  Value, Values, Values2D, When
+  RefProp, RQLTag, SelectableType, setConvertPromise,
+  setDefaultQuerier, sql, SQLProp, SQLTag, StringProp,
+  Table, Value, Values, Values2D, When
 };
-

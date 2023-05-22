@@ -35,9 +35,9 @@ const Team = Table ("team", [
   StringProp ("name")
 ]);
 
-// composition
+// query composition
 const playerById = Player ([
-  "id",
+  id,
   "firstName",
   "lastName",
   Team ([
@@ -59,20 +59,19 @@ const querier = async (query: string, values: any[]) => {
 
 playerById ({ id: 1 }, querier).then(console.log);
 
-//  [
-//    {
-//      id: 1,
-//      firstName: 'David',
-//      lastName: 'Roche',
-//      team: { id: 1, name: 'FC Wezivduk' }
-//    }
-//  ]
+// [
+//   {
+//     id: 1,
+//     firstName: "Christine",
+//     lastName: "Hubbard",
+//     team: { id: 1, name: "FC Agecissak" }
+//   }
+// ];
 ```
 
 ## Table of contents
 * [Tables and References](#tables-and-references)
 * [Querier](#querier)
-* [Function Placeholder](#function-placeholder)
 * [Fantasy Land Interoperability](#fantasy-land-interoperability)
 * [Raw](#raw)
 * [When](#when)
@@ -138,11 +137,11 @@ const fullPlayer = Player ([
   Goal (["minute"]),
   Rating (["*"]),
   Game (["result"]),
-  Limit ()
+  Limit (),
   Offset ()
 ]);
 
-fullPlayer ({ limit: 1, offset: 8 }).then(console.log);
+fullPlayer ({ limit: 1, offset: 8 }, querier).then(console.log);
 
 // [
 //   {
@@ -160,16 +159,14 @@ fullPlayer ({ limit: 1, offset: 8 }).then(console.log);
 RefQL tries to link 2 tables based on logical column names, using snake case. You can always point RefQL in the right direction if this doesn't work for you.
 
 ```ts
-const playerBelongsToManyGames = BelongsToMany ("game", {
+const playerBelongsToManyGames = BelongsToMany ("games", "game", {
   lRef: "id",
   rRef: "id",
   lxRef: "player_id",
   rxRef: "game_id",
-  xTable: "game_player",
-  as: "games"
+  xTable: "game_player"
 });
 ```
-
 
 ## Querier
 The querier should have the type signature `<T>(query: string, values: any[]) => Promise<T[]>`. This function is a necessary in-between piece to make RefQL independent from database clients. This allows you to choose your own client. This is also the place where you can debug or transform a query before it goes to the database or when the result is obtained. Example of a querier for mySQL:
@@ -193,15 +190,40 @@ const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
   });
 ```
 
-### Create `sql` with default querier that returns another container type
+### Set a default querier
+
+```ts
+import { setDefaultQuerier } from "refql";
+
+const querier = async (query: string, values: any[]) => {
+  const { rows } = await pool.query (query, values);
+
+  return rows;
+};
+
+setDefaultQuerier (querier);
+
+const firstTeam = Player ([
+  id,
+  "firstName",
+  "lastName",
+  Limit (),
+  id.asc ()
+]);
+
+// no need to provide a querier anymore
+firstTeam ({ limit: 10 }).then (console.log);
+```
+
+### Convert Promise output to something else 
 U can use [Module augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation) in TypeScript to register another container type.
 
 ```ts
-import { parse, SQLTag, SQLTagVariable } from "refql";
+import { setConvertPromise } from "refql";
 
 declare module "refql" {
-  interface BoxRegistry<Output> {
-    readonly Task: Task<Output>;
+  interface RQLTag<TableId extends string = any, Params = any, Output = any> {
+    (params?: Params, querier?: Querier): Task<Output>;
   }
 }
 
@@ -217,114 +239,33 @@ class Task<Output> {
 const promiseToTask = <Output>(p: Promise<Output>) =>
   new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
-const sql = <Params = {}, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
-  const nodes = parse <Params, Output, "Task"> (strings, variables);
-  return SQLTag (nodes, defaultQuerier, promiseToTask);
-};
+setConvertPromise (promiseToTask);
 
-const tag = sql<{}, { id: number; first_name: string }[]>`
-  select id, first_name,
-`;
+const firstTeam = Player ([
+  id,
+  "firstName",
+  "lastName",
+  Limit (),
+  id.asc ()
+]);
 
-const tag2 = sql<{}, { last_name: string }[]>`
-  last_name
-  from player
-  limit 1
-`;
 
-const tag3 = tag.concat (tag2);
-
-// no need to provide a querier anymore
-tag3 ().fork (console.error, console.log);
-
-// [ { id: 1, first_name: "Georgia", last_name: "Marquez" } ];
-```
-
-### Create `Table` with default querier that returns another container type
-U can use [Module augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation) in TypeScript to register another container type.
-
-```ts
-import { Ref, sql, Table } from "refql";
-
-declare module "refql" {
-  interface BoxRegistry<Output> {
-    readonly Task: Task<Output>;
-  }
-}
-
-class Task<Output> {
-  fork: (rej: (e: any) => void, res: (x: Output) => void) => void;
-
-  constructor(fork: (rej: (e: any) => void, res: (x: Output) => void) => void) {
-    this.fork = fork;
-  }
-}
-
-// natural transformation
-const promiseToTask = <Output>(p: Promise<Output>) =>
-  new Task<Output> ((rej, res) => p.then (res).catch (rej));
-
-const Table = (name: string, refs: Ref<"Task">[] = []) => {
-  return Table<"Task"> (name, refs, defaultQuerier, promiseToTask);
-};
-
-const Player = Table ("Player");
-
-const tag = Player<{}, { id: number; first_name: string }[]>`
-  id
-  first_name
-`;
-
-const tag2 = Player<{}, { last_name: string; team: { name: string } }[]>`
-  last_name
-  ${sql`
-    limit 1 
-  `}
-`;
-
-const tag3 = tag.concat (tag2);
-
-// no need to provide a querier anymore
-tag3 ().fork (console.error, console.log);
-
-// [ { id: 1, first_name: "Georgia", last_name: "Marquez" } ];
-```
-
-## Function placeholder
-If you use a function placeholder inside a `SQLTag` or `RQLTag`, the first parameter of that function will be the parameters with which you execute the tag. If you're working on a `RQLTag`, u can also access the table through the second parameter of the function placeholder. [Raw](#raw), [When](#when), [Values](#values) and [Values2D](#values2d) can also be constructed with this function.
-
-```ts
-const orderedTeamPlayers = Table ("Player")<{ team_id: number; order_by: string }>`
-  *
-  ${sql`
-    and team_id = ${p => p.team_id}
-    order by ${Raw ((p, t) => `${t}.${p.order_by}`)} 
-  `}
-`;
-
-orderedTeamPlayers ({ team_id: 1, order_by: "first_name" }, querier).then (console.log);
+// `fork` instead of `then`
+firstTeam ({ limit: 10 }).fork (console.error, console.log);
 
 // [
-//   {
-//     id: 3,
-//     first_name: 'Celia',
-//     last_name: 'Sbolci',
-//     team_id: 1
-//   },
-//   {
-//     id: 5,
-//     first_name: 'Eleanor',
-//     last_name: 'Klein',
-//     team_id: 1
-//   },
-//   {
-//     id: 6,
-//     first_name: 'Eliza',
-//     last_name: 'Pasquini',
-//     team_id: 1
-//   },
-//   ...
-// ]
+//   { id: 1, firstName: "Christine", lastName: "Hubbard" },
+//   { id: 2, firstName: "Emily", lastName: "Mendez" },
+//   { id: 3, firstName: "Stella", lastName: "Kubo" },
+//   { id: 4, firstName: "Celia", lastName: "Misuri" },
+//   { id: 5, firstName: "Herbert", lastName: "Okada" },
+//   { id: 6, firstName: "Terry", lastName: "Bertrand" },
+//   { id: 7, firstName: "Fannie", lastName: "Guerrero" },
+//   { id: 8, firstName: "Lottie", lastName: "Warren" },
+//   { id: 9, firstName: "Leah", lastName: "Kennedy" },
+//   { id: 10, firstName: "Lottie", lastName: "Giraud" },
+//   { id: 11, firstName: "Marc", lastName: "Passeri" }
+// ];
 ```
 
 ## Fantasy Land Interoperability

@@ -1,38 +1,9 @@
-import mariaDB from "mariadb";
-import mySQL from "mysql2";
-import pg from "pg";
 import Table from ".";
 import { flEquals } from "../common/consts";
-import { Querier } from "../common/types";
-import NumberProp from "../Prop/NumberProp";
-import StringProp from "../Prop/StringProp";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
-import mariaDBQuerier from "../test/mariaDBQuerier";
-import mySQLQuerier from "../test/mySQLQuerier";
-import pgQuerier from "../test/pgQuerier";
 import { Player, Team } from "../test/tables";
-import userConfig from "../test/userConfig";
 
 describe ("Table type", () => {
-  let pool: any;
-  let querier: Querier;
-
-  if (process.env.DB_TYPE === "mysql") {
-    pool = mySQL.createPool (userConfig ("mysql"));
-    querier = mySQLQuerier (pool);
-  } else if (process.env.DB_TYPE === "mariadb") {
-    pool = mariaDB.createPool (userConfig ("mariadb"));
-    querier = mariaDBQuerier (pool);
-  } else {
-    pool = new pg.Pool (userConfig ("pg"));
-    querier = pgQuerier (pool);
-  }
-
-  afterAll (() => {
-    pool.end ();
-  });
-
   test ("create Table", () => {
     const Player2 = Table ("public.player", []);
     expect (Player.name).toBe ("player");
@@ -42,27 +13,6 @@ describe ("Table type", () => {
     expect (`${Player2}`).toBe ("public.player");
     expect (Table.isTable (Player)).toBe (true);
     expect (Table.isTable ({})).toBe (false);
-  });
-
-  test ("default querier", async () => {
-    const Player2 = Table ("player", [
-      NumberProp ("id"),
-      StringProp ("lastName", "last_name")
-    ], querier);
-
-    const firstPlayer = Player2 ([
-      "id",
-      "lastName",
-      sql`
-        limit 1 
-      `
-    ]);
-
-    const players = await firstPlayer ({});
-
-    expect (players.length).toBe (1);
-
-    expect (Object.keys (players[0])).toEqual (["id", "lastName"]);
   });
 
   test ("Setoid", () => {

@@ -1,4 +1,6 @@
 import { flConcat, refqlType } from "../common/consts";
+import { getConvertPromise } from "../common/convertPromise";
+import getDefaultQuerier from "../common/defaultQuerier";
 import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
@@ -40,8 +42,6 @@ export interface RQLTag<TableId extends string = any, Params = any, Output = any
   type: Output;
   table: Table<TableId>;
   nodes: RQLNode[];
-  defaultQuerier?: Querier;
-  convertPromise: (p: Promise<Output>) => any;
   interpreted: InterpretedRQLTag<Params, Output>;
   concat<Params2, Output2>(other: RQLTag<TableId, Params2, Output2>): RQLTag<TableId, Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<TableId, Params, Output>["concat"];
@@ -59,25 +59,25 @@ let prototype = {
   [flConcat]: concat,
   interpret,
   compile,
-  aggregate,
-  convertPromise: <T>(p: Promise<T>) => p
+  aggregate
 };
 
-export function createRQLTag<TableId extends string, Params = any, Output = any>(table: Table<TableId>, nodes: RQLNode[], defaultQuerier?: Querier) {
-
+export function createRQLTag<TableId extends string, Params = any, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
   const tag = ((params = {} as Params, querier?: Querier) => {
+    const defaultQuerier = getDefaultQuerier ();
+    const convertPromise = getConvertPromise ();
+
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
     }
-    return tag.convertPromise (tag.aggregate (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
+    return convertPromise (tag.aggregate (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
   }) as RQLTag<TableId, Params, Output>;
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
       table,
-      nodes,
-      defaultQuerier
+      nodes
     })
   );
 
@@ -113,8 +113,7 @@ function concat(this: RQLTag, other: RQLTag) {
 
   return createRQLTag (
     this.table,
-    [...nodes, ...Object.values (refs)],
-    this.defaultQuerier
+    [...nodes, ...Object.values (refs)]
   );
 }
 
@@ -266,10 +265,6 @@ async function aggregate(this: RQLTag, params: StringMap, querier: Querier): Pro
     }, row)
   );
 }
-
-export const convertRQLTagResult = (f: <T>(p: Promise<T>) => any) => {
-  prototype.convertPromise = f;
-};
 
 export const isRQLTag = function <As extends string = any, Params = any, Output = any> (x: any): x is RQLTag<As, Params, Output> {
   return x != null && x[refqlType] === type;

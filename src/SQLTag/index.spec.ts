@@ -1,9 +1,11 @@
 import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
-import { convertSQLTagResult, createSQLTag, isSQLTag } from ".";
+import { createSQLTag, isSQLTag } from ".";
 import { flConcat } from "../common/consts";
-import { OnlyProps, Querier, SQLTagVariable, StringMap } from "../common/types";
+import setConvertPromise from "../common/convertPromise";
+import { setDefaultQuerier } from "../common/defaultQuerier";
+import { OnlyProps, Querier, StringMap } from "../common/types";
 import When from "../common/When";
 import Table from "../Table";
 import format from "../test/format";
@@ -13,7 +15,7 @@ import pgQuerier from "../test/pgQuerier";
 import { Player, Team } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Raw from "./Raw";
-import sql, { parse } from "./sql";
+import sql from "./sql";
 import Values from "./Values";
 import Values2D from "./Values2D";
 
@@ -32,6 +34,8 @@ describe ("SQLTag type", () => {
     querier = pgQuerier (pool);
   }
 
+  setDefaultQuerier (querier);
+
   const rawLastName = Raw ('last_name "lastName"');
 
   afterAll (() => {
@@ -46,31 +50,6 @@ describe ("SQLTag type", () => {
     expect (tag.interpreted).toBe (undefined);
     expect (isSQLTag (tag)).toBe (true);
     expect (isSQLTag ({})).toBe (false);
-  });
-
-  test ("create sql with default querier", async () => {
-    const sql2 = <Params = {}, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) => {
-      const nodes = parse <Params, Output> (strings, variables);
-      return createSQLTag<Params, Output> (nodes, querier);
-    };
-
-    const tag = sql2<{}, { id: number; first_name: string }[]>`
-      select id, first_name,
-    `;
-
-    const tag2 = sql2<{}, { last_name: string }[]>`
-      last_name
-      from player
-      limit 1
-    `;
-
-    const tag3 = tag.concat (tag2);
-
-    const players = await tag3 ();
-
-    expect (players.length).toBe (1);
-
-    expect (Object.keys (players[0])).toEqual (["id", "first_name", "last_name"]);
   });
 
   test ("Semigroup", () => {
@@ -106,7 +85,7 @@ describe ("SQLTag type", () => {
       where id = ${p => p.id}
     `;
 
-    const [firstPlayer] = await playerById ({ id: 1 }, querier);
+    const [firstPlayer] = await playerById ({ id: 1 });
 
     expect (Object.keys (firstPlayer)).toEqual (["id", "first_name"]);
   });
@@ -124,7 +103,7 @@ describe ("SQLTag type", () => {
       from public.team
       where id = $1
     `));
-    const [firstTeam] = await teamById ({ id: 1 }, querier);
+    const [firstTeam] = await teamById ({ id: 1 });
 
     expect (Object.keys (firstTeam)).toEqual (["id", "name"]);
   });
@@ -161,7 +140,7 @@ describe ("SQLTag type", () => {
 
     expect (values2).toEqual ([3, 4, 5]);
 
-    const players = await tag ({ ids: [3, 4] }, querier);
+    const players = await tag ({ ids: [3, 4] });
 
     expect (players[0].id).toBe (3);
     expect (players[1].id).toBe (4);
@@ -196,7 +175,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", cars]);
 
-    await insert (params, querier);
+    await insert (params);
 
     let returning = sql<{}, any>`
       select * from player
@@ -246,7 +225,7 @@ describe ("SQLTag type", () => {
 
     expect (values).toEqual (["John", "Doe", "Jane", "Doe", "Jimmy", "Doe"]);
 
-    await insert (params, querier);
+    await insert (params);
 
     const returning = sql<{}, any>`
       select * from player
@@ -254,7 +233,7 @@ describe ("SQLTag type", () => {
       limit 3
     `;
 
-    const players = await returning ({}, querier);
+    const players = await returning ({});
 
     expect (players[0].first_name).toBe ("Jimmy");
     expect (players[1].first_name).toBe ("Jane");
@@ -381,11 +360,13 @@ describe ("SQLTag type", () => {
   test ("no querier provided error", async () => {
     const message = "There was no Querier provided";
     try {
+      setDefaultQuerier (undefined as any);
       const tag = sql`select * from player`;
       await tag ();
     } catch (err: any) {
       expect (err.message).toBe (message);
     }
+    setDefaultQuerier (querier);
   });
 
   test ("compile errors", () => {
@@ -407,10 +388,10 @@ describe ("SQLTag type", () => {
       return x;
     };
 
-    convertSQLTagResult (id);
+    setConvertPromise (id);
     const tag = sql`select * from player limit 1`;
 
-    await tag ({}, querier);
+    await tag ({});
 
     expect (convert).toBeCalledTimes (1);
   });

@@ -1,4 +1,6 @@
 import { flConcat, refqlType } from "../common/consts";
+import { getConvertPromise } from "../common/convertPromise";
+import getGlobalQuerier from "../common/defaultQuerier";
 import isEmptyTag from "../common/isEmptyTag";
 import { Querier, StringMap, TagFunctionVariable } from "../common/types";
 import When from "../common/When";
@@ -31,7 +33,6 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode, SelectableT
   nodes: SQLNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
   defaultQuerier?: Querier;
-  convertPromise: (p: Promise<Output>) => any;
   concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   [flConcat]: SQLTag<Params, Output>["concat"];
@@ -48,27 +49,27 @@ const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, 
   join,
   [flConcat]: concat,
   interpret,
-  compile,
-  convertPromise: <T>(p: Promise<T>) => p
+  compile
 });
 
-export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[], defaultQuerier?: Querier) {
-
+export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[]) {
   const tag = ((params = {} as Params, querier?) => {
+    const defaultQuerier = getGlobalQuerier ();
+    const convertPromise = getConvertPromise ();
+
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
     }
 
     const [query, values] = tag.compile (params);
 
-    return tag.convertPromise ((querier || defaultQuerier as Querier) (query, values) as Promise<Output>);
+    return convertPromise ((querier || defaultQuerier as Querier) (query, values) as Promise<Output>);
   }) as SQLTag<Params, Output>;
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
-      nodes,
-      defaultQuerier
+      nodes
     })
   );
 
@@ -80,8 +81,7 @@ function join(this: SQLTag, delimiter: string, other: SQLTag) {
   if (isEmptyTag (other)) return this;
 
   return createSQLTag (
-    this.nodes.concat (Raw (delimiter), ...other.nodes),
-    this.defaultQuerier
+    this.nodes.concat (Raw (delimiter), ...other.nodes)
   );
 }
 
@@ -207,10 +207,6 @@ function compile(this: SQLTag, params: StringMap) {
       .map (({ run }) => run (params)).flat (1)
   ];
 }
-
-export const convertSQLTagResult = (f: <T>(p: Promise<T>) => any) => {
-  prototype.convertPromise = f;
-};
 
 export const isSQLTag = function <Params = any, Output = any> (x: any): x is SQLTag<Params, Output> {
   return x != null && x[refqlType] === type;

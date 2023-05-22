@@ -1,8 +1,10 @@
 import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
-import { convertRQLTagResult, createRQLTag, isRQLTag } from ".";
+import { createRQLTag, isRQLTag } from ".";
 import { flConcat, flEmpty } from "../common/consts";
+import setConvertPromise from "../common/convertPromise";
+import { setDefaultQuerier } from "../common/defaultQuerier";
 import { Querier } from "../common/types";
 import When from "../common/When";
 import Raw from "../SQLTag/Raw";
@@ -34,6 +36,8 @@ describe ("RQLTag type", () => {
     pool = new pg.Pool (userConfig ("pg"));
     querier = pgQuerier (pool);
   }
+
+  setDefaultQuerier (querier);
 
   afterAll (() => {
     pool.end ();
@@ -220,7 +224,7 @@ describe ("RQLTag type", () => {
     expect (ratingNext).toEqual ([]);
 
     // db results
-    const players = await tag ({ limit: 30, delimiter: " " }, querier);
+    const players = await tag ({ limit: 30, delimiter: " " });
     const player = players[0];
     const playerTeam = player.team;
     const defender = playerTeam!.players[0];
@@ -246,7 +250,7 @@ describe ("RQLTag type", () => {
       sql`limit 30`
     ]);
 
-    const players = await tag.concat (tag2) ({}, querier);
+    const players = await tag.concat (tag2) ({});
     const player = players[0];
     const playerTeam = player.team;
 
@@ -350,7 +354,7 @@ describe ("RQLTag type", () => {
       sql`limit 30`
     ]);
 
-    const players = await tag.concat (tag2) ({}, querier);
+    const players = await tag.concat (tag2) ({});
     const player = players[0];
     const playerTeam = player.team;
     const teamLeague = player.team!.league;
@@ -368,7 +372,7 @@ describe ("RQLTag type", () => {
     ]);
 
 
-    const players = await tag (undefined, querier);
+    const players = await tag (undefined);
     const player = players[0];
 
     expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "cars", "birthday", "teamId", "positionId"]);
@@ -385,14 +389,14 @@ describe ("RQLTag type", () => {
 
     const spy = jest.spyOn (tag, "interpret");
 
-    const teams = await tag ({ limit: 2, playerLimit: 4, offset: 3, playerOffset: 5 }, querier);
+    const teams = await tag ({ limit: 2, playerLimit: 4, offset: 3, playerOffset: 5 });
     tag.nodes = [];
 
     expect (teams.length).toBe (2);
     expect (teams[0].players.length).toBe (4);
     expect (teams[1].players.length).toBe (4);
 
-    const teams2 = await tag ({ limit: 3, playerLimit: 4, offset: 3, playerOffset: 5 }, querier);
+    const teams2 = await tag ({ limit: 3, playerLimit: 4, offset: 3, playerOffset: 5 });
 
     expect (teams2.length).toBe (3);
     expect (teams2[0].players.length).toBe (4);
@@ -410,7 +414,7 @@ describe ("RQLTag type", () => {
       `
     ]);
 
-    const players = await tag ({ id: 9 }, querier);
+    const players = await tag ({ id: 9 });
     const player = players[0];
 
     expect (player.id).toBe (9);
@@ -425,7 +429,7 @@ describe ("RQLTag type", () => {
       id.eq<{ id: number }> (p => p.id)
     ]);
 
-    const players = await tag ({ id: 9 }, querier);
+    const players = await tag ({ id: 9 });
     const player = players[0];
 
     expect (player.id).toBe (9);
@@ -440,7 +444,7 @@ describe ("RQLTag type", () => {
       teamId.eq (2)
     ]);
 
-    const players = await tag ({}, querier);
+    const players = await tag ({});
     const player = players[0];
 
     expect (player.teamId).toBe (2);
@@ -495,7 +499,7 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([1, 2, 3, 0, 1, 2]);
 
-    const players = await tag ({ ids: [1, 2, 3], delimiter: " " }, querier);
+    const players = await tag ({ ids: [1, 2, 3], delimiter: " " });
 
     expect (players.length).toBe (3);
   });
@@ -510,7 +514,7 @@ describe ("RQLTag type", () => {
       `
     ]);
 
-    const players = await tag ({}, querier);
+    const players = await tag ({});
 
     expect (players.length).toBe (0);
   });
@@ -528,7 +532,7 @@ describe ("RQLTag type", () => {
         and player.id = 1
       `
     ]);
-    const players = await tag ({}, querier);
+    const players = await tag ({});
 
     expect (players.length).toBe (1);
     expect (players[0].team).toBe (null);
@@ -567,11 +571,13 @@ describe ("RQLTag type", () => {
   test ("no querier provided error", async () => {
     const message = "There was no Querier provided";
     try {
+      setDefaultQuerier (undefined as any);
       const tag = Player (["*"]);
       await tag ({});
     } catch (err: any) {
       expect (err.message).toBe (message);
     }
+    setDefaultQuerier (querier);
   });
 
   test ("multiple refs to same table", async () => {
@@ -596,7 +602,7 @@ describe ("RQLTag type", () => {
       limit 1
     `));
 
-    const games = await tag ({}, querier);
+    const games = await tag ({});
     const game1 = games[0];
 
     expect (game1.homeTeam.id).toBe (1);
@@ -654,10 +660,10 @@ describe ("RQLTag type", () => {
       return x;
     };
 
-    convertRQLTagResult (id);
+    setConvertPromise (id);
     const tag = Player (["*"]);
 
-    await tag ({}, querier);
+    await tag ({});
 
     expect (convert).toBeCalledTimes (1);
   });
