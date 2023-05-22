@@ -78,7 +78,7 @@ describe ("RQLTag type", () => {
 
     const [player] = await tag ({ id: 9, delimiter: " " }, querier);
 
-    expect (player.goalCount).toBeGreaterThan (0);
+    expect (Number (player.goalCount)).toBeGreaterThan (0);
     expect (Object.keys (player)).toEqual (["fullName", "goalCount", "firstGoalId"]);
   });
 

@@ -1,7 +1,5 @@
 import { Pool } from "pg";
-import {
-  BelongsTo, Limit, NumberProp, setDefaultQuerier, StringProp, Table
-} from ".";
+import { Limit, setDefaultQuerier } from ".";
 import { Player, Team } from "./test/tables";
 
 const querier = async (query: string, values: any[]) => {
