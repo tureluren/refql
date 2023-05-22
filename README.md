@@ -1,7 +1,7 @@
 # RefQL
 A Node.js and Deno library for composing and running SQL queries.
 
-<img width="584" height="426" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
+<img width="584" height="328" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
 
 
 ## Installation
