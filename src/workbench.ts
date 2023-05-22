@@ -1,6 +1,18 @@
 import { Pool } from "pg";
-import { belongsTo } from "./nodes";
-import Table from "./Table";
+import {
+  BelongsTo, Limit, NumberProp, setDefaultQuerier, StringProp, Table
+} from ".";
+import { Player, Team } from "./test/tables";
+
+const querier = async (query: string, values: any[]) => {
+  console.log (query);
+  const { rows } = await pool.query (query, values);
+
+  return rows;
+};
+
+setDefaultQuerier (querier);
+
 
 const pool = new Pool ({
   user: "test",
@@ -10,26 +22,18 @@ const pool = new Pool ({
   port: 5432
 });
 
-const querier = async (query: string, values: any[]) => {
-  const { rows } = await pool.query (query, values);
 
-  return rows;
-};
-
-interface Team {
-  id: number;
-  name: string;
-}
-
-const Team = Table ("team");
-
-interface Player {
-  id: number;
-  first_name: string;
-  last_name: string;
-  full_name: string;
-}
-
-const Player = Table ("player", [
-  belongsTo ("team")
+// select components
+const playerLtd = Player ([
+  "id",
+  "firstName",
+  "lastName",
+  Team ([
+    "id",
+    "name"
+  ]),
+  Limit ()
 ]);
+
+// and run
+playerLtd ({ limit: 5 });

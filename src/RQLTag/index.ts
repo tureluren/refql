@@ -1,46 +1,59 @@
-import castAs from "../common/castAs";
 import { flConcat, refqlType } from "../common/consts";
-import { Boxes } from "../common/BoxRegistry";
+import { getConvertPromise } from "../common/convertPromise";
+import getDefaultQuerier from "../common/defaultQuerier";
+import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
-import { ConvertPromise, Querier, RefInfo, RefQLRows, Runnable } from "../common/types";
-import unimplemented from "../common/unimplemented";
-import { all, ASTNode, Raw, RefNode, When } from "../nodes";
-import SQLTag from "../SQLTag";
+import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
+import When from "../common/When";
+import Prop from "../Prop";
+import SQLProp from "../Prop/SQLProp";
+import { isSQLTag, SQLTag } from "../SQLTag";
+import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
+import Values from "../SQLTag/Values";
 import Table from "../Table";
+import Eq from "./Eq";
+import In from "./In";
+import Limit from "./Limit";
+import Offset from "./Offset";
+import OrderBy from "./OrderBy";
+import RefNode from "./RefNode";
+import RQLNode from "./RQLNode";
 
-export interface Next<Params, Output, Box extends Boxes> {
-  tag: RQLTag<Params & RefQLRows, Output, Box>;
+export interface Next {
+  tag: RQLTag<any, RefQLRows>;
   link: [string, string];
   single: boolean;
 }
 
-interface InterpretedRQLTag<Params, Output, Box extends Boxes> {
-  tag: SQLTag<Params, Output, Box>;
-  next: Next<Params, Output, Box>[];
+interface InterpretedRQLTag<Params = any, Output = any> {
+  tag: SQLTag<Params, Output>;
+  next: Next[];
 }
 
-interface Extra<Params, Output, Box extends Boxes> {
-  extra: SQLTag<Params, Output, Box>;
+interface Extra<Params = any, Output = any> {
+  extra: SQLTag<Params, Output>;
 }
 
-interface RQLTag<Params, Output, Box extends Boxes> {
-  table: Table<Box>;
-  nodes: ASTNode<Params, Output, Box>[];
-  defaultQuerier?: Querier;
-  convertPromise?: ConvertPromise<Box, Output>;
-  interpreted: InterpretedRQLTag<Params, Output, Box>;
-  concat<Params2, Output2, Box2 extends Boxes>(other: RQLTag<Params2, Output2, Box2>): RQLTag<Params & Params2, Output & Output2, Box> & Runnable<Params & Params2, ReturnType<ConvertPromise<Box, Output & Output2>>>;
-  [flConcat]: RQLTag<Params, Output, Box>["concat"];
-  interpret(): InterpretedRQLTag<Params, Output, Box> & Extra<Params, Output, Box>;
-  compile(params: Params): [string, any[], Next<Params, Output, Box>[]];
+export interface RQLTag<TableId extends string = any, Params = any, Output = any> {
+  (params?: Params, querier?: Querier): Promise<Output>;
+  tableId: TableId;
+  params: Params;
+  type: Output;
+  table: Table<TableId>;
+  nodes: RQLNode[];
+  interpreted: InterpretedRQLTag<Params, Output>;
+  concat<Params2, Output2>(other: RQLTag<TableId, Params2, Output2>): RQLTag<TableId, Params & Params2, Output & Output2>;
+  [flConcat]: RQLTag<TableId, Params, Output>["concat"];
+  interpret(): InterpretedRQLTag<Params, Output> & Extra<Params, Output>;
+  compile(params: Params): [string, any[], Next[]];
   aggregate(params: Params, querier: Querier): Promise<Output>;
 }
 
 const type = "refql/RQLTag";
 
-const prototype = {
-  constructor: RQLTag,
+let prototype = {
+  constructor: createRQLTag,
   [refqlType]: type,
   concat,
   [flConcat]: concat,
@@ -49,34 +62,33 @@ const prototype = {
   aggregate
 };
 
-function RQLTag<Params, Output, Box extends Boxes>(table: Table<Box>, nodes: ASTNode<Params, Output, Box>[], defaultQuerier?: Querier, convertPromise?: ConvertPromise<Box, Output>) {
-  const convert = convertPromise || (x => x);
+export function createRQLTag<TableId extends string, Params = any, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
+  const tag = ((params = {} as Params, querier?: Querier) => {
+    const defaultQuerier = getDefaultQuerier ();
+    const convertPromise = getConvertPromise ();
 
-  const tag = ((params: Params = {} as Params, querier?: Querier) => {
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
     }
-    return convert (tag.aggregate (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
-  }) as RQLTag<Params, Output, Box> & Runnable<Params, ReturnType<ConvertPromise<Box, Output>>>;
+    return convertPromise (tag.aggregate (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
+  }) as RQLTag<TableId, Params, Output>;
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
       table,
-      nodes,
-      defaultQuerier,
-      convertPromise
+      nodes
     })
   );
 
   return tag;
 }
 
-type Deep<Params, Output, Box extends Boxes> = { [tableId: string]: RefNode<Params, Output, Box>} & { nodes: ASTNode<Params, Output, Box>[]};
+type Deep = { [tableId: string]: RefNode } & { nodes: RQLNode[]};
 
-const concatDeep = <Params, Output, Box extends Boxes>(nodes: ASTNode<Params, Output, Box>[]): Deep<Params, Output, Box> => {
+const concatDeep = (nodes: RQLNode[]): Deep => {
   return nodes.reduce ((acc, node) => {
-    if (RefNode.isRefNode<Params, Output, Box> (node)) {
+    if (RefNode.isRefNode (node)) {
       const { table } = node.tag;
       const id = table.toString ();
 
@@ -89,105 +101,119 @@ const concatDeep = <Params, Output, Box extends Boxes>(nodes: ASTNode<Params, Ou
       acc.nodes.push (node);
     }
     return acc;
-  }, { nodes: [] as ASTNode<Params, Output, Box>[] } as Deep<Params, Output, Box>);
+  }, { nodes: [] as RQLNode[] } as Deep);
 };
 
-function concat<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output, Box>, other: RQLTag<Params, Output, Box>) {
+function concat(this: RQLTag, other: RQLTag) {
   if (!this.table.equals (other.table)) {
     throw new Error ("U can't concat RQLTags that come from different tables");
   }
 
   const { nodes, ...refs } = concatDeep (this.nodes.concat (other.nodes));
 
-  return RQLTag (
+  return createRQLTag (
     this.table,
-    [...nodes, ...Object.values (refs)],
-    this.defaultQuerier,
-    this.convertPromise
+    [...nodes, ...Object.values (refs)]
   );
 }
 
-const unsupported = unimplemented ("RQLTag");
-
-function interpret<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output, Box>): InterpretedRQLTag<Params, Output, Box> & Extra<Params, Output, Box> {
+function interpret(this: RQLTag): InterpretedRQLTag & Extra {
   const { nodes, table } = this,
-    next = [] as Next<Params, Output, Box>[],
-    members = [] as (Raw<Params, Output, Box> | SQLTag<Params, Output, Box>)[];
+    next = [] as Next[],
+    members = [] as (Raw | SQLTag)[];
 
-  let extra = sql<Params, Output, Box>``;
+  let extra = sql``;
+  let orderBy = sql``;
+  let limit = sql``;
+  let offset = sql``;
 
-  const caseOfRef = (tag: RQLTag<Params & RefQLRows, Output, Box>, info: RefInfo<Box>, single: boolean) => {
+  const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     members.push (Raw (info.lRef));
 
     next.push ({ tag, link: [info.as, info.lRef.as], single });
   };
 
   for (const node of nodes) {
-    node.caseOf<void> ({
-      RefNode: caseOfRef,
-      BelongsToMany: caseOfRef,
-      Call: (tag, name, as, cast) => {
-        members.push (sql`
-          ${Raw (name)} (${tag})${Raw (castAs (cast, as))}
+    if (Prop.isProp (node)) {
+        members.push (
+          Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
+        );
+    } else if (SQLProp.isSQLProp (node)) {
+      members.push (sql`
+        (${node.col}) ${Raw (`"${node.as}"`)}`
+      );
+    } else if (isSQLTag (node)) {
+      extra = extra.concat (node);
+    } else if (RefNode.isRefNode (node)) {
+      caseOfRef (node.joinLateral (), node.info, node.single);
+    } else if (When.isWhen (node)) {
+      extra = extra.concat (sql`${node}`);
+    } else if (Eq.isEq (node)) {
+      if (isSQLTag (node.prop)) {
+        extra = extra.concat (sql`
+          and (${node.prop}) = ${node.run}
         `);
-      },
-      All: sign => {
-        members.push (
-          Raw (`${table.name}.${sign}`)
-        );
-      },
-      Identifier: (name, as, cast) => {
-        members.push (
-          Raw (`${table.name}.${name}${castAs (cast, as)}`)
-        );
-      },
-      Variable: (x, as, cast) => {
-        if (SQLTag.isSQLTag<Params, Output, Box> (x)) {
-          if (as) {
-            members.push (sql<Params, Output, Box>`
-              (${x})${Raw (castAs (cast, as))} 
-            `);
-          } else {
-            extra = extra.concat (x);
-          }
-
-        } else {
-          throw new Error (`U can't insert "${x}" in this section of the RQLTag`);
-        }
-      },
-      Literal: (x, as, cast) => {
-        members.push (Raw (`${x}${castAs (cast, as)}`));
-      },
-      StringLiteral: (x, as, cast) => {
-        members.push (Raw (`'${x}'${castAs (cast, as)}`));
-      },
-      When: (pred, tag) => {
-        extra = extra.concat (sql<Params, Output, Box>`${When (pred, tag)}`);
-      },
-      Raw: unsupported ("Raw"),
-      Value: unsupported ("Value"),
-      Values: unsupported ("Values"),
-      Values2D: unsupported ("Values2D")
-    });
+      } else {
+        extra = extra.concat (sql`
+          and ${Raw (`${table.name}.${node.prop}`)} = ${node.run}
+        `);
+      }
+    } else if (In.isIn (node)) {
+      if (isSQLTag (node.prop)) {
+        extra = extra.concat (sql`
+          and (${node.prop}) in ${Values (node.run)}
+        `);
+      } else {
+        extra = extra.concat (sql`
+          and ${Raw (`${table.name}.${node.prop}`)} in ${Values (node.run)}
+        `);
+      }
+    } else if (OrderBy.isOrderBy (node)) {
+      if (isSQLTag (node.prop)) {
+        orderBy = orderBy.join (", ", sql`
+          (${node.prop}) ${Raw (node.descending ? "desc" : "asc")}
+        `);
+      } else {
+        orderBy = orderBy.join (", ", sql`
+          ${Raw (`${table.name}.${node.prop} ${node.descending ? "desc" : "asc"}`)}
+        `);
+      }
+    } else if (Limit.isLimit (node)) {
+      limit = sql<typeof node["params"]>`limit ${p => p[node.prop]}`;
+    } else if (Offset.isOffset (node)) {
+      offset = sql<typeof node["params"]>`offset ${p => p[node.prop]}`;
+    } else {
+      throw new Error (`Unknown RQLNode Type: "${String (node)}"`);
+    }
   }
 
-  const refMemberLength = nodes.reduce ((n, node) =>
-    RefNode.isRefNode (node) ? n + 1 : n
-  , 0);
-
-  if (refMemberLength === members.length) {
-    members.push (Raw (`${table.name}.${all.sign}`));
-  }
-
-  let tag = sql<Params, Output, Box>`
+  let tag = sql`
     select ${joinMembers (members)}
     from ${Raw (table)}
   `;
 
-  return { next, tag, extra };
+  if (!isEmptyTag (orderBy)) {
+    extra = extra.concat (sql`
+      order by ${orderBy} 
+    `);
+  }
+
+  if (!isEmptyTag (limit)) {
+    extra = extra.concat (limit);
+  }
+
+  if (!isEmptyTag (offset)) {
+    extra = extra.concat (offset);
+  }
+
+  return {
+    next,
+    tag,
+    extra
+  };
 }
 
-function compile<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output, Box>, params: Params) {
+function compile(this: RQLTag, params: StringMap) {
   if (!this.interpreted) {
     const { tag, extra, next } = this.interpret ();
 
@@ -198,15 +224,15 @@ function compile<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output,
   }
 
   return [
-    ...this.interpreted.tag.compile (params, this.table),
+    ...this.interpreted.tag.compile (params),
     this.interpreted.next
   ];
 }
 
-async function aggregate<Params, Output, Box extends Boxes>(this: RQLTag<Params, Output, Box>, params: Params, querier: Querier): Promise<any[]> {
+async function aggregate(this: RQLTag, params: StringMap, querier: Querier): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
-  const refQLRows = await querier<any> (query, values);
+  const refQLRows = await querier (query, values);
 
   if (!refQLRows.length) return [];
 
@@ -240,8 +266,6 @@ async function aggregate<Params, Output, Box extends Boxes>(this: RQLTag<Params,
   );
 }
 
-RQLTag.isRQLTag = function <Params, Output, Box extends Boxes> (x: any): x is RQLTag<Params, Output, Box> {
+export const isRQLTag = function <As extends string = any, Params = any, Output = any> (x: any): x is RQLTag<As, Params, Output> {
   return x != null && x[refqlType] === type;
 };
-
-export default RQLTag;

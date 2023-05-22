@@ -1,7 +1,7 @@
 # RefQL
 A Node.js and Deno library for composing and running SQL queries.
 
-<img height="358" width="452" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
+<img height="374" width="828" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/safe-table/example.gif">
 
 
 ## Installation
@@ -14,28 +14,38 @@ npm install refql
 ## Getting started
 ```ts
 import postgres from "https://deno.land/x/postgresjs/mod.js";
-import { belongsTo, sql, Table } from "https://deno.land/x/refql/mod.ts";
+import { 
+  BelongsTo, NumberProp, 
+  StringProp, Table 
+} from "https://deno.land/x/refql/mod.ts";
 
-// Table
+// id Prop
+const id = NumberProp ("id");
+
+// Tables
 const Player = Table ("player", [
-  belongsTo ("team")
+  id,
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  BelongsTo ("team", "team")
 ]);
 
-const Team = Table ("team");
+const Team = Table ("team", [
+  id,
+  StringProp ("name")
+]);
 
-// sql snippet
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
-`;
-
-// composition
-const playerById = Player`
-  id
-  first_name
-  last_name
-  ${Team}
-  ${byId}
-`;
+// select components
+const playerById = Player ([
+  id,
+  "firstName",
+  "lastName",
+  Team ([
+    id,
+    "name"
+  ]),
+  id.eq<{ id: number }> (p => p.id)
+]);
 
 const pool = postgres ({
   // ...pool options
@@ -49,27 +59,25 @@ const querier = async (query: string, values: any[]) => {
 
 playerById ({ id: 1 }, querier).then(console.log);
 
-//  [
-//    {
-//      id: 1,
-//      first_name: 'David',
-//      last_name: 'Roche',
-//      team: { id: 1, name: 'FC Wezivduk', league_id: 1 }
-//    }
-//  ]
+// [
+//   {
+//     id: 1,
+//     firstName: "Christine",
+//     lastName: "Hubbard",
+//     team: { id: 1, name: "FC Agecissak" }
+//   }
+// ];
 ```
 
 ## Table of contents
 * [Tables and References](#tables-and-references)
 * [Querier](#querier)
-* [Function Placeholder](#function-placeholder)
 * [Fantasy Land Interoperability](#fantasy-land-interoperability)
-* [Raw](#raw)
+* [OrderBy, Limit and Offset](#orderby-limit-and-offset)
+* [Eq](#eq)
 * [When](#when)
-* [Values](#values)
-* [Values2D](#values2d)
-* [Comments](#comments)
-* [Functions, subselects, aliases, casts, literals, :1](#functions-subselects-aliases-casts-literals-1)
+* [Functions and subselects](#functions-and-subselects)
+* [SQLTag](#sqltag)
 
 ## Tables and References
 The example below shows how to define tables and describe their references to other tables. From then on, these references can be used in a `RQLTag`. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
@@ -77,8 +85,9 @@ The example below shows how to define tables and describe their references to ot
 ```ts
 import postgres from "https://deno.land/x/postgresjs/mod.js";
 import { 
-  belongsTo, belongsToMany, hasMany,
-  hasOne, sql, Table
+  BelongsTo, BelongsToMany, HasMany,
+  HasOne, Limit, NumberProp, Offset,
+  StringProp, Table
 } from "https://deno.land/x/refql/mod.ts";
 
 const pool = postgres ({
@@ -92,83 +101,56 @@ const querier = async (query: string, values: any[]) => {
 };
 
 const Player = Table ("player", [
-  belongsTo ("public.team"),
-  hasMany ("goal"),
-  hasOne ("rating"),
-  belongsToMany ("game")
-], querier); // You can pass a default querier here
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  BelongsTo ("team", "public.team"),
+  HasOne ("rating", "rating"),
+  HasMany ("goals", "goal"),
+  BelongsToMany ("games", "game")
+]);
 
-const Team = Table ("public.team");
-const Goal = Table ("goal");
-const Rating = Table ("rating");
-const Game = Table ("game");
+const Team = Table ("public.team", [
+  StringProp ("name")
+]);
 
-// SQLTag
-const limit = sql<{ limit: number }>`
-  limit ${p => p.limit}
-`;
+const Rating = Table ("rating", [
+  NumberProp ("finishing"),
+  NumberProp ("dribbling"),
+  NumberProp ("tackling")
+]);
 
-// RQLTag
-const fullPlayer = Player`
-  ${Team}
-  ${Goal}
-  ${Rating}
-  ${Game}
-  ${limit}
-`;
+const Game = Table ("game", [
+  StringProp ("result")
+]);
 
-fullPlayer ({ limit: 1 }).then(console.log);
+const Goal = Table ("goal", [
+  NumberProp ("minute")
+]);
+
+const fullPlayer = Player ([
+  "id",
+  "firstName",
+  "lastName",
+  Team (["name"]),
+  Goal (["minute"]),
+  Rating (["*"]),
+  Game (["result"]),
+  Limit (),
+  Offset ()
+]);
+
+fullPlayer ({ limit: 1, offset: 8 }, querier).then (console.log);
 
 // [
 //   {
-//     id: 1,
-//     first_name: "Steve",
-//     last_name: "Short",
-//     cars: null,
-//     birthday: "1995-05-05T22:00:00.000Z",
-//     team_id: 1,
-//     position_id: 1,
-//     team: {
-//       id: 1,
-//       name: "FC Adunupmev",
-//       league_id: 1
-//     },
-//     goals: [],
-//     rating: {
-//       player_id: 1,
-//       acceleration: 9,
-//       finishing: 11,
-//       positioning: 56,
-//       shot_power: 56,
-//       free_kick: 70,
-//       stamina: 88,
-//       dribbling: 52,
-//       tackling: 21
-//     },
-//     games: [
-//       {
-//         id: 1,
-//         home_team_id: 1,
-//         away_team_id: 2,
-//         league_id: 1,
-//         result: "5 - 2"
-//       },
-//       {
-//         id: 2,
-//         home_team_id: 1,
-//         away_team_id: 3,
-//         league_id: 1,
-//         result: "0 - 3"
-//       },
-//       {
-//         id: 3,
-//         home_team_id: 1,
-//         away_team_id: 4,
-//         league_id: 1,
-//         result: "4 - 2"
-//       },
-//       ...
-//     ]
+//     id: 9,
+//     firstName: "Leah",
+//     lastName: "Kennedy",
+//     team: { name: "FC Agecissak" },
+//     goals: [{ minute: 36 }, { minute: 20 }, { minute: 87 }, ...],
+//     rating: { finishing: 82, dribbling: 48, tackling: 47 },
+//     games: [{ result: "5 - 4" }, { result: "4 - 0" }, { result: "4 - 5" }, ...]
 //   }
 // ];
 ```
@@ -176,16 +158,14 @@ fullPlayer ({ limit: 1 }).then(console.log);
 RefQL tries to link 2 tables based on logical column names, using snake case. You can always point RefQL in the right direction if this doesn't work for you.
 
 ```ts
-const playerBelongsToManyGames = belongsToMany ("game", {
+const playerBelongsToManyGames = BelongsToMany ("games", "game", {
   lRef: "id",
   rRef: "id",
   lxRef: "player_id",
   rxRef: "game_id",
-  xTable: "game_player",
-  as: "games"
+  xTable: "game_player"
 });
 ```
-
 
 ## Querier
 The querier should have the type signature `<T>(query: string, values: any[]) => Promise<T[]>`. This function is a necessary in-between piece to make RefQL independent from database clients. This allows you to choose your own client. This is also the place where you can debug or transform a query before it goes to the database or when the result is obtained. Example of a querier for mySQL:
@@ -209,15 +189,40 @@ const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
   });
 ```
 
-### Create `sql` with default querier that returns another container type
+### Set a default querier
+
+```ts
+import { setDefaultQuerier } from "https://deno.land/x/refql/mod.ts";
+
+const querier = async (query: string, values: any[]) => {
+  const { rows } = await pool.query (query, values);
+
+  return rows;
+};
+
+setDefaultQuerier (querier);
+
+const firstTeam = Player ([
+  id,
+  "firstName",
+  "lastName",
+  Limit (),
+  id.asc ()
+]);
+
+// no need to provide a querier anymore
+firstTeam ({ limit: 10 }).then (console.log);
+```
+
+### Convert Promise output to something else 
 U can use [Module augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation) in TypeScript to register another container type.
 
 ```ts
-import { parse, SQLTag, SQLTagVariable } from "https://deno.land/x/refql/mod.ts";
+import { setConvertPromise } from "https://deno.land/x/refql/mod.ts";
 
 declare module "refql" {
-  interface BoxRegistry<Output> {
-    readonly Task: Task<Output>;
+  interface RQLTag<TableId extends string = any, Params = any, Output = any> {
+    (params?: Params, querier?: Querier): Task<Output>;
   }
 }
 
@@ -233,142 +238,51 @@ class Task<Output> {
 const promiseToTask = <Output>(p: Promise<Output>) =>
   new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
-const sql = <Params = unknown, Output = unknown> (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params, Output, "Task">[]) => {
-  const nodes = parse <Params, Output, "Task"> (strings, variables);
-  return SQLTag (nodes, defaultQuerier, promiseToTask);
-};
+setConvertPromise (promiseToTask);
 
-const tag = sql<{}, { id: number; first_name: string }[]>`
-  select id, first_name,
-`;
+const firstTeam = Player ([
+  id,
+  "firstName",
+  "lastName",
+  Limit (),
+  id.asc ()
+]);
 
-const tag2 = sql<{}, { last_name: string }[]>`
-  last_name
-  from player
-  limit 1
-`;
-
-const tag3 = tag.concat (tag2);
-
-// no need to provide a querier anymore
-tag3 ().fork (console.error, console.log);
-
-// [ { id: 1, first_name: "Georgia", last_name: "Marquez" } ];
-```
-
-### Create `Table` with default querier that returns another container type
-U can use [Module augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation) in TypeScript to register another container type.
-
-```ts
-import { Ref, sql, Table } from "https://deno.land/x/refql/mod.ts";
-
-declare module "refql" {
-  interface BoxRegistry<Output> {
-    readonly Task: Task<Output>;
-  }
-}
-
-class Task<Output> {
-  fork: (rej: (e: any) => void, res: (x: Output) => void) => void;
-
-  constructor(fork: (rej: (e: any) => void, res: (x: Output) => void) => void) {
-    this.fork = fork;
-  }
-}
-
-// natural transformation
-const promiseToTask = <Output>(p: Promise<Output>) =>
-  new Task<Output> ((rej, res) => p.then (res).catch (rej));
-
-const Table2 = (name: string, refs: Ref<"Task">[] = []) => {
-  return Table<"Task"> (name, refs, defaultQuerier, promiseToTask);
-};
-
-const Player = Table2 ("Player");
-
-const tag = Player<{}, { id: number; first_name: string }[]>`
-  id
-  first_name
-`;
-
-const tag2 = Player<{}, { last_name: string; team: { name: string } }[]>`
-  last_name
-  ${sql`
-    limit 1 
-  `}
-`;
-
-const tag3 = tag.concat (tag2);
-
-// no need to provide a querier anymore
-tag3 ().fork (console.error, console.log);
-
-// [ { id: 1, first_name: "Georgia", last_name: "Marquez" } ];
-```
-
-## Function placeholder
-If you use a function placeholder inside a `SQLTag` or `RQLTag`, the first parameter of that function will be the parameters with which you execute the tag. If you're working on a `RQLTag`, u can also access the table through the second parameter of the function placeholder. [Raw](#raw), [When](#when), [Values](#values) and [Values2D](#values2d) can also be constructed with this function.
-
-```ts
-const orderedTeamPlayers = Table ("Player")<{ team_id: number; order_by: string }>`
-  *
-  ${sql`
-    and team_id = ${p => p.team_id}
-    order by ${Raw ((p, t) => `${t}.${p.order_by}`)} 
-  `}
-`;
-
-orderedTeamPlayers ({ team_id: 1, order_by: "first_name" }, querier).then (console.log);
+// `fork` instead of `then`
+firstTeam ({ limit: 10 }).fork (console.error, console.log);
 
 // [
-//   {
-//     id: 3,
-//     first_name: 'Celia',
-//     last_name: 'Sbolci',
-//     team_id: 1
-//   },
-//   {
-//     id: 5,
-//     first_name: 'Eleanor',
-//     last_name: 'Klein',
-//     team_id: 1
-//   },
-//   {
-//     id: 6,
-//     first_name: 'Eliza',
-//     last_name: 'Pasquini',
-//     team_id: 1
-//   },
-//   ...
-// ]
+//   { id: 1, firstName: "Christine", lastName: "Hubbard" },
+//   { id: 2, firstName: "Emily", lastName: "Mendez" },
+//   { id: 3, firstName: "Stella", lastName: "Kubo" },
+//   { id: 4, firstName: "Celia", lastName: "Misuri" },
+//   { id: 5, firstName: "Herbert", lastName: "Okada" },
+//   { id: 6, firstName: "Terry", lastName: "Bertrand" },
+//   { id: 7, firstName: "Fannie", lastName: "Guerrero" },
+//   { id: 8, firstName: "Lottie", lastName: "Warren" },
+//   { id: 9, firstName: "Leah", lastName: "Kennedy" },
+//   { id: 10, firstName: "Lottie", lastName: "Giraud" },
+//   { id: 11, firstName: "Marc", lastName: "Passeri" }
+// ];
 ```
 
 ## Fantasy Land Interoperability
 <a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
 
-Both `RQLTag` and `SQLTag` are `Semigroup` structures. `RQLTag` is also a `Monoid` and `Table` is a `Setoid`.
+Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures. `RQLTag` is also a `Monoid` and `Table` is a `Setoid`.
 
 ```ts
-const Player = Table ("player", [
-  belongsTo ("team")
-], querier);
+const part1 = Player ([
+  id,
+  "firstName",
+  Team (["id"])
+]);
 
-const Team = Table ("team");
-
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
-`;
-
-const idAndFirstName = Player<{}, { id: number; first_name: string }[]>`
-  id
-  first_name
-`;
-
-const lastNameAndTeam = Player<{ id: number }, { last_name: string; team: { name: string } }[]>`
-  last_name
-  ${Team`name`}
-  ${byId}
-`;
+const part2 = Player ([
+  "lastName",
+  Team (["name"]),
+  id.eq<{ id: number }> (p => p.id)
+]);
 
 const playerById = idAndFirstName
   .concat (lastNameAndTeam);
@@ -378,24 +292,189 @@ playerById ({ id: 1 }).then (console.log);
 // [
 //   {
 //     id: 1,
-//     first_name: 'Georgia',
-//     last_name: 'Marquez',
-//     team: { name: 'FC Evatelo' }
+//     firstName: "Christine",
+//     lastName: "Hubbard",
+//     team: { id: 1, name: "FC Agecissak" }
 //   }
+// ];
+```
+
+## OrderBy, Limit and Offset
+```ts
+import { NumberProp, Limit, Offset, StringProp, Table } from "https://deno.land/x/refql/mod.ts";
+
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name")
+]);
+
+const { lastName } = Player.props;
+
+const orderByLastName = Player ([
+  "*",
+  lastName.desc (),
+  Limit (),
+  Offset ()
+]);
+
+orderByLastName ({ limit: 5, offset: 30 }).then (console.log);
+
+// [
+//   { id: 410, firstName: "Marcus", lastName: "Volpe" },
+//   { id: 248, firstName: "Clarence", lastName: "Vogt" },
+//   { id: 615, firstName: "Daniel", lastName: "Vincent" },
+//   { id: 228, firstName: "Lloyd", lastName: "Vidal" },
+//   { id: 166, firstName: "Marian", lastName: "Vermeulen" }
+// ];
+```
+
+## Eq
+
+```ts
+import { NumberProp, StringProp, Table } from "https://deno.land/x/refql/mod.ts";
+
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  NumberProp ("teamId", "team_id").nullable ()
+]);
+
+const { teamId } = Player.props;
+
+const firstTeam = Player ([
+  "*",
+  teamId.eq (1)
+]);
+
+firstTeam ().then (console.log);
+
+// [
+//   { id: 1, firstName: "Christine", lastName: "Hubbard", teamId: 1 },
+//   { id: 2, firstName: "Emily", lastName: "Mendez", teamId: 1 },
+//   { id: 3, firstName: "Stella", lastName: "Kubo", teamId: 1 },
+//   { id: 4, firstName: "Celia", lastName: "Misuri", teamId: 1 },
+//   { id: 5, firstName: "Herbert", lastName: "Okada", teamId: 1 },
+//   { id: 6, firstName: "Terry", lastName: "Bertrand", teamId: 1 },
+//   { id: 7, firstName: "Fannie", lastName: "Guerrero", teamId: 1 },
+//   { id: 8, firstName: "Lottie", lastName: "Warren", teamId: 1 },
+//   { id: 9, firstName: "Leah", lastName: "Kennedy", teamId: 1 },
+//   { id: 10, firstName: "Lottie", lastName: "Giraud", teamId: 1 },
+//   { id: 11, firstName: "Marc", lastName: "Passeri", teamId: 1 }
+// ];
+```
+
+## When
+`When` takes a predicate and a [`SQLTag`](#sqltag). If the predicate returns true, the tag is added to `searchPlayer`.
+
+```ts
+import { When } from "https://deno.land/x/refql/mod.ts";
+
+const searchPlayer = Player ([
+  "id",
+  "lastName",
+  When<{ q: string }> (p => p.q != null, sql`
+    and last_name like ${p => `%${p.q}%`}
+  `),
+  When<{ limit: number }> (p => p.limit != null, sql`
+    limit ${p => p.limit} 
+  `)
+]);
+
+searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
+
+// [
+//   { id: 1, lastName: "Hubbard" },
+//   { id: 341, lastName: "Lombardi" }
+// ];
+```
+
+## Functions and subselects
+U can pass a [`SQLTag`](#sqltag) as the second argument to a `Prop` builder to select functions and subselects.
+
+```ts
+import { NumberProp, Limit, Offset, StringProp, Table } from "https://deno.land/x/refql/mod.ts";
+
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  StringProp ("fullName", sql`
+    concat (player.first_name, ' ', player.last_name)
+  `),
+  NumberProp ("goalCount", sql`
+    select count (*) from goal
+    where goal.player_id = player.id
+  `)
+]);
+
+const strikers = Player ([
+  "id",
+  "fullName",
+  "goalCount",
+  Limit (),
+  Offset ()
+]);
+
+strikers ({ limit: 3, offset: 8 }).then (console.log);
+
+// [
+//   { id: 9, fullName: "Leah Kennedy", goalCount: 10 },
+//   { id: 10, fullName: "Lottie Giraud", goalCount: 7 },
+//   { id: 11, fullName: "Marc Passeri", goalCount: 5 }
 // ]
 ```
 
-## Raw
+## SQLTag
+If something can't be done by using the functions provided by RefQL, use `sql`.
+
+```ts
+import { NumberProp, sql, StringProp, Table } from "https://deno.land/x/refql/mod.ts";
+
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  NumberProp ("goalCount", sql`
+    select count (*) from goal
+    where goal.player_id = player.id
+  `)
+]);
+
+const topScorers = Player ([
+  "id",
+  "firstName",
+  "lastName",
+  "goalCount",
+  sql`
+    and (
+      select count (*) from goal
+      where goal.player_id = player.id
+    ) > 15
+  `
+]);
+
+topScorers ().then (console.log);
+
+// [
+//   { id: 44, firstName: "Lester", lastName: "Rhodes", goalCount: 16 },
+//   { id: 373, firstName: "Lucinda", lastName: "Moss", goalCount: 17 }
+// ];
+
+```
+
+### Raw
 With the Raw data type it's possible to inject values as raw text into the query.
 
 ```ts
-import { Raw } from "https://deno.land/x/refql/mod.ts";
+import { Raw, sql, Table } from "https://deno.land/x/refql/mod.ts";
 
 // dynamic properties
 const idField = "id";
 const bdField = "birthday";
 
-const Player = Table ("player");
+const Player = Table ("player", []);
 
 const playerById = sql<{ id: number }>`
   select id, last_name, age (${Raw (bdField)})::text
@@ -407,42 +486,16 @@ const playerById = sql<{ id: number }>`
 
 playerById ({ id: 1 }).then (console.log);
 
-// [ { id: 1, last_name: 'Short', age: '27 years 9 mons 1 day' } ]
+// [ { id: 1, last_name: "Hubbard", age: "26 years 1 mon 15 days" } ];
 ```
 
-## When
-`When` takes a predicate and a `SQLTag`. If the predicate returns true, the tag is added to `searchPlayer`.
-```ts
-import { When } from "https://deno.land/x/refql/mod.ts";
-
-const searchPlayer = Player<{ q?: string; limit?: number }>`
-  id
-  last_name
-  ${When (p => p.q != null, sql`
-    and last_name like ${p => `%${p.q}%`}
-  `)}
-  ${When (p => p.limit != null, sql`
-    limit ${p => p.limit} 
-  `)}
-`;
-
-searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
-
-// [
-//   { id: 25, last_name: 'Ibanez' },
-//   { id: 355, last_name: 'Lombardi' },
-//   { id: 409, last_name: 'Gambacciani' },
-//   { id: 546, last_name: 'Caballero' }
-// ]
-```
-
-## Values
+### Values
 Useful when you want to create dynamic queries, such as inserts or queries with the `in` operator.
 
 ```ts
-import { Values } from "https://deno.land/x/refql/mod.ts";
+import { sql, Table, Values } from "https://deno.land/x/refql/mod.ts";
 
-const Player = Table ("player");
+const Player = Table ("player", []);
 
 // select id, last_name from player where id in ($1, $2, $3)
 const selectPlayers = sql<{ ids: number[]}>`
@@ -454,24 +507,25 @@ const selectPlayers = sql<{ ids: number[]}>`
 selectPlayers ({ ids: [1, 2, 3] }).then (console.log);
 
 // [
-//   { id: 1, last_name: 'Short' },
-//   { id: 2, last_name: 'Owens' },
-//   { id: 3, last_name: 'Sbolci' }
-// ]
+//   { id: 1, last_name: "Hubbard" },
+//   { id: 2, last_name: "Mendez" },
+//   { id: 3, last_name: "Kubo" }
+// ];
 
 ```
-## Values2D
+
+### Values2D
 Useful for batch inserts.
 
 ```ts
-import { Values2D } from "https://deno.land/x/refql/mod.ts";
+import { Table, Raw, sql, Values2D } from "https://deno.land/x/refql/mod.ts";
 
 interface Player {
   first_name: string;
   last_name: string;
 }
 
-const Player = Table ("player", [], querier);
+const Player = Table ("player", []);
 
 const insertBatch = sql<{ fields: (keyof Player)[]; data: Player[] }, Player[]>`
   insert into ${Player} (${Raw (p => p.fields.join (", "))})
@@ -486,103 +540,11 @@ insertBatch ({
     { first_name: "Jane", last_name: "Doe" },
     { first_name: "Jimmy", last_name: "Doe" }
   ]
-}, querier).then (console.log);
+}).then (console.log);
 
 // [
-//   {
-//     id: 733,
-//     first_name: 'John',
-//     last_name: 'Doe'
-//   },
-//   {
-//     id: 734,
-//     first_name: 'Jane',
-//     last_name: 'Doe'
-//   },
-//   {
-//     id: 735,
-//     first_name: 'Jimmy',
-//     last_name: 'Doe'
-//   }
-// ]
-```
-
-## Comments
-Just use `//` to comment out a line.
-
-```ts
-const playerById = Player`
-  id
-  // first_name
-  // last_name
-  concat: full_name(first_name, ' ', last_name)
-  ${sql`
-    and id = 1 
-  `}
-`;
-
-playerById ({ id: 1 }).then (console.log);
-
-// [ { id: 1, full_name: 'Steve Short' } ]
-```
-
-## Functions, subselects, aliases, casts, literals, :1
-Some other features of RefQL.
-
-```ts
-import postgres from "https://deno.land/x/postgresjs/mod.js";
-import { hasMany, sql, Table } from "https://deno.land/x/refql/mod.ts";
-
-const pool = postgres ({
-  // ...pool options
-});
-
-const querier = async (query: string, values: any[]) => {
-  const { rows } = await pool.query (query, values);
-
-  return rows;
-};
-
-const Goal = Table ("goal");
-
-const Player = Table ("player", [
-  hasMany ("goal")
-], querier);
-
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
-`;
-
-const goalCount = sql<{}>`
-  select count(*) from ${Goal}
-  where player_id = player.id
-`;
-
-const features = Player`
-  *
-  id::text
-  ${goalCount}:goal_count::int
-  concat:full_name (first_name, " ", last_name)
-  true:is_player
-  ${Goal}:1 first_goal
-  ${byId}
-`;
-
-features ({ id: 9 }).then (console.log);
-
-// [
-//   {
-//     id: '9',
-//     first_name: 'Phoebe',
-//     last_name: 'van Dongen',
-//     cars: null,
-//     birthday: 1992-02-25T23:00:00.000Z,
-//     team_id: 1,
-//     position_id: 9,
-//     goal_count: 6,
-//     full_name: 'Phoebe van Dongen',
-//     is_player: true,
-//     first_goal: { id: 2, game_id: 1, player_id: 9, own_goal: false, minute: 30 }
-//   }
-// ]
+//   { id: 1020, first_name: "John", last_name: "Doe" },
+//   { id: 1021, first_name: "Jane", last_name: "Doe" },
+//   { id: 1022, first_name: "Jimmy", last_name: "Doe" }
+// ];
 ```

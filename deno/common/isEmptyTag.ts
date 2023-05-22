@@ -1,8 +1,7 @@
-import RQLTag from "../RQLTag/index.ts";
-import SQLTag from "../SQLTag/index.ts";
-import { Boxes } from "./BoxRegistry.ts";
+import { RQLTag } from "../RQLTag/index.ts";
+import { SQLTag } from "../SQLTag/index.ts";
 
-const isEmptyTag = <Params, Output, Box extends Boxes>(tag: SQLTag<Params, Output, Box> | RQLTag<Params, Output, Box>) =>
+const isEmptyTag = (tag: SQLTag | RQLTag) =>
   tag.nodes.length === 0;
 
 export default isEmptyTag;
