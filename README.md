@@ -41,7 +41,7 @@ const playerById = Player ([
   "firstName",
   "lastName",
   Team ([
-    "id",
+    id,
     "name"
   ]),
   id.eq<{ id: number }> (p => p.id)
@@ -298,6 +298,7 @@ playerById ({ id: 1 }).then (console.log);
 //   }
 // ];
 ```
+
 ## OrderBy, Limit and Offset
 ```ts
 import { NumberProp, Limit, Offset, StringProp, Table } from "refql";
@@ -329,6 +330,7 @@ orderByLastName ({ limit: 5, offset: 30 }).then (console.log);
 ```
 
 ## Eq
+
 ```ts
 import { NumberProp, StringProp, Table } from "refql";
 
@@ -365,6 +367,7 @@ firstTeam ().then (console.log);
 
 ## When
 `When` takes a predicate and a [`SQLTag`](#sqltag). If the predicate returns true, the tag is added to `searchPlayer`.
+
 ```ts
 import { When } from "refql";
 
@@ -389,6 +392,7 @@ searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
 
 ## Functions and subselects
 U can pass a [`SQLTag`](#sqltag) as the second argument to a `Prop` builder to select functions and subselects.
+
 ```ts
 import { NumberProp, Limit, Offset, StringProp, Table } from "refql";
 

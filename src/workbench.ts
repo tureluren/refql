@@ -1,15 +1,7 @@
 import { Pool } from "pg";
 import {
-  BelongsTo, BelongsToMany, HasMany,
-  HasOne, Limit, NumberProp, Offset,
-  Querier,
-  Raw,
-  setConvertPromise,
-  setDefaultQuerier,
-  sql,
-  StringProp, Table, Values, Values2D, When
+  BelongsTo, NumberProp, setDefaultQuerier, StringProp, Table
 } from ".";
-import { Team } from "./test/tables";
 
 const querier = async (query: string, values: any[]) => {
   console.log (query);
@@ -21,8 +13,6 @@ const querier = async (query: string, values: any[]) => {
 setDefaultQuerier (querier);
 
 
-
-
 const pool = new Pool ({
   user: "test",
   host: "localhost",
@@ -32,36 +22,32 @@ const pool = new Pool ({
 });
 
 
-// firstTeam ({ limit: 11 }).fork (console.log, console.log);
+// id Prop
+const id = NumberProp ("id");
 
-// const playerBelongsToManyGames = BelongsToMany ("games", "game", {
-//   lRef: "id",
-//   rRef: "id",
-//   lxRef: "player_id",
-//   rxRef: "game_id",
-//   xTable: "game_player"
-// });
+// Tables
+const Player = Table ("player", [
+  id,
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  BelongsTo ("team", "team")
+]);
 
+const Team = Table ("team", [
+  id,
+  StringProp ("name")
+]);
 
-// dynamic properties
-interface Player {
-  first_name: string;
-  last_name: string;
-}
+// query composition
+const playerById = Player ([
+  id,
+  "firstName",
+  "lastName",
+  Team ([
+    id,
+    "name"
+  ]),
+  id.eq<{ id: number }> (p => p.id)
+]);
 
-const Player = Table ("player", []);
-
-const insertBatch = sql<{ fields: (keyof Player)[]; data: Player[] }, Player[]>`
-  insert into ${Player} (${Raw (p => p.fields.join (", "))})
-  values ${Values2D (p => p.data.map (x => p.fields.map (f => x[f])))}
-  returning *
-`;
-
-insertBatch ({
-  fields: ["first_name", "last_name"],
-  data: [
-    { first_name: "John", last_name: "Doe" },
-    { first_name: "Jane", last_name: "Doe" },
-    { first_name: "Jimmy", last_name: "Doe" }
-  ]
-}).then (console.log);
+playerById ({ id: 9 }).then (console.log);
