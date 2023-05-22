@@ -24,14 +24,21 @@ const Player = Table ("player", [
   NumberProp ("id"),
   StringProp ("firstName", "first_name"),
   StringProp ("lastName", "last_name"),
-  NumberProp ("teamId", "team_id").nullable ()
+  NumberProp ("goalCount", sql`
+    select count (*) from goal
+    where goal.player_id = player.id
+  `)
 ]);
 
-const { teamId } = Player.props;
-
-const firstTeam = Player ([
-  "*",
-  teamId.eq (1)
+const topScorers = Player ([
+  "id",
+  "firstName",
+  "lastName",
+  "goalCount",
+  sql`
+    and (select count (*) from goal
+    where goal.player_id = player.id) > 15
+  `
 ]);
 
 
@@ -43,7 +50,7 @@ const pool = new Pool ({
   port: 5432
 });
 
-firstTeam ().then (console.log);
+topScorers ().then (console.log);
 
 // firstTeam ({ limit: 11 }).fork (console.log, console.log);
 

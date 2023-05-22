@@ -67,7 +67,7 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select
         (concat (player.first_name, ' ', player.last_name)) "fullName",
-        (select count (*)::int from goal where goal.player_id = player.id) "goalCount",
+        (select count (*) from goal where goal.player_id = player.id) "goalCount",
         (select id from goal where goal.player_id = player.id limit 1) "firstGoalId"
       from player
       where 1 = 1
@@ -492,7 +492,7 @@ describe ("RQLTag type", () => {
       from player
       where 1 = 1 
       and player.id in ($1, $2, $3)
-      and (select count (*)::int from goal where goal.player_id = player.id) in ($4)
+      and (select count (*) from goal where goal.player_id = player.id) in ($4)
       and player.team_id in ($5, $6)
       order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
     `));

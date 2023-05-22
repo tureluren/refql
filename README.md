@@ -400,7 +400,7 @@ const Player = Table ("player", [
     concat (player.first_name, ' ', player.last_name)
   `),
   NumberProp ("goalCount", sql`
-    select count (*)::int from goal
+    select count (*) from goal
     where goal.player_id = player.id
   `)
 ]);
@@ -423,7 +423,43 @@ strikers ({ limit: 3, offset: 8 }).then (console.log);
 ```
 
 ## SQLTag
-pass sqltag to player
+If something can't be done by using the functions provided by RefQL, use `sql`.
+
+```ts
+import { NumberProp, sql, StringProp, Table } from "refql";
+
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  NumberProp ("goalCount", sql`
+    select count (*) from goal
+    where goal.player_id = player.id
+  `)
+]);
+
+const topScorers = Player ([
+  "id",
+  "firstName",
+  "lastName",
+  "goalCount",
+  sql`
+    and (
+      select count (*) from goal
+      where goal.player_id = player.id
+    ) > 15
+  `
+]);
+
+topScorers ().then (console.log);
+
+// [
+//   { id: 44, firstName: "Lester", lastName: "Rhodes", goalCount: 16 },
+//   { id: 373, firstName: "Lucinda", lastName: "Moss", goalCount: 17 }
+// ];
+
+```
+
 ### Raw
 With the Raw data type it's possible to inject values as raw text into the query.
 

@@ -8,7 +8,8 @@
   "version": "3.0.22",
   "scripts": {
     "start": "NODE_ENV=development nodemon src/workbench.ts",
-    "test": "NODE_ENV=test DB_TYPE=pg jest --setupFiles dotenv/config --watch --detectOpenHandles",
+    "test": "NODE_ENV=test jest --setupFiles dotenv/config --watch --detectOpenHandles",
+    "test:pg": "DB_TYPE=pg yarn test",
     "test:mysql": "DB_TYPE=mysql yarn test",
     "test:mariadb": "DB_TYPE=mariadb yarn test",
     "migrate": "node -r dotenv/config ./db/migrateDB.js",
