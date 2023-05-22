@@ -73,12 +73,11 @@ playerById ({ id: 1 }, querier).then(console.log);
 * [Tables and References](#tables-and-references)
 * [Querier](#querier)
 * [Fantasy Land Interoperability](#fantasy-land-interoperability)
-* [SQLTag](#sqltag)
-* [Raw](#raw)
+* [OrderBy, Limit and Offset](#orderby-limit-and-offset)
+* [Eq](#eq)
 * [When](#when)
-* [Values](#values)
-* [Values2D](#values2d)
-* [Functions, subselects, aliases, casts, literals, :1](#functions-subselects-aliases-casts-literals-1)
+* [Functions and subselects](#functions-and-subselects)
+* [SQLTag](#sqltag)
 
 ## Tables and References
 The example below shows how to define tables and describe their references to other tables. From then on, these references can be used in a `RQLTag`. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
@@ -273,12 +272,13 @@ firstTeam ({ limit: 10 }).fork (console.error, console.log);
 Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures. `RQLTag` is also a `Monoid` and `Table` is a `Setoid`.
 
 ```ts
-const idAndFirstName = Player ([
+const part1 = Player ([
   id,
+  Team (["id"]),
   "firstName"
 ]);
 
-const lastNameAndTeam = Player ([
+const part2 = Player ([
   "lastName",
   Team (["name"]),
   id.eq<{ id: number }> (p => p.id)
@@ -294,34 +294,73 @@ playerById ({ id: 1 }).then (console.log);
 //     id: 1,
 //     firstName: "Christine",
 //     lastName: "Hubbard",
-//     team: { name: "FC Agecissak" }
+//     team: { id: 1, name: "FC Agecissak" }
 //   }
 // ];
 ```
-## SQLTag
-## Raw
-With the Raw data type it's possible to inject values as raw text into the query.
-
+## OrderBy, Limit and Offset
 ```ts
-import { Raw } from "refql";
+import { NumberProp, Limit, Offset, StringProp, Table } from "refql";
 
-// dynamic properties
-const idField = "id";
-const bdField = "birthday";
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name")
+]);
 
-const Player = Table ("player");
+const { lastName } = Player.props;
 
-const playerById = sql<{ id: number }>`
-  select id, last_name, age (${Raw (bdField)})::text
-  from ${Player} where ${Raw (idField)} = ${p => p.id}
-`;
+const orderByLastName = Player ([
+  "*",
+  lastName.desc (),
+  Limit (),
+  Offset ()
+]);
 
-// query: select id, last_name, age (birthday)::text from player where id = $1
-// values: [1]
+orderByLastName ({ limit: 5, offset: 30 }).then (console.log);
 
-playerById ({ id: 1 }).then (console.log);
+// [
+//   { id: 410, firstName: "Marcus", lastName: "Volpe" },
+//   { id: 248, firstName: "Clarence", lastName: "Vogt" },
+//   { id: 615, firstName: "Daniel", lastName: "Vincent" },
+//   { id: 228, firstName: "Lloyd", lastName: "Vidal" },
+//   { id: 166, firstName: "Marian", lastName: "Vermeulen" }
+// ];
+```
 
-// [ { id: 1, last_name: 'Short', age: '27 years 9 mons 1 day' } ]
+## Eq
+```ts
+import { NumberProp, StringProp, Table } from "refql";
+
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  NumberProp ("teamId", "team_id").nullable ()
+]);
+
+const { teamId } = Player.props;
+
+const firstTeam = Player ([
+  "*",
+  teamId.eq (1)
+]);
+
+firstTeam ().then (console.log);
+
+// [
+//   { id: 1, firstName: "Christine", lastName: "Hubbard", teamId: 1 },
+//   { id: 2, firstName: "Emily", lastName: "Mendez", teamId: 1 },
+//   { id: 3, firstName: "Stella", lastName: "Kubo", teamId: 1 },
+//   { id: 4, firstName: "Celia", lastName: "Misuri", teamId: 1 },
+//   { id: 5, firstName: "Herbert", lastName: "Okada", teamId: 1 },
+//   { id: 6, firstName: "Terry", lastName: "Bertrand", teamId: 1 },
+//   { id: 7, firstName: "Fannie", lastName: "Guerrero", teamId: 1 },
+//   { id: 8, firstName: "Lottie", lastName: "Warren", teamId: 1 },
+//   { id: 9, firstName: "Leah", lastName: "Kennedy", teamId: 1 },
+//   { id: 10, firstName: "Lottie", lastName: "Giraud", teamId: 1 },
+//   { id: 11, firstName: "Marc", lastName: "Passeri", teamId: 1 }
+// ];
 ```
 
 ## When
@@ -348,7 +387,69 @@ searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
 // ];
 ```
 
-## Values
+## Functions and subselects
+U can pass a [`SQLTag`](#sqltag) as the second argument to a `Prop` builder to select functions and subselects.
+```ts
+import { NumberProp, Limit, Offset, StringProp, Table } from "refql";
+
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  StringProp ("fullName", sql`
+    concat (player.first_name, ' ', player.last_name)
+  `),
+  NumberProp ("goalCount", sql`
+    select count (*)::int from goal
+    where goal.player_id = player.id
+  `)
+]);
+
+const strikers = Player ([
+  "id",
+  "fullName",
+  "goalCount",
+  Limit (),
+  Offset ()
+]);
+
+strikers ({ limit: 3, offset: 8 }).then (console.log);
+
+// [
+//   { id: 9, fullName: "Leah Kennedy", goalCount: 10 },
+//   { id: 10, fullName: "Lottie Giraud", goalCount: 7 },
+//   { id: 11, fullName: "Marc Passeri", goalCount: 5 }
+// ]
+```
+
+## SQLTag
+pass sqltag to player
+### Raw
+With the Raw data type it's possible to inject values as raw text into the query.
+
+```ts
+import { Raw } from "refql";
+
+// dynamic properties
+const idField = "id";
+const bdField = "birthday";
+
+const Player = Table ("player");
+
+const playerById = sql<{ id: number }>`
+  select id, last_name, age (${Raw (bdField)})::text
+  from ${Player} where ${Raw (idField)} = ${p => p.id}
+`;
+
+// query: select id, last_name, age (birthday)::text from player where id = $1
+// values: [1]
+
+playerById ({ id: 1 }).then (console.log);
+
+// [ { id: 1, last_name: 'Short', age: '27 years 9 mons 1 day' } ]
+```
+
+### Values
 Useful when you want to create dynamic queries, such as inserts or queries with the `in` operator.
 
 ```ts
@@ -372,7 +473,8 @@ selectPlayers ({ ids: [1, 2, 3] }).then (console.log);
 // ]
 
 ```
-## Values2D
+
+### Values2D
 Useful for batch inserts.
 
 ```ts
@@ -415,67 +517,6 @@ insertBatch ({
 //     id: 735,
 //     first_name: 'Jimmy',
 //     last_name: 'Doe'
-//   }
-// ]
-```
-
-## Functions, subselects, aliases, casts, literals, :1
-Some other features of RefQL.
-
-```ts
-import { Pool } from "pg";
-import { HasMany, sql, Table } from "refql";
-
-const pool = new Pool ({
-  // ...pool options
-});
-
-const querier = async (query: string, values: any[]) => {
-  const { rows } = await pool.query (query, values);
-
-  return rows;
-};
-
-const Goal = Table ("goal");
-
-const Player = Table ("player", [
-  HasMany ("goal")
-], querier);
-
-const byId = sql<{id: number}>`
-  and id = ${p => p.id}
-`;
-
-const goalCount = sql<{}>`
-  select count(*) from ${Goal}
-  where player_id = player.id
-`;
-
-const features = Player`
-  *
-  id::text
-  ${goalCount}:goal_count::int
-  concat:full_name (first_name, " ", last_name)
-  true:is_player
-  ${Goal}:1 first_goal
-  ${byId}
-`;
-
-features ({ id: 9 }).then (console.log);
-
-// [
-//   {
-//     id: '9',
-//     first_name: 'Phoebe',
-//     last_name: 'van Dongen',
-//     cars: null,
-//     birthday: 1992-02-25T23:00:00.000Z,
-//     team_id: 1,
-//     position_id: 9,
-//     goal_count: 6,
-//     full_name: 'Phoebe van Dongen',
-//     is_player: true,
-//     first_goal: { id: 2, game_id: 1, player_id: 9, own_goal: false, minute: 30 }
 //   }
 // ]
 ```

@@ -8,7 +8,7 @@ import {
   sql,
   StringProp, Table, When
 } from ".";
-import { Player, Team } from "./test/tables";
+import { Team } from "./test/tables";
 
 const querier = async (query: string, values: any[]) => {
   console.log (query);
@@ -19,18 +19,21 @@ const querier = async (query: string, values: any[]) => {
 
 setDefaultQuerier (querier);
 
-const id = NumberProp ("id");
 
-const idAndFirstName = Player ([
-  id,
-  "firstName"
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  NumberProp ("teamId", "team_id").nullable ()
 ]);
 
-const lastNameAndTeam = Player ([
-  "lastName",
-  Team (["name"]),
-  id.eq<{ id: number }> (p => p.id)
+const { teamId } = Player.props;
+
+const firstTeam = Player ([
+  "*",
+  teamId.eq (1)
 ]);
+
 
 const pool = new Pool ({
   user: "test",
@@ -40,10 +43,7 @@ const pool = new Pool ({
   port: 5432
 });
 
-const playerById = idAndFirstName
-  .concat (lastNameAndTeam);
-
-playerById ({ id: 1 }).then (res => res[0]);
+firstTeam ().then (console.log);
 
 // firstTeam ({ limit: 11 }).fork (console.log, console.log);
 
@@ -54,16 +54,3 @@ playerById ({ id: 1 }).then (res => res[0]);
 //   rxRef: "game_id",
 //   xTable: "game_player"
 // });
-
-const searchPlayer = Player ([
-  "id",
-  "lastName",
-  When<{ q: string }> (p => p.q != null, sql`
-    and last_name like ${p => `%${p.q}%`}
-  `),
-  When<{ limit: number }> (p => p.limit != null, sql`
-    limit ${p => p.limit} 
-  `)
-]);
-
-searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
