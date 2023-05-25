@@ -23,7 +23,7 @@ const pool = new Pool ({
   port: 5432
 });
 
-const { id, lastName, firstName } = Player.props;
+const { id, lastName, firstName, fullName } = Player.props;
 
 // select components
 // const tag = Player ([
@@ -53,7 +53,7 @@ const p = Player ([
   "id",
   "lastName",
   Limit (),
-  id.eq<{ id: number }> (p => p.id)
+  id.eq<{ id: number }> (3)
 ]);
 
 p ({ limit: 1, id: 3 }).then (console.log);

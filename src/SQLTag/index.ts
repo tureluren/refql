@@ -8,6 +8,7 @@ import Eq from "../RQLTag/Eq";
 import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
+import Table from "../Table";
 import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import Raw from "./Raw";
 import SQLNode from "./SQLNode";
@@ -42,8 +43,8 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode, SelectableT
   concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   [flConcat]: SQLTag<Params, Output>["concat"];
-  interpret(selectables?: SelectableType[]): InterpretedSQLTag<Params>;
-  compile(params: Params, selectables?: SelectableType[]): [string, any[]];
+  interpret(selectables?: SelectableType[], table?: Table): InterpretedSQLTag<Params>;
+  compile(params: Params, selectables?: SelectableType[], table?: Table): [string, any[]];
   setPred (fn: (p: any) => boolean): SQLTag<Params, Output>;
 }
 
@@ -98,7 +99,7 @@ function concat(this: SQLTag, other: SQLTag) {
   return this.join (" ", other);
 }
 
-function interpret(this: SQLTag, selectables: SelectableType[] = []): InterpretedSQLTag {
+function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Table): InterpretedSQLTag {
   const strings = [] as InterpretedString[],
     limits = [] as InterpretedString[],
     offsets = [] as InterpretedString[],
@@ -221,27 +222,43 @@ function interpret(this: SQLTag, selectables: SelectableType[] = []): Interprete
         run: p => p[prop]
       });
     } else if (Eq.isEq (selectable)) {
-      const { pred, prop } = selectable;
+      const { pred, prop, run } = selectable;
       if (isSQLTag (prop)) {
-        // extra = extra.concat (sql`
-        //   and (${node.prop}) = ${node.run}
-        // `);
+        strings.push ({
+          pred,
+          run: () => [" and (", 0]
+        });
+
+        const { strings: strings2, values: values2 } = prop.interpret ();
+
+        strings.push (...strings2.map (({ run, pred: pred2 }) => ({
+          pred: (p: StringMap) => pred2 (p) && pred (p),
+          run
+        })));
+
+        strings.push ({
+          pred,
+          run: (_p, i) => [`) = $${i + 1}`, 1]
+        });
+
+        values.push (...values2.map (({ run, pred: pred2 }) => ({
+          pred: (p: StringMap) => pred2 (p) && pred (p),
+          run
+        })));
       } else {
-        // extra = extra.concat (sql`
-        //   and ${Raw (`${table.name}.${node.prop}`)} = ${node.run}
-        // `);
-      strings.push ({
-        pred,
-        run: (_p, i) => {
-          return [` and ${prop} = $${i + 1}`, 1];
-        }
-      });
+        strings.push ({
+          pred,
+          run: (_p, i) => {
+            return [` and ${table?.name}.${prop} = $${i + 1}`, 1];
+          }
+        });
+
+      }
 
       values.push ({
         pred,
-        run: p => p[prop]
+        run: p => run (p)
       });
-      }
     }
   }
 
@@ -251,9 +268,9 @@ function interpret(this: SQLTag, selectables: SelectableType[] = []): Interprete
 const filterByPred = (params: StringMap) => (strings: InterpretedString[]) =>
   strings.filter (({ pred }) => pred (params));
 
-function compile(this: SQLTag, params: StringMap, selectables: SelectableType[] = []) {
+function compile(this: SQLTag, params: StringMap, selectables: SelectableType[] = [], table?: Table) {
   if (!this.interpreted) {
-    this.interpreted = this.interpret (selectables);
+    this.interpreted = this.interpret (selectables, table);
   }
 
   const { strings, limits, offsets, values } = this.interpreted;

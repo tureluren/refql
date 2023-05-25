@@ -166,7 +166,7 @@ function compile(this: RQLTag, params: StringMap) {
   }
 
   return [
-    ...this.interpreted.tag.compile (params, sortedSelectables),
+    ...this.interpreted.tag.compile (params, sortedSelectables, this.table),
     this.interpreted.next
   ];
 }
