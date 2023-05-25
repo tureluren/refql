@@ -3,6 +3,7 @@ import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
 import RefField from "../RQLTag/RefField";
+import { SQLTag } from "../SQLTag";
 import SQLNode from "../SQLTag/SQLNode";
 import Table from "../Table";
 import SelectableType from "../Table/SelectableType";
@@ -85,7 +86,7 @@ export type Selectable<T> =
   | SelectableType;
 
 export type ParamsType<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
-  ? (U extends ({ params: any })
+  ? (U extends { params: any }
     ? U
     : U extends keyof SQLProps
       ? SQLProps[U]
@@ -96,7 +97,7 @@ export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<ParamsTyp
 
 export type IsAllSignSelected<S, Components extends Selectable<S>[]> = AllSign extends Components[number] ? true : false;
 
-export type FinalComponents<Props, Components extends Selectable<Props>[], > = IsAllSignSelected<Props, Components> extends true
+export type FinalComponents<Props, Components extends Selectable<Props>[]> = IsAllSignSelected<Props, Components> extends true
   ? [keyof OnlyProps<Props>, ...Components]
   : Components;
 

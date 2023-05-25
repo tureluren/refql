@@ -1,35 +1,47 @@
 import { refqlType } from "../common/consts";
-import { TagFunctionVariable } from "../common/types";
+import { Params, TagFunctionVariable } from "../common/types";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
-import { SQLTag } from "../SQLTag";
-import SQLNode, { sqlNodePrototype } from "../SQLTag/SQLNode";
-import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
+import SelectableType, { isSelectableType, selectableTypePrototype } from "../Table/SelectableType";
 
-interface When<Params = any> extends RQLNode, SQLNode<Params>, SelectableType {
-  params: Params;
-  pred: TagFunctionVariable<Params, boolean>;
-  tag: SQLTag<Params>;
-  whenable: true;
+// still A selectable type ?, move to RQLTAG if not common anymore
+interface When<Components extends SelectableType[] = any[]> extends RQLNode, SelectableType {
+  params: Partial<Params<{}, Components>>;
+  pred: TagFunctionVariable<Params<{}, Components>, boolean>;
+  components: Components;
 }
 
 const type = "refql/When";
 
-const prototype = Object.assign ({}, sqlNodePrototype, rqlNodePrototype, selectableTypePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   constructor: When,
   [refqlType]: type
 });
 
-// Params is inferred from type of `tag` parameter, so no need to default it to any
-function When<Params>(pred: TagFunctionVariable<Params, boolean>, tag: SQLTag<Params>) {
-  let when: When<Params> = Object.create (prototype);
+// Components is inferred from type of `tag` parameter, so no need to default it to any
+function When<Components extends SelectableType[]>(pred: TagFunctionVariable<Params<{}, Components>, boolean>, components: Components) {
+  let when: When<Components> = Object.create (prototype);
+
+  const whenComponents = components.flatMap (comp => {
+    if (!isSelectableType (comp)) {
+      throw new Error ("Unallowed component provided to When");
+    }
+
+    if (When.isWhen (comp)) {
+      return comp.components.map (comp2 =>
+        comp2.setPred ((p: any) => comp.pred (p) && pred (p))
+      );
+    }
+
+    return comp.setPred (pred);
+  });
 
   when.pred = pred;
-  when.tag = tag;
+  when.components = whenComponents as Components;
 
   return when;
 }
 
-When.isWhen = function <Params = any> (x: any): x is When<Params> {
+When.isWhen = function <Components extends SelectableType[] = any[]> (x: any): x is When<Components> {
   return x != null && x[refqlType] === type;
 };
 

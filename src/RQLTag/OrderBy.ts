@@ -7,13 +7,16 @@ interface OrderBy<Prop extends SQLTag | string = any, Descending extends boolean
   params: Params;
   prop: Prop;
   descending: Descending;
+  setPred (fn: (p: any) => boolean): OrderBy<Prop, Descending, Params>;
 }
 
 const type = "refql/OrderBy";
 
 const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   constructor: OrderBy,
-  [refqlType]: type
+  [refqlType]: type,
+  setPred,
+  precedence: 2
 });
 
 function OrderBy<Prop extends SQLTag | string, Descending extends boolean, Params = any>(prop: Prop, descending: Descending) {
@@ -21,6 +24,14 @@ function OrderBy<Prop extends SQLTag | string, Descending extends boolean, Param
 
   orderBy.prop = prop;
   orderBy.descending = descending;
+
+  return orderBy;
+}
+
+function setPred(this: OrderBy, fn: (p: any) => boolean) {
+  let orderBy = OrderBy (this.prop, this.descending);
+
+  orderBy.pred = fn;
 
   return orderBy;
 }

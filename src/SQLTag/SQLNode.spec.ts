@@ -1,11 +1,11 @@
 import { flMap } from "../common/consts";
-import When from "../common/When";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import { isSQLNode } from "./SQLNode";
 import Value from "./Value";
 import Values from "./Values";
 import Values2D from "./Values2D";
+import When2 from "./When2";
 
 describe ("SQLNodes", () => {
   test ("is SQLNode", () => {
@@ -45,9 +45,9 @@ describe ("SQLNodes", () => {
     expect (Values2D.isValues2D ("Values2D")).toBe (false);
   });
 
-  test ("is When", () => {
-    expect (When.isWhen (When (() => true, sql``))).toBe (true);
-    expect (When.isWhen ("When")).toBe (false);
+  test ("is When2", () => {
+    expect (When2.isWhen2 (When2 (() => true, sql``))).toBe (true);
+    expect (When2.isWhen2 ("When2")).toBe (false);
   });
 
   test ("Raw is functor", () => {

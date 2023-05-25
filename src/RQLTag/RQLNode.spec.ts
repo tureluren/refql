@@ -14,8 +14,13 @@ import { isRQLNode } from "./RQLNode";
 
 describe ("RQLNodes", () => {
   test ("is RQLNode", () => {
-    expect (isRQLNode (When (() => true, sql``))).toBe (true);
+    expect (isRQLNode (When (() => true, [sql``]))).toBe (true);
     expect (isRQLNode ("When")).toBe (false);
+  });
+
+  test ("is When", () => {
+    expect (When.isWhen (When (() => true, [sql``]))).toBe (true);
+    expect (When.isWhen ("When")).toBe (false);
   });
 
   test ("is Eq", () => {

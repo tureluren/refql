@@ -2,8 +2,11 @@ import { flConcat, refqlType } from "../common/consts";
 import { getConvertPromise } from "../common/convertPromise";
 import getGlobalQuerier from "../common/defaultQuerier";
 import isEmptyTag from "../common/isEmptyTag";
+import truePred from "../common/truePred";
 import { Querier, StringMap, TagFunctionVariable } from "../common/types";
-import When from "../common/When";
+import Eq from "../RQLTag/Eq";
+import Limit from "../RQLTag/Limit";
+import Offset from "../RQLTag/Offset";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import Raw from "./Raw";
@@ -11,6 +14,7 @@ import SQLNode from "./SQLNode";
 import Value from "./Value";
 import Values from "./Values";
 import Values2D from "./Values2D";
+import When2 from "./When2";
 
 type InterpretedString<Params = any> = {
   pred: TagFunctionVariable<Params, boolean>;
@@ -24,6 +28,8 @@ type InterpretedValue<Params = any> = {
 
 interface InterpretedSQLTag<Params = any> {
   strings: InterpretedString<Params>[];
+  limits: InterpretedString<Params>[];
+  offsets: InterpretedString<Params>[];
   values: InterpretedValue<Params>[];
 }
 
@@ -36,8 +42,9 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode, SelectableT
   concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   [flConcat]: SQLTag<Params, Output>["concat"];
-  interpret(): InterpretedSQLTag<Params>;
-  compile(params: Params): [string, any[]];
+  interpret(selectables?: SelectableType[]): InterpretedSQLTag<Params>;
+  compile(params: Params, selectables?: SelectableType[]): [string, any[]];
+  setPred (fn: (p: any) => boolean): SQLTag<Params, Output>;
 }
 
 const type = "refql/SQLTag";
@@ -49,7 +56,9 @@ const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, 
   join,
   [flConcat]: concat,
   interpret,
-  compile
+  compile,
+  setPred,
+  precedence: 1
 });
 
 export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[]) {
@@ -89,10 +98,10 @@ function concat(this: SQLTag, other: SQLTag) {
   return this.join (" ", other);
 }
 
-const truePred = () => true;
-
-function interpret(this: SQLTag): InterpretedSQLTag {
+function interpret(this: SQLTag, selectables: SelectableType[] = []): InterpretedSQLTag {
   const strings = [] as InterpretedString[],
+    limits = [] as InterpretedString[],
+    offsets = [] as InterpretedString[],
     values = [] as InterpretedValue[];
 
   for (const [idx, node] of this.nodes.entries ()) {
@@ -104,7 +113,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
         pred: truePred,
         run: (p, _i) => {
           let s = run (p);
-          if (When.isWhen (nextNode) && !nextNode.pred (p)) {
+          if (When2.isWhen2 (nextNode) && !nextNode.pred (p)) {
             s = s.trimEnd ();
           }
           return [s, 0];
@@ -164,7 +173,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
           return [s.join (", "), n];
         }
       });
-    } else if (When.isWhen (node)) {
+    } else if (When2.isWhen2 (node)) {
       const { pred: pred2, tag } = node;
 
       const { strings: strings2, values: values2 } = tag.interpret ();
@@ -183,19 +192,82 @@ function interpret(this: SQLTag): InterpretedSQLTag {
     }
   }
 
-  return { strings, values };
-}
+  // sorted selectables
+  for (const selectable of selectables) {
+    if (Limit.isLimit (selectable)) {
+      const { pred, prop } = selectable;
+      limits.push ({
+        pred,
+        run: (_p, i) => {
+          return [` limit $${i + 1}`, 1];
+        }
+      });
 
-function compile(this: SQLTag, params: StringMap) {
-  if (!this.interpreted) {
-    this.interpreted = this.interpret ();
+      values.push ({
+        pred,
+        run: p => p[prop]
+      });
+    } else if (Offset.isOffset (selectable)) {
+      const { pred, prop } = selectable;
+      offsets.push ({
+        pred,
+        run: (_p, i) => {
+          return [` offset $${i + 1}`, 1];
+        }
+      });
+
+      values.push ({
+        pred,
+        run: p => p[prop]
+      });
+    } else if (Eq.isEq (selectable)) {
+      const { pred, prop } = selectable;
+      if (isSQLTag (prop)) {
+        // extra = extra.concat (sql`
+        //   and (${node.prop}) = ${node.run}
+        // `);
+      } else {
+        // extra = extra.concat (sql`
+        //   and ${Raw (`${table.name}.${node.prop}`)} = ${node.run}
+        // `);
+      strings.push ({
+        pred,
+        run: (_p, i) => {
+          return [` and ${prop} = $${i + 1}`, 1];
+        }
+      });
+
+      values.push ({
+        pred,
+        run: p => p[prop]
+      });
+      }
+    }
   }
 
-  const { strings, values } = this.interpreted;
+  return { strings, limits, offsets, values };
+}
+
+const filterByPred = (params: StringMap) => (strings: InterpretedString[]) =>
+  strings.filter (({ pred }) => pred (params));
+
+function compile(this: SQLTag, params: StringMap, selectables: SelectableType[] = []) {
+  if (!this.interpreted) {
+    this.interpreted = this.interpret (selectables);
+  }
+
+  const { strings, limits, offsets, values } = this.interpreted;
+
+  const filterByP = filterByPred (params);
+
+  const filteredStrings = filterByP (strings);
+  const filteredLimits = filterByP (limits);
+  const filteredOffsets = filterByP (offsets);
 
   return [
-    strings
-      .filter (({ pred }) => pred (params))
+    filteredStrings
+      .concat (filteredLimits)
+      .concat (filteredOffsets)
       .reduce (([query, idx]: [string, number], { run }): [string, number] => {
         const [s, n] = run (params, idx);
 
@@ -206,6 +278,14 @@ function compile(this: SQLTag, params: StringMap) {
       .filter (({ pred }) => pred (params))
       .map (({ run }) => run (params)).flat (1)
   ];
+}
+
+function setPred(this: SQLTag, fn: (p: any) => boolean) {
+  let sqlTag = createSQLTag (this.nodes);
+
+  sqlTag.pred = fn;
+
+  return sqlTag;
 }
 
 export const isSQLTag = function <Params = any, Output = any> (x: any): x is SQLTag<Params, Output> {

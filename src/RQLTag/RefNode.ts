@@ -1,3 +1,4 @@
+import concatExtra from "../common/concatExtra";
 import { refqlType } from "../common/consts";
 import { RefInfo, RefInput, RefQLRows } from "../common/types";
 import RefProp from "../Prop/RefProp";
@@ -91,7 +92,7 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
 
 function joinLateral(this: RefNode) {
   if (this.info.xTable) {
-    const { tag, next, extra } = this.tag.interpret ();
+    const { tag, next, ...extra } = this.tag.interpret ();
     const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info as Required<RefInfo>;
 
     const l1 = sql<RefQLRows>`
@@ -101,12 +102,12 @@ function joinLateral(this: RefNode) {
       in ${Values (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
     `;
 
-    const l2 = tag
+    const l2 = concatExtra (tag
       .concat (sql`
         join ${Raw (`${xTable} on ${rxRef.name} = ${rRef.name}`)}
         where ${Raw (`${lxRef.name} = refqll1.${lRef.as}`)}
       `)
-      .concat (extra);
+      , extra);
 
     const joined = sql`
       select * from (${l1}) refqll1,
@@ -118,7 +119,7 @@ function joinLateral(this: RefNode) {
     return this.tag;
 
   } else {
-    const { tag, next, extra } = this.tag.interpret ();
+    const { tag, next, ...extra } = this.tag.interpret ();
     const { rRef, lRef, parent } = this.info;
 
     const l1 = sql<RefQLRows>`
@@ -128,11 +129,10 @@ function joinLateral(this: RefNode) {
       in ${Values (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
     `;
 
-    const l2 = tag
+    const l2 = concatExtra (tag
       .concat (sql`
         where ${Raw (`${rRef.name} = refqll1.${lRef.as}`)}
-      `)
-      .concat (extra);
+      `), extra);
 
     const joined = sql`
       select * from (${l1}) refqll1,

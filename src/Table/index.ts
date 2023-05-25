@@ -1,6 +1,7 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
 import { Output, Params, Selectable } from "../common/types";
 import validateTable from "../common/validateTable";
+import When from "../common/When";
 import Prop from "../Prop";
 import PropType from "../Prop/PropType";
 import RefProp from "../Prop/RefProp";
@@ -78,6 +79,8 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
         }
 
         nodes.push (...refNodes);
+      } else if (When.isWhen (comp)) {
+        nodes.push (...comp.components);
       } else if (isRQLNode (comp)) {
         nodes.push (comp);
       } else {

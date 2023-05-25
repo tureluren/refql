@@ -612,12 +612,8 @@ describe ("RQLTag type", () => {
   test ("when", () => {
     const tag = Player ([
       "id",
-      When (p => !!p.limit, sql<{ limit?: number }>`
-        limit ${p => p.limit}
-      `),
-      When (p => !!p.offset, sql<{ offset?: number }>`
-        offset ${p => p.offset}
-      `)
+      When (p => !!p.limit, [Limit ()]),
+      When (p => !!p.offset, [Offset ()])
     ]);
 
     const [query, values] = tag.compile ({ limit: 5 });
@@ -652,6 +648,71 @@ describe ("RQLTag type", () => {
     expect (values3).toEqual ([5, 10]);
   });
 
+  test ("nested when", () => {
+    const { id } = Player.props;
+
+    const tag = Player ([
+      id,
+      When (p => !!p.id, [
+        id.eq<{ id: number }> (p => p.id)
+      ]),
+      When (p => !!p.orderBy, [
+        sql<{ orderBy: string }>`
+          order by ${Raw (p => p.orderBy)}
+        `,
+        When (p => !!p.limit, [
+          Limit (),
+          When (p => !!p.offset, [
+            Offset ()
+          ])
+        ])
+      ])
+    ]);
+
+    const [query, values] = tag.compile ({ id: 1, orderBy: "last_name" });
+
+    expect (query).toBe (format (`
+      select player.id "id" from player
+      where 1 = 1
+      and player.id = $1
+      order by last_name
+    `));
+
+    expect (values).toEqual ([1]);
+
+    const [query2, values2] = tag.compile ({ limit: 5 });
+
+    expect (query2).toBe (format (`
+      select player.id "id" from player
+      where 1 = 1
+    `));
+
+    expect (values2).toEqual ([]);
+
+    const [query3, values3] = tag.compile ({ id: 1, orderBy: "last_name", limit: 5 });
+
+    expect (query3).toBe (format (`
+      select player.id "id" from player
+      where 1 = 1
+      and player.id = $1
+      order by last_name
+      limit $2
+    `).replace ("limit $2", "limit $2 "));
+
+    expect (values3).toEqual ([1, 5]);
+
+    const [query4, values4] = tag.compile ({ orderBy: "last_name", limit: 5, offset: 10 });
+
+    expect (query4).toBe (format (`
+      select player.id "id" from player
+      where 1 = 1
+      order by last_name
+      limit $1
+      offset $2
+    `));
+
+    expect (values4).toEqual ([5, 10]);
+  });
   test ("convert result", async () => {
     const convert = jest.fn ();
 
