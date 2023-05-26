@@ -1,4 +1,3 @@
-import concatExtra from "../common/concatExtra";
 import { flConcat, refqlType } from "../common/consts";
 import { getConvertPromise } from "../common/convertPromise";
 import getDefaultQuerier from "../common/defaultQuerier";
@@ -23,6 +22,8 @@ export interface Next {
 interface InterpretedRQLTag<Params = any, Output = any> {
   tag: SQLTag<Params, Output>;
   next: Next[];
+  selectables: SelectableType[];
+  ending?: string;
 }
 
 export interface RQLTag<TableId extends string = any, Params = any, Output = any> {
@@ -35,7 +36,7 @@ export interface RQLTag<TableId extends string = any, Params = any, Output = any
   interpreted: InterpretedRQLTag<Params, Output>;
   concat<Params2, Output2>(other: RQLTag<TableId, Params2, Output2>): RQLTag<TableId, Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<TableId, Params, Output>["concat"];
-  interpret(): InterpretedRQLTag<Params, Output> & { selectables: SelectableType[] };
+  interpret(): InterpretedRQLTag<Params, Output>;
   compile(params: Params): [string, any[], Next[]];
   aggregate(params: Params, querier: Querier): Promise<Output>;
 }
@@ -107,7 +108,7 @@ function concat(this: RQLTag, other: RQLTag) {
   );
 }
 
-function interpret(this: RQLTag): InterpretedRQLTag & { selectables: SelectableType[] } {
+function interpret(this: RQLTag): InterpretedRQLTag {
   const { nodes, table } = this,
     next = [] as Next[],
     members = [] as (Raw | SQLTag)[],
@@ -145,7 +146,7 @@ function interpret(this: RQLTag): InterpretedRQLTag & { selectables: SelectableT
   return {
     next,
     tag,
-    selectables
+    selectables: sortSelectables (selectables)
   };
 }
 
@@ -153,20 +154,18 @@ const sortSelectables = (selectables: SelectableType[]) =>
   selectables.sort ((a, b) => a.precedence - b.precedence);
 
 function compile(this: RQLTag, params: StringMap) {
-  let sortedSelectables = [] as SelectableType[];
   if (!this.interpreted) {
     let { next, tag, selectables } = this.interpret ();
 
     this.interpreted = {
       tag: tag.concat (sql`where 1 = 1`),
-      next
+      next,
+      selectables
     };
-
-    sortedSelectables = sortSelectables (selectables);
   }
 
   return [
-    ...this.interpreted.tag.compile (params, sortedSelectables, this.table),
+    ...this.interpreted.tag.compile (params, this.interpreted.selectables, this.table, this.interpreted.ending),
     this.interpreted.next
   ];
 }

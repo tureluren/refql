@@ -52,6 +52,26 @@ describe ("SQLTag type", () => {
     expect (isSQLTag ({})).toBe (false);
   });
 
+  test ("join", () => {
+    const tag = sql``;
+
+    const tag2 = sql`
+      select *
+    `;
+
+    const tag3 = sql``;
+
+    const tag4 = sql`
+      from player
+    `;
+
+    const joined = tag.join (" ", tag2).join (" ", tag3).join (" ", tag4);
+
+    const [query] = joined.compile ({});
+
+    expect (query).toBe ("select * from player");
+  });
+
   test ("Semigroup", () => {
     const tag = sql`
       select id, ${rawLastName}

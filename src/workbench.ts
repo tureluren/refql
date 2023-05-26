@@ -49,11 +49,10 @@ const { id, lastName, firstName, fullName } = Player.props;
 // and run
 // tag ({ id: 1 }).then (x => console.log (x));
 
-const p = Player ([
-  "id",
-  "lastName",
-  Limit (),
-  id.eq<{ id: number }> (3)
+const tag = Player ([
+  id,
+  "isVeteran",
+  Limit ()
 ]);
 
-p ({ limit: 1, id: 3 }).then (console.log);
+tag ({ limit: 1, year: 1970 }).then (console.log);

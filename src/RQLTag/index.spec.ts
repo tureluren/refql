@@ -6,7 +6,6 @@ import { flConcat, flEmpty } from "../common/consts";
 import setConvertPromise from "../common/convertPromise";
 import { setDefaultQuerier } from "../common/defaultQuerier";
 import { Querier } from "../common/types";
-import When from "../common/When";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -21,6 +20,7 @@ import {
 import userConfig from "../test/userConfig";
 import Limit from "./Limit";
 import Offset from "./Offset";
+import When from "./When";
 
 describe ("RQLTag type", () => {
   let pool: any;
@@ -436,7 +436,7 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (1);
   });
 
-  test ("By team-id - using Eq", async () => {
+  test ("By teamId - using Eq", async () => {
     const { teamId } = Player.props;
 
     const tag = Player ([
@@ -451,24 +451,26 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (11);
   });
 
-  test ("By full-name - using Eq", async () => {
-    const { fullName } = Player.props;
+  test ("By fullName and isVeteran - using Eq", async () => {
+    const { fullName, isVeteran } = Player.props;
 
     const tag = Player ([
       "id",
-      fullName.eq<{ name: string }> (p => p.name)
+      fullName.eq<{ name: string }> (p => p.name),
+      isVeteran.eq (false)
     ]);
 
-    const [query, values] = await tag.compile ({ name: "John Doe", delimiter: " " });
+    const [query, values] = await tag.compile ({ name: "John Doe", delimiter: " ", year: 1980 });
 
     expect (query).toBe (format (`
       select player.id "id"
       from player
       where 1 = 1
       and (concat (player.first_name, ' ', player.last_name)) = $1
+      and (select case when extract(year from birthday) < $2 then true else false end from player where id = player.id limit 1) = $3
     `));
 
-    expect (values).toEqual (["John Doe"]);
+    expect (values).toEqual (["John Doe", 1980, false]);
   });
 
   test ("Where in and order by", async () => {
@@ -551,6 +553,9 @@ describe ("RQLTag type", () => {
     expect (() => Player ({} as any))
       .toThrowError (new Error ("Invalid components: not an Array"));
 
+    expect (() => Player ([When (() => true, [Team (["*"]) as any])]))
+      .toThrowError (new Error ("Unallowed component provided to When"));
+
     let tag = Player (["*"]);
     tag.nodes = [1] as any;
 
@@ -610,8 +615,13 @@ describe ("RQLTag type", () => {
   });
 
   test ("when", () => {
+    const { id } = Player.props;
+
     const tag = Player ([
-      "id",
+      id,
+      When (p => !!p.ids, [
+        id.in<{ ids: number[] }> (p => p.ids)
+      ]),
       When (p => !!p.limit, [Limit ()]),
       When (p => !!p.offset, [Offset ()])
     ]);
@@ -636,29 +646,32 @@ describe ("RQLTag type", () => {
 
     expect (values2).toEqual ([10]);
 
-    const [query3, values3] = tag.compile ({ limit: 5, offset: 10 });
+    const [query3, values3] = tag.compile ({ limit: 5, offset: 10, ids: [7, 8, 9] });
 
     expect (query3).toBe (format (`
       select player.id "id" from player
       where 1 = 1
-      limit $1
-      offset $2
+      and player.id in ($1, $2, $3)
+      limit $4
+      offset $5
     `));
 
-    expect (values3).toEqual ([5, 10]);
+    expect (values3).toEqual ([7, 8, 9, 5, 10]);
   });
 
   test ("nested when", () => {
-    const { id } = Player.props;
+    const { id, fullName } = Player.props;
 
     const tag = Player ([
       id,
       When (p => !!p.id, [
-        id.eq<{ id: number }> (p => p.id)
+        id.eq<{ id: number }> (p => p.id),
+        fullName.desc (),
+        id.asc ()
       ]),
-      When (p => !!p.orderBy, [
-        sql<{ orderBy: string }>`
-          order by ${Raw (p => p.orderBy)}
+      When (p => !!p.gt1, [
+        sql<{ gt1: string }>`
+          and ${Raw (p => p.gt1)} > 1
         `,
         When (p => !!p.limit, [
           Limit (),
@@ -669,18 +682,19 @@ describe ("RQLTag type", () => {
       ])
     ]);
 
-    const [query, values] = tag.compile ({ id: 1, orderBy: "last_name" });
+    const [query, values] = tag.compile ({ id: 1, gt1: "id", delimiter: " " });
 
     expect (query).toBe (format (`
       select player.id "id" from player
       where 1 = 1
       and player.id = $1
-      order by last_name
+      and id > 1
+      order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
     `));
 
     expect (values).toEqual ([1]);
 
-    const [query2, values2] = tag.compile ({ limit: 5 });
+    const [query2, values2] = tag.compile ({ limit: 5, delimiter: " " });
 
     expect (query2).toBe (format (`
       select player.id "id" from player
@@ -689,24 +703,24 @@ describe ("RQLTag type", () => {
 
     expect (values2).toEqual ([]);
 
-    const [query3, values3] = tag.compile ({ id: 1, orderBy: "last_name", limit: 5 });
+    const [query3, values3] = tag.compile ({ id: 1, gt1: "id", limit: 5, delimiter: " " });
 
     expect (query3).toBe (format (`
       select player.id "id" from player
       where 1 = 1
       and player.id = $1
-      order by last_name
-      limit $2
-    `).replace ("limit $2", "limit $2 "));
+      and id > 1
+      order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc limit $2
+    `));
 
     expect (values3).toEqual ([1, 5]);
 
-    const [query4, values4] = tag.compile ({ orderBy: "last_name", limit: 5, offset: 10 });
+    const [query4, values4] = tag.compile ({ gt1: "id", limit: 5, offset: 10 });
 
     expect (query4).toBe (format (`
       select player.id "id" from player
       where 1 = 1
-      order by last_name
+      and id > 1
       limit $1
       offset $2
     `));

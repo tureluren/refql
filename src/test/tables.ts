@@ -58,6 +58,12 @@ const Player = Table ("player", [
     where goal.player_id = player.id
     limit 1
   `).nullable (),
+  BooleanProp ("isVeteran", sql<{ year: number }>`
+    select case when extract(year from birthday) < ${p => p.year} then true else false end
+    from player
+    where id = player.id
+    limit 1
+  `),
   StringProp ("cars").arrayOf (),
   StringProp ("birthday"),
   NumberProp ("teamId", "team_id").nullable (),

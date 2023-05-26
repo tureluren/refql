@@ -1,4 +1,3 @@
-import When from "../common/When";
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import sql from "../SQLTag/sql";
@@ -11,6 +10,7 @@ import OrderBy from "./OrderBy";
 import RefField from "./RefField";
 import RefNode from "./RefNode";
 import { isRQLNode } from "./RQLNode";
+import When from "./When";
 
 describe ("RQLNodes", () => {
   test ("is RQLNode", () => {

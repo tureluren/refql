@@ -5,8 +5,10 @@ import isEmptyTag from "../common/isEmptyTag";
 import truePred from "../common/truePred";
 import { Querier, StringMap, TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
+import In from "../RQLTag/In";
 import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
+import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import Table from "../Table";
 import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
@@ -29,6 +31,7 @@ type InterpretedValue<Params = any> = {
 
 interface InterpretedSQLTag<Params = any> {
   strings: InterpretedString<Params>[];
+  orderBies: InterpretedString<Params>[];
   limits: InterpretedString<Params>[];
   offsets: InterpretedString<Params>[];
   values: InterpretedValue<Params>[];
@@ -44,7 +47,7 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode, SelectableT
   join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   [flConcat]: SQLTag<Params, Output>["concat"];
   interpret(selectables?: SelectableType[], table?: Table): InterpretedSQLTag<Params>;
-  compile(params: Params, selectables?: SelectableType[], table?: Table): [string, any[]];
+  compile(params: Params, selectables?: SelectableType[], table?: Table, ending?: string): [string, any[]];
   setPred (fn: (p: any) => boolean): SQLTag<Params, Output>;
 }
 
@@ -101,6 +104,7 @@ function concat(this: SQLTag, other: SQLTag) {
 
 function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Table): InterpretedSQLTag {
   const strings = [] as InterpretedString[],
+    orderBies = [] as InterpretedString[],
     limits = [] as InterpretedString[],
     offsets = [] as InterpretedString[],
     values = [] as InterpretedValue[];
@@ -252,45 +256,161 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
             return [` and ${table?.name}.${prop} = $${i + 1}`, 1];
           }
         });
+      }
+
+      values.push ({
+        pred,
+        run
+      });
+    } else if (In.isIn (selectable)) {
+      const { pred, prop, run } = selectable;
+      if (isSQLTag (prop)) {
+        strings.push ({
+          pred,
+          run: () => [" and (", 0]
+        });
+
+        const { strings: strings2, values: values2 } = prop.interpret ();
+
+        strings.push (...strings2.map (({ run, pred: pred2 }) => ({
+          pred: (p: StringMap) => pred2 (p) && pred (p),
+          run
+        })));
+
+        strings.push ({
+          pred,
+          run: (p, i) => {
+            const xs = run (p);
+            return [
+              `) in (${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
+              xs.length
+            ];
+          }
+        });
+
+        values.push (...values2.map (({ run, pred: pred2 }) => ({
+          pred: (p: StringMap) => pred2 (p) && pred (p),
+          run
+        })));
+      } else {
+
+        strings.push ({
+          pred,
+          run: (p, i) => {
+            const xs = run (p);
+            return [
+              ` and ${table?.name}.${prop} in (${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
+              xs.length
+            ];
+          }
+        });
 
       }
 
       values.push ({
         pred,
-        run: p => run (p)
+        run
       });
+    } else if (OrderBy.isOrderBy (selectable)) {
+      const { pred, prop, descending } = selectable;
+      orderBies.push ({
+        pred,
+        run: () => [", ", 0]
+      });
+
+      if (isSQLTag (prop)) {
+        orderBies.push ({
+          pred,
+          run: () => ["(", 0]
+        });
+
+        const { strings: strings2, values: values2 } = prop.interpret ();
+
+        orderBies.push (...strings2.map (({ run, pred: pred2 }) => ({
+          pred: (p: StringMap) => pred2 (p) && pred (p),
+          run
+        })));
+
+        orderBies.push ({
+          pred,
+          run: () => [`) ${descending ? "desc" : "asc"}`, 0]
+        });
+
+        values.push (...values2.map (({ run, pred: pred2 }) => ({
+          pred: (p: StringMap) => pred2 (p) && pred (p),
+          run
+        })));
+      } else {
+        orderBies.push ({
+          pred,
+          run: () => [`${table?.name}.${prop} ${descending ? "desc" : "asc"}`, 0]
+        });
+      }
+    } else if (isSQLTag (selectable)) {
+      const { pred } = selectable;
+
+      const { strings: strings2, values: values2 } = selectable.interpret ();
+
+      strings.push ({
+        pred,
+        run: () => [" ", 0]
+      });
+
+      strings.push (...strings2.map (({ run, pred: pred2 }) => ({
+        pred: (p: StringMap) => pred2 (p) && pred (p),
+        run
+      })));
+
+      values.push (...values2.map (({ run, pred: pred2 }) => ({
+        pred: (p: StringMap) => pred2 (p) && pred (p),
+        run
+      })));
     }
   }
 
-  return { strings, limits, offsets, values };
+  return { strings, limits, orderBies, offsets, values };
 }
 
 const filterByPred = (params: StringMap) => (strings: InterpretedString[]) =>
   strings.filter (({ pred }) => pred (params));
 
-function compile(this: SQLTag, params: StringMap, selectables: SelectableType[] = [], table?: Table) {
+function compile(this: SQLTag, params: StringMap, selectables: SelectableType[] = [], table?: Table, ending?: string) {
   if (!this.interpreted) {
     this.interpreted = this.interpret (selectables, table);
   }
 
-  const { strings, limits, offsets, values } = this.interpreted;
+  const { strings, orderBies, limits, offsets, values } = this.interpreted;
 
   const filterByP = filterByPred (params);
 
-  const filteredStrings = filterByP (strings);
+  let filteredStrings = filterByP (strings);
+  const filteredOrderBies = filterByP (orderBies);
   const filteredLimits = filterByP (limits);
   const filteredOffsets = filterByP (offsets);
 
+  if (filteredOrderBies.length) {
+    filteredStrings = filteredStrings.concat ([
+      { pred: truePred, run: () => [" order by ", 0] },
+      // remove leading comma
+      ...filteredOrderBies.slice (1)
+    ]);
+  }
+
+  let query = filteredStrings
+    .concat (filteredLimits)
+    .concat (filteredOffsets)
+    .reduce (([query, idx]: [string, number], { run }): [string, number] => {
+      const [s, n] = run (params, idx);
+
+      return [query.concat (s), idx + n];
+    }, ["", 0])[0];
+
+  if (ending) {
+    query += ending;
+  }
+
   return [
-    filteredStrings
-      .concat (filteredLimits)
-      .concat (filteredOffsets)
-      .reduce (([query, idx]: [string, number], { run }): [string, number] => {
-        const [s, n] = run (params, idx);
-
-        return [query.concat (s), idx + n];
-      }, ["", 0])[0],
-
+    query,
     values
       .filter (({ pred }) => pred (params))
       .map (({ run }) => run (params)).flat (1)

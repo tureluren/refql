@@ -1,9 +1,9 @@
 import { refqlType } from "../common/consts";
 import { Params, TagFunctionVariable } from "../common/types";
-import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
+import RQLNode, { rqlNodePrototype } from "./RQLNode";
 import SelectableType, { isSelectableType, selectableTypePrototype } from "../Table/SelectableType";
 
-// still A selectable type ?, move to RQLTAG if not common anymore
+// still A selectable type ?
 interface When<Components extends SelectableType[] = any[]> extends RQLNode, SelectableType {
   params: Partial<Params<{}, Components>>;
   pred: TagFunctionVariable<Params<{}, Components>, boolean>;
@@ -28,7 +28,7 @@ function When<Components extends SelectableType[]>(pred: TagFunctionVariable<Par
 
     if (When.isWhen (comp)) {
       return comp.components.map (comp2 =>
-        comp2.setPred ((p: any) => comp.pred (p) && pred (p))
+        comp2.setPred ((p: any) => comp2.pred (p) && pred (p))
       );
     }
 
