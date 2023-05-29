@@ -102,12 +102,28 @@ function concat(this: SQLTag, other: SQLTag) {
   return this.join (" ", other);
 }
 
+const interpretWithPred = (pred: TagFunctionVariable<any, boolean>, tag: SQLTag) => {
+  const { strings, values } = tag.interpret ();
+
+  return {
+    strings: strings.map (({ run, pred: pred2 }) => ({
+      pred: (p: StringMap) => pred2 (p) && pred (p),
+      run
+    })),
+    values: values.map (({ run, pred: pred2 }) => ({
+      pred: (p: StringMap) => pred2 (p) && pred (p),
+      run
+    }))
+  };
+};
+
 function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Table): InterpretedSQLTag {
   const strings = [] as InterpretedString[],
     orderBies = [] as InterpretedString[],
     limits = [] as InterpretedString[],
     offsets = [] as InterpretedString[],
     values = [] as InterpretedValue[];
+
 
   for (const [idx, node] of this.nodes.entries ()) {
     if (Raw.isRaw (node)) {
@@ -179,19 +195,12 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
         }
       });
     } else if (When2.isWhen2 (node)) {
-      const { pred: pred2, tag } = node;
+      const { pred, tag } = node;
 
-      const { strings: strings2, values: values2 } = tag.interpret ();
+      const { strings: strings2, values: values2 } = interpretWithPred (pred, tag);
 
-      strings.push (...strings2.map (({ run, pred }) => ({
-        pred: (p: StringMap) => pred2 (p) && pred (p),
-        run
-      })));
-
-      values.push (...values2.map (({ run, pred }) => ({
-        pred: (p: StringMap) => pred2 (p) && pred (p),
-        run
-      })));
+      strings.push (...strings2);
+      values.push (...values2);
     } else {
       throw new Error (`Unknown SQLNode Type: "${String (node)}"`);
     }
@@ -233,22 +242,16 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
           run: () => [" and (", 0]
         });
 
-        const { strings: strings2, values: values2 } = prop.interpret ();
+        const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
 
-        strings.push (...strings2.map (({ run, pred: pred2 }) => ({
-          pred: (p: StringMap) => pred2 (p) && pred (p),
-          run
-        })));
+        strings.push (...strings2);
+        values.push (...values2);
 
         strings.push ({
           pred,
           run: (_p, i) => [`) = $${i + 1}`, 1]
         });
 
-        values.push (...values2.map (({ run, pred: pred2 }) => ({
-          pred: (p: StringMap) => pred2 (p) && pred (p),
-          run
-        })));
       } else {
         strings.push ({
           pred,
@@ -270,12 +273,10 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
           run: () => [" and (", 0]
         });
 
-        const { strings: strings2, values: values2 } = prop.interpret ();
+        const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
 
-        strings.push (...strings2.map (({ run, pred: pred2 }) => ({
-          pred: (p: StringMap) => pred2 (p) && pred (p),
-          run
-        })));
+        strings.push (...strings2);
+        values.push (...values2);
 
         strings.push ({
           pred,
@@ -288,10 +289,6 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
           }
         });
 
-        values.push (...values2.map (({ run, pred: pred2 }) => ({
-          pred: (p: StringMap) => pred2 (p) && pred (p),
-          run
-        })));
       } else {
 
         strings.push ({
@@ -324,22 +321,16 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
           run: () => ["(", 0]
         });
 
-        const { strings: strings2, values: values2 } = prop.interpret ();
+        const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
 
-        orderBies.push (...strings2.map (({ run, pred: pred2 }) => ({
-          pred: (p: StringMap) => pred2 (p) && pred (p),
-          run
-        })));
+        orderBies.push (...strings2);
+        values.push (...values2);
 
         orderBies.push ({
           pred,
           run: () => [`) ${descending ? "desc" : "asc"}`, 0]
         });
 
-        values.push (...values2.map (({ run, pred: pred2 }) => ({
-          pred: (p: StringMap) => pred2 (p) && pred (p),
-          run
-        })));
       } else {
         orderBies.push ({
           pred,
@@ -349,22 +340,15 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
     } else if (isSQLTag (selectable)) {
       const { pred } = selectable;
 
-      const { strings: strings2, values: values2 } = selectable.interpret ();
-
       strings.push ({
         pred,
         run: () => [" ", 0]
       });
 
-      strings.push (...strings2.map (({ run, pred: pred2 }) => ({
-        pred: (p: StringMap) => pred2 (p) && pred (p),
-        run
-      })));
+      const { strings: strings2, values: values2 } = interpretWithPred (pred, selectable);
 
-      values.push (...values2.map (({ run, pred: pred2 }) => ({
-        pred: (p: StringMap) => pred2 (p) && pred (p),
-        run
-      })));
+      strings.push (...strings2);
+      values.push (...values2);
     }
   }
 
