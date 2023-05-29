@@ -506,6 +506,32 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (3);
   });
 
+  test ("Like", async () => {
+    const { fullName, lastName } = Player.props;
+
+    const tag = Player ([
+      "id",
+      "firstName",
+      lastName,
+      fullName.like (`%Be%`),
+      When (() => true, [
+        lastName.like<{ lastName: string }> (p => p.lastName)
+      ])
+    ]);
+
+    const [query, values] = await tag.compile ({ delimiter: " ", lastName: "Be" });
+
+    expect (query).toBe (format (`
+      select player.id "id", player.first_name "firstName", player.last_name "lastName"
+      from player
+      where 1 = 1 
+      and (concat (player.first_name, ' ', player.last_name)) like $1
+      and player.last_name like $2
+    `));
+
+    expect (values).toEqual (["%Be%", "Be%"]);
+  });
+
   test ("No record found", async () => {
     const goals = Goal (["*"]);
 

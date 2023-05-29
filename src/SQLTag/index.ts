@@ -6,6 +6,7 @@ import truePred from "../common/truePred";
 import { Querier, StringMap, TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
+import Like from "../RQLTag/Like";
 import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
 import OrderBy from "../RQLTag/OrderBy";
@@ -257,6 +258,37 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
           pred,
           run: (_p, i) => {
             return [` and ${table?.name}.${prop} = $${i + 1}`, 1];
+          }
+        });
+      }
+
+      values.push ({
+        pred,
+        run
+      });
+    } else if (Like.isLike (selectable)) {
+      const { pred, prop, run } = selectable;
+      if (isSQLTag (prop)) {
+        strings.push ({
+          pred,
+          run: () => [" and (", 0]
+        });
+
+        const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
+
+        strings.push (...strings2);
+        values.push (...values2);
+
+        strings.push ({
+          pred,
+          run: (_p, i) => [`) like $${i + 1}`, 1]
+        });
+
+      } else {
+        strings.push ({
+          pred,
+          run: (_p, i) => {
+            return [` and ${table?.name}.${prop} like $${i + 1}`, 1];
           }
         });
       }

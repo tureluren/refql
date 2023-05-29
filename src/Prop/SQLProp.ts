@@ -2,6 +2,7 @@ import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
+import Like from "../RQLTag/Like";
 import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import { SQLTag } from "../SQLTag";
@@ -14,6 +15,7 @@ interface SQLProp<As extends string = any, Params = any, Type = any> extends RQL
   arrayOf(): SQLProp<As, Params, Type[]>;
   nullable(): SQLProp<As, Params, Type | null>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params & Params2, Type>;
+  like<Params2 = {}>(run: TagFunctionVariable<Params2, string> | string): Like<As, Params & Params2>;
   in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): In<As, Params & Params2, Type>;
   asc(): OrderBy<As, false, Params>;
   desc(): OrderBy<As, true, Params>;
@@ -27,6 +29,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   arrayOf: nullable,
   nullable,
   eq,
+  like,
   in: whereIn,
   asc,
   desc
@@ -47,6 +50,10 @@ function nullable(this: SQLProp) {
 
 function eq(this: SQLProp, run: any) {
   return Eq (this.col, run);
+}
+
+function like(this: SQLProp, run: any) {
+  return Like (this.col, run);
 }
 
 function whereIn(this: SQLProp, run: any) {

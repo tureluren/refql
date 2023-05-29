@@ -2,6 +2,7 @@ import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
+import Like from "../RQLTag/Like";
 import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import PropType, { propTypePrototype } from "./PropType";
@@ -12,6 +13,7 @@ interface Prop<As extends string = any, Type = any> extends RQLNode, PropType<As
   arrayOf(): Prop<As, Type[]>;
   nullable(): Prop<As, Type | null>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params2, Type>;
+  like<Params2 = {}>(run: TagFunctionVariable<Params2, string> | string): Like<As, Params2>;
   in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): In<As, Params2, Type>;
   asc(): OrderBy<As, false, {}>;
   desc(): OrderBy<As, true, {}>;
@@ -25,6 +27,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   arrayOf: nullable,
   nullable,
   eq,
+  like,
   in: whereIn,
   asc,
   desc
@@ -45,6 +48,10 @@ function nullable(this: Prop) {
 
 function eq(this: Prop, run: any) {
   return Eq (this.col || this.as, run);
+}
+
+function like(this: Prop, run: any) {
+  return Like (this.col || this.as, run);
 }
 
 function whereIn(this: Prop, run: any) {
