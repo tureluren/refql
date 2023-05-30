@@ -1,8 +1,5 @@
 import { Pool } from "pg";
-import {
-  BelongsTo, Limit, NumberProp, Offset, Raw, SelectableType, setDefaultQuerier, sql, StringProp, Table, When
-} from ".";
-import { Player, Team } from "./test/tables";
+import { Limit, NumberProp, setDefaultQuerier, sql, StringProp, Table, When } from ".";
 
 const querier = async (query: string, values: any[]) => {
   console.log (`'${query}'`);
@@ -24,42 +21,44 @@ const pool = new Pool ({
 });
 
 
-// select components
-// const tag = Player ([
-//   id,
-//   When (p => !!p.id, [
-//     id.eq<{ id: number }> (p => p.id)
-//   ]),
-//   When (p => true, [
-//     lastName.asc (),
-//     When (p => !!p.limit, [
-//       Limit (),
-//       When (p => !!p.offset, [
-//         Offset ()
-//       ])
-//     ])
-//   ]),
-//   When (p => true, [
-//     lastName.asc ()
-//   ])
-// ]);
-
-
-// and run
-// tag ({ id: 1 }).then (x => console.log (x));
-
-const { id, firstName, lastName, fullName, birthday } = Player.props;
-
-const tag = Player ([
-  id,
-  firstName,
-  lastName,
-  firstName.lt ("Z"),
-  lastName.gte ("A"),
-  lastName.lte ("Z"),
-  birthday.lt (new Date ()),
-  fullName.desc (),
-  Limit ()
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  NumberProp ("teamId", "team_id").nullable (),
+  NumberProp ("goalCount", sql`
+    select cast (count (*) as int) from goal
+    where goal.player_id = player.id
+  `)
 ]);
 
-// tag ({ limit: 5 }).then (console.log);
+const { goalCount, lastName, teamId } = Player.props;
+
+const strikes = Player ([
+  "*",
+  goalCount,
+  teamId.eq (1),
+  goalCount.gt (7),
+  lastName.like ("Craw")
+]);
+
+strikes ().then (console.log);
+
+// [
+//   {
+//     id: 6,
+//     firstName: "Verna",
+//     lastName: "Crawford",
+//     teamId: 1,
+//     goalCount: 11
+//   }
+// ];
+
+// searchPlayer ({ limit: 5, q: "Ba" }).then (console.log);
+// [
+//   { id: 11, lastName: "Bardi" },
+//   { id: 14, lastName: "Barchielli" },
+//   { id: 22, lastName: "Baronti" },
+//   { id: 23, lastName: "Baumann" },
+//   { id: 72, lastName: "Barrett" }
+// ];

@@ -6,7 +6,7 @@ import SelectableType, { isSelectableType, selectableTypePrototype } from "../Ta
 // still A selectable type ?
 interface When<Components extends SelectableType[] = any[]> extends RQLNode, SelectableType {
   params: Partial<Params<{}, Components>>;
-  pred: TagFunctionVariable<Params<{}, Components>, boolean>;
+  pred: TagFunctionVariable<Partial<Params<{}, Components>>, boolean>;
   components: Components;
 }
 
@@ -18,7 +18,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, 
 });
 
 // Components is inferred from type of `tag` parameter, so no need to default it to any
-function When<Components extends SelectableType[]>(pred: TagFunctionVariable<Params<{}, Components>, boolean>, components: Components) {
+function When<Components extends SelectableType[]>(pred: TagFunctionVariable<Partial<Params<{}, Components>>, boolean>, components: Components) {
   let when: When<Components> = Object.create (prototype);
 
   const whenComponents = components.flatMap (comp => {

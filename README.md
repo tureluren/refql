@@ -73,8 +73,8 @@ playerById ({ id: 1 }, querier).then(console.log);
 * [Tables and References](#tables-and-references)
 * [Querier](#querier)
 * [Fantasy Land Interoperability](#fantasy-land-interoperability)
+* [Compare](#compare)
 * [OrderBy, Limit and Offset](#orderby-limit-and-offset)
-* [Eq](#eq)
 * [When](#when)
 * [Functions and subselects](#functions-and-subselects)
 * [SQLTag](#sqltag)
@@ -299,6 +299,45 @@ playerById ({ id: 1 }).then (console.log);
 // ];
 ```
 
+## Compare
+
+```ts
+import { NumberProp, sql, StringProp, Table } from "refql";
+
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  NumberProp ("teamId", "team_id").nullable (),
+  NumberProp ("goalCount", sql`
+    select cast (count (*) as int) from goal
+    where goal.player_id = player.id
+  `)
+]);
+
+const { goalCount, lastName, teamId } = Player.props;
+
+const strikers = Player ([
+  "*",
+  goalCount,
+  teamId.eq (1),
+  goalCount.gt (7),
+  lastName.like ("Craw")
+]);
+
+strikers ().then (console.log);
+
+// [
+//   {
+//     id: 6,
+//     firstName: "Verna",
+//     lastName: "Crawford",
+//     teamId: 1,
+//     goalCount: 11
+//   }
+// ];
+```
+
 ## OrderBy, Limit and Offset
 ```ts
 import { NumberProp, Limit, Offset, StringProp, Table } from "refql";
@@ -329,64 +368,31 @@ orderByLastName ({ limit: 5, offset: 30 }).then (console.log);
 // ];
 ```
 
-## Eq
-
-```ts
-import { NumberProp, StringProp, Table } from "refql";
-
-const Player = Table ("player", [
-  NumberProp ("id"),
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  NumberProp ("teamId", "team_id").nullable ()
-]);
-
-const { teamId } = Player.props;
-
-const firstTeam = Player ([
-  "*",
-  teamId.eq (1)
-]);
-
-firstTeam ().then (console.log);
-
-// [
-//   { id: 1, firstName: "Christine", lastName: "Hubbard", teamId: 1 },
-//   { id: 2, firstName: "Emily", lastName: "Mendez", teamId: 1 },
-//   { id: 3, firstName: "Stella", lastName: "Kubo", teamId: 1 },
-//   { id: 4, firstName: "Celia", lastName: "Misuri", teamId: 1 },
-//   { id: 5, firstName: "Herbert", lastName: "Okada", teamId: 1 },
-//   { id: 6, firstName: "Terry", lastName: "Bertrand", teamId: 1 },
-//   { id: 7, firstName: "Fannie", lastName: "Guerrero", teamId: 1 },
-//   { id: 8, firstName: "Lottie", lastName: "Warren", teamId: 1 },
-//   { id: 9, firstName: "Leah", lastName: "Kennedy", teamId: 1 },
-//   { id: 10, firstName: "Lottie", lastName: "Giraud", teamId: 1 },
-//   { id: 11, firstName: "Marc", lastName: "Passeri", teamId: 1 }
-// ];
-```
-
 ## When
-`When` takes a predicate and a [`SQLTag`](#sqltag). If the predicate returns true, the tag is added to `searchPlayer`.
+`When` takes a predicate and a list of operations. If the predicate returns true, the operations will be applied.
 
 ```ts
-import { When } from "refql";
+import { Limit, When } from "refql";
+
+const { id, lastName } = Player.props;
 
 const searchPlayer = Player ([
-  "id",
-  "lastName",
-  When<{ q: string }> (p => p.q != null, sql`
-    and last_name like ${p => `%${p.q}%`}
-  `),
-  When<{ limit: number }> (p => p.limit != null, sql`
-    limit ${p => p.limit} 
-  `)
+  id,
+  lastName,
+  When (p => p.q != null, [
+    lastName.like<{ q: string }> (p => p.q)
+  ]),
+  Limit ()
 ]);
 
-searchPlayer ({ limit: 5, q: "ba" }).then (console.log);
+searchPlayer ({ limit: 5, q: "Ba" }).then (console.log);
 
 // [
-//   { id: 1, lastName: "Hubbard" },
-//   { id: 341, lastName: "Lombardi" }
+//   { id: 11, lastName: "Bardi" },
+//   { id: 14, lastName: "Barchielli" },
+//   { id: 22, lastName: "Baronti" },
+//   { id: 23, lastName: "Baumann" },
+//   { id: 72, lastName: "Barrett" }
 // ];
 ```
 
