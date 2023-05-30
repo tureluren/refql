@@ -6,7 +6,6 @@ import { flConcat } from "../common/consts";
 import setConvertPromise from "../common/convertPromise";
 import { setDefaultQuerier } from "../common/defaultQuerier";
 import { OnlyProps, Querier, StringMap } from "../common/types";
-import When from "../common/When";
 import Table from "../Table";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
@@ -18,6 +17,7 @@ import Raw from "./Raw";
 import sql from "./sql";
 import Values from "./Values";
 import Values2D from "./Values2D";
+import When2 from "./When2";
 
 describe ("SQLTag type", () => {
   let pool: any;
@@ -50,6 +50,26 @@ describe ("SQLTag type", () => {
     expect (tag.interpreted).toBe (undefined);
     expect (isSQLTag (tag)).toBe (true);
     expect (isSQLTag ({})).toBe (false);
+  });
+
+  test ("join", () => {
+    const tag = sql``;
+
+    const tag2 = sql`
+      select *
+    `;
+
+    const tag3 = sql``;
+
+    const tag4 = sql`
+      from player
+    `;
+
+    const joined = tag.join (" ", tag2).join (" ", tag3).join (" ", tag4);
+
+    const [query] = joined.compile ({});
+
+    expect (query).toBe ("select * from player");
   });
 
   test ("Semigroup", () => {
@@ -148,7 +168,7 @@ describe ("SQLTag type", () => {
   });
 
   test ("insert", async () => {
-    const isPG = process.env.DB_TYPE === "pg";
+    const isPG = !process.env.DB_TYPE || process.env.DB_TYPE === "pg";
     let cars = '["Mercedes", "volvo"]';
 
     if (isPG) {
@@ -254,13 +274,13 @@ describe ("SQLTag type", () => {
     }
   });
 
-  test ("when", () => {
+  test ("when2", () => {
     const tag = sql<{limit?: number; offset?: number}, any>`
       select id from player
-      ${When (p => !!p.limit, sql`
+      ${When2 (p => !!p.limit, sql`
         limit ${p => p.limit}
       `)}
-      ${When (p => !!p.offset, sql`
+      ${When2 (p => !!p.offset, sql`
         offset ${p => p.offset}
       `)}
     `;
@@ -294,18 +314,18 @@ describe ("SQLTag type", () => {
     expect (values3).toEqual ([5, 10]);
   });
 
-  test ("nested when", () => {
+  test ("nested when2", () => {
     const tag = sql<{id?: number; limit?: number; offset?: number; orderBy?: string}, any>`
       select id from player
-      ${When (p => !!p.id, sql`
+      ${When2 (p => !!p.id, sql`
         where id = ${p => p.id}
       `)}
       and 1 = 1
-      ${When (p => !!p.orderBy, sql`
+      ${When2 (p => !!p.orderBy, sql`
         order by ${Raw (p => p.orderBy)}
-        ${When (p => !!p.limit, sql`
+        ${When2 (p => !!p.limit, sql`
           limit ${p => p.limit}
-          ${When (p => !!p.offset, sql`
+          ${When2 (p => !!p.offset, sql`
             offset ${p => p.offset}
           `)}
         `)}

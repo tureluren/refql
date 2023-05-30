@@ -1,7 +1,6 @@
 import setConvertPromise from "./common/convertPromise";
 import { setDefaultQuerier } from "./common/defaultQuerier";
 import isEmptyTag from "./common/isEmptyTag";
-import When from "./common/When";
 import Prop from "./Prop";
 import BelongsTo from "./Prop/BelongsTo";
 import BelongsToMany from "./Prop/BelongsToMany";
@@ -20,6 +19,7 @@ import Limit from "./RQLTag/Limit";
 import Offset from "./RQLTag/Offset";
 import RefField from "./RQLTag/RefField";
 import RefNode from "./RQLTag/RefNode";
+import When from "./RQLTag/When";
 import { createSQLTag, isSQLTag, SQLTag } from "./SQLTag";
 import Raw from "./SQLTag/Raw";
 import sql, { parse } from "./SQLTag/sql";

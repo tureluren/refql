@@ -1,6 +1,7 @@
 import BelongsTo from "../Prop/BelongsTo";
 import BelongsToMany from "../Prop/BelongsToMany";
 import BooleanProp from "../Prop/BooleanProp";
+import DateProp from "../Prop/DateProp";
 import HasMany from "../Prop/HasMany";
 import HasOne from "../Prop/HasOne";
 import NumberProp from "../Prop/NumberProp";
@@ -50,7 +51,7 @@ const Player = Table ("player", [
     concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
   `),
   NumberProp ("goalCount", sql`
-    select count (*) from goal
+    select cast (count (*) as int) from goal
     where goal.player_id = player.id
   `),
   NumberProp ("firstGoalId", sql`
@@ -58,8 +59,14 @@ const Player = Table ("player", [
     where goal.player_id = player.id
     limit 1
   `).nullable (),
+  BooleanProp ("isVeteran", sql<{ year: number }>`
+    select case when extract(year from birthday) < ${p => p.year} then true else false end
+    from player
+    where id = player.id
+    limit 1
+  `),
   StringProp ("cars").arrayOf (),
-  StringProp ("birthday"),
+  DateProp ("birthday"),
   NumberProp ("teamId", "team_id").nullable (),
   BelongsTo ("team", "public.team").nullable (),
   NumberProp ("positionId", "position_id"),
