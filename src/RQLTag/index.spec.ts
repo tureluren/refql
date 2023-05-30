@@ -536,6 +536,89 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (7);
   });
 
+  test ("Ord numbers", async () => {
+    const { id, goalCount, teamId } = Player.props;
+
+    const tag = Player ([
+      "id",
+      "firstName",
+      "lastName",
+      goalCount,
+      id.lte (100),
+      teamId.lt (10),
+      When (() => true, [
+        teamId.gte<{ teamId: number }> (p => p.teamId)
+      ]),
+      goalCount.gt<{ count: number }> (p => p.count),
+      Limit ()
+    ]);
+
+    const [query, values] = await tag.compile ({ count: 1, limit: 5, teamId: 0 });
+
+    expect (query).toBe (format (`
+      select player.id "id", player.first_name "firstName", player.last_name "lastName",
+        (select count (*) from goal where goal.player_id = player.id) "goalCount"
+      from player
+      where 1 = 1 
+      and player.id <= $1
+      and player.team_id < $2
+      and player.team_id >= $3
+      and (select count (*) from goal where goal.player_id = player.id) > $4
+      limit $5
+    `));
+
+    expect (values).toEqual ([100, 10, 0, 1, 5]);
+
+    const players = await tag ({ count: 1, limit: 5, teamId: 0 });
+
+    expect (players.length).toBe (5);
+    expect (parseInt (players[0].goalCount as any)).toBeGreaterThan (1);
+  });
+
+  test ("Ord strings", async () => {
+    const { id, firstName, lastName, fullName, birthday } = Player.props;
+
+    const today = new Date ();
+
+    const tag = Player ([
+      id,
+      firstName,
+      lastName,
+      fullName,
+      firstName.gt ("A"),
+      firstName.lt ("Z"),
+      fullName.gt ("A"),
+      fullName.lt ("Z"),
+      lastName.gte ("A"),
+      lastName.lte ("Z"),
+      birthday.lt (today),
+
+      Limit ()
+    ]);
+
+    const [query, values] = await tag.compile ({ limit: 5, delimiter: " " });
+
+    expect (query).toBe (format (`
+      select player.id "id", player.first_name "firstName", player.last_name "lastName",
+        (concat (player.first_name, ' ', player.last_name)) "fullName"
+      from player
+      where 1 = 1 
+      and player.first_name > $1
+      and player.first_name < $2 
+      and (concat (player.first_name, ' ', player.last_name)) > $3
+      and (concat (player.first_name, ' ', player.last_name)) < $4
+      and player.last_name >= $5
+      and player.last_name <= $6
+      and player.birthday < $7
+      limit $8
+    `));
+
+    expect (values).toEqual (["A", "Z", "A", "Z", "A", "Z", today, 5]);
+
+    const players = await tag ({ limit: 5, delimiter: " " });
+
+    expect (players.length).toBe (5);
+  });
 
   test ("Like", async () => {
     const { fullName, lastName } = Player.props;

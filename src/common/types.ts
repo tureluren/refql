@@ -115,3 +115,5 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLPro
             : never
         : never)[]
   : never;
+
+export type OrdOperator = ">" | "<" | ">=" | "<=";

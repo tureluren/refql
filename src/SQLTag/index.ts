@@ -9,6 +9,7 @@ import In from "../RQLTag/In";
 import Like from "../RQLTag/Like";
 import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
+import Ord from "../RQLTag/Ord";
 import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import Table from "../Table";
@@ -260,6 +261,38 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
           pred,
           run: (_p, i) => {
             return [` and ${table?.name}.${prop} ${equality} $${i + 1}`, 1];
+          }
+        });
+      }
+
+      values.push ({
+        pred,
+        run
+      });
+    } else if (Ord.isOrd (selectable)) {
+      const { pred, prop, run, operator } = selectable;
+
+      if (isSQLTag (prop)) {
+        strings.push ({
+          pred,
+          run: () => [" and (", 0]
+        });
+
+        const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
+
+        strings.push (...strings2);
+        values.push (...values2);
+
+        strings.push ({
+          pred,
+          run: (_p, i) => [`) ${operator} $${i + 1}`, 1]
+        });
+
+      } else {
+        strings.push ({
+          pred,
+          run: (_p, i) => {
+            return [` and ${table?.name}.${prop} ${operator} $${i + 1}`, 1];
           }
         });
       }

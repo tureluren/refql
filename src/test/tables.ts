@@ -1,6 +1,7 @@
 import BelongsTo from "../Prop/BelongsTo";
 import BelongsToMany from "../Prop/BelongsToMany";
 import BooleanProp from "../Prop/BooleanProp";
+import DateProp from "../Prop/DateProp";
 import HasMany from "../Prop/HasMany";
 import HasOne from "../Prop/HasOne";
 import NumberProp from "../Prop/NumberProp";
@@ -65,7 +66,7 @@ const Player = Table ("player", [
     limit 1
   `),
   StringProp ("cars").arrayOf (),
-  StringProp ("birthday"),
+  DateProp ("birthday"),
   NumberProp ("teamId", "team_id").nullable (),
   BelongsTo ("team", "public.team").nullable (),
   NumberProp ("positionId", "position_id"),

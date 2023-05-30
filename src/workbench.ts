@@ -23,7 +23,6 @@ const pool = new Pool ({
   port: 5432
 });
 
-const { id, lastName, firstName, fullName, goalCount, isVeteran } = Player.props;
 
 // select components
 // const tag = Player ([
@@ -49,10 +48,18 @@ const { id, lastName, firstName, fullName, goalCount, isVeteran } = Player.props
 // and run
 // tag ({ id: 1 }).then (x => console.log (x));
 
+const { id, firstName, lastName, fullName, birthday } = Player.props;
+
 const tag = Player ([
   id,
+  firstName,
   lastName,
-  id.in ([1, 2, 3]).not ()
+  firstName.lt ("Z"),
+  lastName.gte ("A"),
+  lastName.lte ("Z"),
+  birthday.lt (new Date ()),
+  fullName.desc (),
+  Limit ()
 ]);
 
-tag ({ year: 1970 }).then (console.log);
+// tag ({ limit: 5 }).then (console.log);
