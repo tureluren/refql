@@ -14,6 +14,7 @@ interface Prop<As extends string = any, Type = any> extends RQLNode, PropType<As
   nullable(): Prop<As, Type | null>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params2, Type>;
   like<Params2 = {}>(run: TagFunctionVariable<Params2, string> | string): Like<As, Params2>;
+  iLike: Prop<As, Type>["like"];
   in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): In<As, Params2, Type>;
   asc(): OrderBy<As, false, {}>;
   desc(): OrderBy<As, true, {}>;
@@ -28,6 +29,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   nullable,
   eq,
   like,
+  iLike,
   in: whereIn,
   asc,
   desc
@@ -52,6 +54,10 @@ function eq(this: Prop, run: any) {
 
 function like(this: Prop, run: any) {
   return Like (this.col || this.as, run);
+}
+
+function iLike(this: Prop, run: any) {
+  return Like (this.col || this.as, run, false);
 }
 
 function whereIn(this: Prop, run: any) {

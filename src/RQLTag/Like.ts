@@ -9,6 +9,9 @@ interface Like<Prop extends SQLTag | string = any, Params = any> extends RQLNode
   prop: Prop;
   run: TagFunctionVariable<Params, string>;
   setPred (fn: (p: any) => boolean): Like<Prop, Params>;
+  caseSensitive: boolean;
+  isNot: boolean;
+  not(): Like<Prop, Params>;
 }
 
 const type = "refql/Like";
@@ -16,6 +19,7 @@ const type = "refql/Like";
 const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   constructor: Like,
   [refqlType]: type,
+  not,
   setPred,
   precedence: 1
 });
@@ -26,7 +30,7 @@ const considerPercentSign = <Params>(run: TagFunctionVariable<Params, string>) =
   return `${value}%`;
 };
 
-function Like<Prop extends SQLTag | string, Params>(prop: Prop, run: TagFunctionVariable<Params, string> | string) {
+function Like<Prop extends SQLTag | string, Params>(prop: Prop, run: TagFunctionVariable<Params, string> | string, caseSensitive = true) {
   let like: Like<Prop, Params> = Object.create (prototype);
 
   like.prop = prop;
@@ -35,12 +39,25 @@ function Like<Prop extends SQLTag | string, Params>(prop: Prop, run: TagFunction
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params, string>);
 
+  like.caseSensitive = caseSensitive;
+  like.isNot = false;
+
+  return like;
+}
+
+function not(this: Like) {
+  let like = Like (this.prop, this.run, this.caseSensitive);
+
+  like.pred = this.pred;
+  like.isNot = true;
+
   return like;
 }
 
 function setPred(this: Like, fn: (p: any) => boolean) {
-  let like = Like (this.prop, this.run);
+  let like = Like (this.prop, this.run, this.caseSensitive);
 
+  like.isNot = this.isNot;
   like.pred = fn;
 
   return like;

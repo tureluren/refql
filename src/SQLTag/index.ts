@@ -236,7 +236,9 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
         run: p => p[prop]
       });
     } else if (Eq.isEq (selectable)) {
-      const { pred, prop, run } = selectable;
+      const { pred, prop, run, isNot } = selectable;
+      const equality = isNot ? "!=" : "=";
+
       if (isSQLTag (prop)) {
         strings.push ({
           pred,
@@ -250,14 +252,14 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
 
         strings.push ({
           pred,
-          run: (_p, i) => [`) = $${i + 1}`, 1]
+          run: (_p, i) => [`) ${equality} $${i + 1}`, 1]
         });
 
       } else {
         strings.push ({
           pred,
           run: (_p, i) => {
-            return [` and ${table?.name}.${prop} = $${i + 1}`, 1];
+            return [` and ${table?.name}.${prop} ${equality} $${i + 1}`, 1];
           }
         });
       }
@@ -267,7 +269,10 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
         run
       });
     } else if (Like.isLike (selectable)) {
-      const { pred, prop, run } = selectable;
+      const { pred, prop, run, caseSensitive, isNot } = selectable;
+      const like = caseSensitive ? "like" : "ilike";
+      const equality = isNot ? `not ${like}` : like;
+
       if (isSQLTag (prop)) {
         strings.push ({
           pred,
@@ -281,14 +286,14 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
 
         strings.push ({
           pred,
-          run: (_p, i) => [`) like $${i + 1}`, 1]
+          run: (_p, i) => [`) ${equality} $${i + 1}`, 1]
         });
 
       } else {
         strings.push ({
           pred,
           run: (_p, i) => {
-            return [` and ${table?.name}.${prop} like $${i + 1}`, 1];
+            return [` and ${table?.name}.${prop} ${equality} $${i + 1}`, 1];
           }
         });
       }
@@ -298,7 +303,9 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
         run
       });
     } else if (In.isIn (selectable)) {
-      const { pred, prop, run } = selectable;
+      const { pred, prop, run, isNot } = selectable;
+      const equality = isNot ? "not in" : "in";
+
       if (isSQLTag (prop)) {
         strings.push ({
           pred,
@@ -315,7 +322,7 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
           run: (p, i) => {
             const xs = run (p);
             return [
-              `) in (${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
+              `) ${equality} (${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
               xs.length
             ];
           }
@@ -328,7 +335,7 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
           run: (p, i) => {
             const xs = run (p);
             return [
-              ` and ${table?.name}.${prop} in (${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
+              ` and ${table?.name}.${prop} ${equality} (${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
               xs.length
             ];
           }

@@ -52,7 +52,7 @@ const { id, lastName, firstName, fullName, goalCount, isVeteran } = Player.props
 const tag = Player ([
   id,
   lastName,
-  lastName.like ("Be")
+  id.in ([1, 2, 3]).not ()
 ]);
 
 tag ({ year: 1970 }).then (console.log);

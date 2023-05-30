@@ -506,23 +506,60 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (3);
   });
 
+  test ("Where not in", async () => {
+    const { id, teamId } = Player.props;
+
+    const tag = Player ([
+      "id",
+      "firstName",
+      "lastName",
+      id.in<{ ids: number[] }> (p => p.ids).not (),
+      id.eq (1).not (),
+      teamId.in ([1])
+    ]);
+
+    const [query, values] = await tag.compile ({ ids: [2, 3, 4] });
+
+    expect (query).toBe (format (`
+      select player.id "id", player.first_name "firstName", player.last_name "lastName"
+      from player
+      where 1 = 1 
+      and player.id not in ($1, $2, $3)
+      and player.id != $4
+      and player.team_id in ($5)
+    `));
+
+    expect (values).toEqual ([2, 3, 4, 1, 1]);
+
+    const players = await tag ({ ids: [2, 3, 4] });
+
+    expect (players.length).toBe (7);
+  });
+
+
   test ("Like", async () => {
     const { fullName, lastName } = Player.props;
+    const { name } = Team.props;
 
     const tag = Player ([
       "id",
       "firstName",
       lastName,
+      Team ([
+        name,
+        name.like (`%A%`).not ()
+      ]),
       fullName.like (`%Be%`),
       When (() => true, [
         lastName.like<{ lastName: string }> (p => p.lastName)
       ])
     ]);
 
-    const [query, values] = await tag.compile ({ delimiter: " ", lastName: "Be" });
+    const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be" });
 
     expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName"
+      select player.id "id", player.first_name "firstName", player.last_name "lastName",
+        player.team_id teamlref
       from player
       where 1 = 1 
       and (concat (player.first_name, ' ', player.last_name)) like $1
@@ -530,6 +567,62 @@ describe ("RQLTag type", () => {
     `));
 
     expect (values).toEqual (["%Be%", "Be%"]);
+
+    const [teamQuery, teamValues] = await next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }] });
+
+    expect (teamQuery).toBe (format (`
+      select * from (
+        select distinct player.team_id teamlref from player where player.team_id in ($1)
+      ) refqll1, 
+      lateral (select team.name "name" from public.team where team.id = refqll1.teamlref and team.name not like $2
+      ) refqll2
+    `));
+
+    expect (teamValues).toEqual ([1, "%A%"]);
+  });
+
+  test ("ILike", async () => {
+    const { fullName, lastName } = Player.props;
+    const { name } = Team.props;
+
+    const tag = Player ([
+      "id",
+      "firstName",
+      lastName,
+      Team ([
+        name,
+        name.iLike (`%A%`).not ()
+      ]),
+      fullName.iLike (`%Be%`),
+      When (() => true, [
+        lastName.iLike<{ lastName: string }> (p => p.lastName)
+      ])
+    ]);
+
+    const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be" });
+
+    expect (query).toBe (format (`
+      select player.id "id", player.first_name "firstName", player.last_name "lastName",
+        player.team_id teamlref
+      from player
+      where 1 = 1 
+      and (concat (player.first_name, ' ', player.last_name)) ilike $1
+      and player.last_name ilike $2
+    `));
+
+    expect (values).toEqual (["%Be%", "Be%"]);
+
+    const [teamQuery, teamValues] = await next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }] });
+
+    expect (teamQuery).toBe (format (`
+      select * from (
+        select distinct player.team_id teamlref from player where player.team_id in ($1)
+      ) refqll1, 
+      lateral (select team.name "name" from public.team where team.id = refqll1.teamlref and team.name not ilike $2
+      ) refqll2
+    `));
+
+    expect (teamValues).toEqual ([1, "%A%"]);
   });
 
   test ("No record found", async () => {

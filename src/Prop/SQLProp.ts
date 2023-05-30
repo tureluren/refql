@@ -16,6 +16,7 @@ interface SQLProp<As extends string = any, Params = any, Type = any> extends RQL
   nullable(): SQLProp<As, Params, Type | null>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params & Params2, Type>;
   like<Params2 = {}>(run: TagFunctionVariable<Params2, string> | string): Like<As, Params & Params2>;
+  iLike: SQLProp<As, Params, Type>["like"];
   in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): In<As, Params & Params2, Type>;
   asc(): OrderBy<As, false, Params>;
   desc(): OrderBy<As, true, Params>;
@@ -30,6 +31,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   nullable,
   eq,
   like,
+  iLike,
   in: whereIn,
   asc,
   desc
@@ -54,6 +56,10 @@ function eq(this: SQLProp, run: any) {
 
 function like(this: SQLProp, run: any) {
   return Like (this.col, run);
+}
+
+function iLike(this: SQLProp, run: any) {
+  return Like (this.col, run, false);
 }
 
 function whereIn(this: SQLProp, run: any) {
