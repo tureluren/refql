@@ -51,7 +51,7 @@ const Player = Table ("player", [
     concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
   `),
   NumberProp ("goalCount", sql`
-    select cast (count (*) as int) from goal
+    select cast(count(*) as int) from goal
     where goal.player_id = player.id
   `),
   NumberProp ("firstGoalId", sql`

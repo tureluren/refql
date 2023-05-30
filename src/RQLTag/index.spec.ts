@@ -67,7 +67,7 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select
         (concat (player.first_name, ' ', player.last_name)) "fullName",
-        (select cast (count (*) as int) from goal where goal.player_id = player.id) "goalCount",
+        (select cast(count(*) as int) from goal where goal.player_id = player.id) "goalCount",
         (select id from goal where goal.player_id = player.id limit 1) "firstGoalId"
       from player
       where 1 = 1
@@ -494,7 +494,7 @@ describe ("RQLTag type", () => {
       from player
       where 1 = 1 
       and player.id in ($1, $2, $3)
-      and (select cast (count (*) as int) from goal where goal.player_id = player.id) in ($4)
+      and (select cast(count(*) as int) from goal where goal.player_id = player.id) in ($4)
       and player.team_id in ($5, $6)
       order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
     `));
@@ -557,13 +557,13 @@ describe ("RQLTag type", () => {
 
     expect (query).toBe (format (`
       select player.id "id", player.first_name "firstName", player.last_name "lastName",
-        (select cast (count (*) as int) from goal where goal.player_id = player.id) "goalCount"
+        (select cast(count(*) as int) from goal where goal.player_id = player.id) "goalCount"
       from player
       where 1 = 1 
       and player.id <= $1
       and player.team_id < $2
       and player.team_id >= $3
-      and (select cast (count (*) as int) from goal where goal.player_id = player.id) > $4
+      and (select cast(count(*) as int) from goal where goal.player_id = player.id) > $4
       limit $5
     `));
 

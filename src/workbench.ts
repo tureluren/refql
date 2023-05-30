@@ -1,24 +1,26 @@
-import { Pool } from "pg";
+import mySQL from "mysql2";
 import { Limit, NumberProp, setDefaultQuerier, sql, StringProp, Table, When } from ".";
+import mySQLQuerier from "./test/mySQLQuerier";
 
-const querier = async (query: string, values: any[]) => {
-  console.log (`'${query}'`);
-  console.log (values);
-  const { rows } = await pool.query (query, values);
+// const querier = async (query: string, values: any[]) => {
+//   console.log (`'${query}'`);
+//   console.log (values);
+//   // const { rows } = await pool.query (query, values);
 
-  return rows;
-};
-
-setDefaultQuerier (querier);
+//   return rows;
+// };
 
 
-const pool = new Pool ({
+
+const pool = mySQL.createPool ({
   user: "test",
   host: "localhost",
   database: "soccer",
   password: "test",
-  port: 5432
+  port: 3306
 });
+
+setDefaultQuerier (mySQLQuerier (pool));
 
 
 const Player = Table ("player", [
@@ -27,7 +29,7 @@ const Player = Table ("player", [
   StringProp ("lastName", "last_name"),
   NumberProp ("teamId", "team_id").nullable (),
   NumberProp ("goalCount", sql`
-    select cast (count (*) as int) from goal
+    select cast(count(*) as int) from goal
     where goal.player_id = player.id
   `)
 ]);

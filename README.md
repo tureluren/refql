@@ -310,7 +310,7 @@ const Player = Table ("player", [
   StringProp ("lastName", "last_name"),
   NumberProp ("teamId", "team_id").nullable (),
   NumberProp ("goalCount", sql`
-    select cast (count (*) as int) from goal
+    select cast(count(*) as int) from goal
     where goal.player_id = player.id
   `)
 ]);
@@ -410,7 +410,7 @@ const Player = Table ("player", [
     concat (player.first_name, ' ', player.last_name)
   `),
   NumberProp ("goalCount", sql`
-    select count (*) from goal
+    select count(*) from goal
     where goal.player_id = player.id
   `)
 ]);
@@ -443,7 +443,7 @@ const Player = Table ("player", [
   StringProp ("firstName", "first_name"),
   StringProp ("lastName", "last_name"),
   NumberProp ("goalCount", sql`
-    select count (*) from goal
+    select count(*) from goal
     where goal.player_id = player.id
   `)
 ]);
@@ -455,7 +455,7 @@ const topScorers = Player ([
   "goalCount",
   sql`
     and (
-      select count (*) from goal
+      select count(*) from goal
       where goal.player_id = player.id
     ) > 15
   `
