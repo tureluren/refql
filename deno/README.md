@@ -100,6 +100,7 @@ const querier = async (query: string, values: any[]) => {
   return rows;
 };
 
+// construct RQLTag
 const Player = Table ("player", [
   NumberProp ("id"),
   StringProp ("firstName", "first_name"),
@@ -161,9 +162,9 @@ RefQL tries to link 2 tables based on logical column names, using snake case. Yo
 const playerBelongsToManyGames = BelongsToMany ("games", "game", {
   lRef: "id",
   rRef: "id",
-  lxRef: "player_id",
-  rxRef: "game_id",
-  xTable: "game_player"
+  lxRef: "playerId",
+  rxRef: "gameId",
+  xTable: "gamePlayer"
 });
 ```
 
