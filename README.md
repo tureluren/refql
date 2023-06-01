@@ -285,8 +285,7 @@ const part2 = Player ([
   id.eq<{ id: number }> (p => p.id)
 ]);
 
-const playerById = idAndFirstName
-  .concat (lastNameAndTeam);
+const playerById = part1.concat (part2);
 
 playerById ({ id: 1 }).then (console.log);
 
