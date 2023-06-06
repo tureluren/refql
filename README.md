@@ -270,7 +270,7 @@ firstTeam ({ limit: 10 }).fork (console.error, console.log);
 ## Fantasy Land Interoperability
 <a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
 
-Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures. `RQLTag` is also a `Monoid` and `Table` is a `Setoid`.
+Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures.
 
 ```ts
 const part1 = Player ([
