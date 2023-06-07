@@ -39,6 +39,7 @@ const League = Table ("league", [
 const Team = Table ("public.team", [
   id,
   name,
+  NumberProp ("leagueId", "league_id"),
   HasMany ("players", "player"),
   BelongsTo ("league", "league")
 ]);

@@ -93,6 +93,33 @@ describe ("RQLTag type", () => {
     expect (res.compile ({})).toEqual (res2.compile ({}));
   });
 
+  test ("Semigroup Nested", () => {
+    const tag = Player (["id", Team (["id"]), Goal (["id"])]);
+    const tag2 = Player (["firstName", Goal (["minute"]), "lastName", Team (["leagueId"])]);
+    const tag3 = Player (["teamId", Goal (["ownGoal"]), "positionId", Team (["name"])]);
+
+    const res = tag[flConcat] (tag2)[flConcat] (tag3);
+    const res2 = tag[flConcat] (tag2[flConcat] (tag3));
+
+    const [playersQuery, playersValues, [teamsTag, goalsTag]] = res.compile ({});
+    const [playersQuery2, playersValues2, [teamsTag2, goalsTag2]] = res2.compile ({});
+
+    expect (playersQuery).toEqual (playersQuery2);
+    expect (playersValues).toEqual (playersValues2);
+
+    const [teamsQuery, teamsValues] = teamsTag.tag.compile ({ refQLRows: [{ teamlref: 1 }, { teamlref: 2 }] });
+    const [teamsQuery2, teamsValues2] = teamsTag2.tag.compile ({ refQLRows: [{ teamlref: 1 }, { teamlref: 2 }] });
+
+    expect (teamsQuery).toEqual (teamsQuery2);
+    expect (teamsValues).toEqual (teamsValues2);
+
+    const [goalsQuery, goalsValues] = goalsTag.tag.compile ({ refQLRows: [{ goalslref: 1 }, { goalslref: 2 }] });
+    const [goalsQuery2, goalsValues2] = goalsTag2.tag.compile ({ refQLRows: [{ goalslref: 1 }, { goalslref: 2 }] });
+
+    expect (goalsQuery).toEqual (goalsQuery2);
+    expect (goalsValues).toEqual (goalsValues2);
+  });
+
   test ("Monoid", () => {
     const tag = Player (["id", "lastName"]);
 
