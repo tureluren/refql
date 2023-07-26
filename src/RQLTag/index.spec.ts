@@ -144,7 +144,7 @@ describe ("RQLTag type", () => {
       ]),
       Game (["result"]),
       Rating (["acceleration", "stamina"]),
-      Limit (),
+      Limit<{ limit: number }> (p => p.limit),
       props.fullName.asc (),
       props.id.desc ()
     ]);
@@ -409,14 +409,14 @@ describe ("RQLTag type", () => {
   test ("Nested limit, nested offset and cache", async () => {
     const tag = Team ([
       "*",
-      Player (["*", Limit ("playerLimit"), Offset ("playerOffset")]),
-      Limit (),
-      Offset ()
+      Player (["*", Limit<{ playerLimit: number }> (p => p.playerLimit), Offset<{playerOffset: number}> (p => p.playerOffset)]),
+      Limit<{ limit: number }> (p => p.limit),
+      Offset (3)
     ]);
 
     const spy = jest.spyOn (tag, "interpret");
 
-    const teams = await tag ({ limit: 2, playerLimit: 4, offset: 3, playerOffset: 5 });
+    const teams = await tag ({ limit: 2, playerLimit: 4, playerOffset: 5 });
     tag.nodes = [];
 
     expect (teams.length).toBe (2);
@@ -471,7 +471,7 @@ describe ("RQLTag type", () => {
       teamId.eq (2)
     ]);
 
-    const players = await tag ({});
+    const players = await tag ();
     const player = players[0];
 
     expect (player.teamId).toBe (2);
@@ -577,7 +577,7 @@ describe ("RQLTag type", () => {
         teamId.gte<{ teamId: number }> (p => p.teamId)
       ]),
       goalCount.gt<{ count: number }> (p => p.count),
-      Limit ()
+      Limit<{ limit: number }> (p => p.limit)
     ]);
 
     const [query, values] = await tag.compile ({ count: 1, limit: 5, teamId: 0 });
@@ -620,10 +620,10 @@ describe ("RQLTag type", () => {
       lastName.lte ("Z"),
       birthday.lt (today),
 
-      Limit ()
+      Limit (5)
     ]);
 
-    const [query, values] = await tag.compile ({ limit: 5, delimiter: " " });
+    const [query, values] = await tag.compile ({ delimiter: " " });
 
     expect (query).toBe (format (`
       select player.id "id", player.first_name "firstName", player.last_name "lastName",
@@ -851,8 +851,8 @@ describe ("RQLTag type", () => {
       When (p => !!p.ids, [
         id.in<{ ids: number[] }> (p => p.ids)
       ]),
-      When (p => !!p.limit, [Limit ()]),
-      When (p => !!p.offset, [Offset ()])
+      When (p => !!p.limit, [Limit<{limit: number}> (p => p.limit)]),
+      When (p => !!p.offset, [Offset<{offset: number}> (p => p.offset)])
     ]);
 
     const [query, values] = tag.compile ({ limit: 5 });
@@ -903,9 +903,9 @@ describe ("RQLTag type", () => {
           and ${Raw (p => p.gt1)} > 1
         `,
         When (p => !!p.limit, [
-          Limit (),
+          Limit<{ limit: number }> (p => p.limit),
           When (p => !!p.offset, [
-            Offset ()
+            Offset<{ offset: number }> (p => p.offset)
           ])
         ])
       ])

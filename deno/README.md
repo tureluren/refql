@@ -137,11 +137,11 @@ const fullPlayer = Player ([
   Goal (["minute"]),
   Rating (["*"]),
   Game (["result"]),
-  Limit (),
-  Offset ()
+  Limit (1),
+  Offset (8)
 ]);
 
-fullPlayer ({ limit: 1, offset: 8 }, querier).then (console.log);
+fullPlayer ({}, querier).then (console.log);
 
 // [
 //   {
@@ -207,7 +207,7 @@ const firstTeam = Player ([
   id,
   "firstName",
   "lastName",
-  Limit (),
+  Limit (10),
   id.asc ()
 ]);
 
@@ -245,12 +245,12 @@ const firstTeam = Player ([
   id,
   "firstName",
   "lastName",
-  Limit (),
+  Limit (10),
   id.asc ()
 ]);
 
 // `fork` instead of `then`
-firstTeam ({ limit: 10 }).fork (console.error, console.log);
+firstTeam ().fork (console.error, console.log);
 
 // [
 //   { id: 1, firstName: "Christine", lastName: "Hubbard" },
@@ -270,7 +270,7 @@ firstTeam ({ limit: 10 }).fork (console.error, console.log);
 ## Fantasy Land Interoperability
 <a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
 
-Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures. `RQLTag` is also a `Monoid` and `Table` is a `Setoid`.
+Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures.
 
 ```ts
 const part1 = Player ([
@@ -285,8 +285,7 @@ const part2 = Player ([
   id.eq<{ id: number }> (p => p.id)
 ]);
 
-const playerById = idAndFirstName
-  .concat (lastNameAndTeam);
+const playerById = part1.concat (part2);
 
 playerById ({ id: 1 }).then (console.log);
 
@@ -354,8 +353,8 @@ const { lastName } = Player.props;
 const orderByLastName = Player ([
   "*",
   lastName.desc (),
-  Limit (),
-  Offset ()
+  Limit<{ limit: number }> (p => p.limit),
+  Offset<{ offset: number }> (p => p.offset)
 ]);
 
 orderByLastName ({ limit: 5, offset: 30 }).then (console.log);
@@ -383,10 +382,10 @@ const searchPlayer = Player ([
   When (p => p.q != null, [
     lastName.like<{ q: string }> (p => p.q)
   ]),
-  Limit ()
+  Limit (5)
 ]);
 
-searchPlayer ({ limit: 5, q: "Ba" }).then (console.log);
+searchPlayer ({ q: "Ba" }).then (console.log);
 
 // [
 //   { id: 11, lastName: "Bardi" },
@@ -420,11 +419,11 @@ const strikers = Player ([
   "id",
   "fullName",
   "goalCount",
-  Limit (),
-  Offset ()
+  Limit (3),
+  Offset (8)
 ]);
 
-strikers ({ limit: 3, offset: 8 }).then (console.log);
+strikers ().then (console.log);
 
 // [
 //   { id: 9, fullName: "Leah Kennedy", goalCount: 10 },

@@ -1,11 +1,12 @@
 import { refqlType } from "../common/consts";
+import { TagFunctionVariable } from "../common/types";
 import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface Offset<ParameterProp extends string = any> extends RQLNode, SelectableType {
-  prop: ParameterProp;
-  params: { [k in ParameterProp]: number };
-  setPred (fn: (p: any) => boolean): Offset<ParameterProp>;
+interface Offset<Params = any> extends RQLNode, SelectableType {
+  params: Params;
+  run: TagFunctionVariable<Params, number>;
+  setPred (fn: (p: any) => boolean): Offset<Params>;
 }
 
 const type = "refql/Offset";
@@ -17,23 +18,25 @@ const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, 
   precedence: 4
 });
 
-function Offset<ParameterProp extends string = "offset">(prop: ParameterProp = "offset" as ParameterProp) {
-  let offset: Offset<ParameterProp> = Object.create (prototype);
+function Offset<Params>(run: TagFunctionVariable<Params, number> | number) {
+  let offset: Offset<Params> = Object.create (prototype);
 
-  offset.prop = prop;
+  offset.run = (
+    typeof run === "function" ? run : () => run
+  ) as TagFunctionVariable<Params, number>;
 
   return offset;
 }
 
 function setPred(this: Offset, fn: (p: any) => boolean) {
-  let offset = Offset (this.prop);
+  let offset = Offset (this.run);
 
   offset.pred = fn;
 
   return offset;
 }
 
-Offset.isOffset = function <ParameterProp extends string = any> (x: any): x is Offset<ParameterProp> {
+Offset.isOffset = function <Params = any> (x: any): x is Offset<Params> {
   return x != null && x[refqlType] === type;
 };
 

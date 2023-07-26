@@ -27,8 +27,10 @@ import { isSQLNode } from "./SQLTag/SQLNode.ts";
 import Value from "./SQLTag/Value.ts";
 import Values from "./SQLTag/Values.ts";
 import Values2D from "./SQLTag/Values2D.ts";
+import When2 from "./SQLTag/When2.ts";
 import Table from "./Table/index.ts";
 import SelectableType from "./Table/SelectableType.ts";
+
 
 export * from "./common/types.ts";
 export {
@@ -39,5 +41,5 @@ export {
   parse, Prop, PropType, Raw, RefField, RefNode,
   RefProp, RQLTag, SelectableType, setConvertPromise,
   setDefaultQuerier, sql, SQLProp, SQLTag, StringProp,
-  Table, Value, Values, Values2D, When
+  Table, Value, Values, Values2D, When, When2
 };

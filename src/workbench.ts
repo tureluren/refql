@@ -64,12 +64,12 @@ const activeTeams = Team ([
     "*",
     Team (["*"]),
     date.desc (),
-    Limit ("gameLimit")
+    Limit (1)
   ]),
   active.eq (true)
 ]);
 
-activeTeams ({ gameLimit: 1 }).then (res => {
+activeTeams ().then (res => {
   console.log (JSON.stringify (res[0], null, 2));
 });
 

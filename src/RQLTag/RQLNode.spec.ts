@@ -59,12 +59,12 @@ describe ("RQLNodes", () => {
   });
 
   test ("is Limit", () => {
-    expect (Limit.isLimit (Limit ())).toBe (true);
+    expect (Limit.isLimit (Limit (3))).toBe (true);
     expect (Limit.isLimit ("limit")).toBe (false);
   });
 
   test ("is Offset", () => {
-    expect (Offset.isOffset (Offset ())).toBe (true);
+    expect (Offset.isOffset (Offset (3))).toBe (true);
     expect (Offset.isOffset ("offset")).toBe (false);
   });
 });

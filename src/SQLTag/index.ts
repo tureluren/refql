@@ -211,7 +211,7 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
   // sorted selectables
   for (const selectable of selectables) {
     if (Limit.isLimit (selectable)) {
-      const { pred, prop } = selectable;
+      const { pred, run } = selectable;
       limits.push ({
         pred,
         run: (_p, i) => {
@@ -221,10 +221,10 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
 
       values.push ({
         pred,
-        run: p => p[prop]
+        run
       });
     } else if (Offset.isOffset (selectable)) {
-      const { pred, prop } = selectable;
+      const { pred, run } = selectable;
       offsets.push ({
         pred,
         run: (_p, i) => {
@@ -234,7 +234,7 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
 
       values.push ({
         pred,
-        run: p => p[prop]
+        run
       });
     } else if (Eq.isEq (selectable)) {
       const { pred, prop, run, isNot } = selectable;
