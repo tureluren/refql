@@ -39,9 +39,16 @@ const League = Table ("league", [
 const Team = Table ("public.team", [
   id,
   name,
+  BooleanProp ("active"),
   NumberProp ("leagueId", "league_id"),
   HasMany ("players", "player"),
-  BelongsTo ("league", "league")
+  BelongsTo ("league", "league"),
+  HasMany ("homeGames", "game", { rRef: "home_team_id" }),
+  HasMany ("awayGames", "game", { rRef: "away_team_id" }),
+  NumberProp ("playerCount", sql`
+    select cast(count(*) as int) from player
+    where player.team_id = team.id
+  `)
 ]);
 
 const Player = Table ("player", [
@@ -126,6 +133,7 @@ const Game = Table ("game", [
   BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
   BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
   NumberProp ("leagueId", "league_id"),
+  DateProp ("date"),
   BelongsTo ("league", "league")
 ]);
 

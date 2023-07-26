@@ -210,10 +210,18 @@ const seedGames = async () => {
           const homeTeamPlayers = getPlayers (gameId, homeTeamId);
           const AwayTeamPlayers = getPlayers (gameId, awayTeamId);
 
+          let date = chance.birthday ({ string: true, year: chance.year ({ min: 2022, max: 2023 }) });
+
+          if (!usingPg) {
+            const [m, d, y] = date.split ("/");
+            date = `${y}-${m}-${d}`;
+          }
+
           games.push ({
             leagueId,
             homeTeamId,
             awayTeamId,
+            date,
             result: `${noOfHomeTeamGoals} - ${noOfAwayTeamGoals}`,
             goals: homeTeamGoals
               .concat (awayTeamGoals)
@@ -244,8 +252,8 @@ const seedGames = async () => {
   });
 
   const gamesSQL = games.reduce ((acc, game) => {
-    return `${acc} (${game.homeTeamId}, ${game.awayTeamId}, ${game.leagueId}, '${game.result}'),`;
-  }, "insert into `game` (`home_team_id`, `away_team_id`, `league_id`, `result`) values").slice (0, -1);
+    return `${acc} (${game.homeTeamId}, ${game.awayTeamId}, ${game.leagueId}, '${game.result}', '${game.date}'),`;
+  }, "insert into `game` (`home_team_id`, `away_team_id`, `league_id`, `result`, `date`) values").slice (0, -1);
 
   const playersSQL = games.flatMap (game => game.players).reduce ((acc, player) => {
     return `${acc} (${player.playerId}, ${player.gameId}),`;

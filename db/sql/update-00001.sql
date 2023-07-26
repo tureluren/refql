@@ -7,6 +7,7 @@ create table `league` (
 create table `team` (
   `id` integer auto_increment,
   `name` text,
+  `active` boolean default true,
   `league_id` integer references `league` (`id`),
   primary key (`id`)
 );
@@ -30,6 +31,7 @@ create table `player` (
 
 create table `game` (
   `id` integer auto_increment,
+  `date` date,
   `home_team_id` integer references `team` (`id`),
   `away_team_id` integer references `team` (`id`),
   `league_id` integer references `league` (`id`),

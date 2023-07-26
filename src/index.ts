@@ -27,8 +27,10 @@ import { isSQLNode } from "./SQLTag/SQLNode";
 import Value from "./SQLTag/Value";
 import Values from "./SQLTag/Values";
 import Values2D from "./SQLTag/Values2D";
+import When2 from "./SQLTag/When2";
 import Table from "./Table";
 import SelectableType from "./Table/SelectableType";
+
 
 export * from "./common/types";
 export {
@@ -39,5 +41,5 @@ export {
   parse, Prop, PropType, Raw, RefField, RefNode,
   RefProp, RQLTag, SelectableType, setConvertPromise,
   setDefaultQuerier, sql, SQLProp, SQLTag, StringProp,
-  Table, Value, Values, Values2D, When
+  Table, Value, Values, Values2D, When, When2
 };
