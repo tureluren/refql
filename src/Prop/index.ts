@@ -2,6 +2,7 @@ import { refqlType } from "../common/consts";
 import { OrdOperator, TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
+import IsNull from "../RQLTag/IsNull";
 import Like from "../RQLTag/Like";
 import Ord from "../RQLTag/Ord";
 import OrderBy from "../RQLTag/OrderBy";
@@ -14,6 +15,7 @@ interface Prop<As extends string = any, Type = any> extends RQLNode, PropType<As
   arrayOf(): Prop<As, Type[]>;
   nullable(): Prop<As, Type | null>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params2, Type>;
+  isNull<Params2 = {}>(): IsNull<As, Params2>;
   like<Params2 = {}>(run: TagFunctionVariable<Params2, string> | string): Like<As, Params2>;
   iLike: Prop<As, Type>["like"];
   in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): In<As, Params2, Type>;
@@ -33,6 +35,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   arrayOf: nullable,
   nullable,
   eq,
+  isNull,
   like: like (),
   iLike: like (false),
   in: whereIn,
@@ -59,6 +62,10 @@ function nullable(this: Prop) {
 
 function eq(this: Prop, run: any) {
   return Eq (this.col || this.as, run);
+}
+
+function isNull(this: Prop) {
+  return IsNull (this.col || this.as);
 }
 
 function like(caseSensitive?: boolean) {

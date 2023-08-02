@@ -735,6 +735,50 @@ describe ("RQLTag type", () => {
     expect (teamValues).toEqual ([1, "%A%"]);
   });
 
+  test ("IsNull", async () => {
+    const { fullName, lastName } = Player.props;
+    const { name } = Team.props;
+
+    const tag = Player ([
+      "id",
+      "firstName",
+      lastName,
+      Team ([
+        name,
+        name.isNull ().not ()
+      ]),
+      fullName.isNull (),
+      When (() => true, [
+        lastName.isNull ()
+      ])
+    ]);
+
+    const [query, values, next] = await tag.compile ({ delimiter: " " });
+
+    expect (query).toBe (format (`
+      select player.id "id", player.first_name "firstName", player.last_name "lastName",
+        player.team_id teamlref
+      from player
+      where 1 = 1 
+      and (concat (player.first_name, ' ', player.last_name)) is null
+      and player.last_name is null
+    `));
+
+    expect (values).toEqual ([]);
+
+    const [teamQuery, teamValues] = await next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }] });
+
+    expect (teamQuery).toBe (format (`
+      select * from (
+        select distinct player.team_id teamlref from player where player.team_id in ($1)
+      ) refqll1,
+      lateral (select team.name "name" from public.team where team.id = refqll1.teamlref and team.name is not null
+      ) refqll2
+    `));
+
+    expect (teamValues).toEqual ([1]);
+  });
+
   test ("No record found", async () => {
     const goals = Goal (["*"]);
 

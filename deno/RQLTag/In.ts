@@ -9,7 +9,7 @@ interface In<Prop extends SQLTag | string = any, Params = any, Type = any> exten
   prop: Prop;
   run: TagFunctionVariable<Params, Type[]>;
   setPred (fn: (p: any) => boolean): In<Prop, Params, Type>;
-  isNot: boolean;
+  notIn: boolean;
   not(): In<Prop, Params, Type>;
 }
 
@@ -32,7 +32,7 @@ function In<Prop extends SQLTag | string, Params, Type>(prop: Prop, run: TagFunc
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params, Type[]>;
 
-  whereIn.isNot = false;
+  whereIn.notIn = false;
 
   return whereIn;
 }
@@ -41,7 +41,7 @@ function not(this: In) {
   let whereIn = In (this.prop, this.run);
 
   whereIn.pred = this.pred;
-  whereIn.isNot = true;
+  whereIn.notIn = true;
 
   return whereIn;
 }
@@ -49,7 +49,7 @@ function not(this: In) {
 function setPred(this: In, fn: (p: any) => boolean) {
   let whereIn = In (this.prop, this.run);
 
-  whereIn.isNot = this.isNot;
+  whereIn.notIn = this.notIn;
   whereIn.pred = fn;
 
   return whereIn;

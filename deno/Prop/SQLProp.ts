@@ -2,6 +2,7 @@ import { refqlType } from "../common/consts.ts";
 import { OrdOperator, TagFunctionVariable } from "../common/types.ts";
 import Eq from "../RQLTag/Eq.ts";
 import In from "../RQLTag/In.ts";
+import IsNull from "../RQLTag/IsNull.ts";
 import Like from "../RQLTag/Like.ts";
 import Ord from "../RQLTag/Ord.ts";
 import OrderBy from "../RQLTag/OrderBy.ts";
@@ -16,6 +17,7 @@ interface SQLProp<As extends string = any, Params = any, Type = any> extends RQL
   arrayOf(): SQLProp<As, Params, Type[]>;
   nullable(): SQLProp<As, Params, Type | null>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Eq<As, Params & Params2, Type>;
+  isNull<Params2 = {}>(): IsNull<As, Params & Params2>;
   like<Params2 = {}>(run: TagFunctionVariable<Params2, string> | string): Like<As, Params & Params2>;
   iLike: SQLProp<As, Params, Type>["like"];
   in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): In<As, Params & Params2, Type>;
@@ -35,6 +37,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   arrayOf: nullable,
   nullable,
   eq,
+  isNull,
   like: like (),
   iLike: like (false),
   in: whereIn,
@@ -61,6 +64,10 @@ function nullable(this: SQLProp) {
 
 function eq(this: SQLProp, run: any) {
   return Eq (this.col, run);
+}
+
+function isNull(this: SQLProp) {
+  return IsNull (this.col);
 }
 
 function like(caseSensitive?: boolean) {

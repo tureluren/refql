@@ -15,6 +15,7 @@ import SQLProp from "./Prop/SQLProp.ts";
 import StringProp from "./Prop/StringProp.ts";
 import { createRQLTag, isRQLTag, RQLTag } from "./RQLTag/index.ts";
 import Eq from "./RQLTag/Eq.ts";
+import IsNull from "./RQLTag/IsNull.ts";
 import Limit from "./RQLTag/Limit.ts";
 import Offset from "./RQLTag/Offset.ts";
 import RefField from "./RQLTag/RefField.ts";
@@ -36,10 +37,11 @@ export * from "./common/types.ts";
 export {
   BelongsTo, BelongsToMany, BooleanProp,
   createRQLTag, createSQLTag, DateProp,
-  Eq, HasMany, HasOne, isEmptyTag, isRQLTag,
+  Eq, HasMany, HasOne, isEmptyTag, IsNull, isRQLTag,
   isSQLNode, isSQLTag, Limit, NumberProp, Offset,
   parse, Prop, PropType, Raw, RefField, RefNode,
   RefProp, RQLTag, SelectableType, setConvertPromise,
   setDefaultQuerier, sql, SQLProp, SQLTag, StringProp,
   Table, Value, Values, Values2D, When, When2
 };
+

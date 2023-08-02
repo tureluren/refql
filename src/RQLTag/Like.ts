@@ -10,7 +10,7 @@ interface Like<Prop extends SQLTag | string = any, Params = any> extends RQLNode
   run: TagFunctionVariable<Params, string>;
   setPred (fn: (p: any) => boolean): Like<Prop, Params>;
   caseSensitive: boolean;
-  isNot: boolean;
+  notLike: boolean;
   not(): Like<Prop, Params>;
 }
 
@@ -40,7 +40,7 @@ function Like<Prop extends SQLTag | string, Params>(prop: Prop, run: TagFunction
   ) as TagFunctionVariable<Params, string>);
 
   like.caseSensitive = caseSensitive;
-  like.isNot = false;
+  like.notLike = false;
 
   return like;
 }
@@ -49,7 +49,7 @@ function not(this: Like) {
   let like = Like (this.prop, this.run, this.caseSensitive);
 
   like.pred = this.pred;
-  like.isNot = true;
+  like.notLike = true;
 
   return like;
 }
@@ -57,7 +57,7 @@ function not(this: Like) {
 function setPred(this: Like, fn: (p: any) => boolean) {
   let like = Like (this.prop, this.run, this.caseSensitive);
 
-  like.isNot = this.isNot;
+  like.notLike = this.notLike;
   like.pred = fn;
 
   return like;

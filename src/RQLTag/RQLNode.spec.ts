@@ -4,6 +4,7 @@ import sql from "../SQLTag/sql";
 import { Player, Team } from "../test/tables";
 import Eq from "./Eq";
 import In from "./In";
+import IsNull from "./IsNull";
 import Limit from "./Limit";
 import Offset from "./Offset";
 import OrderBy from "./OrderBy";
@@ -26,6 +27,11 @@ describe ("RQLNodes", () => {
   test ("is Eq", () => {
     expect (Eq.isEq (Eq ("id", 1))).toBe (true);
     expect (Eq.isEq ("Eq")).toBe (false);
+  });
+
+  test ("is Null", () => {
+    expect (IsNull.isNull (IsNull ("id"))).toBe (true);
+    expect (IsNull.isNull ("IsNull")).toBe (false);
   });
 
   test ("is In", () => {

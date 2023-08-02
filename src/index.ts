@@ -15,6 +15,7 @@ import SQLProp from "./Prop/SQLProp";
 import StringProp from "./Prop/StringProp";
 import { createRQLTag, isRQLTag, RQLTag } from "./RQLTag";
 import Eq from "./RQLTag/Eq";
+import IsNull from "./RQLTag/IsNull";
 import Limit from "./RQLTag/Limit";
 import Offset from "./RQLTag/Offset";
 import RefField from "./RQLTag/RefField";
@@ -36,10 +37,11 @@ export * from "./common/types";
 export {
   BelongsTo, BelongsToMany, BooleanProp,
   createRQLTag, createSQLTag, DateProp,
-  Eq, HasMany, HasOne, isEmptyTag, isRQLTag,
+  Eq, HasMany, HasOne, isEmptyTag, IsNull, isRQLTag,
   isSQLNode, isSQLTag, Limit, NumberProp, Offset,
   parse, Prop, PropType, Raw, RefField, RefNode,
   RefProp, RQLTag, SelectableType, setConvertPromise,
   setDefaultQuerier, sql, SQLProp, SQLTag, StringProp,
   Table, Value, Values, Values2D, When, When2
 };
+

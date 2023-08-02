@@ -6,6 +6,7 @@ import truePred from "../common/truePred";
 import { Querier, StringMap, TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
+import IsNull from "../RQLTag/IsNull";
 import Like from "../RQLTag/Like";
 import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
@@ -237,8 +238,8 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
         run
       });
     } else if (Eq.isEq (selectable)) {
-      const { pred, prop, run, isNot } = selectable;
-      const equality = isNot ? "!=" : "=";
+      const { pred, prop, run, notEq } = selectable;
+      const equality = notEq ? "!=" : "=";
 
       if (isSQLTag (prop)) {
         strings.push ({
@@ -269,6 +270,34 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
         pred,
         run
       });
+    } else if (IsNull.isNull (selectable)) {
+      const { pred, prop, notIsNull } = selectable;
+      const equality = notIsNull ? "is not null" : "is null";
+
+      if (isSQLTag (prop)) {
+        strings.push ({
+          pred,
+          run: () => [" and (", 0]
+        });
+
+        const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
+
+        strings.push (...strings2);
+        values.push (...values2);
+
+        strings.push ({
+          pred,
+          run: () => [`) ${equality}`, 0]
+        });
+
+      } else {
+        strings.push ({
+          pred,
+          run: () => {
+            return [` and ${table?.name}.${prop} ${equality}`, 0];
+          }
+        });
+      }
     } else if (Ord.isOrd (selectable)) {
       const { pred, prop, run, operator } = selectable;
 
@@ -302,9 +331,9 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
         run
       });
     } else if (Like.isLike (selectable)) {
-      const { pred, prop, run, caseSensitive, isNot } = selectable;
+      const { pred, prop, run, caseSensitive, notLike } = selectable;
       const like = caseSensitive ? "like" : "ilike";
-      const equality = isNot ? `not ${like}` : like;
+      const equality = notLike ? `not ${like}` : like;
 
       if (isSQLTag (prop)) {
         strings.push ({
@@ -336,8 +365,8 @@ function interpret(this: SQLTag, selectables: SelectableType[] = [], table?: Tab
         run
       });
     } else if (In.isIn (selectable)) {
-      const { pred, prop, run, isNot } = selectable;
-      const equality = isNot ? "not in" : "in";
+      const { pred, prop, run, notIn } = selectable;
+      const equality = notIn ? "not in" : "in";
 
       if (isSQLTag (prop)) {
         strings.push ({
