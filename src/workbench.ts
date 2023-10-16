@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Pool } from "pg";
 import {
   BelongsTo, BooleanProp,
@@ -122,3 +123,61 @@ activeTeams ().then (res => {
 //     }
 //   ]
 // }
+
+
+const playerByIdOld = Player ([
+  id,
+  "firstName",
+  "lastName",
+  Team ([
+    id,
+    "name"
+  ]),
+  id.eq<{ id: number }> (p => p.id)
+]);
+
+const OrderedGoals = Goal
+  .limit (50)
+  .orderBy (id.desc);
+
+const player = Player
+  .join (Team, OrderedGoals);
+
+const playerById = player ({ id: p => p.id });
+
+const Players = Compose (
+  Player,
+  Team
+);
+
+// onlyIf ipv when
+// like
+const playerById =
+  Player ([Team, Goal])
+  ({ id: p => p.id });
+
+const playerById = pipe (
+  Player,
+  eq (id, p => p.id),
+  limit (50)
+) ([Team, Goal]);
+
+const readById =
+  Player ([Team, Goal])
+    .where ({ id: p => p.id })
+    .sort (id.desc, age.asc)
+    .limit (p => p.limit);
+
+const readById =
+  Player ([Team, Goal ([Player])])
+    .sort (id.desc, age.asc)
+    .limit (p => p.limit)
+    ({ id: p => p.id });
+
+const playerById =
+  Player ({ id: p => p.id });
+
+const getPlayer = pipe (
+  validate,
+  exec (readById)
+);

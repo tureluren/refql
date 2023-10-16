@@ -322,7 +322,7 @@ const strikers = Player ([
   goalCount,
   teamId.eq (1),
   goalCount.gt (7),
-  lastName.like ("Craw")
+  lastName.like ("Craw%")
 ]);
 
 strikers ().then (console.log);

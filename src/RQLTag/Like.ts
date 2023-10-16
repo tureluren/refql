@@ -24,20 +24,14 @@ const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, 
   precedence: 1
 });
 
-const considerPercentSign = <Params>(run: TagFunctionVariable<Params, string>) => (p: Params): string => {
-  const value = run (p);
-  if (value.includes ("%")) return value;
-  return `${value}%`;
-};
-
 function Like<Prop extends SQLTag | string, Params>(prop: Prop, run: TagFunctionVariable<Params, string> | string, caseSensitive = true) {
   let like: Like<Prop, Params> = Object.create (prototype);
 
   like.prop = prop;
 
-  like.run = considerPercentSign<Params> ((
+  like.run = (
     typeof run === "function" ? run : () => run
-  ) as TagFunctionVariable<Params, string>);
+  ) as TagFunctionVariable<Params, string>;
 
   like.caseSensitive = caseSensitive;
   like.notLike = false;

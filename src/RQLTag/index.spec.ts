@@ -665,7 +665,7 @@ describe ("RQLTag type", () => {
       ])
     ]);
 
-    const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be" });
+    const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be%" });
 
     expect (query).toBe (format (`
       select player.id "id", player.first_name "firstName", player.last_name "lastName",
@@ -709,7 +709,7 @@ describe ("RQLTag type", () => {
       ])
     ]);
 
-    const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be" });
+    const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be%" });
 
     expect (query).toBe (format (`
       select player.id "id", player.first_name "firstName", player.last_name "lastName",
