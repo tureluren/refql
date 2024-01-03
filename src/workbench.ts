@@ -181,3 +181,58 @@ const getPlayer = pipe (
   validate,
   exec (readById)
 );
+
+
+// :: queryable
+const playerById = Player ([
+  Team,
+  id.eq (p => p.id),
+  id.desc ()
+]);
+
+await playerById ({
+  id: 1
+});
+
+// or
+Player ({ id: 1 }, [Team]);
+
+const PlayerTable = Table ();
+
+const Player = PlayerTable ([Team]);
+
+const playerById = Player ({
+  id: p => p.id,
+  orderby: ["id"]
+});
+
+await playerById ({
+  id: 1
+});
+
+// or
+const playerById = Player ({
+  orderBy: ["firstName", "lastName"]
+});
+
+// alleen maar rechtstreeks op player, anders problemen (id kan param zijn om andere rede dan where id = x)
+await playerById ({
+  id: 1
+});
+
+const player1 = await Player ({
+  id: 1,
+  orderBy: [Desc ("first_name")],
+  include: [Team]
+});
+
+const playerById = Player ([Team], {
+  id: When (p => p.id, p => p.id),
+  orderby: ["id"]
+});
+
+const sortedPlayerById = Player ([
+  Team,
+  id.eq (p => p.id),
+  id.desc ()
+]);
