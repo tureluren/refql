@@ -1,14 +1,14 @@
-import { flEmpty, flEquals, refqlType } from "../common/consts.ts";
-import { Output, Params, Selectable } from "../common/types.ts";
-import validateTable from "../common/validateTable.ts";
-import Prop from "../Prop/index.ts";
-import PropType from "../Prop/PropType.ts";
-import RefProp from "../Prop/RefProp.ts";
-import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag/index.ts";
-import RefNode from "../RQLTag/RefNode.ts";
-import RQLNode, { isRQLNode } from "../RQLTag/RQLNode.ts";
-import When from "../RQLTag/When.ts";
-import { isSQLTag } from "../SQLTag/index.ts";
+import { flEmpty, flEquals, refqlType } from "../common/consts";
+import { Output, Params, Selectable } from "../common/types";
+import validateTable from "../common/validateTable";
+import Prop from "../Prop";
+import PropType from "../Prop/PropType";
+import RefProp from "../Prop/RefProp";
+import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
+import RefNode from "../RQLTag/RefNode";
+import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
+import When from "../RQLTag/When";
+import { isSQLTag } from "../SQLTag";
 
 interface Table<TableId extends string = any, Props = any> {
   <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Props, Components>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;

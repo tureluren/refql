@@ -29,9 +29,9 @@ else
   docker rm -f dev-postgres || true
   docker run --name dev-postgres \
   --restart always \
-  -p 5432:5432 \
+  -p 3308:5432 \
   -e POSTGRES_PASSWORD=test \
   -e POSTGRES_USER=test \
   -e POSTGRES_DB=soccer \
-  -d postgres:13.5;
+  -d postgres:17.2;
 fi

@@ -1,16 +1,17 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
+import Operation from "../Table/Operation";
 import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface Eq<Prop extends SQLTag | string = any, Params = any, Type = any> extends RQLNode, SelectableType {
+interface Eq<Prop extends SQLTag | string = any, Params = any, Type = any> extends RQLNode, SelectableType, Operation<Params> {
+  // weg omdat op operations zit ?
   params: Params;
   prop: Prop;
   run: TagFunctionVariable<Params, Type>;
   setPred (fn: (p: any) => boolean): Eq<Prop, Params, Type>;
   notEq: boolean;
-  not(): Eq<Prop, Params, Type>;
 }
 
 const type = "refql/Eq";
@@ -18,12 +19,11 @@ const type = "refql/Eq";
 const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   constructor: Eq,
   [refqlType]: type,
-  not,
   setPred,
   precedence: 1
 });
 
-function Eq<Prop extends SQLTag | string, Params, Type>(prop: Prop, run: TagFunctionVariable<Params, Type> | Type) {
+function Eq<Prop extends SQLTag | string, Params, Type>(prop: Prop, run: TagFunctionVariable<Params, Type> | Type, notEq = false) {
   let eq: Eq<Prop, Params, Type> = Object.create (prototype);
 
   eq.prop = prop;
@@ -32,16 +32,7 @@ function Eq<Prop extends SQLTag | string, Params, Type>(prop: Prop, run: TagFunc
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params, Type>;
 
-  eq.notEq = false;
-
-  return eq;
-}
-
-function not(this: Eq) {
-  let eq = Eq (this.prop, this.run);
-
-  eq.pred = this.pred;
-  eq.notEq = true;
+  eq.notEq = notEq;
 
   return eq;
 }

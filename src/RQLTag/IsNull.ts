@@ -1,9 +1,10 @@
 import { refqlType } from "../common/consts";
 import { SQLTag } from "../SQLTag";
+import Operation from "../Table/Operation";
 import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface IsNull<Prop extends SQLTag | string = any, Params = any> extends RQLNode, SelectableType {
+interface IsNull<Prop extends SQLTag | string = any, Params = any> extends RQLNode, SelectableType, Operation<Params> {
   params: Params;
   prop: Prop;
   setPred (fn: (p: any) => boolean): IsNull<Prop, Params>;

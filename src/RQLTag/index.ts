@@ -125,6 +125,8 @@ function interpret(this: RQLTag): InterpretedRQLTag {
       members.push (
         Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
       );
+      // replace any
+      selectables.push (...node.operations as any);
     } else if (SQLProp.isSQLProp (node)) {
       members.push (sql`
         (${node.col}) ${Raw (`"${node.as}"`)}`

@@ -1,10 +1,11 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
+import Operation from "../Table/Operation";
 import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface In<Prop extends SQLTag | string = any, Params = any, Type = any> extends RQLNode, SelectableType {
+interface In<Prop extends SQLTag | string = any, Params = any, Type = any> extends RQLNode, SelectableType, Operation<Params> {
   params: Params;
   prop: Prop;
   run: TagFunctionVariable<Params, Type[]>;
