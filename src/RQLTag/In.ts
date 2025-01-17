@@ -11,7 +11,6 @@ interface In<Prop extends SQLTag | string = any, Params = any, Type = any> exten
   run: TagFunctionVariable<Params, Type[]>;
   setPred (fn: (p: any) => boolean): In<Prop, Params, Type>;
   notIn: boolean;
-  not(): In<Prop, Params, Type>;
 }
 
 const type = "refql/In";
@@ -19,12 +18,11 @@ const type = "refql/In";
 const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   constructor: In,
   [refqlType]: type,
-  not,
   setPred,
   precedence: 1
 });
 
-function In<Prop extends SQLTag | string, Params, Type>(prop: Prop, run: TagFunctionVariable<Params, Type[]> | Type[]) {
+function In<Prop extends SQLTag | string, Params, Type>(prop: Prop, run: TagFunctionVariable<Params, Type[]> | Type[], notIn = false) {
   let whereIn: In<Prop, Params, Type> = Object.create (prototype);
 
   whereIn.prop = prop;
@@ -33,16 +31,7 @@ function In<Prop extends SQLTag | string, Params, Type>(prop: Prop, run: TagFunc
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params, Type[]>;
 
-  whereIn.notIn = false;
-
-  return whereIn;
-}
-
-function not(this: In) {
-  let whereIn = In (this.prop, this.run);
-
-  whereIn.pred = this.pred;
-  whereIn.notIn = true;
+  whereIn.notIn = notIn;
 
   return whereIn;
 }

@@ -9,7 +9,6 @@ interface IsNull<Prop extends SQLTag | string = any, Params = any> extends RQLNo
   prop: Prop;
   setPred (fn: (p: any) => boolean): IsNull<Prop, Params>;
   notIsNull: boolean;
-  not(): IsNull<Prop, Params>;
 }
 
 const type = "refql/IsNull";
@@ -17,26 +16,16 @@ const type = "refql/IsNull";
 const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
   constructor: IsNull,
   [refqlType]: type,
-  not,
   setPred,
   precedence: 1
 });
 
-function IsNull<Prop extends SQLTag | string, Params>(prop: Prop) {
+function IsNull<Prop extends SQLTag | string, Params>(prop: Prop, notIsNull = false) {
   let isNull: IsNull<Prop, Params> = Object.create (prototype);
 
   isNull.prop = prop;
 
-  isNull.notIsNull = false;
-
-  return isNull;
-}
-
-function not(this: IsNull) {
-  let isNull = IsNull (this.prop);
-
-  isNull.pred = this.pred;
-  isNull.notIsNull = true;
+  isNull.notIsNull = notIsNull;
 
   return isNull;
 }

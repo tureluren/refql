@@ -18,9 +18,13 @@ interface Prop<As extends string = any, Type = any, Params = any> extends RQLNod
   eq<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Prop<As, Type, Params2>;
   notEq: Prop<As, Type, Params>["eq"];
   isNull<Params2 = {}>(): Prop<As, Type, Params2>;
+  notIsNull: Prop<As, Type, Params>["isNull"];
   like<Params2 = {}>(run: TagFunctionVariable<Params2, string> | string): Prop<As, Type, Params2>;
+  notLike: Prop<As, Type, Params>["like"];
   iLike: Prop<As, Type, Params>["like"];
+  notILike: Prop<As, Type, Params>["like"];
   in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): Prop<As, Type, Params2>;
+  notIn: Prop<As, Type, Params>["in"];
   gt<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Prop<As, Type, Params2>;
   gte: Prop<As, Type, Params>["gt"];
   lt: Prop<As, Type, Params>["gt"];
@@ -39,10 +43,14 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   nullable,
   eq: eq (),
   notEq: eq (true),
-  isNull,
-  like: like (),
-  iLike: like (false),
-  in: whereIn,
+  isNull: isNull (),
+  notIsNull: isNull (true),
+  like: like (true),
+  notLike: like (true, true),
+  iLike: like (),
+  notILike: like (false, true),
+  in: whereIn (),
+  notIn: whereIn (true),
   gt: ord (">"),
   gte: ord (">="),
   lt: ord ("<"),
@@ -76,19 +84,21 @@ function eq(notEq?: boolean) {
   };
 }
 
-function isNull(this: Prop) {
-  const prop = Prop (this.as, this.col);
-  const nullOp = IsNull (prop.col || prop.as);
+function isNull(notIsNull?: boolean) {
+  return function (this: Prop) {
+    const prop = Prop (this.as, this.col);
+    const nullOp = IsNull (prop.col || prop.as, notIsNull);
 
-  prop.operations = this.operations.concat (nullOp);
+    prop.operations = this.operations.concat (nullOp);
 
-  return prop;
+    return prop;
+  };
 }
 
-function like(caseSensitive?: boolean) {
+function like(caseSensitive?: boolean, notLike?: boolean) {
   return function (this: Prop, run: any) {
     const prop = Prop (this.as, this.col);
-    const likeOp = Like (prop.col || prop.as, run, caseSensitive);
+    const likeOp = Like (prop.col || prop.as, run, caseSensitive, notLike);
 
     prop.operations = this.operations.concat (likeOp);
 
@@ -96,13 +106,15 @@ function like(caseSensitive?: boolean) {
   };
 }
 
-function whereIn(this: Prop, run: any) {
-  const prop = Prop (this.as, this.col);
-  const inOp = In (prop.col || prop.as, run);
+function whereIn(notIn?: boolean) {
+  return function (this: Prop, run: any) {
+    const prop = Prop (this.as, this.col);
+    const inOp = In (prop.col || prop.as, run, notIn);
 
-  prop.operations = this.operations.concat (inOp);
+    prop.operations = this.operations.concat (inOp);
 
-  return prop;
+    return prop;
+  };
 }
 
 function ord(operator: OrdOperator) {

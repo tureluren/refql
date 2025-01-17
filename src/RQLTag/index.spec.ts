@@ -540,8 +540,8 @@ describe ("RQLTag type", () => {
       "id",
       "firstName",
       "lastName",
-      id.in<{ ids: number[] }> (p => p.ids).not (),
-      id.eq (1).not (),
+      id.notIn<{ ids: number[] }> (p => p.ids),
+      id.notEq (1),
       teamId.in ([1])
     ]);
 
@@ -657,7 +657,7 @@ describe ("RQLTag type", () => {
       lastName,
       Team ([
         name,
-        name.like (`%A%`).not ()
+        name.notLike (`%A%`)
       ]),
       fullName.like (`%Be%`),
       When (() => true, [
@@ -701,7 +701,7 @@ describe ("RQLTag type", () => {
       lastName,
       Team ([
         name,
-        name.iLike (`%A%`).not ()
+        name.notILike (`%A%`)
       ]),
       fullName.iLike (`%Be%`),
       When (() => true, [
@@ -745,7 +745,7 @@ describe ("RQLTag type", () => {
       lastName,
       Team ([
         name,
-        name.isNull ().not ()
+        name.notIsNull ()
       ]),
       fullName.isNull (),
       When (() => true, [
