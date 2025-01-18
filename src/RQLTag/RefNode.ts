@@ -91,7 +91,7 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
 
 function joinLateral(this: RefNode) {
   if (this.info.xTable) {
-    const { tag, next, selectables } = this.tag.interpret ();
+    const { tag, next, selectables, props } = this.tag.interpret ();
     const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info as Required<RefInfo>;
 
     const l1 = sql<RefQLRows>`
@@ -112,12 +112,12 @@ function joinLateral(this: RefNode) {
       lateral (${l2}
     `;
 
-    this.tag.interpreted = { tag: joined, next, selectables, ending: ") refqll2" };
+    this.tag.interpreted = { tag: joined, next, selectables, ending: ") refqll2", props };
 
     return this.tag;
 
   } else {
-    const { tag, next, selectables } = this.tag.interpret ();
+    const { tag, next, selectables, props } = this.tag.interpret ();
     const { rRef, lRef, parent } = this.info;
 
     const l1 = sql<RefQLRows>`
@@ -137,7 +137,7 @@ function joinLateral(this: RefNode) {
       lateral (${l2}
     `;
 
-    this.tag.interpreted = { tag: joined, next, selectables, ending: ") refqll2" };
+    this.tag.interpreted = { props, tag: joined, next, selectables, ending: ") refqll2" };
 
     return this.tag;
   }

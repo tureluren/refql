@@ -4,7 +4,6 @@ import getDefaultQuerier from "../common/defaultQuerier";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import Prop from "../Prop";
-import SQLProp from "../Prop/SQLProp";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
@@ -23,6 +22,7 @@ interface InterpretedRQLTag<Params = any, Output = any> {
   tag: SQLTag<Params, Output>;
   next: Next[];
   selectables: SelectableType[];
+  props: Prop[];
   ending?: string;
 }
 
@@ -53,7 +53,7 @@ let prototype = {
   aggregate
 };
 
-export function createRQLTag<TableId extends string, Params = any, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
+export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
   const tag = ((params = {} as Params, querier?: Querier) => {
     const defaultQuerier = getDefaultQuerier ();
     const convertPromise = getConvertPromise ();
@@ -112,7 +112,8 @@ function interpret(this: RQLTag): InterpretedRQLTag {
   const { nodes, table } = this,
     next = [] as Next[],
     members = [] as (Raw | SQLTag)[],
-    selectables = [] as SelectableType[];
+    selectables = [] as SelectableType[],
+    props = [] as Prop[];
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     members.push (Raw (info.lRef));
@@ -125,12 +126,12 @@ function interpret(this: RQLTag): InterpretedRQLTag {
       members.push (
         Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
       );
-      // replace any
-      selectables.push (...node.operations as any);
-    } else if (SQLProp.isSQLProp (node)) {
-      members.push (sql`
-        (${node.col}) ${Raw (`"${node.as}"`)}`
-      );
+
+      props.push (node);
+    // } else if (SQLProp.isSQLProp (node)) {
+    //   members.push (sql`
+    //     (${node.col}) ${Raw (`"${node.as}"`)}`
+    //   );
     } else if (RefNode.isRefNode (node)) {
       caseOfRef (node.joinLateral (), node.info, node.single);
     } else if (isSelectableType (node)) {
@@ -148,6 +149,7 @@ function interpret(this: RQLTag): InterpretedRQLTag {
   return {
     next,
     tag,
+    props,
     selectables: sortSelectables (selectables)
   };
 }
@@ -157,17 +159,18 @@ const sortSelectables = (selectables: SelectableType[]) =>
 
 function compile(this: RQLTag, params: StringMap) {
   if (!this.interpreted) {
-    let { next, tag, selectables } = this.interpret ();
+    let { next, tag, selectables, props } = this.interpret ();
 
     this.interpreted = {
       tag: tag.concat (sql`where 1 = 1`),
       next,
-      selectables
+      selectables,
+      props
     };
   }
 
   return [
-    ...this.interpreted.tag.compile (params, this.interpreted.selectables, this.table, this.interpreted.ending),
+    ...this.interpreted.tag.compile (params, this.interpreted.props, this.interpreted.selectables, this.table, this.interpreted.ending),
     this.interpreted.next
   ];
 }

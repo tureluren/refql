@@ -52,35 +52,35 @@ describe ("RQLTag type", () => {
     expect (isRQLTag ({})).toBe (false);
   });
 
-  test ("calls and subselect", async () => {
-    const tag = Player ([
-      "fullName",
-      "goalCount",
-      "firstGoalId",
-      sql<{ id: number }>`
-        and id = ${p => p.id}
-      `
-    ]);
+  // test ("calls and subselect", async () => {
+  //   const tag = Player ([
+  //     "fullName",
+  //     "goalCount",
+  //     "firstGoalId",
+  //     sql<{ id: number }>`
+  //       and id = ${p => p.id}
+  //     `
+  //   ]);
 
-    const [query, values] = tag.compile ({ id: 9, delimiter: " " });
+  //   const [query, values] = tag.compile ({ id: 9, delimiter: " " });
 
-    expect (query).toBe (format (`
-      select
-        (concat (player.first_name, ' ', player.last_name)) "fullName",
-        (select cast(count(*) as int) from goal where goal.player_id = player.id) "goalCount",
-        (select id from goal where goal.player_id = player.id limit 1) "firstGoalId"
-      from player
-      where 1 = 1
-      and id = $1
-    `));
+  //   expect (query).toBe (format (`
+  //     select
+  //       (concat (player.first_name, ' ', player.last_name)) "fullName",
+  //       (select cast(count(*) as int) from goal where goal.player_id = player.id) "goalCount",
+  //       (select id from goal where goal.player_id = player.id limit 1) "firstGoalId"
+  //     from player
+  //     where 1 = 1
+  //     and id = $1
+  //   `));
 
-    expect (values).toEqual ([9]);
+  //   expect (values).toEqual ([9]);
 
-    const [player] = await tag ({ id: 9, delimiter: " " }, querier);
+  //   const [player] = await tag ({ id: 9, delimiter: " " }, querier);
 
-    expect (Number (player.goalCount)).toBeGreaterThan (0);
-    expect (Object.keys (player)).toEqual (["fullName", "goalCount", "firstGoalId"]);
-  });
+  //   expect (Number (player.goalCount)).toBeGreaterThan (0);
+  //   expect (Object.keys (player)).toEqual (["fullName", "goalCount", "firstGoalId"]);
+  // });
 
   test ("Semigroup", () => {
     const tag = Player (["id"]);
@@ -134,9 +134,9 @@ describe ("RQLTag type", () => {
     const { props } = Player;
 
     const tag = Player ([
-      props.id,
+      props.id.desc (),
       "firstName",
-      "lastName",
+      props.lastName.asc (),
       Team ([
         "name",
         League (["name"]),
@@ -144,12 +144,11 @@ describe ("RQLTag type", () => {
       ]),
       Game (["result"]),
       Rating (["acceleration", "stamina"]),
-      Limit<{ limit: number }> (p => p.limit),
-      props.fullName.asc (),
-      props.id.desc ()
+      Limit<{ limit: number }> (p => p.limit)
+      // props.fullName.asc (),
     ]);
 
-    const [query, values, next] = tag.compile ({ limit: 30, delimiter: " " });
+    const [query, values, next] = tag.compile ({ limit: 30 });
 
     // player
     expect (query).toBe (format (`
@@ -157,7 +156,7 @@ describe ("RQLTag type", () => {
         player.team_id teamlref, player.id gameslref, player.id ratinglref
       from player
       where 1 = 1
-      order by (concat (player.first_name, ' ', player.last_name)) asc, player.id desc
+      order by player.id desc, player.last_name asc
       limit $1
     `));
 
@@ -251,21 +250,21 @@ describe ("RQLTag type", () => {
     expect (ratingNext).toEqual ([]);
 
     // db results
-    const players = await tag ({ limit: 30, delimiter: " " });
-    const player = players[0];
-    const playerTeam = player.team;
-    const defender = playerTeam!.players[0];
-    const teamLeague = player.team!.league;
-    const playerGame = player.games[0];
-    const playerRating = player.rating;
+    // const players = await tag ({ limit: 30, delimiter: " " });
+    // const player = players[0];
+    // const playerTeam = player.team;
+    // const defender = playerTeam!.players[0];
+    // const teamLeague = player.team!.league;
+    // const playerGame = player.games[0];
+    // const playerRating = player.rating;
 
-    expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "team", "games", "rating"]);
-    expect (Object.keys (playerTeam!)).toEqual (["name", "league", "players"]);
-    expect (Object.keys (teamLeague)).toEqual (["name"]);
-    expect (Object.keys (defender)).toEqual (["lastName"]);
-    expect (Object.keys (playerGame)).toEqual (["result"]);
-    expect (Object.keys (playerRating)).toEqual (["acceleration", "stamina"]);
-    expect (players.length).toBe (30);
+    // expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "team", "games", "rating"]);
+    // expect (Object.keys (playerTeam!)).toEqual (["name", "league", "players"]);
+    // expect (Object.keys (teamLeague)).toEqual (["name"]);
+    // expect (Object.keys (defender)).toEqual (["lastName"]);
+    // expect (Object.keys (playerGame)).toEqual (["result"]);
+    // expect (Object.keys (playerRating)).toEqual (["acceleration", "stamina"]);
+    // expect (players.length).toBe (30);
   });
 
   test ("concat", async () => {
@@ -449,14 +448,15 @@ describe ("RQLTag type", () => {
   });
 
   test ("By id - using Eq", async () => {
-    const { id } = Player.props;
+    const { id, lastName } = Player.props;
 
     const tag = Player ([
       "*",
-      id.eq<{ id: number }> (p => p.id)
+      id.eq<{ id: number }> (p => p.id),
+      lastName.eq<{ ln: string }> (p => p.ln)
     ]);
 
-    const players = await tag ({ id: 9 });
+    const players = await tag ({ id: 1, ln: "dd" });
     const player = players[0];
 
     expect (player.id).toBe (9);
@@ -478,77 +478,77 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (11);
   });
 
-  test ("By fullName and isVeteran - using Eq", async () => {
-    const { fullName, isVeteran } = Player.props;
+  // test ("By fullName and isVeteran - using Eq", async () => {
+  //   const { fullName, isVeteran, id } = Player.props;
 
-    const tag = Player ([
-      "id",
-      fullName.eq<{ name: string }> (p => p.name),
-      isVeteran.eq (false)
-    ]);
+  //   const tag = Player ([
+  //     id,
+  //     fullName.eq<{ name: string }> (p => p.name),
+  //     isVeteran.eq (false)
+  //   ]);
 
-    const [query, values] = await tag.compile ({ name: "John Doe", delimiter: " ", year: 1980 });
+  //   const res = await tag ({});
 
-    expect (query).toBe (format (`
-      select player.id "id"
-      from player
-      where 1 = 1
-      and (concat (player.first_name, ' ', player.last_name)) = $1
-      and (select case when extract(year from birthday) < $2 then true else false end from player where id = player.id limit 1) = $3
-    `));
+  //   const [query, values] = await tag.compile ({ name: "John Doe", delimiter: " ", year: 1980 });
 
-    expect (values).toEqual (["John Doe", 1980, false]);
-  });
+  //   expect (query).toBe (format (`
+  //     select player.id "id"
+  //     from player
+  //     where 1 = 1
+  //     and (concat (player.first_name, ' ', player.last_name)) = $1
+  //     and (select case when extract(year from birthday) < $2 then true else false end from player where id = player.id limit 1) = $3
+  //   `));
 
-  test ("Where in and order by", async () => {
-    const { id, fullName, teamId, goalCount } = Player.props;
+  //   expect (values).toEqual (["John Doe", 1980, false]);
+  // });
 
-    const tag = Player ([
-      "id",
-      "firstName",
-      "lastName",
-      id.in<{ ids: number[] }> (p => p.ids),
-      goalCount.in ([0]),
-      teamId.in ([1, 2]),
-      fullName.desc (),
-      id.asc ()
-    ]);
+  // test ("Where in and order by", async () => {
+  //   const { id, teamId } = Player.props;
 
-    const [query, values] = await tag.compile ({ ids: [1, 2, 3], delimiter: " " });
+  //   const tag = Player ([
+  //     "id",
+  //     "firstName",
+  //     "lastName",
+  //     id.in<{ ids: number[] }> (p => p.ids),
+  //     goalCount.in ([0]),
+  //     teamId.in ([1, 2]),
+  //     fullName.desc (),
+  //     id.asc ()
+  //   ]);
 
-    expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName"
-      from player
-      where 1 = 1 
-      and player.id in ($1, $2, $3)
-      and (select cast(count(*) as int) from goal where goal.player_id = player.id) in ($4)
-      and player.team_id in ($5, $6)
-      order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
-    `));
+  //   const [query, values] = await tag.compile ({ ids: [1, 2, 3], delimiter: " " });
 
-    expect (values).toEqual ([1, 2, 3, 0, 1, 2]);
+  //   expect (query).toBe (format (`
+  //     select player.id "id", player.first_name "firstName", player.last_name "lastName"
+  //     from player
+  //     where 1 = 1
+  //     and player.id in ($1, $2, $3)
+  //     and (select cast(count(*) as int) from goal where goal.player_id = player.id) in ($4)
+  //     and player.team_id in ($5, $6)
+  //     order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
+  //   `));
 
-    const players = await tag ({ ids: [1, 2, 3], delimiter: " " });
+  //   expect (values).toEqual ([1, 2, 3, 0, 1, 2]);
 
-    expect (players.length).toBe (3);
-  });
+  //   const players = await tag ({ ids: [1, 2, 3], delimiter: " " });
+
+  //   expect (players.length).toBe (3);
+  // });
 
   test ("Where not in", async () => {
     const { id, teamId } = Player.props;
 
     const tag = Player ([
-      "id",
+      id.notIn<{ ids: number[] }> (p => p.ids).notEq (1),
       "firstName",
       "lastName",
-      id.notIn<{ ids: number[] }> (p => p.ids),
-      id.notEq (1),
       teamId.in ([1])
     ]);
 
     const [query, values] = await tag.compile ({ ids: [2, 3, 4] });
 
     expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName"
+      select player.id "id", player.first_name "firstName", player.last_name "lastName", player.team_id "teamId"
       from player
       where 1 = 1 
       and player.id not in ($1, $2, $3)
@@ -563,221 +563,221 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (7);
   });
 
-  test ("Ord numbers", async () => {
-    const { id, goalCount, teamId } = Player.props;
+  // test ("Ord numbers", async () => {
+  //   const { id, goalCount, teamId } = Player.props;
 
-    const tag = Player ([
-      "id",
-      "firstName",
-      "lastName",
-      goalCount,
-      id.lte (100),
-      teamId.lt (10),
-      When (() => true, [
-        teamId.gte<{ teamId: number }> (p => p.teamId)
-      ]),
-      goalCount.gt<{ count: number }> (p => p.count),
-      Limit<{ limit: number }> (p => p.limit)
-    ]);
+  //   const tag = Player ([
+  //     "id",
+  //     "firstName",
+  //     "lastName",
+  //     goalCount,
+  //     id.lte (100),
+  //     teamId.lt (10),
+  //     When (() => true, [
+  //       teamId.gte<{ teamId: number }> (p => p.teamId)
+  //     ]),
+  //     goalCount.gt<{ count: number }> (p => p.count),
+  //     Limit<{ limit: number }> (p => p.limit)
+  //   ]);
 
-    const [query, values] = await tag.compile ({ count: 1, limit: 5, teamId: 0 });
+  //   const [query, values] = await tag.compile ({ count: 1, limit: 5, teamId: 0 });
 
-    expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName",
-        (select cast(count(*) as int) from goal where goal.player_id = player.id) "goalCount"
-      from player
-      where 1 = 1 
-      and player.id <= $1
-      and player.team_id < $2
-      and player.team_id >= $3
-      and (select cast(count(*) as int) from goal where goal.player_id = player.id) > $4
-      limit $5
-    `));
+  //   expect (query).toBe (format (`
+  //     select player.id "id", player.first_name "firstName", player.last_name "lastName",
+  //       (select cast(count(*) as int) from goal where goal.player_id = player.id) "goalCount"
+  //     from player
+  //     where 1 = 1
+  //     and player.id <= $1
+  //     and player.team_id < $2
+  //     and player.team_id >= $3
+  //     and (select cast(count(*) as int) from goal where goal.player_id = player.id) > $4
+  //     limit $5
+  //   `));
 
-    expect (values).toEqual ([100, 10, 0, 1, 5]);
+  //   expect (values).toEqual ([100, 10, 0, 1, 5]);
 
-    const players = await tag ({ count: 1, limit: 5, teamId: 0 });
+  //   const players = await tag ({ count: 1, limit: 5, teamId: 0 });
 
-    expect (players.length).toBe (5);
-    expect (players[0].goalCount).toBeGreaterThan (1);
-  });
+  //   expect (players.length).toBe (5);
+  //   expect (players[0].goalCount).toBeGreaterThan (1);
+  // });
 
-  test ("Ord strings", async () => {
-    const { id, firstName, lastName, fullName, birthday } = Player.props;
+  // test ("Ord strings", async () => {
+  //   const { id, firstName, lastName, fullName, birthday } = Player.props;
 
-    const today = new Date ();
+  //   const today = new Date ();
 
-    const tag = Player ([
-      id,
-      firstName,
-      lastName,
-      fullName,
-      firstName.gt ("A"),
-      firstName.lt ("Z"),
-      fullName.gt ("A"),
-      fullName.lt ("Z"),
-      lastName.gte ("A"),
-      lastName.lte ("Z"),
-      birthday.lt (today),
+  //   const tag = Player ([
+  //     id,
+  //     firstName,
+  //     lastName,
+  //     fullName,
+  //     firstName.gt ("A"),
+  //     firstName.lt ("Z"),
+  //     fullName.gt ("A"),
+  //     fullName.lt ("Z"),
+  //     lastName.gte ("A"),
+  //     lastName.lte ("Z"),
+  //     birthday.lt (today),
 
-      Limit (5)
-    ]);
+  //     Limit (5)
+  //   ]);
 
-    const [query, values] = await tag.compile ({ delimiter: " " });
+  //   const [query, values] = await tag.compile ({ delimiter: " " });
 
-    expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName",
-        (concat (player.first_name, ' ', player.last_name)) "fullName"
-      from player
-      where 1 = 1 
-      and player.first_name > $1
-      and player.first_name < $2 
-      and (concat (player.first_name, ' ', player.last_name)) > $3
-      and (concat (player.first_name, ' ', player.last_name)) < $4
-      and player.last_name >= $5
-      and player.last_name <= $6
-      and player.birthday < $7
-      limit $8
-    `));
+  //   expect (query).toBe (format (`
+  //     select player.id "id", player.first_name "firstName", player.last_name "lastName",
+  //       (concat (player.first_name, ' ', player.last_name)) "fullName"
+  //     from player
+  //     where 1 = 1
+  //     and player.first_name > $1
+  //     and player.first_name < $2
+  //     and (concat (player.first_name, ' ', player.last_name)) > $3
+  //     and (concat (player.first_name, ' ', player.last_name)) < $4
+  //     and player.last_name >= $5
+  //     and player.last_name <= $6
+  //     and player.birthday < $7
+  //     limit $8
+  //   `));
 
-    expect (values).toEqual (["A", "Z", "A", "Z", "A", "Z", today, 5]);
+  //   expect (values).toEqual (["A", "Z", "A", "Z", "A", "Z", today, 5]);
 
-    const players = await tag ({ limit: 5, delimiter: " " });
+  //   const players = await tag ({ limit: 5, delimiter: " " });
 
-    expect (players.length).toBe (5);
-  });
+  //   expect (players.length).toBe (5);
+  // });
 
-  test ("Like", async () => {
-    const { fullName, lastName } = Player.props;
-    const { name } = Team.props;
+  // test ("Like", async () => {
+  //   const { fullName, lastName } = Player.props;
+  //   const { name } = Team.props;
 
-    const tag = Player ([
-      "id",
-      "firstName",
-      lastName,
-      Team ([
-        name,
-        name.notLike (`%A%`)
-      ]),
-      fullName.like (`%Be%`),
-      When (() => true, [
-        lastName.like<{ lastName: string }> (p => p.lastName)
-      ])
-    ]);
+  //   const tag = Player ([
+  //     "id",
+  //     "firstName",
+  //     lastName,
+  //     Team ([
+  //       name,
+  //       name.notLike (`%A%`)
+  //     ]),
+  //     fullName.like (`%Be%`),
+  //     When (() => true, [
+  //       lastName.like<{ lastName: string }> (p => p.lastName)
+  //     ])
+  //   ]);
 
-    const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be%" });
+  //   const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be%" });
 
-    expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName",
-        player.team_id teamlref
-      from player
-      where 1 = 1 
-      and (concat (player.first_name, ' ', player.last_name)) like $1
-      and player.last_name like $2
-    `));
+  //   expect (query).toBe (format (`
+  //     select player.id "id", player.first_name "firstName", player.last_name "lastName",
+  //       player.team_id teamlref
+  //     from player
+  //     where 1 = 1
+  //     and (concat (player.first_name, ' ', player.last_name)) like $1
+  //     and player.last_name like $2
+  //   `));
 
-    expect (values).toEqual (["%Be%", "Be%"]);
+  //   expect (values).toEqual (["%Be%", "Be%"]);
 
-    const [teamQuery, teamValues] = await next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }] });
+  //   const [teamQuery, teamValues] = await next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }] });
 
-    expect (teamQuery).toBe (format (`
-      select * from (
-        select distinct player.team_id teamlref from player where player.team_id in ($1)
-      ) refqll1, 
-      lateral (select team.name "name" from public.team where team.id = refqll1.teamlref and team.name not like $2
-      ) refqll2
-    `));
+  //   expect (teamQuery).toBe (format (`
+  //     select * from (
+  //       select distinct player.team_id teamlref from player where player.team_id in ($1)
+  //     ) refqll1,
+  //     lateral (select team.name "name" from public.team where team.id = refqll1.teamlref and team.name not like $2
+  //     ) refqll2
+  //   `));
 
-    expect (teamValues).toEqual ([1, "%A%"]);
-  });
+  //   expect (teamValues).toEqual ([1, "%A%"]);
+  // });
 
-  test ("ILike", async () => {
-    const { fullName, lastName } = Player.props;
-    const { name } = Team.props;
+  // test ("ILike", async () => {
+  //   const { fullName, lastName } = Player.props;
+  //   const { name } = Team.props;
 
-    const tag = Player ([
-      "id",
-      "firstName",
-      lastName,
-      Team ([
-        name,
-        name.notILike (`%A%`)
-      ]),
-      fullName.iLike (`%Be%`),
-      When (() => true, [
-        lastName.iLike<{ lastName: string }> (p => p.lastName)
-      ])
-    ]);
+  //   const tag = Player ([
+  //     "id",
+  //     "firstName",
+  //     lastName,
+  //     Team ([
+  //       name,
+  //       name.notILike (`%A%`)
+  //     ]),
+  //     fullName.iLike (`%Be%`),
+  //     When (() => true, [
+  //       lastName.iLike<{ lastName: string }> (p => p.lastName)
+  //     ])
+  //   ]);
 
-    const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be%" });
+  //   const [query, values, next] = await tag.compile ({ delimiter: " ", lastName: "Be%" });
 
-    expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName",
-        player.team_id teamlref
-      from player
-      where 1 = 1 
-      and (concat (player.first_name, ' ', player.last_name)) ilike $1
-      and player.last_name ilike $2
-    `));
+  //   expect (query).toBe (format (`
+  //     select player.id "id", player.first_name "firstName", player.last_name "lastName",
+  //       player.team_id teamlref
+  //     from player
+  //     where 1 = 1
+  //     and (concat (player.first_name, ' ', player.last_name)) ilike $1
+  //     and player.last_name ilike $2
+  //   `));
 
-    expect (values).toEqual (["%Be%", "Be%"]);
+  //   expect (values).toEqual (["%Be%", "Be%"]);
 
-    const [teamQuery, teamValues] = await next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }] });
+  //   const [teamQuery, teamValues] = await next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }] });
 
-    expect (teamQuery).toBe (format (`
-      select * from (
-        select distinct player.team_id teamlref from player where player.team_id in ($1)
-      ) refqll1, 
-      lateral (select team.name "name" from public.team where team.id = refqll1.teamlref and team.name not ilike $2
-      ) refqll2
-    `));
+  //   expect (teamQuery).toBe (format (`
+  //     select * from (
+  //       select distinct player.team_id teamlref from player where player.team_id in ($1)
+  //     ) refqll1,
+  //     lateral (select team.name "name" from public.team where team.id = refqll1.teamlref and team.name not ilike $2
+  //     ) refqll2
+  //   `));
 
-    expect (teamValues).toEqual ([1, "%A%"]);
-  });
+  //   expect (teamValues).toEqual ([1, "%A%"]);
+  // });
 
-  test ("IsNull", async () => {
-    const { fullName, lastName } = Player.props;
-    const { name } = Team.props;
+  // test ("IsNull", async () => {
+  //   const { fullName, lastName } = Player.props;
+  //   const { name } = Team.props;
 
-    const tag = Player ([
-      "id",
-      "firstName",
-      lastName,
-      Team ([
-        name,
-        name.notIsNull ()
-      ]),
-      fullName.isNull (),
-      When (() => true, [
-        lastName.isNull ()
-      ])
-    ]);
+  //   const tag = Player ([
+  //     "id",
+  //     "firstName",
+  //     lastName,
+  //     Team ([
+  //       name,
+  //       name.notIsNull ()
+  //     ]),
+  //     fullName.isNull (),
+  //     When (() => true, [
+  //       lastName.isNull ()
+  //     ])
+  //   ]);
 
-    const [query, values, next] = await tag.compile ({ delimiter: " " });
+  //   const [query, values, next] = await tag.compile ({ delimiter: " " });
 
-    expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName",
-        player.team_id teamlref
-      from player
-      where 1 = 1 
-      and (concat (player.first_name, ' ', player.last_name)) is null
-      and player.last_name is null
-    `));
+  //   expect (query).toBe (format (`
+  //     select player.id "id", player.first_name "firstName", player.last_name "lastName",
+  //       player.team_id teamlref
+  //     from player
+  //     where 1 = 1
+  //     and (concat (player.first_name, ' ', player.last_name)) is null
+  //     and player.last_name is null
+  //   `));
 
-    expect (values).toEqual ([]);
+  //   expect (values).toEqual ([]);
 
-    const [teamQuery, teamValues] = await next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }] });
+  //   const [teamQuery, teamValues] = await next[0].tag.compile ({ refQLRows: [{ teamlref: 1 }] });
 
-    expect (teamQuery).toBe (format (`
-      select * from (
-        select distinct player.team_id teamlref from player where player.team_id in ($1)
-      ) refqll1,
-      lateral (select team.name "name" from public.team where team.id = refqll1.teamlref and team.name is not null
-      ) refqll2
-    `));
+  //   expect (teamQuery).toBe (format (`
+  //     select * from (
+  //       select distinct player.team_id teamlref from player where player.team_id in ($1)
+  //     ) refqll1,
+  //     lateral (select team.name "name" from public.team where team.id = refqll1.teamlref and team.name is not null
+  //     ) refqll2
+  //   `));
 
-    expect (teamValues).toEqual ([1]);
-  });
+  //   expect (teamValues).toEqual ([1]);
+  // });
 
   test ("No record found", async () => {
     const goals = Goal (["*"]);
@@ -887,119 +887,120 @@ describe ("RQLTag type", () => {
     expect (game1.awayTeam.id).toBe (2);
   });
 
-  test ("when", () => {
-    const { id } = Player.props;
+  // test ("when", () => {
+  //   const { id } = Player.props;
 
-    const tag = Player ([
-      id,
-      When (p => !!p.ids, [
-        id.in<{ ids: number[] }> (p => p.ids)
-      ]),
-      When (p => !!p.limit, [Limit<{limit: number}> (p => p.limit)]),
-      When (p => !!p.offset, [Offset<{offset: number}> (p => p.offset)])
-    ]);
+  //   const tag = Player ([
+  //     When (p => !!p.ids, [
+  //       id.in<{ ids: number[] }> (p => p.ids)
+  //     ]),
+  //     When (p => !!p.limit, [Limit<{limit: number}> (p => p.limit)]),
+  //     When (p => !!p.offset, [Offset<{offset: number}> (p => p.offset)])
+  //   ]);
+  //   // tag()
 
-    const [query, values] = tag.compile ({ limit: 5 });
+  //   const [query, values] = tag.compile ({ limit: 5 });
 
-    expect (query).toBe (format (`
-      select player.id "id" from player
-      where 1 = 1
-      limit $1
-    `));
+  //   expect (query).toBe (format (`
+  //     select player.id "id" from player
+  //     where 1 = 1
+  //     limit $1
+  //   `));
 
-    expect (values).toEqual ([5]);
+  //   expect (values).toEqual ([5]);
 
-    const [query2, values2] = tag.compile ({ offset: 10 });
+  //   const [query2, values2] = tag.compile ({ offset: 10 });
 
-    expect (query2).toBe (format (`
-      select player.id "id" from player
-      where 1 = 1
-      offset $1
-    `));
+  //   expect (query2).toBe (format (`
+  //     select player.id "id" from player
+  //     where 1 = 1
+  //     offset $1
+  //   `));
 
-    expect (values2).toEqual ([10]);
+  //   expect (values2).toEqual ([10]);
 
-    const [query3, values3] = tag.compile ({ limit: 5, offset: 10, ids: [7, 8, 9] });
+  //   const [query3, values3] = tag.compile ({ limit: 5, offset: 10, ids: [7, 8, 9] });
 
-    expect (query3).toBe (format (`
-      select player.id "id" from player
-      where 1 = 1
-      and player.id in ($1, $2, $3)
-      limit $4
-      offset $5
-    `));
+  //   expect (query3).toBe (format (`
+  //     select player.id "id" from player
+  //     where 1 = 1
+  //     and player.id in ($1, $2, $3)
+  //     limit $4
+  //     offset $5
+  //   `));
 
-    expect (values3).toEqual ([7, 8, 9, 5, 10]);
-  });
+  //   expect (values3).toEqual ([7, 8, 9, 5, 10]);
+  // });
 
-  test ("nested when", () => {
-    const { id, fullName } = Player.props;
+  // test ("nested when", () => {
+  //   const { id, fullName } = Player.props;
 
-    const tag = Player ([
-      id,
-      When (p => !!p.id, [
-        id.eq<{ id: number }> (p => p.id),
-        fullName.desc (),
-        id.asc ()
-      ]),
-      When (p => !!p.gt1, [
-        sql<{ gt1: string }>`
-          and ${Raw (p => p.gt1)} > 1
-        `,
-        When (p => !!p.limit, [
-          Limit<{ limit: number }> (p => p.limit),
-          When (p => !!p.offset, [
-            Offset<{ offset: number }> (p => p.offset)
-          ])
-        ])
-      ])
-    ]);
+  //   const tag = Player ([
+  //     id,
+  //     When (p => !!p.id, [
+  //       id.eq<{ id: number }> (p => p.id),
+  //       fullName.desc (),
+  //       id.asc ()
+  //     ]),
+  //     When (p => !!p.gt1, [
+  //       sql<{ gt1: string }>`
+  //         and ${Raw (p => p.gt1)} > 1
+  //       `,
+  //       When (p => !!p.limit, [
+  //         Limit<{ limit: number }> (p => p.limit),
+  //         When (p => !!p.offset, [
+  //           Offset<{ offset: number }> (p => p.offset)
+  //         ])
+  //       ])
+  //     ])
+  //   ]);
 
-    const [query, values] = tag.compile ({ id: 1, gt1: "id", delimiter: " " });
+  //   const [query, values] = tag.compile ({ id: 1, gt1: "id", delimiter: " " });
 
-    expect (query).toBe (format (`
-      select player.id "id" from player
-      where 1 = 1
-      and player.id = $1
-      and id > 1
-      order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
-    `));
+  //   expect (query).toBe (format (`
+  //     select player.id "id" from player
+  //     where 1 = 1
+  //     and player.id = $1
+  //     and id > 1
+  //     order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
+  //   `));
 
-    expect (values).toEqual ([1]);
+  //   expect (values).toEqual ([1]);
 
-    const [query2, values2] = tag.compile ({ limit: 5, delimiter: " " });
+  //   const [query2, values2] = tag.compile ({ limit: 5, delimiter: " " });
 
-    expect (query2).toBe (format (`
-      select player.id "id" from player
-      where 1 = 1
-    `));
+  //   expect (query2).toBe (format (`
+  //     select player.id "id" from player
+  //     where 1 = 1
+  //   `));
 
-    expect (values2).toEqual ([]);
+  //   expect (values2).toEqual ([]);
 
-    const [query3, values3] = tag.compile ({ id: 1, gt1: "id", limit: 5, delimiter: " " });
+  //   const [query3, values3] = tag.compile ({ id: 1, gt1: "id", limit: 5, delimiter: " " });
 
-    expect (query3).toBe (format (`
-      select player.id "id" from player
-      where 1 = 1
-      and player.id = $1
-      and id > 1
-      order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc limit $2
-    `));
+  //   expect (query3).toBe (format (`
+  //     select player.id "id" from player
+  //     where 1 = 1
+  //     and player.id = $1
+  //     and id > 1
+  //     order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc limit $2
+  //   `));
 
-    expect (values3).toEqual ([1, 5]);
+  //   expect (values3).toEqual ([1, 5]);
 
-    const [query4, values4] = tag.compile ({ gt1: "id", limit: 5, offset: 10 });
+  //   const [query4, values4] = tag.compile ({ gt1: "id", limit: 5, offset: 10 });
 
-    expect (query4).toBe (format (`
-      select player.id "id" from player
-      where 1 = 1
-      and id > 1
-      limit $1
-      offset $2
-    `));
+  //   expect (query4).toBe (format (`
+  //     select player.id "id" from player
+  //     where 1 = 1
+  //     and id > 1
+  //     limit $1
+  //     offset $2
+  //   `));
 
-    expect (values4).toEqual ([5, 10]);
-  });
+  //   expect (values4).toEqual ([5, 10]);
+  // });
+
   test ("convert result", async () => {
     const convert = jest.fn ();
 

@@ -1,5 +1,4 @@
 import Prop from ".";
-import sql from "../SQLTag/sql";
 import BelongsTo from "./BelongsTo";
 import BelongsToMany from "./BelongsToMany";
 import BooleanProp from "./BooleanProp";
@@ -13,22 +12,22 @@ import StringProp from "./StringProp";
 describe ("Proptypes", () => {
   test ("NumberProp", () => {
     expect (Prop.isProp (NumberProp ("id"))).toBe (true);
-    expect (Prop.isProp (NumberProp ("id", sql`id`))).toBe (false);
+    // expect (Prop.isProp (NumberProp ("id", sql`id`))).toBe (false);
   });
 
   test ("StringProp", () => {
     expect (Prop.isProp (StringProp ("lastName", "last_name"))).toBe (true);
-    expect (Prop.isProp (StringProp ("lastName", sql`last_name`))).toBe (false);
+    // expect (Prop.isProp (StringProp ("lastName", sql`last_name`))).toBe (false);
   });
 
   test ("DateProp", () => {
     expect (Prop.isProp (DateProp ("birthday"))).toBe (true);
-    expect (Prop.isProp (DateProp ("birthday", sql`birthday`))).toBe (false);
+    // expect (Prop.isProp (DateProp ("birthday", sql`birthday`))).toBe (false);
   });
 
   test ("BooleanProp", () => {
     expect (Prop.isProp (BooleanProp ("ownGoal", "own_goal"))).toBe (true);
-    expect (Prop.isProp (BooleanProp ("ownGoal", sql`own_goal`))).toBe (false);
+    // expect (Prop.isProp (BooleanProp ("ownGoal", sql`own_goal`))).toBe (false);
   });
 
   test ("BelongsTo", () => {

@@ -1,43 +1,29 @@
 import { refqlType } from "../common/consts";
-import { SQLTag } from "../SQLTag";
 import Operation from "../Table/Operation";
-import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface OrderBy<Prop extends SQLTag | string = any, Params = any> extends RQLNode, SelectableType, Operation<Params> {
+interface OrderBy<Params = any> extends RQLNode, Operation<Params> {
   params: Params;
-  prop: Prop;
   descending: boolean;
-  setPred (fn: (p: any) => boolean): OrderBy<Prop, Params>;
 }
 
 const type = "refql/OrderBy";
 
-const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: OrderBy,
   [refqlType]: type,
-  setPred,
   precedence: 2
 });
 
-function OrderBy<Prop extends SQLTag | string, Params = any>(prop: Prop, descending: boolean = false) {
-  let orderBy: OrderBy<Prop, Params> = Object.create (prototype);
+function OrderBy<Params = any>(descending: boolean = false) {
+  let orderBy: OrderBy<Params> = Object.create (prototype);
 
-  orderBy.prop = prop;
   orderBy.descending = descending;
 
   return orderBy;
 }
 
-function setPred(this: OrderBy, fn: (p: any) => boolean) {
-  let orderBy = OrderBy (this.prop, this.descending);
-
-  orderBy.pred = fn;
-
-  return orderBy;
-}
-
-OrderBy.isOrderBy = function <Prop extends SQLTag | string = any, Params = any> (x: any): x is OrderBy<Prop, Params> {
+OrderBy.isOrderBy = function <Params = any> (x: any): x is OrderBy<Params> {
   return x != null && x[refqlType] === type;
 };
 

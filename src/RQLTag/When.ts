@@ -2,6 +2,7 @@ import { refqlType } from "../common/consts";
 import { Params, TagFunctionVariable } from "../common/types";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 import SelectableType, { isSelectableType, selectableTypePrototype } from "../Table/SelectableType";
+// WHEN ZOU EIG GWN EEN pred en een RQLTag moeten krijgen, of nie ? (want refnodes zijn nie mogelijk)
 
 // still A selectable type ?
 interface When<Components extends SelectableType[] = any[]> extends RQLNode, SelectableType {

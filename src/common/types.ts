@@ -1,9 +1,7 @@
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
-import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
 import RefField from "../RQLTag/RefField";
-import { SQLTag } from "../SQLTag";
 import SQLNode from "../SQLTag/SQLNode";
 import Table from "../Table";
 import SelectableType from "../Table/SelectableType";
@@ -43,10 +41,6 @@ export type Only<T, S> = {
 
 export type OnlyProps<T> = Only<T, Prop>;
 
-export type OnlySQLProps<T> = Only<T, SQLProp>;
-
-export type OnlyPropsOrSQLProps<T> = Only<T, Prop | SQLProp>;
-
 export type OnlyRefProps<T> = Only<T, RefProp<any, any, any, true | false>>;
 
 export type TableIdMap<T extends { [key: string]: { tableId: string }}> = {
@@ -80,17 +74,15 @@ export type AllSign = "*";
 
 export type Selectable<T> =
   | AllSign
-  | keyof OnlyPropsOrSQLProps<T>
-  | OnlyPropsOrSQLProps<T>[keyof OnlyPropsOrSQLProps<T>]
+  | keyof OnlyProps<T>
+  | OnlyProps<T>[keyof OnlyProps<T>]
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
   | SelectableType;
 
-export type ParamsType<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
+export type ParamsType<S, T extends Selectable<S>[]> = T extends (infer U)[]
   ? (U extends { params: any }
     ? U
-    : U extends keyof SQLProps
-      ? SQLProps[U]
-      : { params: {}})[]
+    : { params: {}})[]
   : {params: {}};
 
 export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<ParamsType<S, T>[number]["params"]>;
@@ -101,7 +93,7 @@ export type FinalComponents<Props, Components extends Selectable<Props>[]> = IsA
   ? [keyof OnlyProps<Props>, ...Components]
   : Components;
 
-export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLProps<S> = OnlyPropsOrSQLProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
+export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
   FinalComponents<S, T> extends (infer U)[]
   ? (U extends keyof Props
     ? {as: U; type: Props[U]["type"]}
