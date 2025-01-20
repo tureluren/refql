@@ -1,11 +1,10 @@
 import { refqlType } from "../common/consts";
-import { TagFunctionVariable } from "../common/types";
+import { InterpretedString, TagFunctionVariable } from "../common/types";
 import Operation from "../Table/Operation";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface In<Params = any, Type = any> extends RQLNode, Operation<Params> {
+interface In<Params = any, Type = any> extends RQLNode, Operation<Params, Type[]> {
   params: Params;
-  run: TagFunctionVariable<Params, Type[]>;
   notIn: boolean;
 }
 
@@ -14,7 +13,8 @@ const type = "refql/In";
 const prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: In,
   [refqlType]: type,
-  precedence: 1
+  precedence: 1,
+  interpret
 });
 
 function In<Params, Type>(run: TagFunctionVariable<Params, Type[]> | Type[], notIn = false) {
@@ -27,6 +27,27 @@ function In<Params, Type>(run: TagFunctionVariable<Params, Type[]> | Type[], not
   whereIn.notIn = notIn;
 
   return whereIn;
+}
+
+function interpret <Params = any>(this: In, pred: TagFunctionVariable<Params, boolean>) {
+  const { notIn, run } = this;
+  const equality = notIn ? "not in" : "in";
+
+  const beginning: InterpretedString<Params> = { pred, run: () => [" and ", 0] };
+
+  const ending: InterpretedString<Params> = {
+    pred,
+    run: (p, i) => {
+      const xs = run (p);
+      return [
+        ` ${equality} (${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
+        xs.length
+      ];
+    }
+  };
+
+
+  return [beginning, ending];
 }
 
 In.isIn = function <Params = any, Type = any> (x: any): x is In<Params, Type> {

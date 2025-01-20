@@ -3,7 +3,7 @@ import { getConvertPromise } from "../common/convertPromise";
 import getGlobalQuerier from "../common/defaultQuerier";
 import isEmptyTag from "../common/isEmptyTag";
 import truePred from "../common/truePred";
-import { Querier, StringMap, TagFunctionVariable } from "../common/types";
+import { InterpretedString, Querier, StringMap, TagFunctionVariable } from "../common/types";
 import Prop from "../Prop";
 import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
@@ -23,10 +23,6 @@ import Values from "./Values";
 import Values2D from "./Values2D";
 import When2 from "./When2";
 
-type InterpretedString<Params = any> = {
-  pred: TagFunctionVariable<Params, boolean>;
-  run: (params: Params, idx: number) => [string, number];
-};
 
 type InterpretedValue<Params = any> = {
   pred: TagFunctionVariable<Params, boolean>;
@@ -128,23 +124,21 @@ function interpret(this: SQLTag, props: Prop[] = [], selectables: SelectableType
     offsets = [] as InterpretedString[],
     values = [] as InterpretedValue[];
 
-
   for (const [idx, node] of this.nodes.entries ()) {
     if (Raw.isRaw (node)) {
+      console.log (node);
+
       const { run } = node;
-      const nextNode = this.nodes[idx + 1];
 
       strings.push ({
         pred: truePred,
         run: (p, _i) => {
           let s = run (p);
-          if (When2.isWhen2 (nextNode) && !nextNode.pred (p)) {
-            s = s.trimEnd ();
-          }
           return [s, 0];
         }
       });
     } else if (Value.isValue (node)) {
+      console.log ("IEPE");
       const { run } = node;
 
       values.push ({
@@ -214,41 +208,44 @@ function interpret(this: SQLTag, props: Prop[] = [], selectables: SelectableType
     const { pred, col, as, operations } = p;
     const prop = col || as;
 
+    let columnStrings: InterpretedString[] = [{ pred, run: () => [`${table?.name}.${prop}`, 0] }];
+    let columnValues: InterpretedValue[] = [];
+
+    if (isSQLTag (prop)) {
+      // interpredWithPRed moet 1 string retourneren en 1 value array (ops niet gebruiken in sql``)
+      const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
+      columnStrings = [{ pred, run: () => ["(", 0] }, ...strings2, { pred, run: () => [")", 0] }];
+      columnValues = values2;
+    }
+
+    // move to rql tag
     for (const op of operations) {
-      if (Eq.isEq (op)) {
-        const { run, notEq } = op;
-        const equality = notEq ? "!=" : "=";
+      const [beginning, ending] = op.interpret (pred);
 
-        if (isSQLTag (prop)) {
-          strings.push ({
-            pred,
-            run: () => [" and (", 0]
-          });
+      if (OrderBy.isOrderBy (op)) {
+        orderBies.push (
+          beginning,
+          ...columnStrings,
+          ending
+        );
 
-          const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
+        values.push (
+          ...columnValues
+        );
+      } else {
+        strings.push (
+          beginning,
+          ...columnStrings,
+          ending
+        );
 
-          strings.push (...strings2);
-          values.push (...values2);
+        values.push (
+          ...columnValues,
+          { pred, run: op.run }
+        );
+      }
 
-          strings.push ({
-            pred,
-            run: (_p, i) => [`) ${equality} $${i + 1}`, 1]
-          });
-
-        } else {
-          strings.push ({
-            pred,
-            run: (_p, i) => {
-              return [` and ${table?.name}.${prop} ${equality} $${i + 1}`, 1];
-            }
-          });
-        }
-
-        values.push ({
-          pred,
-          run
-        });
-      } else if (IsNull.isNull (op)) {
+      if (IsNull.isNull (op)) {
         const { notIsNull } = op;
         const equality = notIsNull ? "is not null" : "is null";
 
@@ -343,84 +340,12 @@ function interpret(this: SQLTag, props: Prop[] = [], selectables: SelectableType
           pred,
           run
         });
-      } else if (In.isIn (op)) {
-        const { run, notIn } = op;
-        const equality = notIn ? "not in" : "in";
-
-        if (isSQLTag (prop)) {
-          strings.push ({
-            pred,
-            run: () => [" and (", 0]
-          });
-
-          const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
-
-          strings.push (...strings2);
-          values.push (...values2);
-
-          strings.push ({
-            pred,
-            run: (p, i) => {
-              const xs = run (p);
-              return [
-                `) ${equality} (${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
-                xs.length
-              ];
-            }
-          });
-
-        } else {
-
-          strings.push ({
-            pred,
-            run: (p, i) => {
-              const xs = run (p);
-              return [
-                ` and ${table?.name}.${prop} ${equality} (${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
-                xs.length
-              ];
-            }
-          });
-        }
-
-        values.push ({
-          pred,
-          run
-        });
-      } else if (OrderBy.isOrderBy (op)) {
-        const { descending } = op;
-        orderBies.push ({
-          pred,
-          run: () => [", ", 0]
-        });
-
-        if (isSQLTag (prop)) {
-          orderBies.push ({
-            pred,
-            run: () => ["(", 0]
-          });
-
-          const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
-
-          orderBies.push (...strings2);
-          values.push (...values2);
-
-          orderBies.push ({
-            pred,
-            run: () => [`) ${descending ? "desc" : "asc"}`, 0]
-          });
-
-        } else {
-          orderBies.push ({
-            pred,
-            run: () => [`${table?.name}.${prop} ${descending ? "desc" : "asc"}`, 0]
-          });
-        }
       }
     }
   }
 
   // sorted selectables
+  // move to rqltag
   for (const selectable of selectables) {
     if (Limit.isLimit (selectable)) {
       const { pred, run } = selectable;
@@ -449,6 +374,7 @@ function interpret(this: SQLTag, props: Prop[] = [], selectables: SelectableType
         run
       });
     } else if (isSQLTag (selectable)) {
+      console.log ("DD");
       const { pred } = selectable;
 
       strings.push ({
@@ -474,42 +400,58 @@ function compile(this: SQLTag, params: StringMap, props: Prop[] = [], selectable
     this.interpreted = this.interpret (props, selectables, table);
   }
 
-  const { strings, orderBies, limits, offsets, values } = this.interpreted;
+  const { strings, values } = this.interpreted;
 
-  const filterByP = filterByPred (params);
-
-  let filteredStrings = filterByP (strings);
-  const filteredOrderBies = filterByP (orderBies);
-  const filteredLimits = filterByP (limits);
-  const filteredOffsets = filterByP (offsets);
-
-  if (filteredOrderBies.length) {
-    filteredStrings = filteredStrings.concat ([
-      { pred: truePred, run: () => [" order by ", 0] },
-      // remove leading comma
-      ...filteredOrderBies.slice (1)
-    ]);
-  }
-
-  let query = filteredStrings
-    .concat (filteredLimits)
-    .concat (filteredOffsets)
+  let query = strings
     .reduce (([query, idx]: [string, number], { run }): [string, number] => {
       const [s, n] = run (params, idx);
 
       return [query.concat (s), idx + n];
     }, ["", 0])[0];
 
-  if (ending) {
-    query += ending;
-  }
-
   return [
     query,
     values
-      .filter (({ pred }) => pred (params))
       .map (({ run }) => run (params)).flat (1)
   ];
+
+  // // should just be strings[] and values []
+  // const { strings, orderBies, limits, offsets, values } = this.interpreted;
+
+  // const filterByP = filterByPred (params);
+
+  // let filteredStrings = filterByP (strings);
+  // const filteredOrderBies = filterByP (orderBies);
+  // const filteredLimits = filterByP (limits);
+  // const filteredOffsets = filterByP (offsets);
+
+  // if (filteredOrderBies.length) {
+  //   filteredStrings = filteredStrings.concat ([
+  //     { pred: truePred, run: () => [" order by ", 0] },
+  //     // remove leading comma
+  //     ...filteredOrderBies.slice (1)
+  //   ]);
+  // }
+
+  // let query = filteredStrings
+  //   .concat (filteredLimits)
+  //   .concat (filteredOffsets)
+  //   .reduce (([query, idx]: [string, number], { run }): [string, number] => {
+  //     const [s, n] = run (params, idx);
+
+  //     return [query.concat (s), idx + n];
+  //   }, ["", 0])[0];
+
+  // if (ending) {
+  //   query += ending;
+  // }
+
+  // return [
+  //   query,
+  //   values
+  //     .filter (({ pred }) => pred (params))
+  //     .map (({ run }) => run (params)).flat (1)
+  // ];
 }
 
 function setPred(this: SQLTag, fn: (p: any) => boolean) {

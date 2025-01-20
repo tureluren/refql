@@ -127,7 +127,7 @@ function interpret(this: RQLTag): InterpretedRQLTag {
         Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
       );
 
-      props.push (node);
+      // props.push (node);
     // } else if (SQLProp.isSQLProp (node)) {
     //   members.push (sql`
     //     (${node.col}) ${Raw (`"${node.as}"`)}`

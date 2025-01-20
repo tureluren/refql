@@ -16,6 +16,7 @@ const pool = new Pool ({
 });
 
 const querier = async (query: string, values: any[]) => {
+  console.log (query);
   const { rows } = await pool.query (query, values);
 
   return rows;
@@ -57,9 +58,18 @@ const Game = Table ("game", [
 
 const { id } = Team.props;
 
-const teamById = Team ([
-  "name",
-  id.in ([1, 2, 3]).desc ()
-]);
+// const teamById = Team ([
+//   "name",
+//   id.eq (1),
+//   sql`
+//     and id = ${2}
+//   `
+// ]);
 
-teamById ({}, querier).then (console.log);
+// teamById ({}, querier).then (console.log);
+const teamById = sql`
+  select * from team
+  where id = ${p => p.id}
+`;
+
+teamById ({ id: 1 }).then (console.log);

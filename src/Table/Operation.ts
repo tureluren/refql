@@ -1,13 +1,14 @@
 import truePred from "../common/truePred";
+import { InterpretedString, TagFunctionVariable } from "../common/types";
 
 const OperationSymbol: unique symbol = Symbol ("@@Operation");
 
-interface Operation<Params = any> {
+interface Operation<Params = any, Type = any> {
   [OperationSymbol]: true;
-  pred(p: any): boolean;
-  setPred (fn: (p: any) => boolean): Operation;
   precedence: number;
   params: Params;
+  run: TagFunctionVariable<Params, Type>;
+  interpret<Params = any>(pred: TagFunctionVariable<Params, boolean>): InterpretedString<Params>[];
 }
 
 export const operationPrototype = {

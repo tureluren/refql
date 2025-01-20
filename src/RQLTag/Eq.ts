@@ -1,10 +1,9 @@
 import { refqlType } from "../common/consts";
-import { TagFunctionVariable } from "../common/types";
+import { InterpretedString, TagFunctionVariable } from "../common/types";
 import Operation from "../Table/Operation";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface Eq<Params = any, Type = any> extends RQLNode, Operation<Params> {
-  run: TagFunctionVariable<Params, Type>;
+interface Eq<Params = any, Type = any> extends RQLNode, Operation<Params, Type> {
   notEq: boolean;
 }
 
@@ -13,7 +12,8 @@ const type = "refql/Eq";
 const prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: Eq,
   [refqlType]: type,
-  precedence: 1
+  precedence: 1,
+  interpret
 });
 
 function Eq<Params, Type>(run: TagFunctionVariable<Params, Type> | Type, notEq = false) {
@@ -26,6 +26,15 @@ function Eq<Params, Type>(run: TagFunctionVariable<Params, Type> | Type, notEq =
   eq.notEq = notEq;
 
   return eq;
+}
+
+function interpret(this: Eq, interpretedColumn: string) {
+  const { notEq } = this;
+  const equality = notEq ? "!=" : "=";
+
+  return {
+    run: (_p: any, i: number) => [` and ${interpretedColumn} ${equality} $${i + 1}`, 1]
+  };
 }
 
 Eq.isEq = function <Params = any, Type = any> (x: any): x is Eq<Params, Type> {
