@@ -110,6 +110,7 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
 
 export type OrdOperator = ">" | "<" | ">=" | "<=";
 
+// WEG ??
 export type InterpretedString<Params = any> = {
   pred: TagFunctionVariable<Params, boolean>;
   run: (params: Params, idx: number) => [string, number];

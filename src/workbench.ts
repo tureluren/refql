@@ -3,8 +3,11 @@ import { Pool } from "pg";
 import {
   BelongsTo, BooleanProp,
   DateProp, HasMany, Limit, NumberProp,
+  Raw,
   setDefaultQuerier, sql,
-  StringProp, Table
+  StringProp, Table,
+  Values,
+  Values2D
 } from ".";
 
 const pool = new Pool ({
@@ -58,18 +61,21 @@ const Game = Table ("game", [
 
 const { id } = Team.props;
 
-// const teamById = Team ([
-//   "name",
-//   id.eq (1),
-//   sql`
-//     and id = ${2}
-//   `
-// ]);
+const teamById = Team ([
+  "name",
+  id.eq (1)
+]);
 
-// teamById ({}, querier).then (console.log);
-const teamById = sql`
-  select * from team
-  where id = ${p => p.id}
-`;
+teamById ({}, querier).then (console.log);
 
-teamById ({ id: 1 }).then (console.log);
+// const teamById = sql`
+//   select id, name, ${Raw ("active")} from team
+//   where id = ${p => p.id}
+//   or id = ${2}
+//   or id in ${Values ([3, 4, 5])}
+// `;
+
+// teamById ({ id: 1 }).then (console.log);
+
+
+// REMOVE all -> *

@@ -9,6 +9,7 @@ import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 import SelectableType, { isSelectableType } from "../Table/SelectableType";
+import Eq from "./Eq";
 import RefNode from "./RefNode";
 import RQLNode from "./RQLNode";
 
@@ -108,12 +109,18 @@ function concat(this: RQLTag, other: RQLTag) {
   );
 }
 
+function interpretOperation() {
+
+}
+
 function interpret(this: RQLTag): InterpretedRQLTag {
   const { nodes, table } = this,
     next = [] as Next[],
     members = [] as (Raw | SQLTag)[],
     selectables = [] as SelectableType[],
     props = [] as Prop[];
+
+  let filters = sql``;
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     members.push (Raw (info.lRef));
@@ -123,9 +130,20 @@ function interpret(this: RQLTag): InterpretedRQLTag {
 
   for (const node of nodes) {
     if (Prop.isProp (node)) {
+      // pred zou in sql tag niet mogen bestaan
+      const { pred } = node;
+
       members.push (
         Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
       );
+
+      for (const op of node.operations) {
+        if (Eq.isEq (op)) {
+          filters = filters.concat (
+            op.interpret (Raw (`${table.name}.${node.col || node.as}`) as any) as any
+          );
+        }
+      }
 
       // props.push (node);
     // } else if (SQLProp.isSQLProp (node)) {
@@ -144,6 +162,8 @@ function interpret(this: RQLTag): InterpretedRQLTag {
   let tag = sql`
     select ${joinMembers (members)}
     from ${Raw (table)}
+    where 1 = 1
+    ${filters}
   `;
 
   return {
@@ -162,7 +182,8 @@ function compile(this: RQLTag, params: StringMap) {
     let { next, tag, selectables, props } = this.interpret ();
 
     this.interpreted = {
-      tag: tag.concat (sql`where 1 = 1`),
+      // tag: tag.concat (sql`where 1 = 1`),
+      tag,
       next,
       selectables,
       props
@@ -170,7 +191,7 @@ function compile(this: RQLTag, params: StringMap) {
   }
 
   return [
-    ...this.interpreted.tag.compile (params, this.interpreted.props, this.interpreted.selectables, this.table, this.interpreted.ending),
+    ...this.interpreted.tag.compile (params),
     this.interpreted.next
   ];
 }
