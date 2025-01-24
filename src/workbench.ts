@@ -6,6 +6,7 @@ import {
   Raw,
   setDefaultQuerier, sql,
   StringProp, Table,
+  Value,
   Values,
   Values2D
 } from ".";
@@ -59,14 +60,14 @@ const Game = Table ("game", [
   DateProp ("date")
 ]);
 
-const { id } = Team.props;
+const { id, name } = Team.props;
 
 const teamById = Team ([
   "name",
-  id.eq (1)
+  id.in ([1, 2, 3]).desc ()
 ]);
 
-teamById ({}, querier).then (console.log);
+teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (console.log);
 
 // const teamById = sql`
 //   select id, name, ${Raw ("active")} from team

@@ -17,24 +17,23 @@ interface Prop<As extends string = any, Type = any, Params = {}> extends RQLNode
   type: Type;
   arrayOf(): Prop<As, Type[], Params>;
   nullable(): Prop<As, Type | null, Params>;
-  eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type> | Type): Prop<As, Type, Params & Params2>;
+  eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type> | Type, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
   notEq: Prop<As, Type, Params>["eq"];
-  isNull<Params2 = {}>(): Prop<As, Type, Params2>;
+  isNull<Params2 = {}>(pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
   notIsNull: Prop<As, Type, Params>["isNull"];
-  like<Params2 = {}>(run: TagFunctionVariable<Params2, string> | string): Prop<As, Type, Params2>;
+  like<Params2 = {}>(run: TagFunctionVariable<Params & Params2, string> | string, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
   notLike: Prop<As, Type, Params>["like"];
   iLike: Prop<As, Type, Params>["like"];
   notILike: Prop<As, Type, Params>["like"];
-  in<Params2 = {}>(run: TagFunctionVariable<Params2, Type[]> | Type[]): Prop<As, Type, Params & Params2>;
+  in<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type[]> | Type[], pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
   notIn: Prop<As, Type, Params>["in"];
-  gt<Params2 = {}>(run: TagFunctionVariable<Params2, Type> | Type): Prop<As, Type, Params2>;
+  gt<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type> | Type, pred?: TagFunctionVariable<Params & Params2>): Prop<As, Type, Params & Params2>;
   gte: Prop<As, Type, Params>["gt"];
   lt: Prop<As, Type, Params>["gt"];
   lte: Prop<As, Type, Params>["gt"];
   asc(): Prop<As, Type, Params>;
   desc: Prop<As, Type, Params>["asc"];
-  operations: Operation[];
-  setPred (fn: (p: any) => boolean): Prop<As, Type, Params>;
+  operations: Operation<Params>[];
 }
 
 const type = "refql/Prop";
@@ -59,8 +58,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, 
   lt: ord ("<"),
   lte: ord ("<="),
   asc: dir (),
-  desc: dir (true),
-  setPred
+  desc: dir (true)
 });
 
 function Prop<As extends string, Type = any, Params = {}>(as: As, col?: string) {
@@ -78,9 +76,9 @@ function nullable(this: Prop) {
 }
 
 function eq(notEq?: boolean) {
-  return function (this: Prop, run: any) {
+  return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
     const prop = Prop (this.as, this.col);
-    const eqOp = Eq (run, notEq);
+    const eqOp = Eq (run, pred, notEq);
 
     prop.operations = this.operations.concat (eqOp);
 
@@ -89,9 +87,9 @@ function eq(notEq?: boolean) {
 }
 
 function isNull(notIsNull?: boolean) {
-  return function (this: Prop) {
+  return function (this: Prop, pred?: TagFunctionVariable<any, boolean>) {
     const prop = Prop (this.as, this.col);
-    const nullOp = IsNull (notIsNull);
+    const nullOp = IsNull (pred, notIsNull);
 
     prop.operations = this.operations.concat (nullOp);
 
@@ -100,9 +98,9 @@ function isNull(notIsNull?: boolean) {
 }
 
 function like(caseSensitive?: boolean, notLike?: boolean) {
-  return function (this: Prop, run: any) {
+  return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
     const prop = Prop (this.as, this.col);
-    const likeOp = Like (prop.col || prop.as, run, caseSensitive, notLike);
+    const likeOp = Like (run, pred, caseSensitive, notLike);
 
     prop.operations = this.operations.concat (likeOp);
 
@@ -111,9 +109,9 @@ function like(caseSensitive?: boolean, notLike?: boolean) {
 }
 
 function whereIn(notIn?: boolean) {
-  return function (this: Prop, run: any) {
+  return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
     const prop = Prop (this.as, this.col);
-    const inOp = In (run, notIn);
+    const inOp = In (run, pred, notIn);
 
     prop.operations = this.operations.concat (inOp);
 
@@ -122,9 +120,9 @@ function whereIn(notIn?: boolean) {
 }
 
 function ord(operator: OrdOperator) {
-  return function (this: Prop, run: any) {
+  return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
     const prop = Prop (this.as, this.col);
-    const ordOp = Ord (run, operator);
+    const ordOp = Ord (run, operator, pred);
 
     prop.operations = this.operations.concat (ordOp);
 
@@ -141,15 +139,6 @@ function dir(descending?: boolean) {
 
     return prop;
   };
-}
-
-function setPred(this: Prop, fn: (p: any) => boolean) {
-  let prop = Prop (this.as, this.col);
-
-  prop.operations = this.operations;
-  prop.pred = fn;
-
-  return prop;
 }
 
 Prop.isProp = function <As extends string = any, Type = any> (x: any): x is Prop {

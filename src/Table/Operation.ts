@@ -1,14 +1,16 @@
+import { SQLTag } from "../SQLTag";
+import Raw from "../SQLTag/Raw";
 import truePred from "../common/truePred";
-import { InterpretedString, TagFunctionVariable } from "../common/types";
+import { TagFunctionVariable } from "../common/types";
 
 const OperationSymbol: unique symbol = Symbol ("@@Operation");
 
-interface Operation<Params = any, Type = any> {
+interface Operation<Params = any> {
   [OperationSymbol]: true;
   precedence: number;
   params: Params;
-  run: TagFunctionVariable<Params, Type>;
-  interpret<Params = any>(pred: TagFunctionVariable<Params, boolean>): InterpretedString<Params>[];
+  interpret<Params = any>(col: Raw | SQLTag, isEmpty?: boolean): SQLTag<Params>;
+  pred: TagFunctionVariable<Params, boolean>;
 }
 
 export const operationPrototype = {
@@ -16,7 +18,7 @@ export const operationPrototype = {
   pred: truePred
 };
 
-export const isOperation = function (x: any): x is Operation {
+export const isOperation = function<Params = any> (x: any): x is Operation<Params> {
   return x != null && !!x[OperationSymbol];
 };
 

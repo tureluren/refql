@@ -1,25 +1,28 @@
 import { refqlType } from "../common/consts";
 import { OrdOperator, TagFunctionVariable } from "../common/types";
-import Operation from "../Table/Operation";
+import { SQLTag } from "../SQLTag";
+import Raw from "../SQLTag/Raw";
+import { sqlP } from "../SQLTag/sql";
+import Value from "../SQLTag/Value";
+import Operation, { operationPrototype } from "../Table/Operation";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
 interface Ord<Params = any, Type = any> extends RQLNode, Operation<Params> {
-  params: Params;
   run: TagFunctionVariable<Params, Type>;
   operator: OrdOperator;
 }
 
 const type = "refql/Ord";
 
-const prototype = Object.assign ({}, rqlNodePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, operationPrototype, {
   constructor: Ord,
   [refqlType]: type,
-  precedence: 1
+  precedence: 1,
+  interpret
 });
 
-function Ord<Params, Type>(run: TagFunctionVariable<Params, Type> | Type, operator: OrdOperator) {
+function Ord<Params, Type>(run: TagFunctionVariable<Params, Type> | Type, operator: OrdOperator, pred?: TagFunctionVariable<Params, boolean>) {
   let ord: Ord<Params, Type> = Object.create (prototype);
-
 
   ord.run = (
     typeof run === "function" ? run : () => run
@@ -27,7 +30,19 @@ function Ord<Params, Type>(run: TagFunctionVariable<Params, Type> | Type, operat
 
   ord.operator = operator;
 
+  if (pred) {
+    ord.pred = pred;
+  }
+
   return ord;
+}
+
+function interpret(this: Ord, col: Raw | SQLTag) {
+  const { operator, pred, run } = this;
+
+  return sqlP (pred)`
+    and ${col} ${Raw (operator)} ${Value (run)}
+  `;
 }
 
 Ord.isOrd = function <Params = any, Type = any> (x: any): x is Ord<Params, Type> {

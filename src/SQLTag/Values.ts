@@ -4,6 +4,7 @@ import SQLNode, { sqlNodePrototype } from "./SQLNode";
 
 interface Values<Params = any> extends SQLNode<Params> {
   run: TagFunctionVariable<Params, ValueType[]>;
+  setPred (fn: TagFunctionVariable<Params, boolean>): Values<Params>;
 }
 
 const type = "refql/Values";

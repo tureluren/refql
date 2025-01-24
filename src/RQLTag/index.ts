@@ -1,6 +1,7 @@
 import { flConcat, refqlType } from "../common/consts";
 import { getConvertPromise } from "../common/convertPromise";
 import getDefaultQuerier from "../common/defaultQuerier";
+import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import Prop from "../Prop";
@@ -10,6 +11,7 @@ import sql from "../SQLTag/sql";
 import Table from "../Table";
 import SelectableType, { isSelectableType } from "../Table/SelectableType";
 import Eq from "./Eq";
+import OrderBy from "./OrderBy";
 import RefNode from "./RefNode";
 import RQLNode from "./RQLNode";
 
@@ -121,6 +123,7 @@ function interpret(this: RQLTag): InterpretedRQLTag {
     props = [] as Prop[];
 
   let filters = sql``;
+  let orderBies = sql``;
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     members.push (Raw (info.lRef));
@@ -136,11 +139,14 @@ function interpret(this: RQLTag): InterpretedRQLTag {
       members.push (
         Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
       );
-
       for (const op of node.operations) {
-        if (Eq.isEq (op)) {
+        if (OrderBy.isOrderBy (op)) {
+          orderBies = orderBies.concat (
+            op.interpret (Raw (`${table.name}.${node.col || node.as}`) as any, isEmptyTag (orderBies)) as any
+          );
+        } else {
           filters = filters.concat (
-            op.interpret (Raw (`${table.name}.${node.col || node.as}`) as any) as any
+            op.interpret (Raw (`${table.name}.${node.col || node.as}`) as any, isEmptyTag (filters)) as any
           );
         }
       }
@@ -164,6 +170,7 @@ function interpret(this: RQLTag): InterpretedRQLTag {
     from ${Raw (table)}
     where 1 = 1
     ${filters}
+    ${orderBies}
   `;
 
   return {

@@ -52,4 +52,13 @@ function sql <Params = {}, Output = unknown>(strings: TemplateStringsArray, ...v
   return createSQLTag<Params, Output> (nodes);
 }
 
+export function sqlP <Params = {}, Output = unknown>(pred: any) {
+  return function (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) {
+    const nodes = parse<Params, Output> (strings, variables);
+    const withPred = nodes.map (n => n.setPred (pred));
+
+    return createSQLTag<Params, Output> (withPred);
+  };
+}
+
 export default sql;

@@ -35,6 +35,7 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode, SelectableT
   [flConcat]: SQLTag<Params, Output>["concat"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params): [string, any[]];
+  // WEG
   setPred (fn: (p: any) => boolean): SQLTag<Params, Output>;
 }
 
@@ -109,37 +110,57 @@ function interpret(this: SQLTag): InterpretedSQLTag {
     values = [] as InterpretedSQLTagValue[];
 
   for (const node of this.nodes) {
+    const { pred, run } = node;
     if (Raw.isRaw (node)) {
-
-      const { run } = node;
+      // move run 1ne hoger en definier on SQL node
 
       strings.push ({
         run: (p, _i) => {
+          const pr = pred (p);
+          if (!pr) return ["", 0];
+
           let s = run (p);
           return [s, 0];
         }
       });
     } else if (Value.isValue (node)) {
-      const { run } = node;
 
       values.push ({
-        run: p => [run (p)]
-      });
-      strings.push ({
-        run: (_p, i) => [`$${i + 1}`, 1]
-      });
-    } else if (Values.isValues (node)) {
-      const { run } = node;
+        run: p => {
+          const pr = pred (p);
+          if (!pr) return [];
 
-      values.push ({
-        run
+          return [run (p)];
+        }
       });
 
       strings.push ({
         run: (p, i) => {
+          const pr = pred (p);
+          if (!pr) return ["", 0];
+
+          return [`$${i + 1}`, 1];
+        }
+      });
+    } else if (Values.isValues (node)) {
+
+      values.push ({
+        run: p => {
+          const pr = pred (p);
+          if (!pr) return [];
+
+          return run (p);
+        }
+      });
+
+      strings.push ({
+        run: (p, i) => {
+          const pr = pred (p);
+          if (!pr) return ["", 0];
+
           const xs = run (p);
           return [
-            `(${xs.map ((_x, j) => `$${i + j + 1}`).join (", ")})`,
+            `(${xs.map ((_x: any, j: number) => `$${i + j + 1}`).join (", ")})`,
             xs.length
           ];
         }
@@ -267,126 +288,7 @@ export const isSQLTag = function <Params = any, Output = any> (x: any): x is SQL
 //   for (const op of operations) {
 //     const [beginning, ending] = op.interpret (pred);
 
-//     if (OrderBy.isOrderBy (op)) {
-//       orderBies.push (
-//         beginning,
-//         ...columnStrings,
-//         ending
-//       );
-
-//       values.push (
-//         ...columnValues
-//       );
-//     } else {
-//       strings.push (
-//         beginning,
-//         ...columnStrings,
-//         ending
-//       );
-
-//       values.push (
-//         ...columnValues,
-//         { pred, run: op.run }
-//       );
-//     }
-
-//     if (IsNull.isNull (op)) {
-//       const { notIsNull } = op;
-//       const equality = notIsNull ? "is not null" : "is null";
-
-//       if (isSQLTag (prop)) {
-//         strings.push ({
-//           pred,
-//           run: () => [" and (", 0]
-//         });
-
-//         const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
-
-//         strings.push (...strings2);
-//         values.push (...values2);
-
-//         strings.push ({
-//           pred,
-//           run: () => [`) ${equality}`, 0]
-//         });
-
-//       } else {
-//         strings.push ({
-//           pred,
-//           run: () => {
-//             return [` and ${table?.name}.${prop} ${equality}`, 0];
-//           }
-//         });
-//       }
-
-//     } else if (Ord.isOrd (op)) {
-//       const { run, operator } = op;
-
-//       if (isSQLTag (prop)) {
-//         strings.push ({
-//           pred,
-//           run: () => [" and (", 0]
-//         });
-
-//         const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
-
-//         strings.push (...strings2);
-//         values.push (...values2);
-
-//         strings.push ({
-//           pred,
-//           run: (_p, i) => [`) ${operator} $${i + 1}`, 1]
-//         });
-
-//       } else {
-//         strings.push ({
-//           pred,
-//           run: (_p, i) => {
-//             return [` and ${table?.name}.${prop} ${operator} $${i + 1}`, 1];
-//           }
-//         });
-//       }
-
-//       values.push ({
-//         pred,
-//         run
-//       });
-//     } else if (Like.isLike (op)) {
-//       const { run, caseSensitive, notLike } = op;
-//       const like = caseSensitive ? "like" : "ilike";
-//       const equality = notLike ? `not ${like}` : like;
-
-//       if (isSQLTag (prop)) {
-//         strings.push ({
-//           pred,
-//           run: () => [" and (", 0]
-//         });
-
-//         const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
-
-//         strings.push (...strings2);
-//         values.push (...values2);
-
-//         strings.push ({
-//           pred,
-//           run: (_p, i) => [`) ${equality} $${i + 1}`, 1]
-//         });
-
-//       } else {
-//         strings.push ({
-//           pred,
-//           run: (_p, i) => {
-//             return [` and ${table?.name}.${prop} ${equality} $${i + 1}`, 1];
-//           }
-//         });
-//       }
-
-//       values.push ({
-//         pred,
-//         run
-//       });
-//     }
-//   }
+//
 // }
 
 // // sorted selectables
