@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import {
   BelongsTo, BooleanProp,
   DateProp, HasMany, Limit, NumberProp,
+  Prop,
   Raw,
   setDefaultQuerier, sql,
   StringProp, Table,
@@ -64,7 +65,7 @@ const { id, name } = Team.props;
 
 const teamById = Team ([
   "name",
-  id.in ([1, 2, 3]).desc ()
+  id.in ([1, 2, 3]).lt (3).desc ().omit ()
 ]);
 
 teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (console.log);
@@ -80,3 +81,15 @@ teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (console.log);
 
 
 // REMOVE all -> *
+
+const p = Prop ("test", "dd");
+p.operations = ["buh" as any];
+
+const c = Object.assign (Object.create (Object.getPrototypeOf (p)), p);
+c.isOmitted = true;
+
+console.log (Prop.isProp (p));
+console.log (Prop.isProp (c));
+
+console.log (p);
+console.log (c);

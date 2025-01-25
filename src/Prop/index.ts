@@ -1,4 +1,5 @@
 import { refqlType } from "../common/consts";
+import copyObj from "../common/copyObj";
 import { OrdOperator, TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
@@ -15,6 +16,7 @@ interface Prop<As extends string = any, Type = any, Params = {}> extends RQLNode
   params: Params;
   col?: string;
   type: Type;
+  isOmitted: boolean;
   arrayOf(): Prop<As, Type[], Params>;
   nullable(): Prop<As, Type | null, Params>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type> | Type, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
@@ -34,6 +36,7 @@ interface Prop<As extends string = any, Type = any, Params = {}> extends RQLNode
   asc(): Prop<As, Type, Params>;
   desc: Prop<As, Type, Params>["asc"];
   operations: Operation<Params>[];
+  omit(): Prop<As, Type, Params>;
 }
 
 const type = "refql/Prop";
@@ -58,7 +61,8 @@ const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, 
   lt: ord ("<"),
   lte: ord ("<="),
   asc: dir (),
-  desc: dir (true)
+  desc: dir (true),
+  omit
 });
 
 function Prop<As extends string, Type = any, Params = {}>(as: As, col?: string) {
@@ -67,20 +71,21 @@ function Prop<As extends string, Type = any, Params = {}>(as: As, col?: string) 
   prop.as = as;
   prop.col = col;
   prop.operations = [];
+  prop.isOmitted = false;
 
   return prop;
 }
 
 function nullable(this: Prop) {
-  return Prop (this.as, this.col);
+  return copyObj (this);
 }
 
 function eq(notEq?: boolean) {
   return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
-    const prop = Prop (this.as, this.col);
+    const prop = copyObj (this);
     const eqOp = Eq (run, pred, notEq);
 
-    prop.operations = this.operations.concat (eqOp);
+    prop.operations = prop.operations.concat (eqOp);
 
     return prop;
   };
@@ -88,10 +93,10 @@ function eq(notEq?: boolean) {
 
 function isNull(notIsNull?: boolean) {
   return function (this: Prop, pred?: TagFunctionVariable<any, boolean>) {
-    const prop = Prop (this.as, this.col);
+    const prop = copyObj (this);
     const nullOp = IsNull (pred, notIsNull);
 
-    prop.operations = this.operations.concat (nullOp);
+    prop.operations = prop.operations.concat (nullOp);
 
     return prop;
   };
@@ -99,10 +104,10 @@ function isNull(notIsNull?: boolean) {
 
 function like(caseSensitive?: boolean, notLike?: boolean) {
   return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
-    const prop = Prop (this.as, this.col);
+    const prop = copyObj (this);
     const likeOp = Like (run, pred, caseSensitive, notLike);
 
-    prop.operations = this.operations.concat (likeOp);
+    prop.operations = prop.operations.concat (likeOp);
 
     return prop;
   };
@@ -110,10 +115,10 @@ function like(caseSensitive?: boolean, notLike?: boolean) {
 
 function whereIn(notIn?: boolean) {
   return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
-    const prop = Prop (this.as, this.col);
+    const prop = copyObj (this);
     const inOp = In (run, pred, notIn);
 
-    prop.operations = this.operations.concat (inOp);
+    prop.operations = prop.operations.concat (inOp);
 
     return prop;
   };
@@ -121,10 +126,10 @@ function whereIn(notIn?: boolean) {
 
 function ord(operator: OrdOperator) {
   return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
-    const prop = Prop (this.as, this.col);
+    const prop = copyObj (this);
     const ordOp = Ord (run, operator, pred);
 
-    prop.operations = this.operations.concat (ordOp);
+    prop.operations = prop.operations.concat (ordOp);
 
     return prop;
   };
@@ -132,13 +137,20 @@ function ord(operator: OrdOperator) {
 
 function dir(descending?: boolean) {
   return function (this: Prop) {
-    const prop = Prop (this.as, this.col);
+    const prop = copyObj (this);
     const orderByOp = OrderBy (descending);
 
-    prop.operations = this.operations.concat (orderByOp);
+    prop.operations = prop.operations.concat (orderByOp);
 
     return prop;
   };
+}
+
+function omit(this: Prop) {
+  let prop = copyObj (this);
+  prop.isOmitted = true;
+
+  return prop;
 }
 
 Prop.isProp = function <As extends string = any, Type = any> (x: any): x is Prop {

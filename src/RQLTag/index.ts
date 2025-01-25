@@ -136,9 +136,12 @@ function interpret(this: RQLTag): InterpretedRQLTag {
       // pred zou in sql tag niet mogen bestaan
       const { pred } = node;
 
-      members.push (
-        Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
-      );
+      if (!node.isOmitted) {
+        members.push (
+          Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
+        );
+      }
+
       for (const op of node.operations) {
         if (OrderBy.isOrderBy (op)) {
           orderBies = orderBies.concat (

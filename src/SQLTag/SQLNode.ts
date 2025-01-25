@@ -1,3 +1,4 @@
+import copyObj from "../common/copyObj";
 import truePred from "../common/truePred";
 import { TagFunctionVariable } from "../common/types";
 
@@ -18,8 +19,7 @@ export const sqlNodePrototype = {
 };
 
 function setPred<Params>(this: SQLNode<Params>, fn: TagFunctionVariable<Params, boolean>) {
-  const SQLNodeCls = (this as any).__proto__.constructor;
-  const sqlNode = new SQLNodeCls (this.run);
+  let sqlNode = copyObj (this);
 
   sqlNode.pred = fn;
 
