@@ -1,3 +1,5 @@
+import { SQLTag } from "../SQLTag";
+import sql from "../SQLTag/sql";
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
@@ -5,13 +7,15 @@ import RQLNode, { rqlNodePrototype } from "./RQLNode";
 interface Offset<Params = any> extends RQLNode {
   params: Params;
   run: TagFunctionVariable<Params, number>;
+  interpret<Params = any>(): SQLTag<Params>;
 }
 
 const type = "refql/Offset";
 
 const prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: Offset,
-  [refqlType]: type
+  [refqlType]: type,
+  interpret
 });
 
 function Offset<Params>(run: TagFunctionVariable<Params, number> | number) {
@@ -22,6 +26,14 @@ function Offset<Params>(run: TagFunctionVariable<Params, number> | number) {
   ) as TagFunctionVariable<Params, number>;
 
   return offset;
+}
+
+function interpret(this: Offset) {
+  const { run } = this;
+
+  return sql`
+    offset ${run}
+  `;
 }
 
 Offset.isOffset = function <Params = any> (x: any): x is Offset<Params> {

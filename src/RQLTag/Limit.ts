@@ -1,3 +1,5 @@
+import { SQLTag } from "../SQLTag";
+import sql from "../SQLTag/sql";
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
@@ -5,13 +7,15 @@ import RQLNode, { rqlNodePrototype } from "./RQLNode";
 interface Limit<Params = any> extends RQLNode {
   params: Params;
   run: TagFunctionVariable<Params, number>;
+  interpret<Params = any>(): SQLTag<Params>;
 }
 
 const type = "refql/Limit";
 
 const prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: Limit,
-  [refqlType]: type
+  [refqlType]: type,
+  interpret
 });
 
 function Limit<Params>(run: TagFunctionVariable<Params, number> | number) {
@@ -22,6 +26,14 @@ function Limit<Params>(run: TagFunctionVariable<Params, number> | number) {
   ) as TagFunctionVariable<Params, number>;
 
   return limit;
+}
+
+function interpret(this: Limit) {
+  const { run } = this;
+
+  return sql`
+    limit ${run}
+  `;
 }
 
 Limit.isLimit = function <Params = any> (x: any): x is Limit<Params> {

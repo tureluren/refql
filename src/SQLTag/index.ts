@@ -85,21 +85,6 @@ function concat(this: SQLTag, other: SQLTag) {
   return this.join (" ", other);
 }
 
-// const interpretWithPred = (pred: TagFunctionVariable<any, boolean>, tag: SQLTag) => {
-//   const { strings, values } = tag.interpret ();
-
-//   return {
-//     strings: strings.map (({ run, pred: pred2 }) => ({
-//       pred: (p: StringMap) => pred2 (p) && pred (p),
-//       run
-//     })),
-//     values: values.map (({ run, pred: pred2 }) => ({
-//       pred: (p: StringMap) => pred2 (p) && pred (p),
-//       run
-//     }))
-//   };
-// };
-
 function interpret(this: SQLTag): InterpretedSQLTag {
   const strings = [] as InterpretedSQLTagString[],
     values = [] as InterpretedSQLTagValue[];
@@ -187,20 +172,6 @@ function interpret(this: SQLTag): InterpretedSQLTag {
       throw new Error (`Unknown SQLNode Type: "${String (node)}"`);
     }
   }
-
-  // for (const p of props) {
-  //   const { pred, col, as, operations } = p;
-  //   const prop = col || as;
-
-  //   let columnStrings: InterpretedString[] = [{ pred, run: () => [`${table?.name}.${prop}`, 0] }];
-  //   let columnValues: InterpretedSQLTagValue[] = [];
-
-  //   if (isSQLTag (prop)) {
-  //     // interpredWithPRed moet 1 string retourneren en 1 value array (ops niet gebruiken in sql``)
-  //     const { strings: strings2, values: values2 } = interpretWithPred (pred, prop);
-  //     columnStrings = [{ pred, run: () => ["(", 0] }, ...strings2, { pred, run: () => [")", 0] }];
-  //     columnValues = values2;
-  //   }
 
   return { strings, values };
 }

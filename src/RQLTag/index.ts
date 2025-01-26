@@ -9,6 +9,8 @@ import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
+import Limit from "./Limit";
+import Offset from "./Offset";
 import OrderBy from "./OrderBy";
 import RefNode from "./RefNode";
 import RQLNode from "./RQLNode";
@@ -116,6 +118,8 @@ function interpret(this: RQLTag): InterpretedRQLTag {
 
   let filters = sql``;
   let orderBies = sql``;
+  let limit = sql``;
+  let offset = sql``;
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     members.push (Raw (info.lRef));
@@ -144,14 +148,15 @@ function interpret(this: RQLTag): InterpretedRQLTag {
           );
         }
       }
+    } else if (Limit.isLimit (node)) {
+      limit = node.interpret ();
 
-      // props.push (node);
-    // } else if (SQLProp.isSQLProp (node)) {
-    //   members.push (sql`
-    //     (${node.col}) ${Raw (`"${node.as}"`)}`
-    //   );
+    } else if (Offset.isOffset (node)) {
+      offset = node.interpret ();
+
     } else if (RefNode.isRefNode (node)) {
       caseOfRef (node.joinLateral (), node.info, node.single);
+
     } else {
       throw new Error (`Unknown RQLNode Type: "${String (node)}"`);
     }
@@ -163,6 +168,8 @@ function interpret(this: RQLTag): InterpretedRQLTag {
     where 1 = 1
     ${filters}
     ${orderBies}
+    ${limit}
+    ${offset}
   `;
 
   return {

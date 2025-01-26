@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import {
   BelongsTo, BooleanProp,
   DateProp, HasMany, Limit, NumberProp,
+  Offset,
   Prop,
   Raw,
   setDefaultQuerier, sql,
@@ -65,7 +66,10 @@ const { id, name } = Team.props;
 
 const teamById = Team ([
   "name",
-  id.in ([1, 2, 3]).lt (3).desc ().omit ()
+  id.in ([1, 2, 3]).lt (3).desc ().omit (),
+  Limit (() => 1),
+  Offset (1)
+
 ]);
 
 teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (console.log);
