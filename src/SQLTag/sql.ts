@@ -1,5 +1,5 @@
 import { createSQLTag, isSQLTag } from ".";
-import { SQLTagVariable } from "../common/types";
+import { SQLTagVariable, TagFunctionVariable } from "../common/types";
 import { isRQLTag } from "../RQLTag";
 import Table from "../Table";
 import Raw from "./Raw";
@@ -52,7 +52,7 @@ function sql <Params = {}, Output = unknown>(strings: TemplateStringsArray, ...v
   return createSQLTag<Params, Output> (nodes);
 }
 
-export function sqlP <Params = {}, Output = unknown>(pred: any) {
+export function sqlP <Params = {}, Output = unknown>(pred: TagFunctionVariable<Params, boolean>) {
   return function (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) {
     const nodes = parse<Params, Output> (strings, variables);
     const withPred = nodes.map (n => n.setPred (pred));

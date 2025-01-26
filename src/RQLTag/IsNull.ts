@@ -4,18 +4,16 @@ import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import { sqlP } from "../SQLTag/sql";
 import Operation, { operationPrototype } from "../Table/Operation";
-import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface IsNull<Params = any> extends RQLNode, Operation<Params> {
+interface IsNull<Params = any> extends Operation<Params> {
   notIsNull: boolean;
 }
 
 const type = "refql/IsNull";
 
-const prototype = Object.assign ({}, rqlNodePrototype, operationPrototype, {
+const prototype = Object.assign ({}, operationPrototype, {
   constructor: IsNull,
   [refqlType]: type,
-  precedence: 1,
   interpret
 });
 

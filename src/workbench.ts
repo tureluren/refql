@@ -81,15 +81,3 @@ teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (console.log);
 
 
 // REMOVE all -> *
-
-const p = Prop ("test", "dd");
-p.operations = ["buh" as any];
-
-const c = Object.assign (Object.create (Object.getPrototypeOf (p)), p);
-c.isOmitted = true;
-
-console.log (Prop.isProp (p));
-console.log (Prop.isProp (c));
-
-console.log (p);
-console.log (c);

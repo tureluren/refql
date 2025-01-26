@@ -4,9 +4,8 @@ import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import { sqlP } from "../SQLTag/sql";
 import Operation, { operationPrototype } from "../Table/Operation";
-import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface Like<Params = any> extends RQLNode, Operation<Params> {
+interface Like<Params = any> extends Operation<Params> {
   run: TagFunctionVariable<Params, string>;
   caseSensitive: boolean;
   notLike: boolean;
@@ -14,10 +13,9 @@ interface Like<Params = any> extends RQLNode, Operation<Params> {
 
 const type = "refql/Like";
 
-const prototype = Object.assign ({}, rqlNodePrototype, operationPrototype, {
+const prototype = Object.assign ({}, operationPrototype, {
   constructor: Like,
   [refqlType]: type,
-  precedence: 1,
   interpret
 });
 

@@ -5,19 +5,17 @@ import Raw from "../SQLTag/Raw";
 import { sqlP } from "../SQLTag/sql";
 import Values from "../SQLTag/Values";
 import Operation, { operationPrototype } from "../Table/Operation";
-import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface In<Params = any, Type = any> extends RQLNode, Operation<Params> {
+interface In<Params = any, Type = any> extends Operation<Params> {
   run: TagFunctionVariable<Params, Type[]> | Type[];
   notIn: boolean;
 }
 
 const type = "refql/In";
 
-const prototype = Object.assign ({}, rqlNodePrototype, operationPrototype, {
+const prototype = Object.assign ({}, operationPrototype, {
   constructor: In,
   [refqlType]: type,
-  precedence: 1,
   interpret
 });
 

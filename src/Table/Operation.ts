@@ -7,7 +7,6 @@ const OperationSymbol: unique symbol = Symbol ("@@Operation");
 
 interface Operation<Params = any> {
   [OperationSymbol]: true;
-  precedence: number;
   params: Params;
   interpret<Params = any>(col: Raw | SQLTag, isEmpty?: boolean): SQLTag<Params>;
   pred: TagFunctionVariable<Params, boolean>;

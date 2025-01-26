@@ -4,18 +4,16 @@ import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import { sqlP } from "../SQLTag/sql";
 import Operation, { operationPrototype } from "../Table/Operation";
-import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface OrderBy<Params = any> extends RQLNode, Operation<Params> {
+interface OrderBy<Params = any> extends Operation<Params> {
   descending: boolean;
 }
 
 const type = "refql/OrderBy";
 
-const prototype = Object.assign ({}, rqlNodePrototype, operationPrototype, {
+const prototype = Object.assign ({}, operationPrototype, {
   constructor: OrderBy,
   [refqlType]: type,
-  precedence: 2,
   interpret
 });
 

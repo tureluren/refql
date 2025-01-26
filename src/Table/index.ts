@@ -7,7 +7,6 @@ import RefProp from "../Prop/RefProp";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import RefNode from "../RQLTag/RefNode";
 import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
-import When from "../RQLTag/When";
 import { isSQLTag } from "../SQLTag";
 
 interface Table<TableId extends string = any, Props = any> {
@@ -79,8 +78,6 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
         }
 
         nodes.push (...refNodes);
-      } else if (When.isWhen (comp)) {
-        nodes.push (...comp.components);
       } else if (isRQLNode (comp)) {
         nodes.push (comp);
       } else {

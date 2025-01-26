@@ -4,7 +4,6 @@ import getGlobalQuerier from "../common/defaultQuerier";
 import isEmptyTag from "../common/isEmptyTag";
 import { Querier, StringMap, TagFunctionVariable } from "../common/types";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
-import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import Raw from "./Raw";
 import SQLNode from "./SQLNode";
 import Value from "./Value";
@@ -24,7 +23,7 @@ interface InterpretedSQLTag<Params = any> {
   values: InterpretedSQLTagValue<Params>[];
 }
 
-export interface SQLTag<Params = any, Output = any> extends RQLNode, SelectableType {
+export interface SQLTag<Params = any, Output = any> extends RQLNode {
   (params?: Params, querier?: Querier): Promise<Output>;
   params: Params;
   nodes: SQLNode<Params>[];
@@ -35,22 +34,18 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode, SelectableT
   [flConcat]: SQLTag<Params, Output>["concat"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params): [string, any[]];
-  // WEG
-  setPred (fn: (p: any) => boolean): SQLTag<Params, Output>;
 }
 
 const type = "refql/SQLTag";
 
-const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, {
   [refqlType]: type,
   constructor: createSQLTag,
   concat,
   join,
   [flConcat]: concat,
   interpret,
-  compile,
-  setPred,
-  precedence: 1
+  compile
 });
 
 export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[]) {
@@ -210,9 +205,6 @@ function interpret(this: SQLTag): InterpretedSQLTag {
   return { strings, values };
 }
 
-// const filterByPred = (params: StringMap) => (strings: InterpretedString[]) =>
-//   strings.filter (({ pred }) => pred (params));
-
 function compile(this: SQLTag, params: StringMap) {
   if (!this.interpreted) {
     this.interpreted = this.interpret ();
@@ -270,14 +262,6 @@ function compile(this: SQLTag, params: StringMap) {
   //     .filter (({ pred }) => pred (params))
   //     .map (({ run }) => run (params)).flat (1)
   // ];
-}
-
-function setPred(this: SQLTag, fn: (p: any) => boolean) {
-  let sqlTag = createSQLTag (this.nodes);
-
-  sqlTag.pred = fn;
-
-  return sqlTag;
 }
 
 export const isSQLTag = function <Params = any, Output = any> (x: any): x is SQLTag<Params, Output> {

@@ -1,21 +1,17 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
-import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface Offset<Params = any> extends RQLNode, SelectableType {
+interface Offset<Params = any> extends RQLNode {
   params: Params;
   run: TagFunctionVariable<Params, number>;
-  setPred (fn: (p: any) => boolean): Offset<Params>;
 }
 
 const type = "refql/Offset";
 
-const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: Offset,
-  [refqlType]: type,
-  setPred,
-  precedence: 4
+  [refqlType]: type
 });
 
 function Offset<Params>(run: TagFunctionVariable<Params, number> | number) {
@@ -24,14 +20,6 @@ function Offset<Params>(run: TagFunctionVariable<Params, number> | number) {
   offset.run = (
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params, number>;
-
-  return offset;
-}
-
-function setPred(this: Offset, fn: (p: any) => boolean) {
-  let offset = Offset (this.run);
-
-  offset.pred = fn;
 
   return offset;
 }

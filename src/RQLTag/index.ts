@@ -9,8 +9,6 @@ import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
-import SelectableType, { isSelectableType } from "../Table/SelectableType";
-import Eq from "./Eq";
 import OrderBy from "./OrderBy";
 import RefNode from "./RefNode";
 import RQLNode from "./RQLNode";
@@ -24,7 +22,6 @@ export interface Next {
 interface InterpretedRQLTag<Params = any, Output = any> {
   tag: SQLTag<Params, Output>;
   next: Next[];
-  selectables: SelectableType[];
   props: Prop[];
   ending?: string;
 }
@@ -111,15 +108,10 @@ function concat(this: RQLTag, other: RQLTag) {
   );
 }
 
-function interpretOperation() {
-
-}
-
 function interpret(this: RQLTag): InterpretedRQLTag {
   const { nodes, table } = this,
     next = [] as Next[],
     members = [] as (Raw | SQLTag)[],
-    selectables = [] as SelectableType[],
     props = [] as Prop[];
 
   let filters = sql``;
@@ -134,7 +126,6 @@ function interpret(this: RQLTag): InterpretedRQLTag {
   for (const node of nodes) {
     if (Prop.isProp (node)) {
       // pred zou in sql tag niet mogen bestaan
-      const { pred } = node;
 
       if (!node.isOmitted) {
         members.push (
@@ -161,8 +152,6 @@ function interpret(this: RQLTag): InterpretedRQLTag {
     //   );
     } else if (RefNode.isRefNode (node)) {
       caseOfRef (node.joinLateral (), node.info, node.single);
-    } else if (isSelectableType (node)) {
-      selectables.push (node);
     } else {
       throw new Error (`Unknown RQLNode Type: "${String (node)}"`);
     }
@@ -179,23 +168,18 @@ function interpret(this: RQLTag): InterpretedRQLTag {
   return {
     next,
     tag,
-    props,
-    selectables: sortSelectables (selectables)
+    props
   };
 }
 
-const sortSelectables = (selectables: SelectableType[]) =>
-  selectables.sort ((a, b) => a.precedence - b.precedence);
-
 function compile(this: RQLTag, params: StringMap) {
   if (!this.interpreted) {
-    let { next, tag, selectables, props } = this.interpret ();
+    let { next, tag, props } = this.interpret ();
 
     this.interpreted = {
       // tag: tag.concat (sql`where 1 = 1`),
       tag,
       next,
-      selectables,
       props
     };
   }

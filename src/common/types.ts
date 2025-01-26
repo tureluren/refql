@@ -1,10 +1,10 @@
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import { RQLTag } from "../RQLTag";
+import RQLNode from "../RQLTag/RQLNode";
 import RefField from "../RQLTag/RefField";
 import SQLNode from "../SQLTag/SQLNode";
 import Table from "../Table";
-import SelectableType from "../Table/SelectableType";
 
 // Array, Function, Date, ...
 export type StringMap = Record<string, any>;
@@ -77,7 +77,7 @@ export type Selectable<T> =
   | keyof OnlyProps<T>
   | OnlyProps<T>[keyof OnlyProps<T>]
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
-  | SelectableType;
+  | RQLNode;
 
 export type ParamsType<S, T extends Selectable<S>[]> = T extends (infer U)[]
   ? (U extends { params: any }
@@ -109,9 +109,3 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
   : never;
 
 export type OrdOperator = ">" | "<" | ">=" | "<=";
-
-// WEG ??
-export type InterpretedString<Params = any> = {
-  pred: TagFunctionVariable<Params, boolean>;
-  run: (params: Params, idx: number) => [string, number];
-};

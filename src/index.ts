@@ -19,7 +19,6 @@ import Limit from "./RQLTag/Limit";
 import Offset from "./RQLTag/Offset";
 import RefField from "./RQLTag/RefField";
 import RefNode from "./RQLTag/RefNode";
-import When from "./RQLTag/When";
 import { createSQLTag, isSQLTag, SQLTag } from "./SQLTag";
 import Raw from "./SQLTag/Raw";
 import sql, { parse } from "./SQLTag/sql";
@@ -27,9 +26,7 @@ import { isSQLNode } from "./SQLTag/SQLNode";
 import Value from "./SQLTag/Value";
 import Values from "./SQLTag/Values";
 import Values2D from "./SQLTag/Values2D";
-import When2 from "./SQLTag/When2";
 import Table from "./Table";
-import SelectableType from "./Table/SelectableType";
 
 
 export * from "./common/types";
@@ -39,8 +36,8 @@ export {
   Eq, HasMany, HasOne, isEmptyTag, IsNull, isRQLTag,
   isSQLNode, isSQLTag, Limit, NumberProp, Offset,
   parse, Prop, PropType, Raw, RefField, RefNode,
-  RefProp, RQLTag, SelectableType, setConvertPromise,
+  RefProp, RQLTag, setConvertPromise,
   setDefaultQuerier, sql, SQLTag, StringProp,
-  Table, Value, Values, Values2D, When, When2
+  Table, Value, Values, Values2D
 };
 

@@ -9,10 +9,9 @@ import Ord from "../RQLTag/Ord";
 import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import Operation from "../Table/Operation";
-import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import PropType, { propTypePrototype } from "./PropType";
 
-interface Prop<As extends string = any, Type = any, Params = {}> extends RQLNode, SelectableType, PropType<As> {
+interface Prop<As extends string = any, Type = any, Params = {}> extends RQLNode, PropType<As> {
   params: Params;
   col?: string;
   type: Type;
@@ -41,7 +40,7 @@ interface Prop<As extends string = any, Type = any, Params = {}> extends RQLNode
 
 const type = "refql/Prop";
 
-const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, propTypePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   constructor: Prop,
   [refqlType]: type,
   arrayOf: nullable,

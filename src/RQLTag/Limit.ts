@@ -1,21 +1,17 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
-import SelectableType, { selectableTypePrototype } from "../Table/SelectableType";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
-interface Limit<Params = any> extends RQLNode, SelectableType {
+interface Limit<Params = any> extends RQLNode {
   params: Params;
   run: TagFunctionVariable<Params, number>;
-  setPred (fn: (p: any) => boolean): Limit<Params>;
 }
 
 const type = "refql/Limit";
 
-const prototype = Object.assign ({}, rqlNodePrototype, selectableTypePrototype, {
+const prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: Limit,
-  [refqlType]: type,
-  setPred,
-  precedence: 3
+  [refqlType]: type
 });
 
 function Limit<Params>(run: TagFunctionVariable<Params, number> | number) {
@@ -24,14 +20,6 @@ function Limit<Params>(run: TagFunctionVariable<Params, number> | number) {
   limit.run = (
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params, number>;
-
-  return limit;
-}
-
-function setPred(this: Limit, fn: (p: any) => boolean) {
-  let limit = Limit (this.run);
-
-  limit.pred = fn;
 
   return limit;
 }
