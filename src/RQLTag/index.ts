@@ -5,7 +5,7 @@ import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import Prop from "../Prop";
-import { SQLTag } from "../SQLTag";
+import { isSQLTag, SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
@@ -129,22 +129,22 @@ function interpret(this: RQLTag): InterpretedRQLTag {
 
   for (const node of nodes) {
     if (Prop.isProp (node)) {
-      // pred zou in sql tag niet mogen bestaan
+      const col = isSQLTag (node.col)
+        ? sql`(${node.col})`
+        : Raw (`${table.name}.${node.col || node.as}`);
 
       if (!node.isOmitted) {
-        members.push (
-          Raw (`${table.name}.${node.col || node.as} "${node.as}"`)
-        );
+        members.push (sql`${col} ${Raw (`"${node.as}"`)}`);
       }
 
       for (const op of node.operations) {
         if (OrderBy.isOrderBy (op)) {
           orderBies = orderBies.concat (
-            op.interpret (Raw (`${table.name}.${node.col || node.as}`) as any, isEmptyTag (orderBies)) as any
+            op.interpret (col, isEmptyTag (orderBies))
           );
         } else {
           filters = filters.concat (
-            op.interpret (Raw (`${table.name}.${node.col || node.as}`) as any, isEmptyTag (filters)) as any
+            op.interpret (col, isEmptyTag (filters))
           );
         }
       }
@@ -184,7 +184,6 @@ function compile(this: RQLTag, params: StringMap) {
     let { next, tag, props } = this.interpret ();
 
     this.interpreted = {
-      // tag: tag.concat (sql`where 1 = 1`),
       tag,
       next,
       props

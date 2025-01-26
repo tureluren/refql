@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Pool } from "pg";
 import {
   BelongsTo, BooleanProp,
@@ -41,15 +40,15 @@ const Team = Table ("public.team", [
   // U will have to determine which array contains the last game after the result
   // comes back from the db.
   HasMany ("homeGames", "game", { rRef: "home_team_id" }),
-  HasMany ("awayGames", "game", { rRef: "away_team_id" })
+  HasMany ("awayGames", "game", { rRef: "away_team_id" }),
 
   // // Right now I would define a count in this way.
   // // The problem is that it's not that typesafe since it's using
   // // the not so typesafe `sql`function.
-  // NumberProp ("playerCount", sql`
-  //   select cast(count(*) as int) from player
-  //   where player.team_id = team.id
-  // `)
+  NumberProp ("playerCount", sql`
+    select cast(count(*) as int) from player
+    where player.team_id = team.id
+  `)
 ]);
 
 const Game = Table ("game", [
@@ -62,14 +61,17 @@ const Game = Table ("game", [
   DateProp ("date")
 ]);
 
-const { id, name } = Team.props;
+// const playerCount = NumberProp ("playerCount", sql`
+//   select cast(count(*) as int) from player
+//   where player.team_id = team.id
+// `);
+
+const { id, name, playerCount } = Team.props;
 
 const teamById = Team ([
   "name",
-  id.in ([1, 2, 3]).lt (3).desc ().omit (),
-  Limit (() => 1),
-  Offset (1)
-
+  playerCount.eq (11),
+  id.in ([1, 2, 3])
 ]);
 
 teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (ts => console.log (ts));
@@ -85,3 +87,6 @@ teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (ts => console.lo
 
 
 // REMOVE all -> *
+// count enzo toevoegen om subselects zonder sqlTag te doen
+// insert, update
+// register subselect to Player ?
