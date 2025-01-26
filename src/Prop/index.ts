@@ -8,12 +8,13 @@ import Like from "../RQLTag/Like";
 import Ord from "../RQLTag/Ord";
 import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
+import { SQLTag } from "../SQLTag";
 import Operation from "../Table/Operation";
 import PropType, { propTypePrototype } from "./PropType";
 
 interface Prop<As extends string = any, Type = any, Params = {}> extends RQLNode, PropType<As> {
   params: Params;
-  col?: string;
+  col?: string | SQLTag<Params>;
   type: Type;
   isOmitted: boolean;
   arrayOf(): Prop<As, Type[], Params>;
@@ -64,7 +65,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   omit
 });
 
-function Prop<As extends string, Type = any, Params = {}>(as: As, col?: string) {
+function Prop<As extends string, Type = any, Params = {}>(as: As, col?: string | SQLTag<Params>) {
   let prop: Prop<As, Type, Params> = Object.create (prototype);
 
   prop.as = as;

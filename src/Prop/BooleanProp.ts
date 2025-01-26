@@ -1,7 +1,8 @@
 import Prop from ".";
+import { SQLTag } from "../SQLTag";
 
-function BooleanProp <As extends string>(as: As, col?: string): Prop<As, boolean> {
-  return Prop (as, col as string | undefined);
+function BooleanProp <As extends string, Params = {}>(as: As, col?: string | SQLTag<Params>): Prop<As, boolean, Params> {
+  return Prop (as, col);
 }
 
 export default BooleanProp;

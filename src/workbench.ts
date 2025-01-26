@@ -72,7 +72,7 @@ const teamById = Team ([
 
 ]);
 
-teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (console.log);
+teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (ts => console.log (ts));
 
 // const teamById = sql`
 //   select id, name, ${Raw ("active")} from team
