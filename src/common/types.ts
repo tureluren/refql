@@ -101,12 +101,16 @@ export type FinalComponents<Props, Components extends Selectable<Props>[]> = IsA
   ? [keyof OnlyProps<Props>, ...Components]
   : Components;
 
+
 export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
   FinalComponents<S, T> extends (infer U)[]
   ? (U extends keyof Props
     ? {as: U; type: Props[U]["type"]}
-    : U extends Prop
-      ? {as: U["as"]; type: U["type"]}
+      : U extends Prop
+      ? U["isOmitted"] extends false
+        ? { as: U["as"]; type: U["type"] }
+        : never
+
       : U extends RQLTag<RefProps[keyof RefProps]["tableId"]>
         ? TableIds[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne", true | false>
           ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["type"][0] | null : U["type"][0]}

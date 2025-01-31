@@ -78,13 +78,15 @@ const playerCount2 = NumberProp ("playerCount", sql`
 
 const { id, name, playerCount } = Team.props;
 
+const innie = id.in<{ ids: number[]}> (p => p.ids).omit ();
 const teamById = Team ([
   "name",
+  "active",
   playerCount,
   playerCount2,
+  innie
   // playerCount2.eq (11),
   // name.desc (),
-  id.in<{ ids: number[]}> (p => p.ids)
   // Game (["result"]),
   // sql`limit 1`
   // OrderBy()
