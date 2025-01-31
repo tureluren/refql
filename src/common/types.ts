@@ -14,6 +14,7 @@ export type StringMap = Record<string, any>;
 export type ValueType =
   | boolean
   | null
+  | undefined
   | number
   | bigint
   | string
@@ -27,7 +28,7 @@ export interface RefQLRows {
 }
 
 export type TagFunctionVariable<Params, Output = ValueType> =
-  (params: Params) => Output | undefined;
+  (params: Params) => Output;
 
 export type SQLTagVariable<Params> =
   | SQLNode<Params>

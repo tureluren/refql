@@ -19,17 +19,18 @@ interface Prop<As extends string = any, Type = any, Params = any> extends RQLNod
   isOmitted: boolean;
   arrayOf(): Prop<As, Type[], Params>;
   nullable(): Prop<As, Type | null, Params>;
-  eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type> | Type, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
+  // Because of pred function, Type | undefined
+  eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type | undefined> | Type, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
   notEq: Prop<As, Type, Params>["eq"];
   isNull<Params2 = {}>(pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
   notIsNull: Prop<As, Type, Params>["isNull"];
-  like<Params2 = {}>(run: TagFunctionVariable<Params & Params2, string> | string, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
+  like<Params2 = {}>(run: TagFunctionVariable<Params & Params2, string | undefined> | string, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
   notLike: Prop<As, Type, Params>["like"];
   iLike: Prop<As, Type, Params>["like"];
   notILike: Prop<As, Type, Params>["like"];
-  in<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type[]> | Type[], pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
+  in<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type[] | undefined> | Type[], pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Type, Params & Params2>;
   notIn: Prop<As, Type, Params>["in"];
-  gt<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type> | Type, pred?: TagFunctionVariable<Params & Params2>): Prop<As, Type, Params & Params2>;
+  gt<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Type | undefined> | Type, pred?: TagFunctionVariable<Params & Params2>): Prop<As, Type, Params & Params2>;
   gte: Prop<As, Type, Params>["gt"];
   lt: Prop<As, Type, Params>["gt"];
   lte: Prop<As, Type, Params>["gt"];

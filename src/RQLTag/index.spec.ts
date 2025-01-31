@@ -939,10 +939,10 @@ describe ("RQLTag type", () => {
     const { lastName } = Player.props;
 
     const tag = Player ([
-      lastName.isNull<{ isNull?: boolean }> ((p => p.isNull))
+      lastName.isNull<{ isNull: boolean }> ((p => p.isNull))
     ]);
 
-    const [query, values] = tag.compile ({});
+    const [query, values] = tag.compile ({ isNull: false });
 
     expect (query).toBe (`select player.last_name "lastName" from player where 1 = 1 `);
 
