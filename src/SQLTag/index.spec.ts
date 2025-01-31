@@ -17,7 +17,6 @@ import Raw from "./Raw";
 import sql from "./sql";
 import Values from "./Values";
 import Values2D from "./Values2D";
-import When2 from "./When2";
 
 describe ("SQLTag type", () => {
   let pool: any;
@@ -69,7 +68,7 @@ describe ("SQLTag type", () => {
 
     const [query] = joined.compile ({});
 
-    expect (query).toBe ("select * from player");
+    expect (query).toBe (" select *  from player");
   });
 
   test ("Semigroup", () => {
@@ -272,109 +271,6 @@ describe ("SQLTag type", () => {
     } catch (err: any) {
       expect (err).toBe (message);
     }
-  });
-
-  test ("when2", () => {
-    const tag = sql<{limit?: number; offset?: number}, any>`
-      select id from player
-      ${When2 (p => !!p.limit, sql`
-        limit ${p => p.limit}
-      `)}
-      ${When2 (p => !!p.offset, sql`
-        offset ${p => p.offset}
-      `)}
-    `;
-
-    const [query, values] = tag.compile ({ limit: 5 });
-
-    expect (query).toBe (format (`
-      select id from player
-      limit $1
-    `));
-
-    expect (values).toEqual ([5]);
-
-    const [query2, values2] = tag.compile ({ offset: 10 });
-
-    expect (query2).toBe (format (`
-      select id from player
-      offset $1
-    `));
-
-    expect (values2).toEqual ([10]);
-
-    const [query3, values3] = tag.compile ({ limit: 5, offset: 10 });
-
-    expect (query3).toBe (format (`
-      select id from player
-      limit $1
-      offset $2
-    `));
-
-    expect (values3).toEqual ([5, 10]);
-  });
-
-  test ("nested when2", () => {
-    const tag = sql<{id?: number; limit?: number; offset?: number; orderBy?: string}, any>`
-      select id from player
-      ${When2 (p => !!p.id, sql`
-        where id = ${p => p.id}
-      `)}
-      and 1 = 1
-      ${When2 (p => !!p.orderBy, sql`
-        order by ${Raw (p => p.orderBy)}
-        ${When2 (p => !!p.limit, sql`
-          limit ${p => p.limit}
-          ${When2 (p => !!p.offset, sql`
-            offset ${p => p.offset}
-          `)}
-        `)}
-      `)}
-    `;
-
-    const [query, values] = tag.compile ({ id: 1, orderBy: "last_name" });
-
-    expect (query).toBe (format (`
-      select id from player
-      where id = $1
-      and 1 = 1
-      order by last_name
-    `));
-
-    expect (values).toEqual ([1]);
-
-    const [query2, values2] = tag.compile ({ limit: 5 });
-
-    expect (query2).toBe (format (`
-      select id from player
-      and 1 = 1
-    `));
-
-    expect (values2).toEqual ([]);
-
-    const [query3, values3] = tag.compile ({ id: 1, orderBy: "last_name", limit: 5 });
-
-    expect (query3).toBe (format (`
-      select id from player
-      where id = $1
-      and 1 = 1
-      order by last_name
-      limit $2
-    `));
-
-    expect (values3).toEqual ([1, 5]);
-
-    const [query4, values4] = tag.compile ({ orderBy: "last_name", limit: 5, offset: 10 });
-
-    expect (query4).toBe (format (`
-      select id from player
-      and 1 = 1
-      order by last_name
-      limit $1
-      offset $2
-    `));
-
-    expect (values4).toEqual ([5, 10]);
   });
 
   test ("no querier provided error", async () => {

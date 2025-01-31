@@ -6,6 +6,8 @@ import HasMany from "../Prop/HasMany";
 import HasOne from "../Prop/HasOne";
 import NumberProp from "../Prop/NumberProp";
 import StringProp from "../Prop/StringProp";
+import Raw from "../SQLTag/Raw";
+import sql from "../SQLTag/sql";
 import Table from "../Table";
 
 const id = NumberProp ("id");
@@ -42,24 +44,24 @@ const Team = Table ("public.team", [
   HasMany ("players", "player"),
   BelongsTo ("league", "league"),
   HasMany ("homeGames", "game", { rRef: "home_team_id" }),
-  HasMany ("awayGames", "game", { rRef: "away_team_id" })
-  // NumberProp ("playerCount", sql`
-  //   select cast(count(*) as int) from player
-  //   where player.team_id = team.id
-  // `)
+  HasMany ("awayGames", "game", { rRef: "away_team_id" }),
+  NumberProp ("playerCount", sql`
+    select cast(count(*) as int) from player
+    where player.team_id = team.id
+  `)
 ]);
 
 const Player = Table ("player", [
   id,
   StringProp ("firstName", "first_name"),
   StringProp ("lastName", "last_name"),
-  // StringProp ("fullName", sql<{ delimiter: string }>`
-  //   concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
-  // `),
-  // NumberProp ("goalCount", sql`
-  //   select cast(count(*) as int) from goal
-  //   where goal.player_id = player.id
-  // `),
+  StringProp ("fullName", sql<{ delimiter: string }>`
+    concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
+  `),
+  NumberProp ("goalCount", sql`
+    select cast(count(*) as int) from goal
+    where goal.player_id = player.id
+  `),
   // NumberProp ("firstGoalId", sql`
   //   select id from goal
   //   where goal.player_id = player.id

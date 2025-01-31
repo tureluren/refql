@@ -3,7 +3,7 @@ import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import { sqlP } from "../SQLTag/sql";
-import Operation, { operationPrototype } from "../Table/Operation";
+import Operation, { operationPrototype } from "./Operation";
 
 interface Eq<Params = any, Type = any> extends Operation<Params> {
   run: TagFunctionVariable<Params, Type> | Type;

@@ -73,15 +73,15 @@ export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[]) {
 }
 
 function join(this: SQLTag, delimiter: string, other: SQLTag) {
-  if (isEmptyTag (this)) return other;
-  if (isEmptyTag (other)) return this;
-
   return createSQLTag (
     this.nodes.concat (Raw (delimiter), ...other.nodes)
   );
 }
 
 function concat(this: SQLTag, other: SQLTag) {
+  if (isEmptyTag (this)) return other;
+  if (isEmptyTag (other)) return this;
+
   return this.join (" ", other);
 }
 

@@ -25,7 +25,6 @@ interface InterpretedRQLTag<Params = any, Output = any> {
   tag: SQLTag<Params, Output>;
   next: Next[];
   props: Prop[];
-  ending?: string;
 }
 
 export interface RQLTag<TableId extends string = any, Params = any, Output = any> {
@@ -38,7 +37,7 @@ export interface RQLTag<TableId extends string = any, Params = any, Output = any
   interpreted: InterpretedRQLTag<Params, Output>;
   concat<Params2, Output2>(other: RQLTag<TableId, Params2, Output2>): RQLTag<TableId, Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<TableId, Params, Output>["concat"];
-  interpret(): InterpretedRQLTag<Params, Output>;
+  interpret(where?: SQLTag<Params>): InterpretedRQLTag<Params, Output>;
   compile(params: Params): [string, any[], Next[]];
   aggregate(params: Params, querier: Querier): Promise<Output>;
 }
@@ -110,7 +109,7 @@ function concat(this: RQLTag, other: RQLTag) {
   );
 }
 
-function interpret(this: RQLTag): InterpretedRQLTag {
+function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
   const { nodes, table } = this,
     next = [] as Next[],
     members = [] as (Raw | SQLTag)[],
@@ -139,12 +138,14 @@ function interpret(this: RQLTag): InterpretedRQLTag {
 
       for (const op of node.operations) {
         if (OrderBy.isOrderBy (op)) {
-          orderBies = orderBies.concat (
-            op.interpret (col, isEmptyTag (orderBies))
+          const delimiter = isEmptyTag (orderBies) ? "order by " : ", ";
+          orderBies = orderBies.join (
+            delimiter,
+            op.interpret (col)
           );
         } else {
           filters = filters.concat (
-            op.interpret (col, isEmptyTag (filters))
+            op.interpret (col)
           );
         }
       }
@@ -157,6 +158,8 @@ function interpret(this: RQLTag): InterpretedRQLTag {
     } else if (RefNode.isRefNode (node)) {
       caseOfRef (node.joinLateral (), node.info, node.single);
 
+    } else if (isSQLTag (node)) {
+      filters = filters.concat (node);
     } else {
       throw new Error (`Unknown RQLNode Type: "${String (node)}"`);
     }
@@ -165,12 +168,12 @@ function interpret(this: RQLTag): InterpretedRQLTag {
   let tag = sql`
     select ${joinMembers (members)}
     from ${Raw (table)}
-    where 1 = 1
-    ${filters}
-    ${orderBies}
-    ${limit}
-    ${offset}
-  `;
+  `
+    .concat (where)
+    .concat (filters)
+    .concat (orderBies)
+    .concat (limit)
+    .concat (offset);
 
   return {
     next,

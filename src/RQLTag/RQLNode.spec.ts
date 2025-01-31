@@ -1,47 +1,16 @@
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
-import sql from "../SQLTag/sql";
 import { Player, Team } from "../test/tables";
-import Eq from "./Eq";
-import In from "./In";
-import IsNull from "./IsNull";
 import Limit from "./Limit";
 import Offset from "./Offset";
-import OrderBy from "./OrderBy";
 import RefField from "./RefField";
 import RefNode from "./RefNode";
 import { isRQLNode } from "./RQLNode";
-import When from "./When";
 
 describe ("RQLNodes", () => {
   test ("is RQLNode", () => {
-    expect (isRQLNode (When (() => true, [sql``]))).toBe (true);
-    expect (isRQLNode ("When")).toBe (false);
-  });
-
-  test ("is When", () => {
-    expect (When.isWhen (When (() => true, [sql``]))).toBe (true);
-    expect (When.isWhen ("When")).toBe (false);
-  });
-
-  test ("is Eq", () => {
-    expect (Eq.isEq (Eq ("id", 1))).toBe (true);
-    expect (Eq.isEq ("Eq")).toBe (false);
-  });
-
-  test ("is Null", () => {
-    expect (IsNull.isNull (IsNull ("id"))).toBe (true);
-    expect (IsNull.isNull ("IsNull")).toBe (false);
-  });
-
-  test ("is In", () => {
-    expect (In.isIn (In ("id", [1, 2, 3, 4]))).toBe (true);
-    expect (In.isIn ("In")).toBe (false);
-  });
-
-  test ("order By", () => {
-    expect (OrderBy.isOrderBy (OrderBy ("id", true))).toBe (true);
-    expect (In.isIn ("order by")).toBe (false);
+    expect (isRQLNode (Prop ("id"))).toBe (true);
+    expect (isRQLNode ("prop")).toBe (false);
   });
 
   test ("is Prop", () => {

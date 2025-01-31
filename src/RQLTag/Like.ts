@@ -3,7 +3,7 @@ import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import { sqlP } from "../SQLTag/sql";
-import Operation, { operationPrototype } from "../Table/Operation";
+import Operation, { operationPrototype } from "./Operation";
 
 interface Like<Params = any> extends Operation<Params> {
   run: TagFunctionVariable<Params, string>;
@@ -19,7 +19,7 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function Like<Params>(run: TagFunctionVariable<Params, string> | string, pred?: TagFunctionVariable<Params, boolean>, caseSensitive = true, notLike = false) {
+function Like<Params>(run: TagFunctionVariable<Params, string> | string, pred?: TagFunctionVariable<Params, boolean>, caseSensitive = false, notLike = false) {
   let like: Like<Params> = Object.create (prototype);
 
   like.run = (

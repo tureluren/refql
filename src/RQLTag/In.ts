@@ -4,7 +4,7 @@ import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import { sqlP } from "../SQLTag/sql";
 import Values from "../SQLTag/Values";
-import Operation, { operationPrototype } from "../Table/Operation";
+import Operation, { operationPrototype } from "./Operation";
 
 interface In<Params = any, Type = any> extends Operation<Params> {
   run: TagFunctionVariable<Params, Type[]> | Type[];

@@ -1,9 +1,8 @@
 import { refqlType } from "../common/consts";
-import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import { sqlP } from "../SQLTag/sql";
-import Operation, { operationPrototype } from "../Table/Operation";
+import sql from "../SQLTag/sql";
+import Operation, { operationPrototype } from "./Operation";
 
 interface OrderBy<Params = any> extends Operation<Params> {
   descending: boolean;
@@ -17,24 +16,21 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function OrderBy<Params = any>(descending: boolean = false, pred?: TagFunctionVariable<Params, boolean>) {
+function OrderBy<Params = any>(descending: boolean = false) {
   let orderBy: OrderBy<Params> = Object.create (prototype);
 
   orderBy.descending = descending;
 
-  if (pred) {
-    orderBy.pred = pred;
-  }
-
   return orderBy;
 }
 
-function interpret(this: OrderBy, col: Raw | SQLTag, isEmpty?: boolean) {
-  const { descending, pred } = this;
+// hard to make pred work for orderby because of 'order by' keyword placement.
+function interpret(this: OrderBy, col: Raw | SQLTag) {
+  const { descending } = this;
   const dir = descending ? "desc" : "asc";
 
-  return sqlP (pred)`
-    ${Raw (isEmpty ? "order by" : ",")} ${col} ${Raw (dir)}
+  return sql`
+    ${col} ${Raw (dir)}
   `;
 }
 

@@ -5,7 +5,6 @@ import { isSQLNode } from "./SQLNode";
 import Value from "./Value";
 import Values from "./Values";
 import Values2D from "./Values2D";
-import When2 from "./When2";
 
 describe ("SQLNodes", () => {
   test ("is SQLNode", () => {
@@ -43,11 +42,6 @@ describe ("SQLNodes", () => {
   test ("is Values2D", () => {
     expect (Values2D.isValues2D (Values2D ([[1]]))).toBe (true);
     expect (Values2D.isValues2D ("Values2D")).toBe (false);
-  });
-
-  test ("is When2", () => {
-    expect (When2.isWhen2 (When2 (() => true, sql``))).toBe (true);
-    expect (When2.isWhen2 ("When2")).toBe (false);
   });
 
   test ("Raw is functor", () => {

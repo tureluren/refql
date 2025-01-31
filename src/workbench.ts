@@ -45,7 +45,13 @@ const Team = Table ("public.team", [
   // // Right now I would define a count in this way.
   // // The problem is that it's not that typesafe since it's using
   // // the not so typesafe `sql`function.
-  NumberProp ("playerCount", sql`
+  NumberProp ("playerCount", sql<{ buh: number}>`
+    select cast(count(*) as int) from player
+    where player.team_id = team.id
+    and 1 = ${p => p.buh}
+  `),
+
+  NumberProp ("playerCount2", sql`
     select cast(count(*) as int) from player
     where player.team_id = team.id
   `)
@@ -61,6 +67,10 @@ const Game = Table ("game", [
   DateProp ("date")
 ]);
 
+const playerCount2 = NumberProp ("playerCount", sql`
+  select cast(count(*) as int) from player
+  where player.team_id = team.id
+`);
 // const playerCount = NumberProp ("playerCount", sql`
 //   select cast(count(*) as int) from player
 //   where player.team_id = team.id
@@ -70,11 +80,17 @@ const { id, name, playerCount } = Team.props;
 
 const teamById = Team ([
   "name",
-  playerCount.eq (11),
-  id.in ([1, 2, 3])
+  playerCount,
+  playerCount2,
+  // playerCount2.eq (11),
+  // name.desc (),
+  id.in<{ ids: number[]}> (p => p.ids)
+  // Game (["result"]),
+  // sql`limit 1`
+  // OrderBy()
 ]);
 
-teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (ts => console.log (ts));
+teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
 
 // const teamById = sql`
 //   select id, name, ${Raw ("active")} from team
@@ -90,3 +106,18 @@ teamById ({ eqName: false, name: "FC Ratuhuw" }, querier).then (ts => console.lo
 // count enzo toevoegen om subselects zonder sqlTag te doen
 // insert, update
 // register subselect to Player ?
+
+// OrderBy rqlNode OrderBy(p => p.ordery) (kan ook gewoon een SQL worden he) (maar dan maakt volgorde wel uit)
+// const OrderBy = sql`
+// ->   {Raw(p => order by `p.orderBy`)}
+// -> ` write in docs en tests miss ?
+
+// omitted prop moet uit type gaan
+
+
+// paginated = allPlayers.concat([Limit, Offset])
+
+
+// know Issues, pred return false () => extra " " in queries
+
+// employee ipv soccer

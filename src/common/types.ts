@@ -1,6 +1,8 @@
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import { RQLTag } from "../RQLTag";
+import Limit from "../RQLTag/Limit";
+import Offset from "../RQLTag/Offset";
 import RQLNode from "../RQLTag/RQLNode";
 import RefField from "../RQLTag/RefField";
 import SQLNode from "../SQLTag/SQLNode";
@@ -12,7 +14,6 @@ export type StringMap = Record<string, any>;
 export type ValueType =
   | boolean
   | null
-  | undefined
   | number
   | bigint
   | string
@@ -26,7 +27,7 @@ export interface RefQLRows {
 }
 
 export type TagFunctionVariable<Params, Output = ValueType> =
-  (params: Params) => Output;
+  (params: Params) => Output | undefined;
 
 export type SQLTagVariable<Params> =
   | SQLNode<Params>
@@ -72,12 +73,18 @@ export type UnionToIntersection<U> =
 
 export type AllSign = "*";
 
+export type Pagination = Limit | Offset;
+
 export type Selectable<T> =
   | AllSign
   | keyof OnlyProps<T>
   | OnlyProps<T>[keyof OnlyProps<T>]
+  | Prop
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
   | RQLNode;
+  // | Pagination
+  // | SQLTag;
+
 
 export type ParamsType<S, T extends Selectable<S>[]> = T extends (infer U)[]
   ? (U extends { params: any }
@@ -97,7 +104,7 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
   FinalComponents<S, T> extends (infer U)[]
   ? (U extends keyof Props
     ? {as: U; type: Props[U]["type"]}
-    : U extends Props[keyof Props]
+    : U extends Prop
       ? {as: U["as"]; type: U["type"]}
       : U extends RQLTag<RefProps[keyof RefProps]["tableId"]>
         ? TableIds[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne", true | false>
