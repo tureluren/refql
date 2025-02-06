@@ -100,7 +100,7 @@ function joinLateral(this: RefNode) {
       in ${Values (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
     `;
 
-    const { tag: l2, next, props } = this.tag.interpret (sql`
+    const { tag: l2, next } = this.tag.interpret (sql`
       join ${Raw (`${xTable} on ${rxRef.name} = ${rRef.name}`)}
       where ${Raw (`${lxRef.name} = refqll1.${lRef.as}`)}
     `);
@@ -110,7 +110,7 @@ function joinLateral(this: RefNode) {
       lateral (${l2}) refqll2
     `;
 
-    this.tag.interpreted = { tag: joined, next, props };
+    this.tag.interpreted = { tag: joined, next };
 
     return this.tag;
 
@@ -124,7 +124,7 @@ function joinLateral(this: RefNode) {
       in ${Values (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
     `;
 
-    const { tag: l2, next, props } = this.tag.interpret (sql`
+    const { tag: l2, next } = this.tag.interpret (sql`
       where ${Raw (`${rRef.name} = refqll1.${lRef.as}`)}
     `);
 
@@ -133,7 +133,7 @@ function joinLateral(this: RefNode) {
       lateral (${l2}) refqll2
     `;
 
-    this.tag.interpreted = { props, tag: joined, next };
+    this.tag.interpreted = { tag: joined, next };
 
     return this.tag;
   }

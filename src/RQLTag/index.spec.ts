@@ -129,7 +129,7 @@ describe ("RQLTag type", () => {
     expect (res2.compile ({})).toEqual (tag.compile ({}));
   });
 
-  test ("aggregate", async () => {
+  test ("run", async () => {
     const { props } = Player;
 
     const tag = Player ([
@@ -283,7 +283,7 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (30);
   });
 
-  test ("aggregate - provided refs", async () => {
+  test ("run - provided refs", async () => {
     const tag = Player2 ([
       "id",
       Team (["name"]),

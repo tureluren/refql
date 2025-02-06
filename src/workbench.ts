@@ -22,9 +22,10 @@ const pool = new Pool ({
 
 const querier = async (query: string, values: any[]) => {
   console.log (query);
-  const { rows } = await pool.query (query, values);
+  // const { rows } = await pool.query (query, values);
 
-  return rows;
+  // return rows;
+  return [];
 };
 
 setDefaultQuerier (querier);
@@ -123,3 +124,21 @@ teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
 // know Issues, pred return false () => extra " " in queries
 
 // employee ipv soccer
+
+const insertTeam = Team.insert ([
+  "name"
+  // name.nullable (),
+  // returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
+]) ([{ name: "foemp" }]);
+
+// const updateTeam = Team.update ([
+//   "buh",
+//   name.nullable (),
+//   id.eq(1),
+//   returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
+// ]);
+
+// const updateTeam = Team.delete ([
+//   id.eq(1),
+//   returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
+// ]);

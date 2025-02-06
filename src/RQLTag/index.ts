@@ -24,7 +24,6 @@ export interface Next {
 interface InterpretedRQLTag<Params = any, Output = any> {
   tag: SQLTag<Params, Output>;
   next: Next[];
-  props: Prop[];
 }
 
 export interface RQLTag<TableId extends string = any, Params = any, Output = any> {
@@ -39,7 +38,7 @@ export interface RQLTag<TableId extends string = any, Params = any, Output = any
   [flConcat]: RQLTag<TableId, Params, Output>["concat"];
   interpret(where?: SQLTag<Params>): InterpretedRQLTag<Params, Output>;
   compile(params: Params): [string, any[], Next[]];
-  aggregate(params: Params, querier: Querier): Promise<Output>;
+  run(params: Params, querier: Querier): Promise<Output>;
 }
 
 const type = "refql/RQLTag";
@@ -51,7 +50,7 @@ let prototype = {
   [flConcat]: concat,
   interpret,
   compile,
-  aggregate
+  run
 };
 
 export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
@@ -62,7 +61,7 @@ export function createRQLTag<TableId extends string, Params = {}, Output = any>(
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
     }
-    return convertPromise (tag.aggregate (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
+    return convertPromise (tag.run (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
   }) as RQLTag<TableId, Params, Output>;
 
   Object.setPrototypeOf (
@@ -112,8 +111,7 @@ function concat(this: RQLTag, other: RQLTag) {
 function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
   const { nodes, table } = this,
     next = [] as Next[],
-    members = [] as (Raw | SQLTag)[],
-    props = [] as Prop[];
+    members = [] as (Raw | SQLTag)[];
 
   let filters = sql``;
   let orderBies = sql``;
@@ -177,19 +175,17 @@ function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
 
   return {
     next,
-    tag,
-    props
+    tag
   };
 }
 
 function compile(this: RQLTag, params: StringMap) {
   if (!this.interpreted) {
-    let { next, tag, props } = this.interpret ();
+    let { next, tag } = this.interpret ();
 
     this.interpreted = {
       tag,
-      next,
-      props
+      next
     };
   }
 
@@ -199,7 +195,7 @@ function compile(this: RQLTag, params: StringMap) {
   ];
 }
 
-async function aggregate(this: RQLTag, params: StringMap, querier: Querier): Promise<any[]> {
+async function run(this: RQLTag, params: StringMap, querier: Querier): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
   const refQLRows = await querier (query, values);
@@ -208,7 +204,7 @@ async function aggregate(this: RQLTag, params: StringMap, querier: Querier): Pro
 
   const nextData = await Promise.all (next.map (
     // { ...null } = {}
-    n => n.tag.aggregate ({ ...params, refQLRows }, querier)
+    n => n.tag.run ({ ...params, refQLRows }, querier)
   )) as any[][];
 
   return refQLRows.map (row =>

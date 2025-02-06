@@ -5,6 +5,7 @@ import Prop from "../Prop";
 import PropType from "../Prop/PropType";
 import RefProp from "../Prop/RefProp";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
+import { createInsertRQLTag } from "../RQLTag/InsertRQLTag";
 import RefNode from "../RQLTag/RefNode";
 import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
 import { isSQLTag } from "../SQLTag";
@@ -20,13 +21,17 @@ interface Table<TableId extends string = any, Props = any> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
+  insert(components: any[]): any;
 }
+
+// insert(data: Partial<{ [K in OnlyProps<Props>[keyof OnlyProps<Props>] as K["as"]]: K["type"] }>[]): Promise<{ [K in OnlyProps<Props>[keyof OnlyProps<Props>] as K["as"]]: K["type"] }[]>;
 
 const type = "refql/Table";
 
 const prototype = Object.assign (Object.create (Function.prototype), {
   constructor: Table,
   [refqlType]: type,
+  insert,
   equals, [flEquals]: equals,
   empty, [flEmpty]: empty,
   toString
@@ -103,6 +108,28 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
   table.props = properties;
 
   return table;
+}
+
+function insert(this: Table, components: any) {
+  if (!Array.isArray (components)) {
+    // empty array is allowed because `select from player` is valid SQL
+    throw new Error ("Invalid components: not an Array");
+  }
+
+  const nodes: RQLNode[] = [];
+
+  for (const comp of components) {
+    if (typeof comp === "string" && this.props[comp]) {
+      const prop = this.props[comp] as Prop;
+        nodes.push (prop);
+    } else if (Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) {
+        nodes.push (comp);
+    } else {
+      throw new Error (`Unknown Selectable Type: "${String (comp)}"`);
+    }
+  }
+
+  return createInsertRQLTag (this, nodes);
 }
 
 function toString<Name extends string, S>(this: Table<Name, S>) {
