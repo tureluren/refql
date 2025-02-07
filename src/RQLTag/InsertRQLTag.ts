@@ -78,7 +78,7 @@ function interpret(this: InsertRQLTag): InterpretedInsertRQLTag {
 
   let tag = sql`
     insert into ${Raw (`${table} (${members.map (f => f.col || f.as).join (", ")})`)}
-    values ${Values2D ((batch: any[]) => batch.map (x => members.map (f => x[f.as])))}
+    values ${Values2D ((batch: any[]) => batch.map (x => members.map (f => x[f.as] || null)))}
   `;
 
   return {

@@ -86,14 +86,33 @@ export type Selectable<T> =
   // | Pagination
   // | SQLTag;
 
+export type Insertable<T> =
+  | keyof OnlyProps<T>
+  | OnlyProps<T>[keyof OnlyProps<T>];
 
+
+// HOE WERKT DIT? de ene returned array en de andere niet
 export type ParamsType<S, T extends Selectable<S>[]> = T extends (infer U)[]
   ? (U extends { params: any }
     ? U
     : { params: {}})[]
-  : {params: {}};
+  : {params: {}}[];
+
+
+export type InsertParamsType<S, T extends Insertable<S>[], Props extends OnlyProps<S> = OnlyProps<S>> =
+  T extends (infer U)[]
+    ? U extends Prop
+      ? { [K in U["as"]]: U["type"] }[]
+      : U extends keyof Props
+        ? { [K in Props[U]["as"]]: Props[U]["type"]}[]
+        : {}[]
+    : {}[];
+
+
 
 export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<ParamsType<S, T>[number]["params"]>;
+
+export type InsertParams<S, T extends Insertable<S>[]> = UnionToIntersection<InsertParamsType<S, T>[number]>[];
 
 export type IsAllSignSelected<S, Components extends Selectable<S>[]> = AllSign extends Components[number] ? true : false;
 

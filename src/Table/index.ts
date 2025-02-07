@@ -1,11 +1,11 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Output, Params, Selectable } from "../common/types";
+import { Insertable, InsertParams, Output, Params, Selectable } from "../common/types";
 import validateTable from "../common/validateTable";
 import Prop from "../Prop";
 import PropType from "../Prop/PropType";
 import RefProp from "../Prop/RefProp";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
-import { createInsertRQLTag } from "../RQLTag/InsertRQLTag";
+import { createInsertRQLTag, InsertRQLTag } from "../RQLTag/InsertRQLTag";
 import RefNode from "../RQLTag/RefNode";
 import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
 import { isSQLTag } from "../SQLTag";
@@ -21,7 +21,7 @@ interface Table<TableId extends string = any, Props = any> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
-  insert(components: any[]): any;
+  insert<Components extends Insertable<Props>[]>(components: Components): InsertRQLTag<TableId, InsertParams<Props, Components>>;
 }
 
 // insert(data: Partial<{ [K in OnlyProps<Props>[keyof OnlyProps<Props>] as K["as"]]: K["type"] }>[]): Promise<{ [K in OnlyProps<Props>[keyof OnlyProps<Props>] as K["as"]]: K["type"] }[]>;
