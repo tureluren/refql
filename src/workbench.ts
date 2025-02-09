@@ -87,6 +87,7 @@ const teamById = Team ([
   playerCount,
   playerCount2,
   innie
+  // Team (["*"])
   // playerCount2.eq (11),
   // name.desc (),
   // Game (["result"]),
@@ -127,10 +128,13 @@ teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
 // employee ipv soccer
 
 const insertTeam = Team.insert ([
-  // "name"
-  name,
-  "active"
+  "name",
+  // name,
+  "active",
   // name.nullable (),
+  Team (["*"])
+  // Game (["*"])
+
   // returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
 ]);
 

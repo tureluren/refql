@@ -21,10 +21,8 @@ interface Table<TableId extends string = any, Props = any> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
-  insert<Components extends Insertable<Props>[]>(components: Components): InsertRQLTag<TableId, InsertParams<Props, Components>>;
+  insert<Components extends Insertable<TableId, Props>[]>(components: Components): InsertRQLTag<TableId, InsertParams<TableId, Props, Components>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;
 }
-
-// insert(data: Partial<{ [K in OnlyProps<Props>[keyof OnlyProps<Props>] as K["as"]]: K["type"] }>[]): Promise<{ [K in OnlyProps<Props>[keyof OnlyProps<Props>] as K["as"]]: K["type"] }[]>;
 
 const type = "refql/Table";
 
