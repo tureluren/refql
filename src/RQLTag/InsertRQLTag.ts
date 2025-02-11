@@ -1,10 +1,12 @@
-import { RQLTag } from ".";
+import { createRQLTag, isRQLTag, RQLTag } from ".";
 import { refqlType } from "../common/consts";
 import { getConvertPromise } from "../common/convertPromise";
 import getDefaultQuerier from "../common/defaultQuerier";
+import isEmptyTag from "../common/isEmptyTag";
 import { Querier, StringMap } from "../common/types";
 import Prop from "../Prop";
-import { SQLTag } from "../SQLTag";
+import RefProp from "../Prop/RefProp";
+import { isSQLTag, SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Values2D from "../SQLTag/Values2D";
@@ -61,16 +63,24 @@ export function createInsertRQLTag<TableId extends string, Params = {}, Output =
   return tag;
 }
 
+export const filterTableProps = (table: Table) =>
+  Object.keys (table.props)
+    .filter (p => !RefProp.isRefProp (table.props[p]) && !isSQLTag (table.props[p].col))
+    .filter (k => k !== "updatedAt" && k !== "createdAt")
+    .map (k => ({ col: table.props[k].col, as: table.props[k].as }));
+
 function interpret(this: InsertRQLTag): InterpretedInsertRQLTag {
   const { nodes, table } = this,
     members = [] as Prop[];
 
-  let returning: RQLTag | undefined;
+  let returning = table ([]); // returning concatten (2 TEAM rqltags mag, en if empty, TEAM(["*"] toevoegen))
 
   for (const node of nodes) {
     if (Prop.isProp (node)) {
       members.push (node);
-
+    } else if (isRQLTag (node)) {
+      // if node.table !=
+      returning = returning.concat (node);
     } else {
       throw new Error (`Unknown RQLNode Type: "${String (node)}"`);
     }
@@ -80,6 +90,13 @@ function interpret(this: InsertRQLTag): InterpretedInsertRQLTag {
     insert into ${Raw (`${table} (${members.map (f => f.col || f.as).join (", ")})`)}
     values ${Values2D ((batch: any[]) => batch.map (x => members.map (f => x[f.as] || null)))}
   `;
+
+  if (isEmptyTag (returning)) {
+    const fields = table.props;
+    tag = tag.concat (sql`
+      returning *
+    `);
+  }
 
   return {
     tag,
@@ -108,10 +125,10 @@ async function run(this: InsertRQLTag, params: StringMap, querier: Querier): Pro
 
   const inserts = await querier (query, values);
 
-  if (!inserts.length || !returning) return [];
+  if (isEmptyTag (returning)) return inserts;
 
   // check if cached
-  return returning ({ inserts });
+  return returning (inserts);
 }
 
 export const isInsertRQLTag = function <As extends string = any, Params = any, Output = any> (x: any): x is InsertRQLTag<As, Params, Output> {

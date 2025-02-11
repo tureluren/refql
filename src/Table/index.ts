@@ -1,5 +1,5 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Insertable, InsertParams, Output, Params, Selectable } from "../common/types";
+import { Insertable, InsertOutput, InsertParams, Output, Params, Selectable } from "../common/types";
 import validateTable from "../common/validateTable";
 import Prop from "../Prop";
 import PropType from "../Prop/PropType";
@@ -21,7 +21,8 @@ interface Table<TableId extends string = any, Props = any> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
-  insert<Components extends Insertable<TableId, Props>[]>(components: Components): InsertRQLTag<TableId, InsertParams<TableId, Props, Components>, { [K in Output<Props, Components>[number] as K["as"]]: K["type"] }[]>;
+  // It seems to be important to put '[]' after InsertRQLTag, instead of incorporating it into the type definition of InsertRQLTag, to prevent long type explanation.
+  insert<Components extends Insertable<TableId, Props>[]>(components: Components): InsertRQLTag<TableId, InsertParams<TableId, Props, Components>[], InsertOutput<TableId, Props, Components>["type"]>;
 }
 
 const type = "refql/Table";
@@ -122,6 +123,9 @@ function insert(this: Table, components: any) {
         nodes.push (prop);
     } else if (Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) {
         nodes.push (comp);
+    } else if (isRQLTag (comp)) {
+      // CONTROLLEER OF TYPE ZELFDE TABLE IS !!!
+      nodes.push (comp as any);
     } else {
       throw new Error (`Unknown Selectable Type: "${String (comp)}"`);
     }

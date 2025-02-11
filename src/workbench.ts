@@ -22,11 +22,11 @@ const pool = new Pool ({
 
 const querier = async (query: string, values: any[]) => {
   console.log (query);
-  console.log (values);
-  // const { rows } = await pool.query (query, values);
+  // console.log (values);
+  const res = await pool.query (query, values);
 
   // return rows;
-  return [];
+  return res.rows;
 };
 
 setDefaultQuerier (querier);
@@ -95,7 +95,7 @@ const teamById = Team ([
   // OrderBy()
 ]);
 
-teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
+// teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
 
 // const teamById = sql`
 //   select id, name, ${Raw ("active")} from team
@@ -126,23 +126,35 @@ teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
 // know Issues, pred return false () => extra " " in queries
 
 // employee ipv soccer
+const byIds = sql<{ id: number}[]>`
+  and id in ${Values (rows => rows.map (r => r.id))} 
+`;
 
 const insertTeam = Team.insert ([
   "name",
   // name,
-  "active",
-  // name.nullable (),
-  Team (["*"])
+  "active"
+  // name.nullable ()
+  // Team ([
+  //   "active",
+  //   Game (["*"]),
+  //   byIds
+  // ])
+  // Team (["name"])
   // Game (["*"])
 
   // returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
 ]);
 
-insertTeam ([{ active: true, name: "dd" }, { active: true, name: "dd" }]).then (res => console.log (res));
+insertTeam ([{ active: true, name: "Nice fc" }, { active: true, name: "dd fc" }])
+  .then (console.log)
+  .catch (console.log);
+
+// .then (res => console.log (res));
 
 // const updateTeam = Team.update ([
 //   "buh",
-//   name.nullable (),
+//   name.optional (),
 //   id.eq(1),
 //   returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
 // ]);

@@ -45,6 +45,7 @@ export type OnlyProps<T> = Only<T, Prop>;
 
 export type OnlyRefProps<T> = Only<T, RefProp<any, any, any, true | false>>;
 
+
 export type TableIdMap<T extends { [key: string]: { tableId: string }}> = {
   [K in keyof T as T[K]["tableId"]]: T[K]
 };
@@ -113,7 +114,7 @@ export type InsertParamsType<TableId extends string, S, T extends Insertable<Tab
 
 export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<ParamsType<S, T>[number]["params"]>;
 
-export type InsertParams<TableId extends string, S, T extends Insertable<TableId, S>[]> = UnionToIntersection<InsertParamsType<TableId, S, T>[number]>[];
+export type InsertParams<TableId extends string, S, T extends Insertable<TableId, S>[]> = UnionToIntersection<InsertParamsType<TableId, S, T>[number]>;
 
 export type IsAllSignSelected<S, Components extends Selectable<S>[]> = AllSign extends Components[number] ? true : false;
 
@@ -139,5 +140,20 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
             : never
         : never)[]
   : never;
+
+export type OnlyTableRQLTags<TableId extends string, T extends Insertable<TableId, any>[]> =
+  Extract<T[number], RQLTag<TableId>>[];
+
+export type InsertOutput<
+  TableId extends string,
+  S,
+  T extends Insertable<TableId, S>[],
+  TableRQLTags extends OnlyTableRQLTags<TableId, T> = OnlyTableRQLTags<TableId, T>,
+  finalOutput = UnionToIntersection<TableRQLTags[number] extends RQLTag<TableId, any, infer Type> ? Type : never>
+> = TableRQLTags extends never[]
+  ? RQLTag<TableId, {}, { [K in OnlyProps<S>[keyof OnlyProps<S>] as K["as"]]: K["type"] }[]>
+  : RQLTag<TableId, {}, { [K in keyof finalOutput]: finalOutput[K]}>;
+
+
 
 export type OrdOperator = ">" | "<" | ">=" | "<=";
