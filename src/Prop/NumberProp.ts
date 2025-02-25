@@ -1,7 +1,7 @@
 import Prop from ".";
 import { SQLTag } from "../SQLTag";
 
-function NumberProp <As extends string, Params>(as: As, col?: string | SQLTag<Params>): Prop<As, number, Params> {
+function NumberProp <As extends string, Params>(as: As, col?: string | SQLTag<Params>): Prop<As, number, Params, false, false> {
   return Prop (as, col);
 }
 

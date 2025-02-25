@@ -5,6 +5,7 @@ import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
 import RQLNode from "../RQLTag/RQLNode";
 import RefField from "../RQLTag/RefField";
+import { SQLTag } from "../SQLTag";
 import SQLNode from "../SQLTag/SQLNode";
 import Table from "../Table";
 
@@ -87,10 +88,9 @@ export type Selectable<T> =
   // | Pagination
   // | SQLTag;
 
-export type Insertable<TableId extends string, T> =
-  | keyof OnlyProps<T>
-  | OnlyProps<T>[keyof OnlyProps<T>]
+export type Insertable<TableId extends string> =
   | RQLTag<TableId>;
+  // | SQLTag
 
 
 // HOE WERKT DIT? de ene returned array en de andere niet
@@ -101,20 +101,8 @@ export type ParamsType<S, T extends Selectable<S>[]> = T extends (infer U)[]
   : {params: {}}[];
 
 
-export type InsertParamsType<TableId extends string, S, T extends Insertable<TableId, S>[], Props extends OnlyProps<S> = OnlyProps<S>> =
-  T extends (infer U)[]
-    ? U extends Prop
-      ? { [K in U["as"]]: U["type"] }[]
-      : U extends keyof Props
-        ? { [K in Props[U]["as"]]: Props[U]["type"]}[]
-        : {}[]
-    : {}[];
+export type Params<S, T extends Selectable<S>[]> = Simplify<UnionToIntersection<ParamsType<S, T>[number]["params"]>>;
 
-
-
-export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<ParamsType<S, T>[number]["params"]>;
-
-export type InsertParams<TableId extends string, S, T extends Insertable<TableId, S>[]> = UnionToIntersection<InsertParamsType<TableId, S, T>[number]>;
 
 export type IsAllSignSelected<S, Components extends Selectable<S>[]> = AllSign extends Components[number] ? true : false;
 
@@ -141,19 +129,54 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
         : never)[]
   : never;
 
-export type OnlyTableRQLTags<TableId extends string, T extends Insertable<TableId, any>[]> =
+
+// Simplify utility to remove unnecessary nesting
+export type Simplify<T> = T extends object ? { [K in keyof T]: T[K] } : T;
+
+
+export type InsertParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplify<
+  // Optional properties (hasDefaultValue: true) without | undefined
+  { [K in keyof Props as Props[K]["hasDefaultValue"] extends true ? K : never]?: Props[K]["type"] } &
+
+  // Required properties (hasDefaultValue: false) stay as they are
+  { [K in keyof Props as Props[K]["hasDefaultValue"] extends false ? K : never]: Props[K]["type"] }
+>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export type OnlyTableRQLTags<TableId extends string, T extends Insertable<TableId>[]> =
   Extract<T[number], RQLTag<TableId>>[];
+
+export type DefaultReturning<S> =
+  { [K in OnlyProps<S>[keyof OnlyProps<S>] as K["as"]]: K["type"] };
 
 export type InsertOutput<
   TableId extends string,
   S,
-  T extends Insertable<TableId, S>[],
+  T extends Insertable<TableId>[],
   TableRQLTags extends OnlyTableRQLTags<TableId, T> = OnlyTableRQLTags<TableId, T>,
   finalOutput = UnionToIntersection<TableRQLTags[number] extends RQLTag<TableId, any, infer Type> ? Type : never>
 > = TableRQLTags extends never[]
-  ? RQLTag<TableId, {}, { [K in OnlyProps<S>[keyof OnlyProps<S>] as K["as"]]: K["type"] }[]>
+  ? RQLTag<TableId, {}, { [K in keyof DefaultReturning<S>]: DefaultReturning<S>[K] }[]>
   : RQLTag<TableId, {}, { [K in keyof finalOutput]: finalOutput[K]}>;
 
-
-
 export type OrdOperator = ">" | "<" | ">=" | "<=";
+
+export interface InterpretedCUD<Params = any, Output = any> {
+  tag: SQLTag<Params, Output>;
+  returning?: RQLTag<any, Output>;
+}

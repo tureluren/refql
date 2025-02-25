@@ -22,7 +22,7 @@ interface Table<TableId extends string = any, Props = any> {
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
   // It seems to be important to put '[]' after InsertRQLTag, instead of incorporating it into the type definition of InsertRQLTag, to prevent long type explanation.
-  insert<Components extends Insertable<TableId, Props>[]>(components: Components): InsertRQLTag<TableId, InsertParams<TableId, Props, Components>[], InsertOutput<TableId, Props, Components>["type"]>;
+  insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, InsertParams<Props>[], InsertOutput<TableId, Props, Components>["type"]>;
 }
 
 const type = "refql/Table";
@@ -50,7 +50,7 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
 
   const table = (components => {
     if (!Array.isArray (components)) {
-      // empty array is allowed because `select from player` is valid SQL
+      // empty array is allowed because `select from <table>` is valid SQL
       throw new Error ("Invalid components: not an Array");
     }
 
@@ -115,19 +115,22 @@ function insert(this: Table, components: any) {
     throw new Error ("Invalid components: not an Array");
   }
 
-  const nodes: RQLNode[] = [];
+  const nodes: (Prop | RQLTag)[] = [];
 
   for (const comp of components) {
     if (typeof comp === "string" && this.props[comp]) {
       const prop = this.props[comp] as Prop;
-        nodes.push (prop);
+      nodes.push (prop);
     } else if (Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) {
-        nodes.push (comp);
+      nodes.push (comp);
     } else if (isRQLTag (comp)) {
-      // CONTROLLEER OF TYPE ZELFDE TABLE IS !!!
-      nodes.push (comp as any);
+      if (this.equals (comp.table)) {
+        nodes.push (comp);
+      } else {
+        throw new Error ("When creating an InsertRQLTag, RQLTags are reserved for determining the return type. Therefore, the table associated with the RQLTag must match the table into which you are inserting data.");
+      }
     } else {
-      throw new Error (`Unknown Selectable Type: "${String (comp)}"`);
+      throw new Error (`Unknown Insertable Type: "${String (comp)}"`);
     }
   }
 

@@ -1,6 +1,4 @@
 import { flConcat, refqlType } from "../common/consts";
-import { getConvertPromise } from "../common/convertPromise";
-import getDefaultQuerier from "../common/defaultQuerier";
 import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
@@ -14,6 +12,7 @@ import Offset from "./Offset";
 import OrderBy from "./OrderBy";
 import RefNode from "./RefNode";
 import RQLNode from "./RQLNode";
+import runnableTag from "./runnableTag";
 
 export interface Next {
   tag: RQLTag<any, RefQLRows>;
@@ -54,15 +53,7 @@ let prototype = {
 };
 
 export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
-  const tag = ((params = {} as Params, querier?: Querier) => {
-    const defaultQuerier = getDefaultQuerier ();
-    const convertPromise = getConvertPromise ();
-
-    if (!querier && !defaultQuerier) {
-      throw new Error ("There was no Querier provided");
-    }
-    return convertPromise (tag.run (params, (querier || defaultQuerier) as Querier) as Promise<Output>);
-  }) as RQLTag<TableId, Params, Output>;
+  const tag = runnableTag<RQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
     tag,

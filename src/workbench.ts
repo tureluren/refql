@@ -32,10 +32,10 @@ const querier = async (query: string, values: any[]) => {
 setDefaultQuerier (querier);
 
 const Team = Table ("public.team", [
-  NumberProp ("id"),
+  NumberProp ("id").hasDefault (),
   StringProp ("name"),
-  BooleanProp ("active"),
-  NumberProp ("leagueId", "league_id"),
+  BooleanProp ("active").hasDefault (),
+  NumberProp ("leagueId", "league_id").nullable (),
 
   // A game will usually have two refs to a team table
   // which means u're gonna end up with two arrays (homeTeams and awayTeams)
@@ -78,24 +78,24 @@ const playerCount2 = NumberProp ("playerCount", sql`
 //   where player.team_id = team.id
 // `);
 
-const { id, name, playerCount } = Team.props;
+const { id, name, playerCount, active } = Team.props;
 
-const innie = id.in<{ ids: number[]}> (p => p.ids).omit ();
+const innie = id.in<{ ids: number[]}> (p => p.ids).eq (1).omit ();
 const teamById = Team ([
   "name",
   "active",
   playerCount,
   playerCount2,
-  innie
-  // Team (["*"])
+  innie,
+  //  Team (["*"])
   // playerCount2.eq (11),
   // name.desc (),
-  // Game (["result"]),
+  Game (["result"])
   // sql`limit 1`
   // OrderBy()
 ]);
 
-// teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
+teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
 
 // const teamById = sql`
 //   select id, name, ${Raw ("active")} from team
@@ -117,13 +117,22 @@ const teamById = Team ([
 // ->   {Raw(p => order by `p.orderBy`)}
 // -> ` write in docs en tests miss ?
 
-// omitted prop moet uit type gaan
-
 
 // paginated = allPlayers.concat([Limit, Offset])
 
 
-// know Issues, pred return false () => extra " " in queries
+// know Issues:
+// - pred return false () => extra " " in queries
+// - in returning rql tag (inserts, updates) params is any to no type info about returns, so we need
+//    const byIds = sql<{ id: number}[]>`
+//      and id in ${Values (rows => rows.map (r => r.id))}
+//     `;
+
+// TODO:
+// COUNT types MOGEN NIET IN RETURN TYPE ZITTEN bij CUD
+
+// DECISIONS
+// inc ipv omit, omdat bij update statements, byId, meestal wilt ge dan geen set id ={}, enkel op filteren en bij gewone selects kunt ge met * werken ipv incl()
 
 // employee ipv soccer
 const byIds = sql<{ id: number}[]>`
@@ -131,23 +140,24 @@ const byIds = sql<{ id: number}[]>`
 `;
 
 const insertTeam = Team.insert ([
-  "name",
-  // name,
-  "active"
+  // "name",
+  // // name,
+  // "active",
   // name.nullable ()
   // Team ([
   //   "active",
   //   Game (["*"]),
   //   byIds
   // ])
-  // Team (["name"])
+  Team (["name"])
   // Game (["*"])
 
   // returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
 ]);
 
-insertTeam ([{ active: true, name: "Nice fc" }, { active: true, name: "dd fc" }])
-  .then (console.log)
+// data zodat er ruimte is voor andere params
+insertTeam ([{ name: "2", playerCount: 2, playerCount2: 2, leagueId: 2 }])
+  .then (r => console.log (r))
   .catch (console.log);
 
 // .then (res => console.log (res));
@@ -155,11 +165,14 @@ insertTeam ([{ active: true, name: "Nice fc" }, { active: true, name: "dd fc" }]
 // const updateTeam = Team.update ([
 //   "buh",
 //   name.optional (),
-//   id.eq(1),
+//   id.eq(1).incl(),
 //   returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
 // ]);
 
 // const updateTeam = Team.delete ([
-//   id.eq(1),
+//   id.eq(p => p.id),
 //   returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
 // ]);
+
+
+// upsert ??
