@@ -1,9 +1,10 @@
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable, ValueType } from "../common/types";
+import Raw from "./Raw";
 import SQLNode, { sqlNodePrototype } from "./SQLNode";
 
 interface Values2D<Params = any> extends SQLNode<Params> {
-  run: TagFunctionVariable<Params, ValueType[][]>;
+  run: TagFunctionVariable<Params, (ValueType | Raw)[][]>;
   setPred (fn: TagFunctionVariable<Params, boolean>): Values2D<Params>;
 }
 

@@ -6,7 +6,7 @@ import { InterpretedCUD, Querier, StringMap } from "../common/types";
 const CUDSymbol: unique symbol = Symbol ("@@CUD");
 
 interface CUD<TableId extends string = any, Params = any, Output = any> {
-  (params?: Params, querier?: Querier): Promise<Output>;
+  (params?: Params, querier?: Querier): Promise<Output[]>;
   tableId: TableId;
   table: Table<TableId>;
   params: Params;
@@ -15,7 +15,7 @@ interface CUD<TableId extends string = any, Params = any, Output = any> {
   interpret(): InterpretedCUD<Params, Output>;
   interpreted: InterpretedCUD<Params, Output>;
   compile(params: Params): [string, any[], RQLTag<any, Output>];
-  run(params: Params, querier: Querier): Promise<Output>;
+  run(params: Params, querier: Querier): Promise<Output[]>;
 }
 
 export const CUDPrototype = {
@@ -43,11 +43,11 @@ function compile(this: CUD, params: StringMap) {
 async function run(this: CUD, params: StringMap, querier: Querier): Promise<any[]> {
   const [query, values, returning] = this.compile (params);
 
-  const inserts = await querier (query, values);
+  const rows = await querier (query, values);
 
-  if (isEmptyTag (returning)) return inserts;
+  if (isEmptyTag (returning)) return rows;
 
-  return returning (inserts);
+  return returning ({ rows, ...params });
 }
 
 export const isCUD = function (x: any): x is CUD {

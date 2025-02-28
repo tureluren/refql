@@ -22,7 +22,7 @@ const pool = new Pool ({
 
 const querier = async (query: string, values: any[]) => {
   console.log (query);
-  // console.log (values);
+  console.log (values);
   const res = await pool.query (query, values);
 
   // return rows;
@@ -80,7 +80,7 @@ const playerCount2 = NumberProp ("playerCount", sql`
 
 const { id, name, playerCount, active } = Team.props;
 
-const innie = id.in<{ ids: number[]}> (p => p.ids).eq (1).omit ();
+const innie = id.in<{ ids: number[]}> (p => p.ids).omit ();
 const teamById = Team ([
   "name",
   "active",
@@ -93,9 +93,9 @@ const teamById = Team ([
   Game (["result"])
   // sql`limit 1`
   // OrderBy()
-]);
+]).concat (Team (["name", Game (["date"])]));
 
-teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
+teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts[0]));
 
 // const teamById = sql`
 //   select id, name, ${Raw ("active")} from team
@@ -135,8 +135,8 @@ teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts));
 // inc ipv omit, omdat bij update statements, byId, meestal wilt ge dan geen set id ={}, enkel op filteren en bij gewone selects kunt ge met * werken ipv incl()
 
 // employee ipv soccer
-const byIds = sql<{ id: number}[]>`
-  and id in ${Values (rows => rows.map (r => r.id))} 
+const byIds = sql<{rows: { id: number}[]}>`
+  and id in ${Values (({ rows }) => rows.map (r => r.id))} 
 `;
 
 const insertTeam = Team.insert ([
@@ -144,21 +144,20 @@ const insertTeam = Team.insert ([
   // // name,
   // "active",
   // name.nullable ()
-  // Team ([
-  //   "active",
-  //   Game (["*"]),
-  //   byIds
-  // ])
-  Team (["name"])
+  Team (["name", "leagueId"]),
+  Team ([
+    "id",
+    "active",
+    Game (["*"]),
+    byIds,
+    Limit<{ limit: number}> (p => p.limit)
+  ])
   // Game (["*"])
-
-  // returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
 ]);
 
-// data zodat er ruimte is voor andere params
-insertTeam ([{ name: "2", playerCount: 2, playerCount2: 2, leagueId: 2 }])
-  .then (r => console.log (r))
-  .catch (console.log);
+// insertTeam ({ data: [{ playerCount: 2, playerCount2: 2, name: "iep", leagueId: 4 }], limit: 2 })
+//   .then (r => console.log (r))
+//   .catch (console.log);
 
 // .then (res => console.log (res));
 

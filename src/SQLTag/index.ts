@@ -24,7 +24,7 @@ interface InterpretedSQLTag<Params = any> {
 }
 
 export interface SQLTag<Params = any, Output = any> extends RQLNode {
-  (params?: Params, querier?: Querier): Promise<Output>;
+  (params?: Params, querier?: Querier): Promise<Output[]>;
   params: Params;
   nodes: SQLNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
@@ -59,7 +59,7 @@ export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[]) {
 
     const [query, values] = tag.compile (params);
 
-    return convertPromise ((querier || defaultQuerier as Querier) (query, values) as Promise<Output>);
+    return convertPromise ((querier || defaultQuerier as Querier) (query, values) as Promise<Output[]>);
   }) as SQLTag<Params, Output>;
 
   Object.setPrototypeOf (
@@ -149,7 +149,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
       const { run } = node;
 
       values.push ({
-        run: p => run (p).flat (1)
+        run: p => run (p).flat (1).filter (p => !Raw.isRaw (p))
       });
 
       strings.push ({
@@ -161,7 +161,14 @@ function interpret(this: SQLTag): InterpretedSQLTag {
 
           for (const values of values2D) {
             s.push (
-              `(${values.map (() => { n += 1; return `$${i + n}`; }).join (", ")})`
+              `(${values.map (v => {
+                if (Raw.isRaw (v)) {
+                  return v.run (p);
+                } else {
+                  n += 1;
+                  return `$${i + n}`;
+                }
+              }).join (", ")})`
             );
           }
 

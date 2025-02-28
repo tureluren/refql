@@ -37,15 +37,11 @@ export function createInsertRQLTag<TableId extends string, Params = {}, Output =
 }
 
 function interpret(this: InsertRQLTag): InterpretedCUD {
-  const { nodes, table } = this,
-    members = [] as Prop[];
-
+  const { nodes, table } = this;
   let returning = table ([]);
 
   for (const node of nodes) {
-    if (Prop.isProp (node)) {
-      members.push (node);
-    } else if (isRQLTag (node)) {
+    if (isRQLTag (node)) {
       returning = returning.concat (node);
     } else {
       throw new Error (`Not a Prop or RQLTag Type: "${String (node)}"`);
@@ -54,10 +50,9 @@ function interpret(this: InsertRQLTag): InterpretedCUD {
 
   const props = getStandardProps (table);
 
-  // as || RAW(DEFAULT)
   let tag = sql`
-    insert into ${Raw (`${table} (${members.map (f => f.col || f.as).join (", ")})`)}
-    values ${Values2D ((batch: any[]) => batch.map (x => members.map (f => x[f.as] || null)))}
+    insert into ${Raw (`${table} (${props.map (f => f.col || f.as).join (", ")})`)}
+    values ${Values2D ((params: { data: any[]}) => params.data.map (x => props.map (f => x[f.as] == null ? Raw ("DEFAULT") : x[f.as])))}
     returning ${Raw (`${props.map (p => `${table.name}.${p.col || p.as} "${p.as}"`).join (", ")}`)}
   `;
 
