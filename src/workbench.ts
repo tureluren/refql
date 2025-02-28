@@ -161,12 +161,9 @@ const insertTeam = Team.insert ([
 
 // .then (res => console.log (res));
 
-// const updateTeam = Team.update ([
-//   "buh",
-//   name.optional (),
-//   id.eq(1).incl(),
-//   returning (insertedTeams) // inserted teams = rqlTag of gewoon comps ?
-// ]);
+const updateTeam = Team.update ([
+  "buh"
+]);
 
 // const updateTeam = Team.delete ([
 //   id.eq(p => p.id),

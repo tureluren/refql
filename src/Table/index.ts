@@ -1,5 +1,5 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { Insertable, InsertOutput, InsertParams, Output, Params, Selectable, Simplify } from "../common/types";
+import { CUDOutput, Insertable, InsertParams, Output, Params, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
 import validateTable from "../common/validateTable";
 import Prop from "../Prop";
 import PropType from "../Prop/PropType";
@@ -8,6 +8,7 @@ import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import { createInsertRQLTag, InsertRQLTag } from "../RQLTag/InsertRQLTag";
 import RefNode from "../RQLTag/RefNode";
 import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
+import { UpdateRQLTag } from "../RQLTag/UpdateRQLTag";
 import { isSQLTag } from "../SQLTag";
 
 interface Table<TableId extends string = any, Props = any> {
@@ -21,8 +22,8 @@ interface Table<TableId extends string = any, Props = any> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
-  // It seems to be important to put '[]' after InsertRQLTag, instead of incorporating it into the type definition of InsertRQLTag, to prevent long type explanation.
-  insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<Props, Components>, "rows">>, InsertOutput<TableId, Props, Components>["type"]>;
+  insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["type"]>;
+  update<Components extends Updatable<TableId, Prop>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["type"]>;
 }
 
 const type = "refql/Table";

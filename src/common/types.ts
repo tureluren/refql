@@ -86,6 +86,7 @@ export type Selectable<T> =
   | AllSign
   | keyof OnlyProps<T>
   | OnlyProps<T>[keyof OnlyProps<T>]
+  // ?
   | Prop
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
   | RQLNode;
@@ -95,6 +96,11 @@ export type Selectable<T> =
 export type Insertable<TableId extends string> =
   | RQLTag<TableId>;
   // | SQLTag
+
+export type Updatable<TableId extends string, T> =
+  | OnlyProps<T>[keyof OnlyProps<T>]
+  | RQLTag<TableId>
+  | SQLTag;
 
 
 export type ParamsType<S, T extends Selectable<S>[]> = T extends (infer U)[]
@@ -139,13 +145,17 @@ export type InsertParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplif
   { [K in keyof Props as Props[K]["hasDefaultValue"] extends false ? (Extract<Props[K]["type"], null> extends never ? K : never) : never]: Props[K]["type"] }
 >;
 
+export type UpdateParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplify<
+  { [K in keyof Props]?: Props[K]["type"] }
+>;
+
 export type OnlyTableRQLTags<TableId extends string, T extends Insertable<TableId>[]> =
   Extract<T[number], RQLTag<TableId>>[];
 
 export type DefaultReturning<S> =
   Simplify<{ [K in OnlyProps<S>[keyof OnlyProps<S>] as K["as"]]: K["type"] }>;
 
-export type InsertOutput<
+export type CUDOutput<
   TableId extends string,
   S,
   T extends Insertable<TableId>[],
