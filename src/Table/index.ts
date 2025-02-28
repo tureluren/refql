@@ -8,7 +8,7 @@ import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import { createInsertRQLTag, InsertRQLTag } from "../RQLTag/InsertRQLTag";
 import RefNode from "../RQLTag/RefNode";
 import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
-import { UpdateRQLTag } from "../RQLTag/UpdateRQLTag";
+import { createUpdateRQLTag, UpdateRQLTag } from "../RQLTag/UpdateRQLTag";
 import { isSQLTag } from "../SQLTag";
 
 interface Table<TableId extends string = any, Props = any> {
@@ -23,7 +23,7 @@ interface Table<TableId extends string = any, Props = any> {
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
   insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["type"]>;
-  update<Components extends Updatable<TableId, Prop>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["type"]>;
+  update<Components extends Updatable<TableId, Props>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["type"]>;
 }
 
 const type = "refql/Table";
@@ -31,7 +31,7 @@ const type = "refql/Table";
 const prototype = Object.assign (Object.create (Function.prototype), {
   constructor: Table,
   [refqlType]: type,
-  insert,
+  insert, update,
   equals, [flEquals]: equals,
   empty, [flEmpty]: empty,
   toString
@@ -119,12 +119,7 @@ function insert(this: Table, components: any) {
   const nodes: (Prop | RQLTag)[] = [];
 
   for (const comp of components) {
-    if (typeof comp === "string" && this.props[comp]) {
-      const prop = this.props[comp] as Prop;
-      nodes.push (prop);
-    } else if (Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) {
-      nodes.push (comp);
-    } else if (isRQLTag (comp)) {
+    if (isRQLTag (comp)) {
       if (this.equals (comp.table)) {
         nodes.push (comp);
       } else {
@@ -137,6 +132,32 @@ function insert(this: Table, components: any) {
 
   return createInsertRQLTag (this, nodes);
 }
+
+function update(this: Table, components: any) {
+  if (!Array.isArray (components)) {
+    // empty array is allowed because `select from player` is valid SQL
+    throw new Error ("Invalid components: not an Array");
+  }
+
+  const nodes: (Prop | RQLTag)[] = [];
+
+  for (const comp of components) {
+    if (Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) {
+      nodes.push (comp);
+    } else if (isRQLTag (comp)) {
+      if (this.equals (comp.table)) {
+        nodes.push (comp);
+      } else {
+        throw new Error ("When creating an UpdateRQLTag, RQLTags are reserved for determining the return type. Therefore, the table associated with the RQLTag must match the table into which you are inserting data.");
+      }
+    } else {
+      throw new Error (`Unknown Updatable Type: "${String (comp)}"`);
+    }
+  }
+
+  return createUpdateRQLTag (this, nodes);
+}
+
 
 function toString<Name extends string, S>(this: Table<Name, S>) {
   return `${this.schema ? `${this.schema}.` : ""}${this.name}`;

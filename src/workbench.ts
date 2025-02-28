@@ -95,7 +95,7 @@ const teamById = Team ([
   // OrderBy()
 ]).concat (Team (["name", Game (["date"])]));
 
-teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts[0]));
+// teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts[0]));
 
 // const teamById = sql`
 //   select id, name, ${Raw ("active")} from team
@@ -162,8 +162,12 @@ const insertTeam = Team.insert ([
 // .then (res => console.log (res));
 
 const updateTeam = Team.update ([
-  "buh"
+  id.eq<{ id: number }> (p => p.id)
 ]);
+
+updateTeam ({ data: { name: "foemp" }, id: 2 })
+  .then (r => console.log (r))
+  .catch (console.log);
 
 // const updateTeam = Team.delete ([
 //   id.eq(p => p.id),

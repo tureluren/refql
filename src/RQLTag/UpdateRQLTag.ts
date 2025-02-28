@@ -2,8 +2,9 @@ import { isRQLTag, RQLTag } from ".";
 import { refqlType } from "../common/consts";
 import { InterpretedCUD } from "../common/types";
 import Prop from "../Prop";
+import { isSQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
+import sql, { sqlP } from "../SQLTag/sql";
 import Table from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
@@ -36,14 +37,22 @@ export function createUpdateRQLTag<TableId extends string, Params = {}, Output =
 }
 
 function interpret(this: UpdateRQLTag): InterpretedCUD {
-  const { nodes, table } = this,
-    members = [] as Prop[];
+  const { nodes, table } = this;
 
+  let filters = sql``;
   let returning = table ([]);
 
   for (const node of nodes) {
     if (Prop.isProp (node)) {
-      members.push (node);
+      const col = isSQLTag (node.col)
+        ? sql`(${node.col})`
+        : Raw (`${table.name}.${node.col || node.as}`);
+
+      for (const op of node.operations) {
+        filters = filters.concat (
+          op.interpret (col)
+        );
+      }
     } else if (isRQLTag (node)) {
       returning = returning.concat (node);
     } else {
@@ -57,15 +66,19 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
     update ${Raw (table)} set
   `;
 
-  const updateFields = members
-    .reduce ((t, field) => t.concat (sql`
-        ${Raw (field.col || field.as)} = ${(p: any) => p[field.as]}, 
-      `)
+
+  const updateFields = props
+    .reduce ((t, field) => t.concat (sqlP ((params: { data: any[]}) => params.data[field.as] != null)`
+        ${Raw (field.col || field.as)} = ${(p: any) => p.data[field.as]}, 
+      ` as any)
     , updateTable);
 
-  let tag = updateFields.concat (sql`
-    returning ${Raw (`${props.map (p => `${table.name}.${p.col || p.as} "${p.as}"`).join (", ")}`)}
-  `);
+  let tag = updateFields
+    .concat (sql`where 1 = 1`)
+    .concat (filters)
+    .concat (sql`
+      returning ${Raw (`${props.map (p => `${table.name}.${p.col || p.as} "${p.as}"`).join (", ")}`)}
+    `);
 
   return {
     tag,

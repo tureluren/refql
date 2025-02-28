@@ -99,6 +99,7 @@ export type Insertable<TableId extends string> =
 
 export type Updatable<TableId extends string, T> =
   | OnlyProps<T>[keyof OnlyProps<T>]
+  | Prop
   | RQLTag<TableId>
   | SQLTag;
 
@@ -149,7 +150,7 @@ export type UpdateParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplif
   { [K in keyof Props]?: Props[K]["type"] }
 >;
 
-export type OnlyTableRQLTags<TableId extends string, T extends Insertable<TableId>[]> =
+export type OnlyTableRQLTags<TableId extends string, S, T extends (Insertable<TableId> | Updatable<TableId, S>)[]> =
   Extract<T[number], RQLTag<TableId>>[];
 
 export type DefaultReturning<S> =
@@ -158,8 +159,8 @@ export type DefaultReturning<S> =
 export type CUDOutput<
   TableId extends string,
   S,
-  T extends Insertable<TableId>[],
-  TableRQLTags extends OnlyTableRQLTags<TableId, T> = OnlyTableRQLTags<TableId, T>,
+  T extends (Insertable<TableId> | Updatable<TableId, S>)[],
+  TableRQLTags extends OnlyTableRQLTags<TableId, S, T> = OnlyTableRQLTags<TableId, S, T>,
   finalOutput = UnionToIntersection<TableRQLTags[number]["type"]>
 > = TableRQLTags extends never[]
   ? RQLTag<TableId, {}, DefaultReturning<S>>
