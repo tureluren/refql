@@ -1,5 +1,6 @@
 import { isRQLTag, RQLTag } from ".";
 import { refqlType } from "../common/consts";
+import isLastKey from "../common/isLastKey";
 import { InterpretedCUD } from "../common/types";
 import Prop from "../Prop";
 import { isSQLTag } from "../SQLTag";
@@ -36,6 +37,7 @@ export function createUpdateRQLTag<TableId extends string, Params = {}, Output =
   return tag;
 }
 
+
 function interpret(this: UpdateRQLTag): InterpretedCUD {
   const { nodes, table } = this;
 
@@ -69,7 +71,7 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
 
   const updateFields = props
     .reduce ((t, field) => t.concat (sqlP ((params: { data: any[]}) => params.data[field.as] != null)`
-        ${Raw (field.col || field.as)} = ${(p: any) => p.data[field.as]}, 
+        ${Raw (field.col || field.as)} = ${(p: any) => p.data[field.as]}${Raw (p => isLastKey (p.data, field.as) ? "" : ",")} 
       ` as any)
     , updateTable);
 

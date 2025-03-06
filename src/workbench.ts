@@ -165,7 +165,7 @@ const updateTeam = Team.update ([
   id.eq<{ id: number }> (p => p.id)
 ]);
 
-updateTeam ({ data: { name: "foemp" }, id: 2 })
+updateTeam ({ data: { name: "foemp", active: false }, id: 2 })
   .then (r => console.log (r))
   .catch (console.log);
 
