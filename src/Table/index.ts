@@ -1,10 +1,11 @@
 import { flEmpty, flEquals, refqlType } from "../common/consts";
-import { CUDOutput, Insertable, InsertParams, Output, Params, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
+import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
 import validateTable from "../common/validateTable";
 import Prop from "../Prop";
 import PropType from "../Prop/PropType";
 import RefProp from "../Prop/RefProp";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
+import { createDeleteRQLTag, DeleteRQLTag } from "../RQLTag/DeleteRQLTag";
 import { createInsertRQLTag, InsertRQLTag } from "../RQLTag/InsertRQLTag";
 import RefNode from "../RQLTag/RefNode";
 import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
@@ -24,6 +25,7 @@ interface Table<TableId extends string = any, Props = any> {
   toString(): string;
   insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["type"]>;
   update<Components extends Updatable<TableId, Props>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["type"]>;
+  delete<Components extends Deletable<Props>[]>(components: Components): DeleteRQLTag<TableId, Params<Props, Components>, CUDOutput<TableId, Props, Components>["type"]>;
 }
 
 const type = "refql/Table";
@@ -32,6 +34,7 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   constructor: Table,
   [refqlType]: type,
   insert, update,
+  delete: remove,
   equals, [flEquals]: equals,
   empty, [flEmpty]: empty,
   toString
@@ -135,7 +138,6 @@ function insert(this: Table, components: any) {
 
 function update(this: Table, components: any) {
   if (!Array.isArray (components)) {
-    // empty array is allowed because `select from player` is valid SQL
     throw new Error ("Invalid components: not an Array");
   }
 
@@ -158,6 +160,23 @@ function update(this: Table, components: any) {
   return createUpdateRQLTag (this, nodes);
 }
 
+function remove(this: Table, components: any) {
+  if (!Array.isArray (components)) {
+    throw new Error ("Invalid components: not an Array");
+  }
+
+  const nodes: Prop[] = [];
+
+  for (const comp of components) {
+    if (Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) {
+      nodes.push (comp);
+    } else {
+      throw new Error (`Unknown Deletable Type: "${String (comp)}"`);
+    }
+  }
+
+  return createDeleteRQLTag (this, nodes);
+}
 
 function toString<Name extends string, S>(this: Table<Name, S>) {
   return `${this.schema ? `${this.schema}.` : ""}${this.name}`;

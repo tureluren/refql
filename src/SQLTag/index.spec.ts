@@ -128,7 +128,7 @@ describe ("SQLTag type", () => {
   });
 
   test ("Values", async () => {
-    const tag = sql<{ids: number[]}, OnlyProps<typeof Player["props"]>[]>`
+    const tag = sql<{ids: number[]}, OnlyProps<typeof Player["props"]>>`
       select id, first_name "firstName", ${rawLastName}
       from player
       where id in ${Values (p => p.ids)}

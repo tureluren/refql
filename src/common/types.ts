@@ -103,6 +103,10 @@ export type Updatable<TableId extends string, T> =
   | RQLTag<TableId>
   | SQLTag;
 
+export type Deletable<T> =
+  | OnlyProps<T>[keyof OnlyProps<T>]
+  | Prop
+  | SQLTag;
 
 export type ParamsType<S, T extends Selectable<S>[]> = T extends (infer U)[]
   ? (U extends { params: any }
@@ -132,7 +136,7 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
 
       : U extends RQLTag<RefProps[keyof RefProps]["tableId"]>
         ? TableIds[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne", true | false>
-          ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["type"][0] | null : U["type"][0]}
+          ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["type"][][0] | null : U["type"][][0]}
           : TableIds[U["tableId"]] extends RefProp<any, any, "HasMany" | "BelongsToMany", true | false>
             ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["type"][] | null : U["type"][]}
             : never

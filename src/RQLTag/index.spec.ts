@@ -15,7 +15,7 @@ import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import {
   Game, Goal, League,
-  Player, Player2, Rating, Team, XGame
+  Player, Player2, Position, Rating, Team, XGame
 } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Limit from "./Limit";
@@ -869,8 +869,7 @@ describe ("RQLTag type", () => {
 
     const [query, values] = tag.compile ({ limit: 5, offset: 10 });
 
-    // known issue: extra " " in query
-    expect (query).toBe (`select player.id "id" from player where 1 = 1  limit $1 offset $2`);
+    expect (query).toBe (`select player.id "id" from player where 1 = 1 limit $1 offset $2`);
 
     expect (values).toEqual ([5, 10]);
 
@@ -896,7 +895,7 @@ describe ("RQLTag type", () => {
 
     const [query, values] = tag.compile ({});
 
-    expect (query).toBe (`select player.id "id" from player where 1 = 1 `);
+    expect (query).toBe (`select player.id "id" from player where 1 = 1`);
 
     expect (values).toEqual ([]);
 
@@ -920,7 +919,7 @@ describe ("RQLTag type", () => {
 
     const [query, values] = tag.compile ({});
 
-    expect (query).toBe (`select player.last_name "lastName" from player where 1 = 1 `);
+    expect (query).toBe (`select player.last_name "lastName" from player where 1 = 1`);
 
     expect (values).toEqual ([]);
 
@@ -944,7 +943,7 @@ describe ("RQLTag type", () => {
 
     const [query, values] = tag.compile ({ isNull: false });
 
-    expect (query).toBe (`select player.last_name "lastName" from player where 1 = 1 `);
+    expect (query).toBe (`select player.last_name "lastName" from player where 1 = 1`);
 
     expect (values).toEqual ([]);
 

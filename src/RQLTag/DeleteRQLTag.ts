@@ -12,20 +12,20 @@ import getStandardProps from "./getStandardProps";
 import rawSpace from "./RawSpace";
 import runnableTag from "./runnableTag";
 
-export interface UpdateRQLTag<TableId extends string = any, Params = any, Output = any> extends CUD<TableId, Params, Output> {
-  nodes: (Prop | RQLTag<TableId>)[];
+export interface DeleteRQLTag<TableId extends string = any, Params = any, Output = any> extends CUD<TableId, Params, Output> {
+  nodes: Prop[];
 }
 
-const type = "refql/UpdateRQLTag";
+const type = "refql/DeleteRQLTag";
 
 let prototype = Object.assign ({}, CUDPrototype, {
-  constructor: createUpdateRQLTag,
+  constructor: createDeleteRQLTag,
   [refqlType]: type,
   interpret
 });
 
-export function createUpdateRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: (Prop | RQLTag<TableId>)[]) {
-  const tag = runnableTag<UpdateRQLTag<TableId, Params, Output>> ();
+export function createDeleteRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: (Prop | RQLTag<TableId>)[]) {
+  const tag = runnableTag<DeleteRQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
     tag,
@@ -38,7 +38,7 @@ export function createUpdateRQLTag<TableId extends string, Params = {}, Output =
   return tag;
 }
 
-function interpret(this: UpdateRQLTag): InterpretedCUD {
+function interpret(this: DeleteRQLTag): InterpretedCUD {
   const { nodes, table } = this;
 
   let filters = sql``;
@@ -58,8 +58,6 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
           op.interpret (col)
         );
       }
-    } else if (isRQLTag (node)) {
-      returning = returning.concat (node);
     } else {
       throw new Error (`Not a Prop or RQLTag Type: "${String (node)}"`);
     }
@@ -67,21 +65,12 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
 
   const props = getStandardProps (table);
 
-  const updateTable = sql`
-    update ${Raw (table)} set
+  const deleteTable = sql`
+    delete from ${Raw (table)}
+    where 1 = 1
   `;
 
-  const updateFields = props
-    .reduce ((t, field) => {
-      const pred = (params: { data: any[]}) => params.data[field.as] != null;
-
-      return t.join (rawSpace (pred), sqlP (pred)`
-        ${Raw (field.col || field.as)} = ${(p: any) => p.data[field.as]}${Raw (p => isLastKey (p.data, field.as) ? "" : ",")} 
-      ` as any);
-    }, updateTable);
-
-  let tag = updateFields
-    .concat (sql`where 1 = 1`)
+  let tag = deleteTable
     .join ("", filters)
     .concat (sql`
       returning ${Raw (`${props.map (p => `${table.name}.${p.col || p.as} "${p.as}"`).join (", ")}`)}
@@ -93,6 +82,6 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
   };
 }
 
-export const isUpdateRQLTag = function <As extends string = any, Params = any, Output = any> (x: any): x is UpdateRQLTag<As, Params, Output> {
+export const isDeleteRQLTag = function <As extends string = any, Params = any, Output = any> (x: any): x is DeleteRQLTag<As, Params, Output> {
   return x != null && x[refqlType] === type;
 };

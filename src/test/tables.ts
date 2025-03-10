@@ -13,7 +13,7 @@ import Table from "../Table";
 const id = NumberProp ("id");
 const name = StringProp ("name");
 
-const Position = Table ("game", [
+const Position = Table ("position", [
   id,
   name
 ]);

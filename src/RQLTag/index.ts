@@ -11,6 +11,7 @@ import Table from "../Table";
 import Limit from "./Limit";
 import Offset from "./Offset";
 import OrderBy from "./OrderBy";
+import rawSpace from "./RawSpace";
 import RefNode from "./RefNode";
 import RQLNode from "./RQLNode";
 import runnableTag from "./runnableTag";
@@ -139,7 +140,10 @@ function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
             op.interpret (col)
           );
         } else {
-          filters = filters.concat (
+          const delimiter = rawSpace (op.pred);
+
+          filters = filters.join (
+            delimiter,
             op.interpret (col)
           );
         }
@@ -154,7 +158,7 @@ function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
       caseOfRef (node.joinLateral (), node.info, node.single);
 
     } else if (isSQLTag (node)) {
-      filters = filters.concat (node);
+      filters = filters.join (rawSpace (), node);
     } else {
       throw new Error (`Unknown RQLNode Type: "${String (node)}"`);
     }
@@ -165,7 +169,8 @@ function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
     from ${Raw (table)}
   `
     .concat (where)
-    .concat (filters)
+    // filters contains preds, so using join here
+    .join ("", filters)
     .concat (orderBies)
     .concat (limit)
     .concat (offset);

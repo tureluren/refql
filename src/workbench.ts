@@ -21,7 +21,7 @@ const pool = new Pool ({
 });
 
 const querier = async (query: string, values: any[]) => {
-  console.log (query);
+  console.log ("'" + query + "'");
   console.log (values);
   const res = await pool.query (query, values);
 
@@ -122,7 +122,7 @@ const teamById = Team ([
 
 
 // know Issues:
-// - pred return false () => extra " " in queries
+// - in delete no option to define returning RQLTag cause i don't see the point
 // - in returning rql tag (inserts, updates) params is any to no type info about returns, so we need
 //    const byIds = sql<{ id: number}[]>`
 //      and id in ${Values (rows => rows.map (r => r.id))}
@@ -165,9 +165,9 @@ const updateTeam = Team.update ([
   id.eq<{ id: number }> (p => p.id)
 ]);
 
-updateTeam ({ data: { name: "foemp", active: false }, id: 2 })
-  .then (r => console.log (r))
-  .catch (console.log);
+// updateTeam ({ data: { name: "foemp", active: false }, id: 2 })
+//   .then (r => console.log (r))
+//   .catch (console.log);
 
 // const updateTeam = Team.delete ([
 //   id.eq(p => p.id),
@@ -176,3 +176,27 @@ updateTeam ({ data: { name: "foemp", active: false }, id: 2 })
 
 
 // upsert ??
+
+// const tag = Team ([
+//   name.isNull<{ isNull: boolean }> ((p => p.isNull))
+// ]);
+
+// tag ({ isNull: false }).then (() => null);
+
+const deleteTeam = Team.delete ([
+  id.eq<{ id: number }> (p => p.id)
+]);
+
+deleteTeam ({ id: 2000 })
+  .then (r => console.log (r))
+  .catch (console.log);
+
+// maak distinct mogelijk
+// const findCity = sql`
+//   select distinct city, zip
+//   from organisation.location
+//   where city ilike ${p => `%${p.q}%`}
+//   or zip ilike ${p => `%${p.q}%`}
+//   order by city, zip
+//   limit 50
+// `;

@@ -3,6 +3,7 @@ import { getConvertPromise } from "../common/convertPromise";
 import getGlobalQuerier from "../common/defaultQuerier";
 import isEmptyTag from "../common/isEmptyTag";
 import { Querier, StringMap, TagFunctionVariable } from "../common/types";
+import rawSpace from "../RQLTag/RawSpace";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import Raw from "./Raw";
 import SQLNode from "./SQLNode";
@@ -30,7 +31,7 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode {
   interpreted?: InterpretedSQLTag<Params>;
   defaultQuerier?: Querier;
   concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
-  join<Params2, Output2>(delimiter: string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
+  join<Params2, Output2>(delimiter: Raw | string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   [flConcat]: SQLTag<Params, Output>["concat"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params): [string, any[]];
@@ -72,9 +73,11 @@ export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[]) {
   return tag;
 }
 
-function join(this: SQLTag, delimiter: string, other: SQLTag) {
+function join(this: SQLTag, delimiter: Raw | string, other: SQLTag) {
+  const raw = Raw.isRaw (delimiter) ? delimiter : Raw (delimiter);
+
   return createSQLTag (
-    this.nodes.concat (Raw (delimiter), ...other.nodes)
+    this.nodes.concat (raw, ...other.nodes)
   );
 }
 
@@ -82,7 +85,7 @@ function concat(this: SQLTag, other: SQLTag) {
   if (isEmptyTag (this)) return other;
   if (isEmptyTag (other)) return this;
 
-  return this.join (" ", other);
+  return this.join (rawSpace (), other);
 }
 
 function interpret(this: SQLTag): InterpretedSQLTag {
