@@ -78,6 +78,7 @@ const Game = Table ("game", [
 // `);
 
 const { id, name, active } = Team.props;
+const { result } = Game.props;
 
 const innie = id.in<{ ids: number[]}> (p => p.ids).omit ();
 
@@ -85,7 +86,7 @@ const teamById = Team ([
   "name",
   "active",
   playerCount.eq (11),
-  innie,
+  id.in<{ ids: number[]}> (p => p.ids).omit (),
   //  Team (["*"])
   // playerCount2.eq (11),
   // name.desc (),
@@ -94,10 +95,10 @@ const teamById = Team ([
   // OrderBy()
 ]).concat (Team (["name", Game (["date"])]));
 
-// teamById ({ ids: [1, 2] }, querier).then (ts => console.log (ts[0]));
+teamById ({ ids: [1, 2] }, querier).then (ts => console.log (ts[0]));
 
-const getTeams = Team ([Game, Limit (1)]);
-getTeams ().then (e => console.log (e));
+// const getTeams = Team ([Game, Limit (1)]);
+// getTeams ().then (e => console.log (e));
 
 // const teamById = sql`
 //   select id, name, ${Raw ("active")} from team

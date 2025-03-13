@@ -1,20 +1,19 @@
-import { refqlType } from "../common/consts";
-import copyObj from "../common/copyObj";
-import { OrdOperator, TagFunctionVariable } from "../common/types";
 import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
 import IsNull from "../RQLTag/IsNull";
 import Like from "../RQLTag/Like";
+import Operation from "../RQLTag/Operation";
 import Ord from "../RQLTag/Ord";
 import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
-import { SQLTag } from "../SQLTag";
-import Operation from "../RQLTag/Operation";
+import { refqlType } from "../common/consts";
+import copyObj from "../common/copyObj";
+import { OrdOperator, TagFunctionVariable } from "../common/types";
 import PropType, { propTypePrototype } from "./PropType";
 
 interface Prop<As extends string = any, Type = any, Params = any, IsOmitted extends boolean = any, HasDefault extends boolean = any> extends RQLNode, PropType<As> {
   params: Params;
-  col?: string | SQLTag<Params>;
+  col?: string;
   type: Type;
   isOmitted: IsOmitted;
   hasDefaultValue: HasDefault;
@@ -69,7 +68,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   hasDefault
 });
 
-function Prop<As extends string, Type = any, Params = any>(as: As, col?: string | SQLTag<Params>) {
+function Prop<As extends string, Type = any, Params = any>(as: As, col?: string) {
   let prop: Prop<As, Type, Params> = Object.create (prototype);
 
   prop.as = as;
@@ -81,11 +80,11 @@ function Prop<As extends string, Type = any, Params = any>(as: As, col?: string 
   return prop;
 }
 
-function nullable(this: Prop) {
+export function nullable(this: Prop) {
   return copyObj (this);
 }
 
-function eq(notEq?: boolean) {
+export function eq(notEq?: boolean) {
   return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
     const prop = copyObj (this);
     const eqOp = Eq (run, pred, notEq);
@@ -96,7 +95,7 @@ function eq(notEq?: boolean) {
   };
 }
 
-function isNull(notIsNull?: boolean) {
+export function isNull(notIsNull?: boolean) {
   return function (this: Prop, pred?: TagFunctionVariable<any, boolean>) {
     const prop = copyObj (this);
     const nullOp = IsNull (pred, notIsNull);
@@ -107,7 +106,7 @@ function isNull(notIsNull?: boolean) {
   };
 }
 
-function like(caseSensitive?: boolean, notLike?: boolean) {
+export function like(caseSensitive?: boolean, notLike?: boolean) {
   return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
     const prop = copyObj (this);
     const likeOp = Like (run, pred, caseSensitive, notLike);
@@ -118,7 +117,7 @@ function like(caseSensitive?: boolean, notLike?: boolean) {
   };
 }
 
-function whereIn(notIn?: boolean) {
+export function whereIn(notIn?: boolean) {
   return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
     const prop = copyObj (this);
     const inOp = In (run, pred, notIn);
@@ -129,7 +128,7 @@ function whereIn(notIn?: boolean) {
   };
 }
 
-function ord(operator: OrdOperator) {
+export function ord(operator: OrdOperator) {
   return function (this: Prop, run: any, pred?: TagFunctionVariable<any, boolean>) {
     const prop = copyObj (this);
     const ordOp = Ord (run, operator, pred);
@@ -140,7 +139,7 @@ function ord(operator: OrdOperator) {
   };
 }
 
-function dir(descending?: boolean) {
+export function dir(descending?: boolean) {
   return function (this: Prop) {
     const prop = copyObj (this);
     const orderByOp = OrderBy (descending);
@@ -151,7 +150,7 @@ function dir(descending?: boolean) {
   };
 }
 
-function omit(this: Prop) {
+export function omit(this: Prop) {
   let prop = copyObj (this);
   prop.isOmitted = true;
 

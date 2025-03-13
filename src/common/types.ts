@@ -1,5 +1,6 @@
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
+import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
 import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
@@ -84,14 +85,12 @@ export type Pagination = Limit | Offset;
 
 export type Selectable<T> =
   | keyof OnlyProps<T>
-  | OnlyProps<T>[keyof OnlyProps<T>]
-  // ?
-  | Prop
+  | Prop<keyof OnlyProps<T>>
+  | SQLProp
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
   | Table<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
-  | RQLNode;
-  // | Pagination
-  // | SQLTag;
+  | Pagination
+  | SQLTag;
 
 export type Insertable<TableId extends string> =
   | RQLTag<TableId>;
@@ -133,7 +132,7 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
   FinalComponents<S, T> extends (infer U)[]
   ? U extends keyof Props
     ? {as: U; type: Props[U]["type"]}
-      : U extends Prop
+      : U extends Prop | SQLProp
       ? U["isOmitted"] extends false
         ? { as: U["as"]; type: U["type"] }
         : never

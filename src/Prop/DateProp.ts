@@ -1,8 +1,14 @@
 import Prop from ".";
-import { SQLTag } from "../SQLTag";
+import { isSQLTag, SQLTag } from "../SQLTag";
+import SQLProp from "./SQLProp";
 
-function DateProp <As extends string, Params>(as: As, col?: string | SQLTag<Params>): Prop<As, Date, Params, false, false> {
-  return Prop (as, col);
+function DateProp <As extends string, Params>(as: As, col: SQLTag<Params>): SQLProp<As, Date, Params, false>;
+function DateProp <As extends string, Params>(as: As, col?: string): Prop<As, Date, Params, false, false>;
+function DateProp <As extends string>(as: As, col?: unknown): unknown {
+  if (isSQLTag (col)) {
+    return SQLProp (as, col);
+  }
+  return Prop (as, col as string | undefined);
 }
 
 export default DateProp;
