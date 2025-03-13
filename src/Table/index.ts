@@ -1,4 +1,4 @@
-import { flEmpty, flEquals, refqlType } from "../common/consts";
+import { flEquals, refqlType } from "../common/consts";
 import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
 import validateTable from "../common/validateTable";
 import Prop from "../Prop";
@@ -12,6 +12,7 @@ import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
 import { createUpdateRQLTag, UpdateRQLTag } from "../RQLTag/UpdateRQLTag";
 import { isSQLTag } from "../SQLTag";
 
+// Props => NO SQL PROPS
 interface Table<TableId extends string = any, Props = any> {
   <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Props, Components>, { [K in Output<Props, Components> as K["as"]]: K["type"] }>;
   tableId: TableId;
@@ -19,7 +20,6 @@ interface Table<TableId extends string = any, Props = any> {
   schema?: string;
   props: Props;
   empty<Params, Output>(): RQLTag<TableId, Params, Output>;
-  [flEmpty]: Table<TableId, Props>["empty"];
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
@@ -36,7 +36,6 @@ const prototype = Object.assign (Object.create (Function.prototype), {
   insert, update,
   delete: remove,
   equals, [flEquals]: equals,
-  empty, [flEmpty]: empty,
   toString
 });
 
@@ -60,19 +59,38 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
 
     const nodes: RQLNode[] = [];
 
+    let memberCount = 0;
+    // isSQLTag kan weg als dit niet meer kan voorvallen bij gen schema
+    const fieldProps = Object.entries (properties)
+      .map (([, prop]) => prop as Prop)
+      .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
+
     for (const comp of components) {
-      if (comp === "*") {
-        const fieldProps = Object.entries (properties)
-          .map (([, prop]) => prop as Prop)
-          .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
-
-        nodes.push (...fieldProps);
-
-      } else if (typeof comp === "string" && properties[comp]) {
+      if (typeof comp === "string" && properties[comp]) {
         const prop = properties[comp] as Prop;
         nodes.push (prop);
+        memberCount += 1;
       } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
         nodes.push (comp);
+        memberCount += 1;
+      } else if (Table.isTable (comp)) {
+        const refNodes = Object.keys (properties)
+          .map (key => properties[key as keyof typeof properties])
+          .filter (prop => RefProp.isRefProp (prop) && comp.equals (prop.child))
+          .map ((refProp => {
+            const fieldProps = Object.entries (comp.props as any)
+              .map (([, prop]) => prop as Prop)
+              .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
+            return RefNode (createRQLTag (comp, [...fieldProps]), refProp as any, table as any);
+          }));
+
+        if (!refNodes.length) {
+          throw new Error (
+            `${table.tableId} has no ref defined for: ${comp.tableId}`
+          );
+        }
+
+        nodes.push (...refNodes);
       } else if (isRQLTag (comp)) {
         const refNodes = Object.keys (properties)
           .map (key => properties[key as keyof typeof properties])
@@ -91,6 +109,10 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
       } else {
         throw new Error (`Unknown Selectable Type: "${String (comp)}"`);
       }
+    }
+
+    if (memberCount === 0) {
+      nodes.push (...fieldProps);
     }
 
     return createRQLTag (table, nodes);
@@ -189,10 +211,6 @@ function equals<Name extends string, S>(this: Table<Name, S>, other: Table<Name,
     this.name === other.name &&
     this.schema === other.schema
   );
-}
-
-function empty<Name extends string, S>(this: Table<Name, S>) {
-  return this ([]);
 }
 
 Table.isTable = function<Name extends string, S> (x: any): x is Table<Name, S> {

@@ -286,7 +286,7 @@ describe ("SQLTag type", () => {
   });
 
   test ("compile errors", () => {
-    expect (() => sql`select ${Player (["*"])}`.compile ({}))
+    expect (() => sql`select ${Player ([])}`.compile ({}))
       .toThrowError (new Error ("U can't use RQLTags inside SQLTags"));
 
     let tag = sql`select * from player`;

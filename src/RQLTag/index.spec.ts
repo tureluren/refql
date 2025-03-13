@@ -2,7 +2,7 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import { createRQLTag, isRQLTag } from ".";
-import { flConcat, flEmpty } from "../common/consts";
+import { flConcat } from "../common/consts";
 import setConvertPromise from "../common/convertPromise";
 import { setDefaultQuerier } from "../common/defaultQuerier";
 import { Querier } from "../common/types";
@@ -117,16 +117,6 @@ describe ("RQLTag type", () => {
 
     expect (goalsQuery).toEqual (goalsQuery2);
     expect (goalsValues).toEqual (goalsValues2);
-  });
-
-  test ("Monoid", () => {
-    const tag = Player (["id", "lastName"]);
-
-    const res = tag[flConcat] (Player.empty ());
-    const res2 = Player[flEmpty] ()[flConcat] (tag);
-
-    expect (res.compile ({})).toEqual (tag.compile ({}));
-    expect (res2.compile ({})).toEqual (tag.compile ({}));
   });
 
   test ("run", async () => {
@@ -391,7 +381,6 @@ describe ("RQLTag type", () => {
 
   test ("all fields", async () => {
     const tag = Player ([
-      "*",
       sql`limit 1`
     ]);
 
@@ -405,8 +394,7 @@ describe ("RQLTag type", () => {
 
   test ("Nested limit, nested offset and cache", async () => {
     const tag = Team ([
-      "*",
-      Player (["*", Limit<{ playerLimit: number }> (p => p.playerLimit), Offset<{playerOffset: number}> (p => p.playerOffset)]),
+      Player ([Limit<{ playerLimit: number }> (p => p.playerLimit), Offset<{playerOffset: number}> (p => p.playerOffset)]),
       Limit<{ limit: number }> (p => p.limit),
       Offset (3)
     ]);
@@ -432,7 +420,6 @@ describe ("RQLTag type", () => {
 
   test ("By id", async () => {
     const tag = Player ([
-      "*",
       sql<{ id: number }>`
         and ${Raw (Player.name)}.id = ${p => p.id}
       `
@@ -449,7 +436,6 @@ describe ("RQLTag type", () => {
     const { id } = Player.props;
 
     const tag = Player ([
-      "*",
       id.eq<{ id: number }> (p => p.id)
     ]);
 
@@ -464,7 +450,6 @@ describe ("RQLTag type", () => {
     const { teamId } = Player.props;
 
     const tag = Player ([
-      "*",
       teamId.eq (2)
     ]);
 
@@ -754,7 +739,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("No record found", async () => {
-    const goals = Goal (["*"]);
+    const goals = Goal ([]);
 
     const tag = Player ([
       goals,
@@ -770,9 +755,7 @@ describe ("RQLTag type", () => {
 
   test ("No relation found", async () => {
     const tag = Player ([
-      "*",
       Team ([
-        "*",
         sql`
           and id = 999999999
         `
@@ -791,7 +774,7 @@ describe ("RQLTag type", () => {
     expect (() => Player (["id", "lastName"]).concat (Team (["id", "name"]) as any))
       .toThrowError (new Error ("U can't concat RQLTags that come from different tables"));
 
-    expect (() => Player (["id", "lastName", League (["*"]) as any]))
+    expect (() => Player (["id", "lastName", League ([]) as any]))
       .toThrowError (new Error ("player has no ref defined for: league"));
 
     expect (() => Player (["id", "lastName", 1 as any]))
@@ -800,7 +783,7 @@ describe ("RQLTag type", () => {
     expect (() => Player ({} as any))
       .toThrowError (new Error ("Invalid components: not an Array"));
 
-    let tag = Player (["*"]);
+    let tag = Player ([]);
     tag.nodes = [1] as any;
 
     expect (() => tag.compile ({}))
@@ -810,7 +793,7 @@ describe ("RQLTag type", () => {
   test ("database error", async () => {
     const message = 'relation "playerr" does not exist';
     try {
-      const tag = Table ("playerr", []) (["*"]);
+      const tag = Table ("playerr", []) ([]);
       await tag ({}, () => Promise.reject (message));
     } catch (err: any) {
       expect (err).toBe (message);
@@ -821,7 +804,7 @@ describe ("RQLTag type", () => {
     const message = "There was no Querier provided";
     try {
       setDefaultQuerier (undefined as any);
-      const tag = Player (["*"]);
+      const tag = Player ([]);
       await tag ({});
     } catch (err: any) {
       expect (err.message).toBe (message);
@@ -968,7 +951,7 @@ describe ("RQLTag type", () => {
     };
 
     setConvertPromise (id);
-    const tag = Player (["*"]);
+    const tag = Player ([]);
 
     await tag ({});
 

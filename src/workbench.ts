@@ -42,22 +42,24 @@ const Team = Table ("public.team", [
   // U will have to determine which array contains the last game after the result
   // comes back from the db.
   HasMany ("homeGames", "game", { rRef: "home_team_id" }),
-  HasMany ("awayGames", "game", { rRef: "away_team_id" }),
+  HasMany ("awayGames", "game", { rRef: "away_team_id" })
 
-  // // Right now I would define a count in this way.
-  // // The problem is that it's not that typesafe since it's using
-  // // the not so typesafe `sql`function.
-  NumberProp ("playerCount", sql<{ buh: number}>`
-    select cast(count(*) as int) from player
-    where player.team_id = team.id
-    and 1 = ${p => p.buh}
-  `),
-
-  NumberProp ("playerCount2", sql`
-    select cast(count(*) as int) from player
-    where player.team_id = team.id
-  `)
 ]);
+
+// // Right now I would define a count in this way.
+// // The problem is that it's not that typesafe since it's using
+// // the not so typesafe `sql`function.
+const playerCount = NumberProp ("playerCount", sql`
+    select cast(count(*) as int) from player
+    where player.team_id = team.id
+  `);
+
+const playerCount2 = NumberProp ("playerCount2", sql`
+    select cast(count(*) as int) from player
+    where player.team_id = team.id
+  `);
+
+const Position = Table ("position", []);
 
 const Game = Table ("game", [
   NumberProp ("id"),
@@ -69,23 +71,20 @@ const Game = Table ("game", [
   DateProp ("date")
 ]);
 
-const playerCount2 = NumberProp ("playerCount", sql`
-  select cast(count(*) as int) from player
-  where player.team_id = team.id
-`);
+
 // const playerCount = NumberProp ("playerCount", sql`
 //   select cast(count(*) as int) from player
 //   where player.team_id = team.id
 // `);
 
-const { id, name, playerCount, active } = Team.props;
+const { id, name, active } = Team.props;
 
 const innie = id.in<{ ids: number[]}> (p => p.ids).omit ();
+
 const teamById = Team ([
   "name",
   "active",
-  playerCount,
-  playerCount2,
+  playerCount.eq (11),
   innie,
   //  Team (["*"])
   // playerCount2.eq (11),
@@ -95,7 +94,10 @@ const teamById = Team ([
   // OrderBy()
 ]).concat (Team (["name", Game (["date"])]));
 
-// teamById ({ ids: [1, 2], buh: 1 }, querier).then (ts => console.log (ts[0]));
+// teamById ({ ids: [1, 2] }, querier).then (ts => console.log (ts[0]));
+
+const getTeams = Team ([Game, Limit (1)]);
+getTeams ().then (e => console.log (e));
 
 // const teamById = sql`
 //   select id, name, ${Raw ("active")} from team
@@ -129,7 +131,10 @@ const teamById = Team ([
 //     `;
 
 // TODO:
-// COUNT types MOGEN NIET IN RETURN TYPE ZITTEN bij CUD
+// sqltag types MOGEN NIET IN RETURN TYPE ZITTEN bij CUD
+// aggregation, grouping
+// refprops zitten ook op props, dit ook laten toevoegen aan query ?
+// const { id, name, playerCount, active, homeGames } = Team.props;
 
 // DECISIONS
 // inc ipv omit, omdat bij update statements, byId, meestal wilt ge dan geen set id ={}, enkel op filteren en bij gewone selects kunt ge met * werken ipv incl()
@@ -146,16 +151,17 @@ const insertTeam = Team.insert ([
   // name.nullable ()
   Team (["name", "leagueId"]),
   Team ([
+    playerCount,
     "id",
     "active",
-    Game (["*"]),
+    Game,
     byIds,
     Limit<{ limit: number}> (p => p.limit)
   ])
   // Game (["*"])
 ]);
 
-// insertTeam ({ data: [{ playerCount: 2, playerCount2: 2, name: "iep", leagueId: 4 }], limit: 2 })
+// insertTeam ({ data: [{ name: "iep", leagueId: 4 }], limit: 2 })
 //   .then (r => console.log (r))
 //   .catch (console.log);
 
@@ -187,9 +193,9 @@ const deleteTeam = Team.delete ([
   id.eq<{ id: number }> (p => p.id)
 ]);
 
-deleteTeam ({ id: 2000 })
-  .then (r => console.log (r))
-  .catch (console.log);
+// deleteTeam ({ id: 2000 })
+//   .then (r => console.log (r))
+//   .catch (console.log);
 
 // maak distinct mogelijk
 // const findCity = sql`

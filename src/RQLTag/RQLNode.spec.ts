@@ -20,7 +20,7 @@ describe ("RQLNodes", () => {
 
   test ("is RefNode", () => {
     expect (RefNode.isRefNode (RefNode (
-      Team (["*"]),
+      Team ([]),
       RefProp ("team", "public.team", "BelongsTo", { lRef: "team_id", rRef: "id" }, false),
       Player
     ))).toBe (true);
