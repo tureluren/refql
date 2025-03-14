@@ -6,8 +6,8 @@ import { sqlP } from "../SQLTag/sql";
 import Values from "../SQLTag/Values";
 import Operation, { operationPrototype } from "./Operation";
 
-interface In<Params = any, Type = any> extends Operation<Params> {
-  run: TagFunctionVariable<Params, Type[]> | Type[];
+interface In<Params = any, Output = any> extends Operation<Params> {
+  run: TagFunctionVariable<Params, Output[]> | Output[];
   notIn: boolean;
 }
 
@@ -19,12 +19,12 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function In<Params, Type>(run: TagFunctionVariable<Params, Type[]> | Type[], pred?: TagFunctionVariable<Params, boolean>, notIn = false) {
-  let whereIn: In<Params, Type> = Object.create (prototype);
+function In<Params, Output>(run: TagFunctionVariable<Params, Output[]> | Output[], pred?: TagFunctionVariable<Params, boolean>, notIn = false) {
+  let whereIn: In<Params, Output> = Object.create (prototype);
 
   whereIn.run = (
     typeof run === "function" ? run : () => run
-  ) as TagFunctionVariable<Params, Type[]>;
+  ) as TagFunctionVariable<Params, Output[]>;
 
   if (pred) {
     whereIn.pred = pred;
@@ -44,7 +44,7 @@ function interpret(this: In, col: Raw | SQLTag) {
   `;
 }
 
-In.isIn = function <Params = any, Type = any> (x: any): x is In<Params, Type> {
+In.isIn = function <Params = any, Output = any> (x: any): x is In<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 

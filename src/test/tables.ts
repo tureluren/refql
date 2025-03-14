@@ -10,7 +10,7 @@ import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Table from "../Table";
 
-const id = NumberProp ("id");
+const id = NumberProp ("id").hasDefault ();
 const name = StringProp ("name");
 
 const Position = Table ("position", [
@@ -39,7 +39,7 @@ const League = Table ("league", [
 const Team = Table ("public.team", [
   id,
   name,
-  BooleanProp ("active"),
+  BooleanProp ("active").hasDefault (),
   NumberProp ("leagueId", "league_id"),
   HasMany ("players", "player"),
   BelongsTo ("league", "league"),
@@ -62,17 +62,17 @@ const Player = Table ("player", [
     select cast(count(*) as int) from goal
     where goal.player_id = player.id
   `),
-  // NumberProp ("firstGoalId", sql`
-  //   select id from goal
-  //   where goal.player_id = player.id
-  //   limit 1
-  // `).nullable (),
-  // BooleanProp ("isVeteran", sql<{ year: number }>`
-  //   select case when extract(year from birthday) < ${p => p.year} then true else false end
-  //   from player
-  //   where id = player.id
-  //   limit 1
-  // `),
+  NumberProp ("firstGoalId", sql`
+    select id from goal
+    where goal.player_id = player.id
+    limit 1
+  `).nullable (),
+  BooleanProp ("isVeteran", sql<{ year: number }>`
+    select case when extract(year from birthday) < ${p => p.year} then true else false end
+    from player
+    where id = player.id
+    limit 1
+  `),
   StringProp ("cars").arrayOf (),
   DateProp ("birthday"),
   NumberProp ("teamId", "team_id").nullable (),
@@ -142,7 +142,7 @@ const Goal = Table ("goal", [
   NumberProp ("minute"),
   NumberProp ("playerId", "player_id"),
   NumberProp ("gameId", "game_id"),
-  BooleanProp ("ownGoal", "own_goal"),
+  BooleanProp ("ownGoal", "own_goal").hasDefault (),
   BelongsTo ("game", "game"),
   BelongsTo ("player", "player")
 ]);

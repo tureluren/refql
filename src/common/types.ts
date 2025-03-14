@@ -4,7 +4,6 @@ import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
 import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
-import RQLNode from "../RQLTag/RQLNode";
 import RefField from "../RQLTag/RefField";
 import { SQLTag } from "../SQLTag";
 import SQLNode from "../SQLTag/SQLNode";
@@ -51,11 +50,14 @@ export type RelType = "BelongsTo" | "HasMany" | "HasOne" | "BelongsToMany";
 
 export type OnlyProps<T> = Only<T, Prop>;
 
+export type OnlySQLProps<T> = Only<T, SQLProp>;
+
 export type OnlyRefProps<T> = Only<T, RefProp<any, any, any, true | false>>;
 
+export type OnlyPropsOrSQLProps<T> = Only<T, Prop | SQLProp>;
 
 export type PropMap<S> =
-  Simplify<{ [K in OnlyProps<S>[keyof OnlyProps<S>] as K["as"]]: K["type"] }>;
+  Simplify<{ [K in OnlyProps<S>[keyof OnlyProps<S>] as K["as"]]: K["output"] }>;
 
 export type TableIdMap<T extends { [key: string]: { tableId: string }}> = {
   [K in keyof T as T[K]["tableId"]]: T[K]
@@ -84,7 +86,7 @@ export interface RefInfo {
 export type Pagination = Limit | Offset;
 
 export type Selectable<T> =
-  | keyof OnlyProps<T>
+  | keyof OnlyPropsOrSQLProps<T>
   | Prop<keyof OnlyProps<T>>
   | SQLProp
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
@@ -94,25 +96,28 @@ export type Selectable<T> =
 
 export type Insertable<TableId extends string> =
   | RQLTag<TableId>;
-  // | SQLTag
 
 export type Updatable<TableId extends string, T> =
   | OnlyProps<T>[keyof OnlyProps<T>]
-  | Prop
+  | Prop<keyof OnlyProps<T>>
+  | SQLProp
   | RQLTag<TableId>
   | SQLTag;
 
 export type Deletable<T> =
   | OnlyProps<T>[keyof OnlyProps<T>]
-  | Prop
+  | Prop<keyof OnlyProps<T>>
+  | SQLProp
   | SQLTag;
 
-export type ParamsType<S, T extends Selectable<S>[]> = T extends (infer U)[]
+
+export type ParamsType<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
   ? (U extends { params: any }
     ? U
-    : { params: {}})[]
-  : {params: {}}[];
-
+    : U extends keyof SQLProps
+      ? SQLProps[U]
+      : { params: {}})[]
+  : {params: {}};
 
 export type Params<S, T extends Selectable<S>[]> = UnionToIntersection<ParamsType<S, T>[number]["params"]>;
 
@@ -128,20 +133,20 @@ export type FinalComponents<Props, Components extends Selectable<Props>[]> = NoP
   : Components;
 
 
-export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = OnlyProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
+export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLProps<S> = OnlyPropsOrSQLProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
   FinalComponents<S, T> extends (infer U)[]
   ? U extends keyof Props
-    ? {as: U; type: Props[U]["type"]}
+    ? {as: U; type: Props[U]["output"]}
       : U extends Prop | SQLProp
       ? U["isOmitted"] extends false
-        ? { as: U["as"]; type: U["type"] }
+        ? { as: U["as"]; type: U["output"] }
         : never
 
       : U extends RQLTag<RefProps[keyof RefProps]["tableId"]>
         ? TableIds[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne", true | false>
-          ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["type"][][0] | null : U["type"][][0]}
+          ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["output"][][0] | null : U["output"][][0]}
           : TableIds[U["tableId"]] extends RefProp<any, any, "HasMany" | "BelongsToMany", true | false>
-            ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["type"][] | null : U["type"][]}
+            ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["output"][] | null : U["output"][]}
             : never
 
         : U extends Table<RefProps[keyof RefProps]["tableId"]>
@@ -156,12 +161,12 @@ export type Output<S, T extends Selectable<S>[], Props extends OnlyProps<S> = On
 
 
 export type InsertParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplify<
-  { [K in keyof Props as Props[K]["hasDefaultValue"] extends true ? K : Extract<Props[K]["type"], null> extends never ? never : K]?: Exclude<Props[K]["type"], null> } &
-  { [K in keyof Props as Props[K]["hasDefaultValue"] extends false ? (Extract<Props[K]["type"], null> extends never ? K : never) : never]: Props[K]["type"] }
+  { [K in keyof Props as Props[K]["hasDefaultValue"] extends true ? K : Extract<Props[K]["output"], null> extends never ? never : K]?: Exclude<Props[K]["output"], null> } &
+  { [K in keyof Props as Props[K]["hasDefaultValue"] extends false ? (Extract<Props[K]["output"], null> extends never ? K : never) : never]: Props[K]["output"] }
 >;
 
 export type UpdateParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplify<
-  { [K in keyof Props]?: Props[K]["type"] }
+  { [K in keyof Props]?: Props[K]["output"] }
 >;
 
 export type OnlyTableRQLTags<TableId extends string, S, T extends (Insertable<TableId> | Updatable<TableId, S>)[]> =
@@ -172,7 +177,7 @@ export type CUDOutput<
   S,
   T extends (Insertable<TableId> | Updatable<TableId, S>)[],
   TableRQLTags extends OnlyTableRQLTags<TableId, S, T> = OnlyTableRQLTags<TableId, S, T>,
-  finalOutput = UnionToIntersection<TableRQLTags[number]["type"]>
+  finalOutput = UnionToIntersection<TableRQLTags[number]["output"]>
 > = TableRQLTags extends never[]
   ? RQLTag<TableId, {}, PropMap<S>>
   : RQLTag<TableId, {}, finalOutput>;

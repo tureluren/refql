@@ -4,6 +4,7 @@ import joinMembers from "../common/joinMembers";
 import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
+import SQLProp from "../Prop/SQLProp";
 import { isSQLTag, SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
@@ -31,7 +32,7 @@ export interface RQLTag<TableId extends string = any, Params = any, Output = any
   (params?: Params, querier?: Querier): Promise<Output[]>;
   tableId: TableId;
   params: Params;
-  type: Output;
+  output: Output;
   table: Table<TableId>;
   nodes: RQLNode[];
   interpreted: InterpretedRQLTag<Params, Output>;
@@ -109,7 +110,7 @@ function concat(this: RQLTag, other: RQLTag) {
 function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
   const { nodes, table } = this,
     next = [] as Next[],
-    members = [] as (Raw | SQLTag)[];
+    members = [] as { as: string; node: Raw | SQLTag; isOmitted: boolean }[];
 
   let filters = sql``;
   let orderBies = sql``;
@@ -117,20 +118,18 @@ function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
   let offset = sql``;
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
-    members.push (Raw (info.lRef));
+    members.push ({ as: info.lRef.as, node: Raw (info.lRef), isOmitted: false });
 
     next.push ({ tag, link: [info.as, info.lRef.as], single });
   };
 
   for (const node of nodes) {
-    if (Prop.isProp (node)) {
+    if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
       const col = isSQLTag (node.col)
         ? sql`(${node.col})`
         : Raw (`${table.name}.${node.col || node.as}`);
 
-      if (!node.isOmitted) {
-        members.push (sql`${col} ${Raw (`"${node.as}"`)}`);
-      }
+      members.push ({ as: node.as, node: sql`${col} ${Raw (`"${node.as}"`)}`, isOmitted: node.isOmitted });
 
       for (const op of node.operations) {
         if (OrderBy.isOrderBy (op)) {

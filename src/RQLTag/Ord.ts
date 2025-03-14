@@ -6,8 +6,8 @@ import { sqlP } from "../SQLTag/sql";
 import Value from "../SQLTag/Value";
 import Operation, { operationPrototype } from "./Operation";
 
-interface Ord<Params = any, Type = any> extends Operation<Params> {
-  run: TagFunctionVariable<Params, Type>;
+interface Ord<Params = any, Output = any> extends Operation<Params> {
+  run: TagFunctionVariable<Params, Output>;
   operator: OrdOperator;
 }
 
@@ -19,12 +19,12 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function Ord<Params, Type>(run: TagFunctionVariable<Params, Type> | Type, operator: OrdOperator, pred?: TagFunctionVariable<Params, boolean>) {
-  let ord: Ord<Params, Type> = Object.create (prototype);
+function Ord<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, operator: OrdOperator, pred?: TagFunctionVariable<Params, boolean>) {
+  let ord: Ord<Params, Output> = Object.create (prototype);
 
   ord.run = (
     typeof run === "function" ? run : () => run
-  ) as TagFunctionVariable<Params, Type>;
+  ) as TagFunctionVariable<Params, Output>;
 
   ord.operator = operator;
 
@@ -43,7 +43,7 @@ function interpret(this: Ord, col: Raw | SQLTag) {
   `;
 }
 
-Ord.isOrd = function <Params = any, Type = any> (x: any): x is Ord<Params, Type> {
+Ord.isOrd = function <Params = any, Output = any> (x: any): x is Ord<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 

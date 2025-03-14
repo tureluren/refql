@@ -3,6 +3,7 @@ import { refqlType } from "../common/consts";
 import isLastKey from "../common/isLastKey";
 import { InterpretedCUD } from "../common/types";
 import Prop from "../Prop";
+import SQLProp from "../Prop/SQLProp";
 import { isSQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
 import sql, { sqlP } from "../SQLTag/sql";
@@ -42,10 +43,10 @@ function interpret(this: DeleteRQLTag): InterpretedCUD {
   const { nodes, table } = this;
 
   let filters = sql``;
-  let returning = table ([]);
+  let returning: RQLTag | undefined;
 
   for (const node of nodes) {
-    if (Prop.isProp (node)) {
+    if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
       const col = isSQLTag (node.col)
         ? sql`(${node.col})`
         : Raw (`${table.name}.${node.col || node.as}`);

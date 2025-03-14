@@ -81,19 +81,23 @@ const { id, name, active } = Team.props;
 const { result } = Game.props;
 
 const innie = id.in<{ ids: number[]}> (p => p.ids).omit ();
+const eqed = id.eq (p => p.ids);
 
 const teamById = Team ([
-  "name",
-  "active",
-  playerCount.eq (11),
-  id.in<{ ids: number[]}> (p => p.ids).omit (),
+  // "name",
+  // "active",
+  // playerCount.eq (11),
+  // innie,
+  // id.eq<{ ids: number}> (p => p.ids)
+  playerCount
   //  Team (["*"])
   // playerCount2.eq (11),
   // name.desc (),
-  Game (["result"])
+  // Game (["result"])
   // sql`limit 1`
   // OrderBy()
-]).concat (Team (["name", Game (["date"])]));
+]);
+// .concat (Team (["name", Game (["date"])]));
 
 teamById ({ ids: [1, 2] }, querier).then (ts => console.log (ts[0]));
 
@@ -111,6 +115,7 @@ teamById ({ ids: [1, 2] }, querier).then (ts => console.log (ts[0]));
 
 
 // REMOVE all -> *
+// afstappen van querier
 // count enzo toevoegen om subselects zonder sqlTag te doen
 // insert, update
 // register subselect to Player ?
@@ -132,7 +137,6 @@ teamById ({ ids: [1, 2] }, querier).then (ts => console.log (ts[0]));
 //     `;
 
 // TODO:
-// sqltag types MOGEN NIET IN RETURN TYPE ZITTEN bij CUD
 // aggregation, grouping
 // refprops zitten ook op props, dit ook laten toevoegen aan query ?
 // const { id, name, playerCount, active, homeGames } = Team.props;
@@ -169,12 +173,13 @@ const insertTeam = Team.insert ([
 // .then (res => console.log (res));
 
 const updateTeam = Team.update ([
-  id.eq<{ id: number }> (p => p.id)
+  id.eq<{ id: number }> (p => p.id),
+  Team (["active", Team.props.id.in (p => p.ids)])
 ]);
 
-// updateTeam ({ data: { name: "foemp", active: false }, id: 2 })
-//   .then (r => console.log (r))
-//   .catch (console.log);
+updateTeam ({ data: { name: "foemp", active: false }, id: 2 })
+  .then (r => console.log (r))
+  .catch (console.log);
 
 // const updateTeam = Team.delete ([
 //   id.eq(p => p.id),

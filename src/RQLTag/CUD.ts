@@ -10,7 +10,7 @@ interface CUD<TableId extends string = any, Params = any, Output = any> {
   tableId: TableId;
   table: Table<TableId>;
   params: Params;
-  type: Output;
+  output: Output;
   [CUDSymbol]: true;
   interpret(): InterpretedCUD<Params, Output>;
   interpreted: InterpretedCUD<Params, Output>;
@@ -45,7 +45,7 @@ async function run(this: CUD, params: StringMap, querier: Querier): Promise<any[
 
   const rows = await querier (query, values);
 
-  if (isEmptyTag (returning)) return rows;
+  if (!returning) return rows;
 
   return returning ({ rows, ...params });
 }

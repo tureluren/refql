@@ -38,11 +38,11 @@ export function createInsertRQLTag<TableId extends string, Params = {}, Output =
 
 function interpret(this: InsertRQLTag): InterpretedCUD {
   const { nodes, table } = this;
-  let returning = table ([]);
+  let returning: RQLTag | undefined;
 
   for (const node of nodes) {
     if (isRQLTag (node)) {
-      returning = returning.concat (node);
+      returning = returning ? returning.concat (node) : node;
     } else {
       throw new Error (`Not a Prop or RQLTag Type: "${String (node)}"`);
     }

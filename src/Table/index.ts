@@ -23,9 +23,9 @@ interface Table<TableId extends string = any, Props = any> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
-  insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["type"]>;
-  update<Components extends Updatable<TableId, Props>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["type"]>;
-  delete<Components extends Deletable<Props>[]>(components: Components): DeleteRQLTag<TableId, Params<Props, Components>, CUDOutput<TableId, Props, Components>["type"]>;
+  insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
+  update<Components extends Updatable<TableId, Props>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
+  delete<Components extends Deletable<Props>[]>(components: Components): DeleteRQLTag<TableId, Params<Props, Components>, CUDOutput<TableId, Props, Components>["output"]>;
 }
 
 const type = "refql/Table";
@@ -67,12 +67,14 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
 
     for (const comp of components) {
       if (typeof comp === "string" && properties[comp]) {
-        const prop = properties[comp] as Prop;
+        const prop = properties[comp] as unknown as Prop;
         nodes.push (prop);
         memberCount += 1;
       } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
         nodes.push (comp);
-        memberCount += 1;
+        if (comp.operations.length === 0) {
+          memberCount += 1;
+        }
       } else if (Table.isTable (comp)) {
         const refNodes = Object.keys (properties)
           .map (key => properties[key as keyof typeof properties])

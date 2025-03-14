@@ -12,7 +12,7 @@ const runnableTag = <TagType extends RQLTag | CUD>() => {
     if (!querier && !defaultQuerier) {
       throw new Error ("There was no Querier provided");
     }
-    return convertPromise (tag.run (params, (querier || defaultQuerier) as Querier) as Promise<TagType["type"]>);
+    return convertPromise (tag.run (params, (querier || defaultQuerier) as Querier) as Promise<TagType["output"]>);
   }) as TagType;
 
   return tag;

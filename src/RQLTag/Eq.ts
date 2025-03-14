@@ -5,8 +5,8 @@ import Raw from "../SQLTag/Raw";
 import { sqlP } from "../SQLTag/sql";
 import Operation, { operationPrototype } from "./Operation";
 
-interface Eq<Params = any, Type = any> extends Operation<Params> {
-  run: TagFunctionVariable<Params, Type> | Type;
+interface Eq<Params = any, Output = any> extends Operation<Params> {
+  run: TagFunctionVariable<Params, Output> | Output;
   notEq: boolean;
 }
 
@@ -18,12 +18,12 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function Eq<Params, Type>(run: TagFunctionVariable<Params, Type> | Type, pred?: TagFunctionVariable<Params, boolean>, notEq = false) {
-  let eq: Eq<Params, Type> = Object.create (prototype);
+function Eq<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, pred?: TagFunctionVariable<Params, boolean>, notEq = false) {
+  let eq: Eq<Params, Output> = Object.create (prototype);
 
   eq.run = (
     typeof run === "function" ? run : () => run
-  ) as TagFunctionVariable<Params, Type>;
+  ) as TagFunctionVariable<Params, Output>;
 
   if (pred) {
     eq.pred = pred;
@@ -43,7 +43,7 @@ function interpret(this: Eq, col: Raw | SQLTag) {
   `;
 }
 
-Eq.isEq = function <Params = any, Type = any> (x: any): x is Eq<Params, Type> {
+Eq.isEq = function <Params = any, Output = any> (x: any): x is Eq<Params, Output> {
   return x != null && x[refqlType] === type;
 };
 
