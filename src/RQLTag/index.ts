@@ -29,7 +29,8 @@ interface InterpretedRQLTag<Params = any, Output = any> {
 }
 
 export interface RQLTag<TableId extends string = any, Params = any, Output = any> {
-  (params?: Params, querier?: Querier): Promise<Output[]>;
+  (params: {} extends Params ? Params | void : Params, querier?: Querier): Promise<Output[]>;
+
   tableId: TableId;
   params: Params;
   output: Output;

@@ -9,8 +9,16 @@ import { SQLTag } from "../SQLTag";
 import SQLNode from "../SQLTag/SQLNode";
 import Table from "../Table";
 
+type Test<T> = T extends object ? "Yes" : "No";
+
+type A = Test<{}>; // "Yes"  (empty object extends itself)
+type B = Test<{ id: number }>; // "No"   ({} is not assignable to { id: number })
+type C = Test<any>; // "Yes"  (any allows everything)
+type D = Test<{} & any>; // "Yes"  (unknown is a top type)
+type E = Test<never>; // "No"   (never accepts nothing)
+
 // Helpers
-export type Simplify<T> = T extends object ? { [K in keyof T]: T[K] } : T;
+export type Simplify<T> = T extends object ? { [K in keyof T]: T[K] } : {};
 
 export type UnionToIntersection<U> =
   Simplify<(U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never>;

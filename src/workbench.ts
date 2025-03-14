@@ -81,15 +81,17 @@ const { id, name, active } = Team.props;
 const { result } = Game.props;
 
 const innie = id.in<{ ids: number[]}> (p => p.ids).omit ();
-const eqed = id.eq (p => p.ids);
+const eqed = id.eq (2);
 
 const teamById = Team ([
   // "name",
   // "active",
   // playerCount.eq (11),
-  // innie,
-  // id.eq<{ ids: number}> (p => p.ids)
-  playerCount
+  innie
+  // id.eq (p => 2),
+  // eqed,
+  // id,
+  // playerCount
   //  Team (["*"])
   // playerCount2.eq (11),
   // name.desc (),
@@ -99,7 +101,7 @@ const teamById = Team ([
 ]);
 // .concat (Team (["name", Game (["date"])]));
 
-teamById ({ ids: [1, 2] }, querier).then (ts => console.log (ts[0]));
+teamById ().then (ts => console.log (ts[0]));
 
 // const getTeams = Team ([Game, Limit (1)]);
 // getTeams ().then (e => console.log (e));
@@ -174,7 +176,7 @@ const insertTeam = Team.insert ([
 
 const updateTeam = Team.update ([
   id.eq<{ id: number }> (p => p.id),
-  Team (["active", Team.props.id.in (p => p.ids)])
+  Team (["active", Team.props.id.in<{ rows: { id: number }[]}> (p => p.rows.map (r => r.id))])
 ]);
 
 updateTeam ({ data: { name: "foemp", active: false }, id: 2 })
