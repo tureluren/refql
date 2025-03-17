@@ -1,9 +1,10 @@
 import { flEquals, refqlType } from "../common/consts";
 import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
-import validateTable from "../common/validateTable";
+import validateTable, { validateComponents } from "../common/validateTable";
 import Prop from "../Prop";
 import PropType from "../Prop/PropType";
 import RefProp from "../Prop/RefProp";
+import SQLProp from "../Prop/SQLProp";
 import { createRQLTag, isRQLTag, RQLTag } from "../RQLTag";
 import { createDeleteRQLTag, DeleteRQLTag } from "../RQLTag/DeleteRQLTag";
 import { createInsertRQLTag, InsertRQLTag } from "../RQLTag/InsertRQLTag";
@@ -52,10 +53,7 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
   );
 
   const table = (components => {
-    if (!Array.isArray (components)) {
-      // empty array is allowed because `select from <table>` is valid SQL
-      throw new Error ("Invalid components: not an Array");
-    }
+    validateComponents (components);
 
     const nodes: RQLNode[] = [];
 
@@ -138,19 +136,16 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
 }
 
 function insert(this: Table, components: any) {
-  if (!Array.isArray (components)) {
-    // empty array is allowed because `select from player` is valid SQL
-    throw new Error ("Invalid components: not an Array");
-  }
+  validateComponents (components);
 
-  const nodes: (Prop | RQLTag)[] = [];
+  const nodes: RQLNode[] = [];
 
   for (const comp of components) {
     if (isRQLTag (comp)) {
       if (this.equals (comp.table)) {
         nodes.push (comp);
       } else {
-        throw new Error ("When creating an InsertRQLTag, RQLTags are reserved for determining the return type. Therefore, the table associated with the RQLTag must match the table into which you are inserting data.");
+        throw new Error ("When creating an InsertRQLTag, RQLTags are reserved for determining the return type. Therefore, the table associated with the RQLTag must match the table into which you are inserting data");
       }
     } else {
       throw new Error (`Unknown Insertable Type: "${String (comp)}"`);
@@ -161,21 +156,21 @@ function insert(this: Table, components: any) {
 }
 
 function update(this: Table, components: any) {
-  if (!Array.isArray (components)) {
-    throw new Error ("Invalid components: not an Array");
-  }
+  validateComponents (components);
 
-  const nodes: (Prop | RQLTag)[] = [];
+  const nodes: RQLNode[] = [];
 
   for (const comp of components) {
-    if (Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) {
+    if ((Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) || SQLProp.isSQLProp (comp)) {
       nodes.push (comp);
     } else if (isRQLTag (comp)) {
       if (this.equals (comp.table)) {
         nodes.push (comp);
       } else {
-        throw new Error ("When creating an UpdateRQLTag, RQLTags are reserved for determining the return type. Therefore, the table associated with the RQLTag must match the table into which you are inserting data.");
+        throw new Error ("When creating an UpdateRQLTag, RQLTags are reserved for determining the return type. Therefore, the table associated with the RQLTag must match the table into which you are inserting data");
       }
+    } else if (isSQLTag (comp)) {
+      nodes.push (comp);
     } else {
       throw new Error (`Unknown Updatable Type: "${String (comp)}"`);
     }
@@ -185,14 +180,14 @@ function update(this: Table, components: any) {
 }
 
 function remove(this: Table, components: any) {
-  if (!Array.isArray (components)) {
-    throw new Error ("Invalid components: not an Array");
-  }
+  validateComponents (components);
 
-  const nodes: Prop[] = [];
+  const nodes: RQLNode[] = [];
 
   for (const comp of components) {
-    if (Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) {
+    if ((Prop.isProp (comp) && this.props[comp.as as keyof typeof this.props]) || SQLProp.isSQLProp (comp)) {
+      nodes.push (comp);
+    } else if (isSQLTag (comp)) {
       nodes.push (comp);
     } else {
       throw new Error (`Unknown Deletable Type: "${String (comp)}"`);

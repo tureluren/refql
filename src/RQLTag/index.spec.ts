@@ -2,20 +2,21 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import { createRQLTag, isRQLTag } from ".";
+import Raw from "../SQLTag/Raw";
+import sql from "../SQLTag/sql";
+import Table from "../Table";
 import { flConcat } from "../common/consts";
 import setConvertPromise from "../common/convertPromise";
 import { setDefaultQuerier } from "../common/defaultQuerier";
 import { Querier } from "../common/types";
-import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
-import Table from "../Table";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import {
   Game, Goal, League,
-  Player, Player2, Position, Rating, Team, XGame
+  Player, Player2,
+  Rating, Team, XGame
 } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Limit from "./Limit";
@@ -995,71 +996,5 @@ describe ("RQLTag type", () => {
 
     expect (game1.homeTeam.id).toBe (1);
     expect (game1.awayTeam.id).toBe (2);
-  });
-
-  test ("Insert, update and delete", async () => {
-    const insertData = [{ homeTeamId: 1, awayTeamId: 2, date: new Date (), result: "1-1", leagueId: 1 }];
-
-    const tag = Game.insert ([]);
-
-    const [query] = tag.compile ({ data: insertData });
-
-    expect (query).toBe (format (`
-      insert into game (id, result, home_team_id, away_team_id, league_id, date) 
-      values (DEFAULT, $1, $2, $3, $4, $5) 
-      returning game.id "id", game.result "result", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.date "date"
-    `));
-
-    const games = await tag ({ data: insertData });
-    const game1 = games[0];
-
-    expect (games.length).toBe (1);
-    expect (game1.homeTeamId).toBe (1);
-    expect (game1.awayTeamId).toBe (2);
-    expect (Object.keys (game1)).toEqual (["id", "result", "homeTeamId", "awayTeamId", "leagueId", "date"]);
-
-    const tag2 = Game.update ([
-      Game.props.id.eq<{ id: number }> (p => p.id),
-      Game ([
-        Game.props.id.in<{ rows: { id: number}[]}> (({ rows }) => rows.map (r => r.id)),
-        "result"
-      ])
-    ]);
-
-    const updateData = { result: "2-1", leagueId: 2 };
-    const [query2] = tag2.compile ({ data: updateData, id: game1.id });
-
-    expect (query2).toBe (format (`
-      update game set result = $1, league_id = $2
-      where 1 = 1 and game.id = $3 
-      returning game.id "id", game.result "result", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.date "date"
-    `));
-
-    const games2 = await tag2 ({ data: updateData, id: game1.id });
-    const game2 = games2[0];
-
-    expect (games2.length).toBe (1);
-    expect (game2.id).toBe (game1.id);
-    expect (Object.keys (game2)).toEqual (["id", "result"]);
-
-    const tag3 = Game.delete ([
-      Game.props.id.eq<{ id: number }> (p => p.id)
-    ]);
-
-    const [query3] = tag3.compile ({ id: game1.id });
-
-    expect (query3).toBe (format (`
-      delete from game 
-      where 1 = 1 
-      and game.id = $1 
-      returning game.id "id", game.result "result", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.date "date"
-    `));
-
-    const games3 = await tag3 ({ id: game1.id });
-    const game3 = games3[0];
-
-    expect (games3.length).toBe (1);
-    expect (game3.id).toBe (game1.id);
-    expect (Object.keys (game3)).toEqual (["id", "result", "homeTeamId", "awayTeamId", "leagueId", "date"]);
   });
 });

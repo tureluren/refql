@@ -1,17 +1,17 @@
 import { isRQLTag, RQLTag } from ".";
 import { refqlType } from "../common/consts";
 import { InterpretedCUD } from "../common/types";
-import Prop from "../Prop";
 import Raw from "../SQLTag/Raw";
 import sql from "../SQLTag/sql";
 import Values2D from "../SQLTag/Values2D";
 import Table from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
+import RQLNode from "./RQLNode";
 import runnableTag from "./runnableTag";
 
 export interface InsertRQLTag<TableId extends string = any, Params = any, Output = any> extends CUD<TableId, Params, Output> {
-  nodes: (Prop | RQLTag<TableId>)[];
+  nodes: RQLNode[];
 }
 
 const type = "refql/InsertRQLTag";
@@ -22,7 +22,7 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createInsertRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: (Prop | RQLTag<TableId>)[]) {
+export function createInsertRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
   const tag = runnableTag<InsertRQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
@@ -44,7 +44,7 @@ function interpret(this: InsertRQLTag): InterpretedCUD {
     if (isRQLTag (node)) {
       returning = returning ? returning.concat (node) : node;
     } else {
-      throw new Error (`Not a Prop or RQLTag Type: "${String (node)}"`);
+      throw new Error (`Unknown Insertable RQLNode Type: "${String (node)}"`);
     }
   }
 

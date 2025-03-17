@@ -14,7 +14,7 @@ import Offset from "./Offset";
 import OrderBy from "./OrderBy";
 import rawSpace from "./RawSpace";
 import RefNode from "./RefNode";
-import RQLNode from "./RQLNode";
+import RQLNode, { rqlNodePrototype } from "./RQLNode";
 import runnableTag from "./runnableTag";
 
 export interface Next {
@@ -28,9 +28,8 @@ interface InterpretedRQLTag<Params = any, Output = any> {
   next: Next[];
 }
 
-export interface RQLTag<TableId extends string = any, Params = any, Output = any> {
+export interface RQLTag<TableId extends string = any, Params = any, Output = any> extends RQLNode {
   (params: {} extends Params ? Params | void : Params, querier?: Querier): Promise<Output[]>;
-
   tableId: TableId;
   params: Params;
   output: Output;
@@ -46,7 +45,7 @@ export interface RQLTag<TableId extends string = any, Params = any, Output = any
 
 const type = "refql/RQLTag";
 
-let prototype = {
+let prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: createRQLTag,
   [refqlType]: type,
   concat,
@@ -54,7 +53,7 @@ let prototype = {
   interpret,
   compile,
   run
-};
+});
 
 export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
   const tag = runnableTag<RQLTag<TableId, Params, Output>> ();

@@ -11,10 +11,11 @@ import Table from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
 import rawSpace from "./RawSpace";
+import RQLNode from "./RQLNode";
 import runnableTag from "./runnableTag";
 
 export interface UpdateRQLTag<TableId extends string = any, Params = any, Output = any> extends CUD<TableId, Params, Output> {
-  nodes: (Prop | RQLTag<TableId>)[];
+  nodes: RQLNode[];
 }
 
 const type = "refql/UpdateRQLTag";
@@ -25,7 +26,7 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createUpdateRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: (Prop | RQLTag<TableId>)[]) {
+export function createUpdateRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
   const tag = runnableTag<UpdateRQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
@@ -61,8 +62,10 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
       }
     } else if (isRQLTag (node)) {
       returning = returning ? returning.concat (node) : node;
+    } else if (isSQLTag (node)) {
+      filters = filters.join (rawSpace (), node);
     } else {
-      throw new Error (`Not a Prop or RQLTag Type: "${String (node)}"`);
+      throw new Error (`Unknown Updatable RQLNode Type: "${String (node)}"`);
     }
   }
 

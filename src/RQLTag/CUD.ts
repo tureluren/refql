@@ -1,6 +1,5 @@
 import { RQLTag } from ".";
 import Table from "../Table";
-import isEmptyTag from "../common/isEmptyTag";
 import { InterpretedCUD, Querier, StringMap } from "../common/types";
 
 const CUDSymbol: unique symbol = Symbol ("@@CUD");

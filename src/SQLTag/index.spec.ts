@@ -98,6 +98,20 @@ describe ("SQLTag type", () => {
     expect (values).toEqual (values2);
   });
 
+  test ("Concat with empty", () => {
+    const tag = sql``;
+
+    const tag2 = sql`
+      select id, last_name from player where id = 1
+    `;
+
+    const tag3 = sql``;
+
+    const [query] = tag.concat (tag2).concat (tag3).compile ({});
+
+    expect (query).toBe ("select id, last_name from player where id = 1");
+  });
+
   test ("Dynamic Table", async () => {
     const playerById = sql<{ id: number }, any[]>`
       select id, first_name from ${Player}

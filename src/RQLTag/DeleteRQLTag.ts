@@ -1,20 +1,20 @@
-import { isRQLTag, RQLTag } from ".";
+import { RQLTag } from ".";
 import { refqlType } from "../common/consts";
-import isLastKey from "../common/isLastKey";
 import { InterpretedCUD } from "../common/types";
 import Prop from "../Prop";
 import SQLProp from "../Prop/SQLProp";
 import { isSQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import sql, { sqlP } from "../SQLTag/sql";
+import sql from "../SQLTag/sql";
 import Table from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
 import rawSpace from "./RawSpace";
+import RQLNode from "./RQLNode";
 import runnableTag from "./runnableTag";
 
 export interface DeleteRQLTag<TableId extends string = any, Params = any, Output = any> extends CUD<TableId, Params, Output> {
-  nodes: Prop[];
+  nodes: RQLNode[];
 }
 
 const type = "refql/DeleteRQLTag";
@@ -25,7 +25,7 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createDeleteRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: (Prop | RQLTag<TableId>)[]) {
+export function createDeleteRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
   const tag = runnableTag<DeleteRQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
@@ -59,8 +59,10 @@ function interpret(this: DeleteRQLTag): InterpretedCUD {
           op.interpret (col)
         );
       }
+    } else if (isSQLTag (node)) {
+      filters = filters.join (rawSpace (), node);
     } else {
-      throw new Error (`Not a Prop or RQLTag Type: "${String (node)}"`);
+      throw new Error (`Unknown Deletable RQLNode Type: "${String (node)}"`);
     }
   }
 
