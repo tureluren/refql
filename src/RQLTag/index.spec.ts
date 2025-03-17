@@ -239,7 +239,7 @@ describe ("RQLTag type", () => {
     expect (ratingNext).toEqual ([]);
 
     // db results
-    const players = await tag ({ limit: 30, delimiter: " " });
+    const players = await tag ({ limit: 30 });
     const player = players[0];
     const playerTeam = player.team;
     const defender = playerTeam!.players[0];
@@ -409,7 +409,7 @@ describe ("RQLTag type", () => {
     expect (teams[0].players.length).toBe (4);
     expect (teams[1].players.length).toBe (4);
 
-    const teams2 = await tag ({ limit: 3, playerLimit: 4, offset: 3, playerOffset: 5 });
+    const teams2 = await tag ({ limit: 3, playerLimit: 4, playerOffset: 5 });
 
     expect (teams2.length).toBe (3);
     expect (teams2[0].players.length).toBe (4);

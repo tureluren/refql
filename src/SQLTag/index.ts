@@ -2,7 +2,7 @@ import { flConcat, refqlType } from "../common/consts";
 import { getConvertPromise } from "../common/convertPromise";
 import getGlobalQuerier from "../common/defaultQuerier";
 import isEmptyTag from "../common/isEmptyTag";
-import { Querier, StringMap, TagFunctionVariable } from "../common/types";
+import { Querier, Simplify, StringMap, TagFunctionVariable } from "../common/types";
 import rawSpace from "../RQLTag/RawSpace";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import Raw from "./Raw";
@@ -25,7 +25,7 @@ interface InterpretedSQLTag<Params = any> {
 }
 
 export interface SQLTag<Params = any, Output = any> extends RQLNode {
-  (params?: Params, querier?: Querier): Promise<Output[]>;
+  (params: {} extends Params ? Params | void : Params, querier?: Querier): Promise<Output[]>;
   params: Params;
   nodes: SQLNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
@@ -49,7 +49,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   compile
 });
 
-export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[]) {
+export function createSQLTag<Params = {}, Output = any>(nodes: SQLNode<Params>[]) {
   const tag = ((params = {} as Params, querier?) => {
     const defaultQuerier = getGlobalQuerier ();
     const convertPromise = getConvertPromise ();
@@ -58,7 +58,7 @@ export function createSQLTag<Params, Output = any>(nodes: SQLNode<Params>[]) {
       throw new Error ("There was no Querier provided");
     }
 
-    const [query, values] = tag.compile (params);
+    const [query, values] = tag.compile (params as any);
 
     return convertPromise ((querier || defaultQuerier as Querier) (query, values) as Promise<Output[]>);
   }) as SQLTag<Params, Output>;

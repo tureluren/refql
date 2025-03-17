@@ -13,7 +13,6 @@ import RQLNode, { isRQLNode } from "../RQLTag/RQLNode";
 import { createUpdateRQLTag, UpdateRQLTag } from "../RQLTag/UpdateRQLTag";
 import { isSQLTag } from "../SQLTag";
 
-// Props => NO SQL PROPS
 interface Table<TableId extends string = any, Props = any> {
   <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Props, Components>, { [K in Output<Props, Components> as K["as"]]: K["type"] }>;
   tableId: TableId;

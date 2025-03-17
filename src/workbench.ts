@@ -54,7 +54,7 @@ const playerCount = NumberProp ("playerCount", sql`
     where player.team_id = team.id
   `);
 
-const playerCount2 = NumberProp ("playerCount2", sql`
+const playerCount2 = NumberProp ("playerCount2", sql<{buh: string}>`
     select cast(count(*) as int) from player
     where player.team_id = team.id
   `);
@@ -80,28 +80,43 @@ const Game = Table ("game", [
 const { id, name, active } = Team.props;
 const { result } = Game.props;
 
-const innie = id.in<{ ids: number[]}> (p => p.ids).omit ();
+// const innie = id.in<{ ids: number[]}> (p => p.ids).omit ();
 const eqed = id.eq (2);
+const eqedSql = sql`
+    and id = {2}
+  `;
 
 const teamById = Team ([
   // "name",
   // "active",
   // playerCount.eq (11),
-  innie
-  // id.eq (p => 2),
+  // innie,
+  // sql`
+  //   and id = {2}
+  // `,
+  // sql<{id: number}>`
+  //   and id = {2}
+  // `,
+  // NumberProp ("playerCount2", sql<{buh: string}>`
+  //   select cast(count(*) as int) from player
+  //   where player.team_id = team.id
+  // `)
+  // eqedSql
+  id.eq (p => 2),
+  // id.eq<{id: number}> (p => 2)
+  // id.eq<{id2: number}> (p => 2)
   // eqed,
   // id,
-  // playerCount
-  //  Team (["*"])
+  // playerCount,
   // playerCount2.eq (11),
   // name.desc (),
-  // Game (["result"])
+  Game (["result"])
   // sql`limit 1`
   // OrderBy()
 ]);
 // .concat (Team (["name", Game (["date"])]));
 
-teamById ().then (ts => console.log (ts[0]));
+// teamById ().then (ts => console.log (ts[0]));
 
 // const getTeams = Team ([Game, Limit (1)]);
 // getTeams ().then (e => console.log (e));
@@ -121,6 +136,7 @@ teamById ().then (ts => console.log (ts[0]));
 // count enzo toevoegen om subselects zonder sqlTag te doen
 // insert, update
 // register subselect to Player ?
+// employee model
 
 // OrderBy rqlNode OrderBy(p => p.ordery) (kan ook gewoon een SQL worden he) (maar dan maakt volgorde wel uit)
 // const OrderBy = sql`
@@ -162,15 +178,16 @@ const insertTeam = Team.insert ([
     "id",
     "active",
     Game,
+    // Team(["active"]),
     byIds,
     Limit<{ limit: number}> (p => p.limit)
   ])
   // Game (["*"])
 ]);
 
-// insertTeam ({ data: [{ name: "iep", leagueId: 4 }], limit: 2 })
-//   .then (r => console.log (r))
-//   .catch (console.log);
+insertTeam ({ data: [{ name: "iep", leagueId: 4 }], limit: 2 })
+  .then (r => console.log (r[0]))
+  .catch (console.log);
 
 // .then (res => console.log (res));
 
@@ -214,3 +231,15 @@ const deleteTeam = Team.delete ([
 //   order by city, zip
 //   limit 50
 // `;
+
+
+// const justSql = sql`
+//   ${sql<{id: number}>`
+//       idd
+//   `}
+//   ${sql<{id2: number}>`
+//       idd
+//   `}
+// `;
+
+// justSql ().then (r => console.log (r));

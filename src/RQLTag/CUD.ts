@@ -5,7 +5,7 @@ import { InterpretedCUD, Querier, StringMap } from "../common/types";
 const CUDSymbol: unique symbol = Symbol ("@@CUD");
 
 interface CUD<TableId extends string = any, Params = any, Output = any> {
-  (params?: Params, querier?: Querier): Promise<Output[]>;
+  (params: {} extends Params ? Params | void : Params, querier?: Querier): Promise<Output[]>;
   tableId: TableId;
   table: Table<TableId>;
   params: Params;

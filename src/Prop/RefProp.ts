@@ -4,7 +4,7 @@ import Table from "../Table";
 import PropType, { propTypePrototype } from "./PropType";
 import validateRefInput from "./validateRefInput";
 
-interface RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any, Nullable extends boolean = false> extends PropType<As> {
+interface RefProp<As extends string = any, TableId extends string = any, Rel extends RelType = any, Nullable extends boolean = any> extends PropType<As> {
   rel: Rel;
   tableId: TableId;
   refInput: Rel extends "BelongsToMany" ? RefInput : RefNodeInput;
