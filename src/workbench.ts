@@ -31,16 +31,32 @@ const querier = async (query: string, values: any[]) => {
 };
 
 setDefaultQuerier (querier);
-const { id: playerId } = Player.props;
+const { id: playerId, birthday } = Player.props;
 
 const buh = playerId.eq (1);
 
+
+const isVeteran = BooleanProp ("isVeteran", sql<{ year: number }>`
+  select case when extract(year from birthday) < ${p => p.year} then true else false end
+  from player
+  where id = player.id
+  limit 1
+`);
+
 const playerById = Player ([
+  isVeteran,
+  // "birthday",
+  // birthday,
   playerId.omit (),
+  // playerId.omit ()
+  playerId.eq (1),
   Team
 ]);
 
-playerById ().then (p => console.log (p));
+const a = playerId.eq (1);
+const b = playerId.omit ();
+
+playerById ({ year: 2002 }).then (p => console.log (p));
 
 // const Team = Table ("public.team", [
 //   NumberProp ("id").hasDefault (),
