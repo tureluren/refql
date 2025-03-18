@@ -69,7 +69,7 @@ function Table<TableId extends string, Props extends PropType<any>[]>(name: Tabl
         memberCount += 1;
       } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
         nodes.push (comp);
-        if (comp.operations.length === 0) {
+        if (comp.operations.length === 0 && !comp.isOmitted) {
           memberCount += 1;
         }
       } else if (Table.isTable (comp)) {

@@ -2,16 +2,17 @@ import { query } from "./db";
 
 export async function getTables() {
   const res = await query (`
-    SELECT table_name
-    FROM information_schema.tables
-    WHERE table_schema = 'public'
+    select table_schema, table_name
+    from information_schema.tables
+    where table_schema not in ('pg_catalog', 'information_schema')
+    order by table_schema, table_name;
   `);
-  return res.rows.map ((row: any) => row.table_name);
+  return res.rows;
 }
 
 export async function getColumns(tableName: string) {
   const res = await query (`
-    SELECT column_name, data_type, is_nullable
+    SELECT column_name, data_type, is_nullable, column_default
     FROM information_schema.columns
     WHERE table_name = $1
   `, [tableName]);
@@ -47,27 +48,31 @@ export async function getRelationships() {
         SELECT
             kcu.constraint_name,
             kcu.table_name,
+            kcu.table_schema,
             ARRAY_AGG(kcu.column_name ORDER BY kcu.ordinal_position) AS column_names
         FROM
             information_schema.key_column_usage kcu
         GROUP BY
-            kcu.constraint_name, kcu.table_name
+            kcu.constraint_name, kcu.table_name, kcu.table_schema
     ),
     foreign_columns AS (
         SELECT
             ccu.constraint_name,
             ccu.table_name AS foreign_table_name,
+            ccu.table_schema AS foreign_table_schema,
             ARRAY_AGG(ccu.column_name) AS foreign_column_names
         FROM
             information_schema.constraint_column_usage ccu
         GROUP BY
-            ccu.constraint_name, ccu.table_name
+            ccu.constraint_name, ccu.table_name, ccu.table_schema
     )
     SELECT DISTINCT
         tc.table_name AS table_name,
+        tc.table_schema AS table_schema,
         kc.column_names,
         fc.foreign_column_names,
         fc.foreign_table_name,
+        fc.foreign_table_schema,
         tc.constraint_name
     FROM
         information_schema.table_constraints tc
@@ -78,7 +83,7 @@ export async function getRelationships() {
     WHERE
         tc.constraint_type = 'FOREIGN KEY'
     ORDER BY
-        tc.table_name, tc.constraint_name;
+        tc.table_name, tc.table_schema, tc.constraint_name;
   `);
 
   return res.rows;

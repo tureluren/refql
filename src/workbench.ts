@@ -11,6 +11,7 @@ import {
   Values,
   Values2D
 } from ".";
+import { Game, Team, Player } from "./generated/tables";
 
 const pool = new Pool ({
   user: "test",
@@ -30,21 +31,31 @@ const querier = async (query: string, values: any[]) => {
 };
 
 setDefaultQuerier (querier);
+const { id: playerId } = Player.props;
 
-const Team = Table ("public.team", [
-  NumberProp ("id").hasDefault (),
-  StringProp ("name"),
-  BooleanProp ("active").hasDefault (),
-  NumberProp ("leagueId", "league_id").nullable (),
+const buh = playerId.eq (1);
 
-  // A game will usually have two refs to a team table
-  // which means u're gonna end up with two arrays (homeTeams and awayTeams)
-  // U will have to determine which array contains the last game after the result
-  // comes back from the db.
-  HasMany ("homeGames", "game", { rRef: "home_team_id" }),
-  HasMany ("awayGames", "game", { rRef: "away_team_id" })
-
+const playerById = Player ([
+  playerId.omit (),
+  Team
 ]);
+
+playerById ().then (p => console.log (p));
+
+// const Team = Table ("public.team", [
+//   NumberProp ("id").hasDefault (),
+//   StringProp ("name"),
+//   BooleanProp ("active").hasDefault (),
+//   NumberProp ("leagueId", "league_id").nullable (),
+
+//   // A game will usually have two refs to a team table
+//   // which means u're gonna end up with two arrays (homeTeams and awayTeams)
+//   // U will have to determine which array contains the last game after the result
+//   // comes back from the db.
+//   HasMany ("homeGames", "game", { rRef: "home_team_id" }),
+//   HasMany ("awayGames", "game", { rRef: "away_team_id" })
+
+// ]);
 
 // // Right now I would define a count in this way.
 // // The problem is that it's not that typesafe since it's using
@@ -59,17 +70,17 @@ const playerCount2 = NumberProp ("playerCount2", sql<{buh: string}>`
     where player.team_id = team.id
   `);
 
-const Position = Table ("position", []);
+// const Position = Table ("position", []);
 
-const Game = Table ("game", [
-  NumberProp ("id"),
-  StringProp ("result"),
-  NumberProp ("homeTeamId", "home_team_id"),
-  NumberProp ("awayTeamId", "away_team_id"),
-  BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
-  BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
-  DateProp ("date")
-]);
+// const Game = Table ("game", [
+//   NumberProp ("id"),
+//   StringProp ("result"),
+//   NumberProp ("homeTeamId", "home_team_id"),
+//   NumberProp ("awayTeamId", "away_team_id"),
+//   BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
+//   BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
+//   DateProp ("date")
+// ]);
 
 
 // const playerCount = NumberProp ("playerCount", sql`
@@ -155,6 +166,7 @@ const teamById = Team ([
 //     `;
 
 // TODO:
+// belongsto many kan volgens mij gwn gededecteerd worden
 // aggregation, grouping
 // refprops zitten ook op props, dit ook laten toevoegen aan query ?
 // const { id, name, playerCount, active, homeGames } = Team.props;
@@ -185,9 +197,9 @@ const insertTeam = Team.insert ([
   // Game (["*"])
 ]);
 
-insertTeam ({ data: [{ name: "iep", leagueId: 4 }], limit: 2 })
-  .then (r => console.log (r[0]))
-  .catch (console.log);
+// insertTeam ({ data: [{ name: "iep", leagueId: 4 }], limit: 2 })
+//   .then (r => console.log (r[0]))
+//   .catch (console.log);
 
 // .then (res => console.log (res));
 
@@ -196,9 +208,9 @@ const updateTeam = Team.update ([
   Team (["active", Team.props.id.in<{ rows: { id: number }[]}> (p => p.rows.map (r => r.id))])
 ]);
 
-updateTeam ({ data: { name: "foemp", active: false }, id: 2 })
-  .then (r => console.log (r))
-  .catch (console.log);
+// updateTeam ({ data: { name: "foemp", active: false }, id: 2 })
+//   .then (r => console.log (r))
+//   .catch (console.log);
 
 // const updateTeam = Team.delete ([
 //   id.eq(p => p.id),

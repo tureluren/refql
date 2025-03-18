@@ -36,6 +36,9 @@ export type Only<T, S> = {
 
 export type OnlyProps<T> = Only<T, Prop>;
 
+export type OnlyPropsWithEmptyOperations<T> =
+  Only<T, Prop<any, any, any, any, any, false>>;
+
 export type OnlySQLProps<T> = Only<T, SQLProp>;
 
 export type OnlyRefProps<T> = Only<T, RefProp>;
@@ -129,7 +132,7 @@ export type UpdateParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplif
 >;
 
 export type ExtractProps<S, T extends Selectable<S>[]> =
-  Extract<T[number], keyof OnlyProps<S> | OnlyProps<S>[keyof OnlyProps<S>]>[];
+  Extract<T[number], keyof OnlyPropsWithEmptyOperations<S> | OnlyPropsWithEmptyOperations<S>[keyof OnlyPropsWithEmptyOperations<S>]>[];
 
 export type NoPropsSelected<S, Components extends Selectable<S>[], Props extends ExtractProps<S, Components> = ExtractProps<S, Components>> =
   Props extends never[] ? true : false;
