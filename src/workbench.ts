@@ -11,7 +11,7 @@ import {
   Values,
   Values2D
 } from ".";
-import { Game, Team, Player } from "./generated/tables";
+import { Game, Team, Player, Goal } from "./generated/tables";
 
 const pool = new Pool ({
   user: "test",
@@ -44,17 +44,18 @@ const isVeteran = BooleanProp ("isVeteran", sql<{ year: number }>`
 `);
 
 const playerById = Player ([
-  isVeteran,
+  // "isVeteran"
+  // isVeteran.eq (true)
   // "birthday",
   // birthday,
-  playerId.omit (),
+  // playerId.omit (),
   // playerId.omit ()
-  playerId.eq (1),
-  Team
+  // isVeteran
+  // Team (["active"]),
+  // Goal (["id"])
+  // Team,
+  // Goal
 ]);
-
-const a = playerId.eq (1);
-const b = playerId.omit ();
 
 playerById ({ year: 2002 }).then (p => console.log (p));
 

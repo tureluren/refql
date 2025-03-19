@@ -36,16 +36,16 @@ export type Only<T, S> = {
 
 export type OnlyProps<T> = Only<T, Prop>;
 
-export type OnlyPropsWithEmptyOperations<T> =
-  Only<T, Prop<any, any, any, any, any, false>>;
-
 export type OnlySQLProps<T> = Only<T, SQLProp>;
 
 export type OnlyRefProps<T> = Only<T, RefProp>;
 
 export type OnlyPropsOrSQLProps<T> = Only<T, Prop | SQLProp>;
 
-export type PropMap<S> =
+export type OnlyWithEmptyOperations<T> =
+  Only<T, Prop<any, any, any, any, any, false> | SQLProp<any, any, any, any, false>>;
+
+export type AllProps<S> =
   Simplify<{ [K in OnlyProps<S>[keyof OnlyProps<S>] as K["as"]]: K["output"] }>;
 
 export type TagFunctionVariable<Params, Output = ValueType> =
@@ -88,7 +88,7 @@ export interface RefQLRows {
   refQLRows: any[];
 }
 
-export type TableIdMap<T extends { [key: string]: { tableId: string }}> = {
+export type TableIdMap<S, T extends OnlyRefProps<S> = OnlyRefProps<S>> = {
   [K in keyof T as T[K]["tableId"]]: T[K]
 };
 
@@ -131,54 +131,66 @@ export type UpdateParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplif
   { [K in keyof Props]?: Props[K]["output"] }
 >;
 
+export type ShouldSelectAll<S, T extends Selectable<S>[]> =
+  Extract<T[number], keyof OnlyPropsOrSQLProps<S> | OnlyWithEmptyOperations<S>[keyof OnlyWithEmptyOperations<S>]>[] extends never[] ? true : false;
 
-export type ExtractProps<S, T extends Selectable<S>[]> =
-  Extract<T[number], keyof OnlyPropsWithEmptyOperations<S> | OnlyPropsWithEmptyOperations<S>[keyof OnlyPropsWithEmptyOperations<S>]>[];
+export type ExtractOmittedPropsMap<S, T extends Selectable<S>[]> =
+  { [K in T[number] as K extends Prop<infer Key, any, any, true> ? Key : never]: K extends Prop<any, any, any, true> ? K : never;}
+  & { [K in T[number] as K extends SQLProp<infer Key, any, any, true> ? Key : never]: K extends SQLProp<any, any, any, true> ? K : never;};
 
-
-export type NoPropsSelected<S, Components extends Selectable<S>[], Props extends ExtractProps<S, Components> = ExtractProps<S, Components>> =
-  Props extends never[] ? true : false;
-
-
-export type ExtractOmittedPropsMap<S, T extends Selectable<S>[]> = {
-  [K in T[number] as K extends Prop<infer Key, any, any, true> ? Key : never]: K extends Prop<any, any, any, true> ? K : never;
-};
-
-// UITBREIDEN MET SQLProp??
-export type ignore<S, T extends Selectable<S>[], OmitMap = ExtractOmittedPropsMap<S, T>> = T extends (infer U)[]
+export type IgnoreOmitted<S, T extends Selectable<S>[], OmitMap = ExtractOmittedPropsMap<S, T>> = T extends (infer U)[]
   ? (U extends keyof OmitMap
       ? never
-      : U extends Prop
+      : U extends Prop | SQLProp
         ? U["as"] extends keyof OmitMap
           ? never
           : U
         : U)[]
     : never;
 
-export type FinalComponents<Props, Components extends Selectable<Props>[]> = NoPropsSelected<Props, Components> extends true
-  ? [Exclude<keyof OnlyProps<Props>, keyof ExtractOmittedPropsMap<Props, Components>>, ...ignore<Props, Components>]
-  : ignore<Props, Components>;
+export type FinalComponents<Props, Components extends Selectable<Props>[]> = ShouldSelectAll<Props, Components> extends true
+  ? [Exclude<keyof OnlyProps<Props>, keyof ExtractOmittedPropsMap<Props, Components>>, ...IgnoreOmitted<Props, Components>]
+  : IgnoreOmitted<Props, Components>;
 
-export type Output<S, T extends Selectable<S>[], Props extends OnlyPropsOrSQLProps<S> = OnlyPropsOrSQLProps<S>, RefProps extends OnlyRefProps<S> = OnlyRefProps<S>, TableIds extends TableIdMap<RefProps> = TableIdMap<RefProps>> =
-  FinalComponents<S, T> extends (infer U)[]
+export type Output<
+  S,
+  T extends Selectable<S>[],
+  Props extends OnlyPropsOrSQLProps<S> = OnlyPropsOrSQLProps<S>,
+  TableIds extends TableIdMap<S> = TableIdMap<S>
+> = FinalComponents<S, T> extends (infer U)[]
   ? U extends keyof Props
     ? {as: U; type: Props[U]["output"]}
+
       : U extends Prop | SQLProp
         ? { as: U["as"]; type: U["output"] }
 
-      : U extends RQLTag<RefProps[keyof RefProps]["tableId"]>
-        ? TableIds[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne">
-          ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["output"][][0] | null : U["output"][][0]}
-          : TableIds[U["tableId"]] extends RefProp<any, any, "HasMany" | "BelongsToMany">
-            ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? U["output"][] | null : U["output"][]}
-            : never
+      : U extends RQLTag<infer TableId, any, infer Output>
+        ? TableIds[TableId] extends RefProp<infer As, any, infer RelType, infer IsNullable>
+          ? {
+              as: As;
+              type: IsNullable extends true
+                ? RelType extends "BelongsTo" | "HasOne"
+                  ? Output[][0] | null
+                  : Output[] | null
+                : RelType extends "BelongsTo" | "HasOne"
+                  ? Output[][0]
+                  : Output[];
+          }
+          : never
 
-        : U extends Table<RefProps[keyof RefProps]["tableId"]>
-          ? TableIds[U["tableId"]] extends RefProp<any, any, "BelongsTo" | "HasOne">
-            ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? PropMap<U["props"]>[][0] | null : PropMap<U["props"]>[][0]}
-            : TableIds[U["tableId"]] extends RefProp<any, any, "HasMany" | "BelongsToMany">
-              ? {as: TableIds[U["tableId"]]["as"]; type: TableIds[U["tableId"]]["isNullable"] extends true ? PropMap<U["props"]>[] | null : PropMap<U["props"]>[]}
-              : never
+        : U extends Table<infer TableId, infer Props>
+          ? TableIds[TableId] extends RefProp<infer As, any, infer RelType, infer IsNullable>
+            ? {
+                as: As;
+                type: IsNullable extends true
+                  ? RelType extends "BelongsTo" | "HasOne"
+                    ? AllProps<Props>[][0] | null
+                    : AllProps<Props>[] | null
+                  : RelType extends "BelongsTo" | "HasOne"
+                    ? AllProps<Props>[][0]
+                    : AllProps<Props>[];
+            }
+            : never
         : never
   : never;
 
@@ -190,10 +202,10 @@ export type CUDOutput<
   S,
   T extends (Insertable<TableId> | Updatable<TableId, S>)[],
   TableRQLTags extends OnlyTableRQLTags<TableId, S, T> = OnlyTableRQLTags<TableId, S, T>,
-  finalOutput = Simplify<UnionToIntersection<TableRQLTags[number]["output"]>>
+  FinalOutput = Simplify<UnionToIntersection<TableRQLTags[number]["output"]>>
 > = TableRQLTags extends never[]
-  ? RQLTag<TableId, {}, PropMap<S>>
-  : RQLTag<TableId, {}, finalOutput>;
+  ? RQLTag<TableId, {}, AllProps<S>>
+  : RQLTag<TableId, {}, FinalOutput>;
 
 export interface InterpretedCUD<Params = any, Output = any> {
   tag: SQLTag<Params, Output>;

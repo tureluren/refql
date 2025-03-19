@@ -6,6 +6,7 @@ import HasMany from "../Prop/HasMany";
 import HasOne from "../Prop/HasOne";
 import NumberProp from "../Prop/NumberProp";
 import StringProp from "../Prop/StringProp";
+import sql from "../SQLTag/sql";
 import Table from "../Table";
 
 export const Assist = Table ("public.assist", [
@@ -73,7 +74,13 @@ export const Player = Table ("public.player", [
   HasMany ("assists", "public.assist", { lRef: "id", rRef: "player_id" }),
   HasMany ("gamePlayers", "public.game_player", { lRef: "id", rRef: "player_id" }),
   HasMany ("goals", "public.goal", { lRef: "id", rRef: "player_id" }),
-  HasOne ("rating", "public.rating", { lRef: "id", rRef: "player_id" })
+  HasOne ("rating", "public.rating", { lRef: "id", rRef: "player_id" }),
+ BooleanProp ("isVeteran", sql<{ year: number }>`
+  select case when extract(year from birthday) < ${p => p.year} then true else false end
+  from player
+  where id = player.id
+  limit 1
+`)
 ]);
 
 export const Position = Table ("public.position", [
