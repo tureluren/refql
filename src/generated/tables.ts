@@ -1,12 +1,12 @@
 import Prop from "../Prop";
 import BelongsTo from "../Prop/BelongsTo";
+import BelongsToMany from "../Prop/BelongsToMany";
 import BooleanProp from "../Prop/BooleanProp";
 import DateProp from "../Prop/DateProp";
 import HasMany from "../Prop/HasMany";
 import HasOne from "../Prop/HasOne";
 import NumberProp from "../Prop/NumberProp";
 import StringProp from "../Prop/StringProp";
-import sql from "../SQLTag/sql";
 import Table from "../Table";
 
 export const Assist = Table ("public.assist", [
@@ -21,7 +21,7 @@ export const Assist = Table ("public.assist", [
 
 export const Game = Table ("public.game", [
   NumberProp ("id", "id").hasDefault (),
-  Prop ("date", "date").nullable (),
+  DateProp ("date", "date").nullable (),
   NumberProp ("homeTeamId", "home_team_id"),
   NumberProp ("awayTeamId", "away_team_id"),
   NumberProp ("leagueId", "league_id"),
@@ -31,7 +31,8 @@ export const Game = Table ("public.game", [
   BelongsTo ("league", "public.league", { lRef: "league_id", rRef: "id" }),
   HasMany ("assists", "public.assist", { lRef: "id", rRef: "game_id" }),
   HasMany ("gamePlayers", "public.game_player", { lRef: "id", rRef: "game_id" }),
-  HasMany ("goals", "public.goal", { lRef: "id", rRef: "game_id" })
+  HasMany ("goals", "public.goal", { lRef: "id", rRef: "game_id" }),
+  BelongsToMany ("players", "public.player", { lRef: "id", lxRef: "game_id", xTable: "public.game_player", rxRef: "player_id", rRef: "id" })
 ]);
 
 export const GamePlayer = Table ("public.game_player", [
@@ -62,7 +63,7 @@ export const League = Table ("public.league", [
 ]);
 
 export const Player = Table ("public.player", [
-  Prop ("birthday", "birthday").nullable (),
+  DateProp ("birthday", "birthday").nullable (),
   NumberProp ("teamId", "team_id").nullable (),
   NumberProp ("positionId", "position_id").nullable (),
   NumberProp ("id", "id").hasDefault (),
@@ -75,12 +76,7 @@ export const Player = Table ("public.player", [
   HasMany ("gamePlayers", "public.game_player", { lRef: "id", rRef: "player_id" }),
   HasMany ("goals", "public.goal", { lRef: "id", rRef: "player_id" }),
   HasOne ("rating", "public.rating", { lRef: "id", rRef: "player_id" }),
- BooleanProp ("isVeteran", sql<{ year: number }>`
-  select case when extract(year from birthday) < ${p => p.year} then true else false end
-  from player
-  where id = player.id
-  limit 1
-`)
+  BelongsToMany ("games", "public.game", { lRef: "id", lxRef: "player_id", xTable: "public.game_player", rxRef: "game_id", rRef: "id" })
 ]);
 
 export const Position = Table ("public.position", [

@@ -44,6 +44,7 @@ const isVeteran = BooleanProp ("isVeteran", sql<{ year: number }>`
 `);
 
 const playerById = Player ([
+  playerId.eq (1),
   // "isVeteran"
   // isVeteran.eq (true)
   // "birthday",
@@ -54,7 +55,8 @@ const playerById = Player ([
   // Team (["active"]),
   // Goal (["id"])
   // Team,
-  // Goal
+  // Goal,
+  Game (["awayTeamId"])
 ]);
 
 playerById ({ year: 2002 }).then (p => console.log (p));
@@ -187,6 +189,9 @@ const teamById = Team ([
 // aggregation, grouping
 // refprops zitten ook op props, dit ook laten toevoegen aan query ?
 // const { id, name, playerCount, active, homeGames } = Team.props;
+// monoid weghalen uit spec
+// regels many_to_many opstellen
+// configuratie
 
 // DECISIONS
 // inc ipv omit, omdat bij update statements, byId, meestal wilt ge dan geen set id ={}, enkel op filteren en bij gewone selects kunt ge met * werken ipv incl()

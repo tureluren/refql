@@ -2,33 +2,38 @@ import * as fs from "fs-extra";
 import pluralize from "pluralize";
 import { getColumns, getOneToOneRelationships, getRelationships, getTables } from "./queries";
 
-function sanitizeToIdentifier(input: string): string {
-  // Ensure the string starts with a letter; remove invalid leading characters.
-  const start = input.replace (/^[^A-Za-z]+/, "");
-
-  // Keep only valid characters (letters, digits, underscores).
-  const sanitized = start.replace (/[^A-Za-z0-9_]/g, "");
-
-  return sanitized;
-}
-
 function toCamelCase(str: string): string {
   return str
-    .toLowerCase () // Convert the entire string to lowercase for consistency
+    .toLowerCase ()
     .replace (/(?:[_\-\s]+([a-z]))|^[A-Z]/g, (_, letter, offset) =>
       offset === 0 ? str.charAt (0).toLowerCase () : (letter ? letter.toUpperCase () : "")
     );
 }
-
 
 function toPascalCase(str: string): string {
   const camel = toCamelCase (str);
   return camel.charAt (0).toUpperCase () + camel.slice (1);
 }
 
+function toSnakeCase(str: string): string {
+  return str
+    .replace (/([a-z])([A-Z])/g, "$1_$2")
+    .replace (/[-\s]+/g, "_")
+    .toLowerCase ();
+}
+
+function toKebabCase(str: string): string {
+  return str
+    .replace (/([a-z])([A-Z])/g, "$1-$2")
+    .replace (/[_\s]+/g, "-")
+    .toLowerCase ();
+}
+
+
 const imports = [
   'import Prop from "../Prop";',
   'import BelongsTo from "../Prop/BelongsTo";',
+  'import BelongsToMany from "../Prop/BelongsToMany";',
   'import BooleanProp from "../Prop/BooleanProp";',
   'import DateProp from "../Prop/DateProp";',
   'import HasMany from "../Prop/HasMany";',
@@ -58,93 +63,77 @@ export async function generateInterfaces(outputDir: string) {
       const foreignKeys = relationships.filter (rel => rel.table_name === table);
       const reversedForeignKeys = relationships.filter (rel => rel.foreign_table_name === table);
 
-      const intermediateForeignKeys = reversedForeignKeys.flatMap (rfk => {
-        return relationships.filter (rel => rel.table_name === rfk.table_name && rel.foreign_table_name !== table);
-      });
-      const properties: {[propertyName: string]: string} = {};
+      const intermediateForeignKeys = relationships
+        .filter (rel => {
+          const table1 = `${table}_${rel.foreign_table_name}`;
+          const table2 = `${rel.foreign_table_name}_${table}`;
+          return rel.table_name === table1 || rel.table_name === table2;
+        })
+        .map (rRel => {
+          const lRel = relationships.find (rel => rel.table_name === rRel.table_name && rel.foreign_table_name === table);
+          return [lRel, rRel];
+        });
+
       const props: {[propertyName: string]: string} = {};
 
       for (const col of columns) {
         const propertyName = toCamelCase (col.column_name);
-        const tsType = mapPostgresTypeToTS (col.data_type);
         const nullable = col.is_nullable === "YES";
         const hasDefault = col.column_default != null;
-
-        properties[propertyName] = `${propertyName}${nullable ? "?" : ""}: ${tsType};`;
 
         const propType = mapPostgresTypeToPropType (col.data_type);
         props[propertyName] = `${propType} ("${propertyName}", "${col.column_name}")${hasDefault ? `.hasDefault ()` : nullable ? `.nullable ()` : ""}`;
       }
 
       for (const fk of foreignKeys) {
-        const firstCol = fk.column_names[0];
-        const firstFkCol = fk.foreign_column_names[0];
+        const lRef = fk.column_names[0];
+        const rRef = fk.foreign_column_names[0];
 
         // homeTeamId -> homeTeam
-        const propertyName = toCamelCase (firstCol).replace (`${toPascalCase (firstFkCol)}`, "");
+        const propertyName = toCamelCase (lRef).replace (`${toPascalCase (rRef)}`, "");
 
-        const tsType = toPascalCase (fk.foreign_table_name);
-        const col = columns.find (c => c.column_name === firstCol);
+        const col = columns.find (c => c.column_name === lRef);
         const nullable = col.is_nullable === "YES";
 
-        properties[propertyName] = `${propertyName}${nullable ? "?" : ""}: ${tsType};`;
-
-        props[propertyName] = `BelongsTo ("${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", { lRef: "${firstCol}", rRef: "${firstFkCol}" })${nullable ? `.nullable ()` : ""}`;
+        props[propertyName] = `BelongsTo ("${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", { lRef: "${lRef}", rRef: "${rRef}" })${nullable ? `.nullable ()` : ""}`;
       }
 
       for (const fk of reversedForeignKeys) {
         const ufk = uniqueKeys.find (uk => uk.fk_name === fk.constraint_name);
-        const firstCol = fk.column_names[0];
-        const firstFkCol = fk.foreign_column_names[0];
+        const lRef = fk.foreign_column_names[0];
+        const rRef = fk.column_names[0];
 
         if (ufk) {
           const propertyName = toCamelCase (fk.table_name);
-          const tsType = toPascalCase (fk.table_name);
-          properties[propertyName] = `${propertyName}?: ${tsType};`;
-          props[propertyName] = `HasOne ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${firstFkCol}", rRef: "${firstCol}" })`;
+          props[propertyName] = `HasOne ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`;
         } else {
           const propertyName = pluralize (toCamelCase (fk.table_name));
-          const tsType = toPascalCase (fk.table_name);
-          properties[propertyName] = `${propertyName}: ${tsType}[];`;
-          props[propertyName] = `HasMany ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${firstFkCol}", rRef: "${firstCol}" })`;
+          props[propertyName] = `HasMany ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`;
         }
       }
 
       for (const fk of intermediateForeignKeys) {
-        const propertyName = pluralize (toCamelCase (fk.foreign_table_name));
-        const tsType = toPascalCase (fk.foreign_table_name);
-        properties[propertyName] = `${propertyName}: ${tsType}[];`;
+        const [lRel, rRel] = fk;
+        const lRef = lRel.foreign_column_names[0];
+        const lxRef = lRel.column_names[0];
+        const xTable = `${lRel.table_schema}.${lRel.table_name}`;
+        const rxRef = rRel.column_names[0];
+        const rRef = rRel.foreign_column_names[0];
+
+        const propertyName = pluralize (toCamelCase (rRel.foreign_table_name));
+
+        props[propertyName] = `BelongsToMany ("${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", { lRef: "${lRef}", lxRef: "${lxRef}", xTable: "${xTable}", rxRef: "${rxRef}", rRef: "${rRef}" })`;
       }
 
       const interfaceProperties = Object.values (props);
 
-      // return `export interface ${tableName} {\n  ${interfaceProperties.join ("\n  ")}\n}`;
       return `export const ${tableName} = Table ("${table_schema}.${table}", [\n  ${interfaceProperties.join (",\n  ")}\n]);`;
     }));
 
   const fileContent = interfacesNew.join ("\n\n");
   await fs.appendFile (`${outputDir}/tables.ts`, fileContent);
 
-  console.log ("Interfaces generated successfully!");
-}
-
-function mapPostgresTypeToTS(pgType: string): string {
-  switch (pgType) {
-    case "integer":
-    case "bigint":
-      return "number";
-    case "text":
-    case "varchar":
-    case "character varying":
-      return "string";
-    case "boolean":
-      return "boolean";
-    case "timestamp without time zone":
-    case "timestamp with time zone":
-      return "Date";
-    default:
-      return "any";
-  }
+  console.log ("RefQL schema generated successfully!");
 }
 
 function mapPostgresTypeToPropType(pgType: string): string {
@@ -160,6 +149,7 @@ function mapPostgresTypeToPropType(pgType: string): string {
       return "BooleanProp";
     case "timestamp without time zone":
     case "timestamp with time zone":
+    case "date":
       return "DateProp";
     default:
       return "Prop";
