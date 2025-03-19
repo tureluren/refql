@@ -1,4 +1,4 @@
-import { query } from "./db";
+import { query } from "./db.ts";
 
 export async function getTables() {
   const res = await query (`

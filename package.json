@@ -62,7 +62,8 @@
   },
   "homepage": "https://github.com/tureluren/refql#readme",
   "files": [
-    "build/**/*"
+    "build/**/*",
+    "scripts/postinstall.js"
   ],
   "keywords": [
     "nodejs",
