@@ -12,6 +12,7 @@ import NumberProp from "./Prop/NumberProp";
 import PropType from "./Prop/PropType";
 import RefProp from "./Prop/RefProp";
 import StringProp from "./Prop/StringProp";
+import RefQL from "./RefQL";
 import { createRQLTag, isRQLTag, RQLTag } from "./RQLTag";
 import Eq from "./RQLTag/Eq";
 import IsNull from "./RQLTag/IsNull";
@@ -28,7 +29,6 @@ import Values from "./SQLTag/Values";
 import Values2D from "./SQLTag/Values2D";
 import Table from "./Table";
 
-
 export * from "./common/types";
 export {
   BelongsTo, BelongsToMany, BooleanProp,
@@ -42,3 +42,5 @@ export {
 };
 
 // export * from ".refql";
+
+export default RefQL;

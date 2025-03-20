@@ -192,6 +192,7 @@ const teamById = Team ([
 // monoid weghalen uit spec
 // regels many_to_many opstellen
 // configuratie
+// tx
 
 // DECISIONS
 // inc ipv omit, omdat bij update statements, byId, meestal wilt ge dan geen set id ={}, enkel op filteren en bij gewone selects kunt ge met * werken ipv incl()
