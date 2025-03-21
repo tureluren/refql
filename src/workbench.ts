@@ -1,17 +1,15 @@
 import { Pool } from "pg";
-import {
+import RefQL, {
   BelongsTo, BooleanProp,
   DateProp, HasMany, Limit, NumberProp,
   Offset,
   Prop,
   Raw,
-  setDefaultQuerier, sql,
-  StringProp, Table,
+  StringProp,
   Value,
   Values,
   Values2D
 } from ".";
-import { Game, Team, Player, Goal } from "./generated/tables";
 
 const pool = new Pool ({
   user: "test",
@@ -30,7 +28,10 @@ const querier = async (query: string, values: any[]) => {
   return res.rows;
 };
 
-setDefaultQuerier (querier);
+const { tables, sql } = RefQL ({ querier });
+
+const { Player, Game, Team } = tables.public;
+
 const { id: playerId, birthday } = Player.props;
 
 const buh = playerId.eq (1);

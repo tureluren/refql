@@ -1,5 +1,4 @@
 import setConvertPromise from "./common/convertPromise";
-import { setDefaultQuerier } from "./common/defaultQuerier";
 import isEmptyTag from "./common/isEmptyTag";
 import Prop from "./Prop";
 import BelongsTo from "./Prop/BelongsTo";
@@ -22,25 +21,23 @@ import RefField from "./RQLTag/RefField";
 import RefNode from "./RQLTag/RefNode";
 import { createSQLTag, isSQLTag, SQLTag } from "./SQLTag";
 import Raw from "./SQLTag/Raw";
-import sql, { parse } from "./SQLTag/sql";
+import { parse } from "./SQLTag/sql";
 import { isSQLNode } from "./SQLTag/SQLNode";
 import Value from "./SQLTag/Value";
 import Values from "./SQLTag/Values";
 import Values2D from "./SQLTag/Values2D";
-import Table from "./Table";
+import makeTable from "./Table";
 
 export * from "./common/types";
 export {
   BelongsTo, BelongsToMany, BooleanProp,
   createRQLTag, createSQLTag, DateProp,
   Eq, HasMany, HasOne, isEmptyTag, IsNull, isRQLTag,
-  isSQLNode, isSQLTag, Limit, NumberProp, Offset,
-  parse, Prop, PropType, Raw, RefField, RefNode,
-  RefProp, RQLTag, setConvertPromise,
-  setDefaultQuerier, sql, SQLTag, StringProp,
-  Table, Value, Values, Values2D
+  isSQLNode, isSQLTag, Limit, makeTable, NumberProp,
+  Offset, parse, Prop, PropType, Raw, RefField, RefNode,
+  RefProp, RQLTag, setConvertPromise, SQLTag, StringProp, Value, Values, Values2D
 };
 
-// export * from ".refql";
+// export introspect (querier, dbCasing, jsCasing, dbType)
 
 export default RefQL;

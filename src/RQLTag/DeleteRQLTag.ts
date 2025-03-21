@@ -1,12 +1,12 @@
 import { RQLTag } from ".";
 import { refqlType } from "../common/consts";
-import { InterpretedCUD } from "../common/types";
+import { InterpretedCUD, Querier } from "../common/types";
 import Prop from "../Prop";
 import SQLProp from "../Prop/SQLProp";
 import { isSQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
-import Table from "../Table";
+import { sqlX } from "../SQLTag/sql";
+import { Table } from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
 import rawSpace from "./RawSpace";
@@ -25,14 +25,15 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createDeleteRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
+export function createDeleteRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier) {
   const tag = runnableTag<DeleteRQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
       table,
-      nodes
+      nodes,
+      querier
     })
   );
 
@@ -42,13 +43,13 @@ export function createDeleteRQLTag<TableId extends string, Params = {}, Output =
 function interpret(this: DeleteRQLTag): InterpretedCUD {
   const { nodes, table } = this;
 
-  let filters = sql``;
+  let filters = sqlX``;
   let returning: RQLTag | undefined;
 
   for (const node of nodes) {
     if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
       const col = isSQLTag (node.col)
-        ? sql`(${node.col})`
+        ? sqlX`(${node.col})`
         : Raw (`${table.name}.${node.col || node.as}`);
 
       for (const op of node.operations) {
@@ -68,14 +69,14 @@ function interpret(this: DeleteRQLTag): InterpretedCUD {
 
   const props = getStandardProps (table);
 
-  const deleteTable = sql`
+  const deleteTable = sqlX`
     delete from ${Raw (table)}
     where 1 = 1
   `;
 
   let tag = deleteTable
     .join ("", filters)
-    .concat (sql`
+    .concat (sqlX`
       returning ${Raw (`${props.map (p => `${table.name}.${p.col || p.as} "${p.as}"`).join (", ")}`)}
     `);
 

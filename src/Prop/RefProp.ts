@@ -1,6 +1,6 @@
 import { refqlType } from "../common/consts";
 import { RefInput, RefNodeInput, RelType } from "../common/types";
-import Table from "../Table";
+import { Table, TableX } from "../Table";
 import PropType, { propTypePrototype } from "./PropType";
 import validateRefInput from "./validateRefInput";
 
@@ -29,7 +29,7 @@ function RefProp<As extends string, TableId extends string, Rel extends RelType,
   refProp.tableId = tableId;
   refProp.rel = rel;
   refProp.as = as;
-  refProp.child = Table (tableId, []);
+  refProp.child = TableX (tableId, []);
   refProp.refInput = refInput;
   refProp.isNullable = isNullable;
 

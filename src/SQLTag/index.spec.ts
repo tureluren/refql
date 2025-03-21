@@ -4,19 +4,20 @@ import pg from "pg";
 import { createSQLTag, isSQLTag } from ".";
 import { flConcat } from "../common/consts";
 import setConvertPromise from "../common/convertPromise";
-import { setDefaultQuerier } from "../common/defaultQuerier";
 import { OnlyProps, Querier, StringMap } from "../common/types";
-import Table from "../Table";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import { Player, Team } from "../test/tables";
 import userConfig from "../test/userConfig";
 import Raw from "./Raw";
-import sql from "./sql";
+import makeSQL from "./sql";
 import Values from "./Values";
 import Values2D from "./Values2D";
+import makeTestTables from "../test/tables";
+import RefQL from "../RefQL";
+import dummyQuerier from "../common/dummyQuerier";
+import { Table } from "../Table";
 
 describe ("SQLTag type", () => {
   let pool: any;
@@ -33,7 +34,12 @@ describe ("SQLTag type", () => {
     querier = pgQuerier (pool);
   }
 
-  setDefaultQuerier (querier);
+
+  const { Table, sql } = RefQL ({ querier });
+
+  const {
+    Player, Team
+  } = makeTestTables (Table, sql);
 
   const rawLastName = Raw ('last_name "lastName"');
 
@@ -43,7 +49,7 @@ describe ("SQLTag type", () => {
 
   test ("create SQLTag", () => {
     const nodes = [Raw ("select first_name, last_name"), Raw ("from player")];
-    const tag = createSQLTag (nodes);
+    const tag = createSQLTag (nodes, dummyQuerier);
 
     expect (tag.nodes).toEqual (nodes);
     expect (tag.interpreted).toBe (undefined);
@@ -226,7 +232,7 @@ describe ("SQLTag type", () => {
       `;
     }
 
-    const players = await returning ({}, querier);
+    const players = await returning ({});
 
     expect (players[0].first_name).toBe ("John");
     expect (players[0].last_name).toBe ("Doe");
@@ -277,26 +283,14 @@ describe ("SQLTag type", () => {
   test ("database error", async () => {
     const message = 'relation "playerr" does not exist';
     try {
-      const tag = sql`
+      const tag = makeSQL (() => Promise.reject (message))`
         select * from playerr
         where playerr.id = 1
       `;
-      await tag ({}, () => Promise.reject (message));
+      await tag ({});
     } catch (err: any) {
       expect (err).toBe (message);
     }
-  });
-
-  test ("no querier provided error", async () => {
-    const message = "There was no Querier provided";
-    try {
-      setDefaultQuerier (undefined as any);
-      const tag = sql`select * from player`;
-      await tag ();
-    } catch (err: any) {
-      expect (err.message).toBe (message);
-    }
-    setDefaultQuerier (querier);
   });
 
   test ("compile errors", () => {

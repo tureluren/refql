@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import Table from "../Table";
+import { Table } from "../Table";
 
 interface RefField {
   name: string;

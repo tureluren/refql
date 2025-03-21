@@ -1,6 +1,6 @@
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
-import { Player, Team } from "../test/tables";
+import { TableX } from "../Table";
 import Limit from "./Limit";
 import Offset from "./Offset";
 import RefField from "./RefField";
@@ -19,6 +19,8 @@ describe ("RQLNodes", () => {
   });
 
   test ("is RefNode", () => {
+    const Player = TableX ("player", []);
+    const Team = TableX ("public.team", []);
     expect (RefNode.isRefNode (RefNode (
       Team ([]),
       RefProp ("team", "public.team", "BelongsTo", { lRef: "team_id", rRef: "id" }, false),

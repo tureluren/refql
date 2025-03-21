@@ -3,9 +3,9 @@ import { RefInfo, RefInput, RefQLRows } from "../common/types";
 import RefProp from "../Prop/RefProp";
 import { RQLTag } from "../RQLTag";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import Values from "../SQLTag/Values";
-import Table from "../Table";
+import { Table, TableX } from "../Table";
 import RefField from "./RefField";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
@@ -66,9 +66,9 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
     const btmInput: RefInput = refInput;
 
     if (typeof btmInput.xTable === "undefined") {
-      xTable = Table (parent.name < child.name ? `${parent.name}_${child.name}` : `${child.name}_${parent.name}`, []);
+      xTable = TableX (parent.name < child.name ? `${parent.name}_${child.name}` : `${child.name}_${parent.name}`, []);
     } else {
-      xTable = Table (btmInput.xTable, []);
+      xTable = TableX (btmInput.xTable, []);
     }
 
     refNode.info = {
@@ -93,19 +93,19 @@ function joinLateral(this: RefNode) {
   if (this.info.xTable) {
     const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info as Required<RefInfo>;
 
-    const l1 = sql<RefQLRows>`
+    const l1 = sqlX<RefQLRows>`
       select distinct ${Raw (lRef)}
       from ${Raw (parent)}
       where ${Raw (lRef.name)}
       in ${Values (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
     `;
 
-    const { tag: l2, next } = this.tag.interpret (sql`
+    const { tag: l2, next } = this.tag.interpret (sqlX`
       join ${Raw (`${xTable} on ${rxRef.name} = ${rRef.name}`)}
       where ${Raw (`${lxRef.name} = refqll1.${lRef.as}`)}
     `);
 
-    const joined = sql`
+    const joined = sqlX`
       select * from (${l1}) refqll1,
       lateral (${l2}) refqll2
     `;
@@ -117,18 +117,18 @@ function joinLateral(this: RefNode) {
   } else {
     const { rRef, lRef, parent } = this.info;
 
-    const l1 = sql<RefQLRows>`
+    const l1 = sqlX<RefQLRows>`
       select distinct ${Raw (lRef)}
       from ${Raw (parent)}
       where ${Raw (lRef.name)}
       in ${Values (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
     `;
 
-    const { tag: l2, next } = this.tag.interpret (sql`
+    const { tag: l2, next } = this.tag.interpret (sqlX`
       where ${Raw (`${rRef.name} = refqll1.${lRef.as}`)}
     `);
 
-    const joined = sql`
+    const joined = sqlX`
       select * from (${l1}) refqll1,
       lateral (${l2}) refqll2
     `;

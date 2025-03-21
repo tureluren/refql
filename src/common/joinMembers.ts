@@ -1,6 +1,6 @@
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 
 const joinMembers = (tempMembers: {as: string; node: Raw | SQLTag; isOmitted: boolean}[]) => {
   const members = tempMembers
@@ -17,7 +17,7 @@ const joinMembers = (tempMembers: {as: string; node: Raw | SQLTag; isOmitted: bo
     .filter (m => !m.isOmitted)
     .map (m => m.node)
     .reduce ((tag: SQLTag, member, idx) =>
-    tag.join (idx === 0 ? "" : ", ", Raw.isRaw (member) ? sql`${member}` : member as SQLTag), sql``);
+    tag.join (idx === 0 ? "" : ", ", Raw.isRaw (member) ? sqlX`${member}` : member as SQLTag), sqlX``);
 };
 
 export default joinMembers;

@@ -1,5 +1,5 @@
 import { SQLTag } from "../SQLTag";
-import sql from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
@@ -31,7 +31,7 @@ function Limit<Params>(run: TagFunctionVariable<Params, number> | number) {
 function interpret(this: Limit) {
   const { run } = this;
 
-  return sql`
+  return sqlX`
     limit ${run}
   `;
 }

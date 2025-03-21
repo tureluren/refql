@@ -5,167 +5,176 @@ import DateProp from "../Prop/DateProp";
 import HasMany from "../Prop/HasMany";
 import HasOne from "../Prop/HasOne";
 import NumberProp from "../Prop/NumberProp";
+import PropType from "../Prop/PropType";
 import StringProp from "../Prop/StringProp";
+import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
-import Table from "../Table";
+import { Table } from "../Table";
+import { SQLTagVariable } from "../common/types";
+
 
 const id = NumberProp ("id").hasDefault ();
 const name = StringProp ("name");
 
-const Position = Table ("position", [
-  id,
-  name
-]);
+const makeTestTables = (
+  Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, { [P in Props[number] as P["as"]]: P; }>,
+  sql: <Params = {}, Output = unknown>(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) => SQLTag<Params, Output>
+) => {
+  const Position = Table ("position", [
+    id,
+    name
+  ]);
 
-const Rating = Table ("rating", [
-  NumberProp ("playerId", "player_id"),
-  NumberProp ("acceleration"),
-  NumberProp ("finishing"),
-  NumberProp ("positioning"),
-  NumberProp ("shotPower", "shot_power"),
-  NumberProp ("freeKick", "free_kick"),
-  NumberProp ("stamina"),
-  NumberProp ("dribbling"),
-  NumberProp ("tackling")
-]);
+  const Rating = Table ("rating", [
+    NumberProp ("playerId", "player_id"),
+    NumberProp ("acceleration"),
+    NumberProp ("finishing"),
+    NumberProp ("positioning"),
+    NumberProp ("shotPower", "shot_power"),
+    NumberProp ("freeKick", "free_kick"),
+    NumberProp ("stamina"),
+    NumberProp ("dribbling"),
+    NumberProp ("tackling")
+  ]);
 
-const League = Table ("league", [
-  id,
-  name,
-  HasMany ("teams", "public.team")
-]);
+  const League = Table ("league", [
+    id,
+    name,
+    HasMany ("teams", "public.team")
+  ]);
 
-const Team = Table ("public.team", [
-  id,
-  name,
-  BooleanProp ("active").hasDefault (),
-  NumberProp ("leagueId", "league_id"),
-  HasMany ("players", "player"),
-  BelongsTo ("league", "league"),
-  HasMany ("homeGames", "game", { rRef: "home_team_id" }),
-  HasMany ("awayGames", "game", { rRef: "away_team_id" }),
-  NumberProp ("playerCount", sql`
-    select cast(count(*) as int) from player
-    where player.team_id = team.id
-  `)
-]);
+  const Team = Table ("public.team", [
+    id,
+    name,
+    BooleanProp ("active").hasDefault (),
+    NumberProp ("leagueId", "league_id"),
+    HasMany ("players", "player"),
+    BelongsTo ("league", "league"),
+    HasMany ("homeGames", "game", { rRef: "home_team_id" }),
+    HasMany ("awayGames", "game", { rRef: "away_team_id" }),
+    NumberProp ("playerCount", sql`
+      select cast(count(*) as int) from player
+      where player.team_id = team.id
+    `)
+  ]);
 
-const Player = Table ("player", [
-  id,
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  StringProp ("fullName", sql<{ delimiter: string }>`
-    concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
-  `),
-  NumberProp ("goalCount", sql`
-    select cast(count(*) as int) from goal
-    where goal.player_id = player.id
-  `),
-  NumberProp ("firstGoalId", sql`
-    select id from goal
-    where goal.player_id = player.id
-    limit 1
-  `).nullable (),
-  BooleanProp ("isVeteran", sql<{ year: number }>`
-    select case when extract(year from birthday) < ${p => p.year} then true else false end
-    from player
-    where id = player.id
-    limit 1
-  `),
-  StringProp ("cars").arrayOf (),
-  DateProp ("birthday"),
-  NumberProp ("teamId", "team_id").nullable (),
-  BelongsTo ("team", "public.team").nullable (),
-  NumberProp ("positionId", "position_id"),
-  BelongsTo ("position", "position"),
-  HasOne ("rating", "rating"),
-  HasMany ("goals", "goal"),
-  BelongsToMany ("games", "game")
-]);
+  const Player = Table ("player", [
+    id,
+    StringProp ("firstName", "first_name"),
+    StringProp ("lastName", "last_name"),
+    StringProp ("fullName", sql<{ delimiter: string }>`
+      concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
+    `),
+    NumberProp ("goalCount", sql`
+      select cast(count(*) as int) from goal
+      where goal.player_id = player.id
+    `),
+    NumberProp ("firstGoalId", sql`
+      select id from goal
+      where goal.player_id = player.id
+      limit 1
+    `).nullable (),
+    BooleanProp ("isVeteran", sql<{ year: number }>`
+      select case when extract(year from birthday) < ${p => p.year} then true else false end
+      from player
+      where id = player.id
+      limit 1
+    `),
+    StringProp ("cars").arrayOf (),
+    DateProp ("birthday"),
+    NumberProp ("teamId", "team_id").nullable (),
+    BelongsTo ("team", "public.team").nullable (),
+    NumberProp ("positionId", "position_id"),
+    BelongsTo ("position", "position"),
+    HasOne ("rating", "rating"),
+    HasMany ("goals", "goal"),
+    BelongsToMany ("games", "game")
+  ]);
 
-const Player2 = Table ("player", [
-  id,
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  StringProp ("birthday"),
-  NumberProp ("teamId", "team_id"),
-  BelongsTo ("team", "public.team", {
-    lRef: "TEAM_ID",
-    rRef: "ID"
-  }),
-  NumberProp ("positionId", "position_id"),
-  HasOne ("rating", "rating", {
-    lRef: "ID",
-    rRef: "PLAYER_ID"
-  }),
-  HasMany ("goals", "goal", {
-    lRef: "ID",
-    rRef: "PLAYER_ID"
-  }),
-  BelongsToMany ("games", "game", {
-    xTable: "GAME_PLAYER"
-  }),
-  BelongsToMany ("xgames", "xgame", {
-    lRef: "ID",
-    lxRef: "PLAYER_ID",
-    rxRef: "XGAME_ID",
-    rRef: "ID"
-  })
-]);
+  const Player2 = Table ("player", [
+    id,
+    StringProp ("firstName", "first_name"),
+    StringProp ("lastName", "last_name"),
+    StringProp ("birthday"),
+    NumberProp ("teamId", "team_id"),
+    BelongsTo ("team", "public.team", {
+      lRef: "TEAM_ID",
+      rRef: "ID"
+    }),
+    NumberProp ("positionId", "position_id"),
+    HasOne ("rating", "rating", {
+      lRef: "ID",
+      rRef: "PLAYER_ID"
+    }),
+    HasMany ("goals", "goal", {
+      lRef: "ID",
+      rRef: "PLAYER_ID"
+    }),
+    BelongsToMany ("games", "game", {
+      xTable: "GAME_PLAYER"
+    }),
+    BelongsToMany ("xgames", "xgame", {
+      lRef: "ID",
+      lxRef: "PLAYER_ID",
+      rxRef: "XGAME_ID",
+      rRef: "ID"
+    })
+  ]);
 
-const XGame = Table ("xgame", [
-  id,
-  StringProp ("result"),
-  NumberProp ("homeTeamId", "home_team_id"),
-  NumberProp ("awayTeamId", "away_team_id"),
-  BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
-  BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
-  NumberProp ("leagueId", "league_id"),
-  BelongsTo ("league", "league")
-]);
+  const XGame = Table ("xgame", [
+    id,
+    StringProp ("result"),
+    NumberProp ("homeTeamId", "home_team_id"),
+    NumberProp ("awayTeamId", "away_team_id"),
+    BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
+    BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
+    NumberProp ("leagueId", "league_id"),
+    BelongsTo ("league", "league")
+  ]);
 
-const Game = Table ("game", [
-  id,
-  StringProp ("result"),
-  NumberProp ("homeTeamId", "home_team_id"),
-  NumberProp ("awayTeamId", "away_team_id"),
-  BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
-  BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
-  NumberProp ("leagueId", "league_id"),
-  DateProp ("date"),
-  BelongsTo ("league", "league")
-]);
+  const Game = Table ("game", [
+    id,
+    StringProp ("result"),
+    NumberProp ("homeTeamId", "home_team_id"),
+    NumberProp ("awayTeamId", "away_team_id"),
+    BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
+    BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
+    NumberProp ("leagueId", "league_id"),
+    DateProp ("date"),
+    BelongsTo ("league", "league")
+  ]);
 
-const Goal = Table ("goal", [
-  id,
-  NumberProp ("minute"),
-  NumberProp ("playerId", "player_id"),
-  NumberProp ("gameId", "game_id"),
-  BooleanProp ("ownGoal", "own_goal").hasDefault (),
-  BelongsTo ("game", "game"),
-  BelongsTo ("player", "player")
-]);
+  const Goal = Table ("goal", [
+    id,
+    NumberProp ("minute"),
+    NumberProp ("playerId", "player_id"),
+    NumberProp ("gameId", "game_id"),
+    BooleanProp ("ownGoal", "own_goal").hasDefault (),
+    BelongsTo ("game", "game"),
+    BelongsTo ("player", "player")
+  ]);
 
-const Assist = Table ("assist", [
-  id,
-  NumberProp ("playerId", "player_id"),
-  NumberProp ("gameId", "game_id"),
-  NumberProp ("goalId", "goal_id"),
-  BelongsTo ("game", "game"),
-  BelongsTo ("player", "player"),
-  BelongsTo ("goal", "goal")
-]);
+  const Assist = Table ("assist", [
+    id,
+    NumberProp ("playerId", "player_id"),
+    NumberProp ("gameId", "game_id"),
+    NumberProp ("goalId", "goal_id"),
+    BelongsTo ("game", "game"),
+    BelongsTo ("player", "player"),
+    BelongsTo ("goal", "goal")
+  ]);
 
 
-const GamePlayer = Table ("game_player", []);
+  const GamePlayer = Table ("game_player", []);
 
-export {
-  Assist,
-  Game,
-  GamePlayer,
-  Goal,
-  League, Player, Player2, Position, Rating,
-  Team, XGame
+  return {
+    Assist,
+    Game,
+    GamePlayer,
+    Goal,
+    League, Player, Player2, Position, Rating,
+    Team, XGame
+  };
 };
 
+export default makeTestTables;

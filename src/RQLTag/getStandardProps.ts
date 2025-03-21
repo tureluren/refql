@@ -1,6 +1,6 @@
 import RefProp from "../Prop/RefProp";
 import { isSQLTag } from "../SQLTag";
-import Table from "../Table";
+import { Table } from "../Table";
 
 const getStandardProps = (table: Table) =>
   Object.keys (table.props)

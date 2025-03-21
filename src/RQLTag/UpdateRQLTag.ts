@@ -1,13 +1,13 @@
 import { isRQLTag, RQLTag } from ".";
 import { refqlType } from "../common/consts";
 import isLastKey from "../common/isLastKey";
-import { InterpretedCUD } from "../common/types";
+import { InterpretedCUD, Querier } from "../common/types";
 import Prop from "../Prop";
 import SQLProp from "../Prop/SQLProp";
 import { isSQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import sql, { sqlP } from "../SQLTag/sql";
-import Table from "../Table";
+import { sqlP, sqlX } from "../SQLTag/sql";
+import { Table } from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
 import rawSpace from "./RawSpace";
@@ -26,14 +26,15 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createUpdateRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
+export function createUpdateRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier) {
   const tag = runnableTag<UpdateRQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
       table,
-      nodes
+      nodes,
+      querier
     })
   );
 
@@ -43,13 +44,13 @@ export function createUpdateRQLTag<TableId extends string, Params = {}, Output =
 function interpret(this: UpdateRQLTag): InterpretedCUD {
   const { nodes, table } = this;
 
-  let filters = sql``;
+  let filters = sqlX``;
   let returning: RQLTag | undefined;
 
   for (const node of nodes) {
     if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
       const col = isSQLTag (node.col)
-        ? sql`(${node.col})`
+        ? sqlX`(${node.col})`
         : Raw (`${table.name}.${node.col || node.as}`);
 
       for (const op of node.operations) {
@@ -71,7 +72,7 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
 
   const props = getStandardProps (table);
 
-  const updateTable = sql`
+  const updateTable = sqlX`
     update ${Raw (table)} set
   `;
 
@@ -85,9 +86,9 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
     }, updateTable);
 
   let tag = updateFields
-    .concat (sql`where 1 = 1`)
+    .concat (sqlX`where 1 = 1`)
     .join ("", filters)
-    .concat (sql`
+    .concat (sqlX`
       returning ${Raw (`${props.map (p => `${table.name}.${p.col || p.as} "${p.as}"`).join (", ")}`)}
     `);
 

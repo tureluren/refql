@@ -7,7 +7,7 @@ import Offset from "../RQLTag/Offset";
 import RefField from "../RQLTag/RefField";
 import { SQLTag } from "../SQLTag";
 import SQLNode from "../SQLTag/SQLNode";
-import Table from "../Table";
+import { Table } from "../Table";
 
 export type StringMap = Record<string, any>;
 

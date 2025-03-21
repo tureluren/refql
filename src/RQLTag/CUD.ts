@@ -1,20 +1,21 @@
 import { RQLTag } from ".";
-import Table from "../Table";
+import { Table } from "../Table";
 import { InterpretedCUD, Querier, StringMap } from "../common/types";
 
 const CUDSymbol: unique symbol = Symbol ("@@CUD");
 
 interface CUD<TableId extends string = any, Params = any, Output = any> {
-  (params: {} extends Params ? Params | void : Params, querier?: Querier): Promise<Output[]>;
+  (params: {} extends Params ? Params | void : Params): Promise<Output[]>;
   tableId: TableId;
   table: Table<TableId>;
   params: Params;
   output: Output;
+  querier: Querier;
   [CUDSymbol]: true;
   interpret(): InterpretedCUD<Params, Output>;
   interpreted: InterpretedCUD<Params, Output>;
   compile(params: Params): [string, any[], RQLTag<any, Output>];
-  run(params: Params, querier: Querier): Promise<Output[]>;
+  run(params: Params): Promise<Output[]>;
 }
 
 export const CUDPrototype = {
@@ -39,10 +40,10 @@ function compile(this: CUD, params: StringMap) {
   ];
 }
 
-async function run(this: CUD, params: StringMap, querier: Querier): Promise<any[]> {
+async function run(this: CUD, params: StringMap): Promise<any[]> {
   const [query, values, returning] = this.compile (params);
 
-  const rows = await querier (query, values);
+  const rows = await this.querier (query, values);
 
   if (!returning) return rows;
 

@@ -1,7 +1,7 @@
 import { refqlType } from "../common/consts";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import Operation, { operationPrototype } from "./Operation";
 
 interface OrderBy<Params = any> extends Operation<Params> {
@@ -29,7 +29,7 @@ function interpret(this: OrderBy, col: Raw | SQLTag) {
   const { descending } = this;
   const dir = descending ? "desc" : "asc";
 
-  return sql`
+  return sqlX`
     ${col} ${Raw (dir)}
   `;
 }

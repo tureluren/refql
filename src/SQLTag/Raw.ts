@@ -1,6 +1,6 @@
 import { flMap, refqlType } from "../common/consts";
 import { TagFunctionVariable, ValueType } from "../common/types";
-import Table from "../Table";
+import { isTable } from "../Table";
 import SQLNode, { sqlNodePrototype } from "./SQLNode";
 
 interface Raw<Params = any> extends SQLNode<Params> {
@@ -23,7 +23,7 @@ function Raw<Params>(run: ValueType | TagFunctionVariable<Params>) {
   let raw: Raw<Params> = Object.create (prototype);
 
   raw.run = p => String ((
-    typeof run === "function" && !Table.isTable (run) ? run : () => run
+    typeof run === "function" && !isTable (run) ? run : () => run
   ) (p));
 
   return raw;

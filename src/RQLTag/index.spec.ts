@@ -3,24 +3,18 @@ import mySQL from "mysql2";
 import pg from "pg";
 import { createRQLTag, isRQLTag } from ".";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
-import Table from "../Table";
 import { flConcat } from "../common/consts";
 import setConvertPromise from "../common/convertPromise";
-import { setDefaultQuerier } from "../common/defaultQuerier";
 import { Querier } from "../common/types";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import {
-  Game, Goal, League,
-  Player, Player2,
-  Rating, Team, XGame
-} from "../test/tables";
+import makeTestTables from "../test/tables";
 import userConfig from "../test/userConfig";
 import Limit from "./Limit";
 import Offset from "./Offset";
+import RefQL from "../RefQL";
 
 describe ("RQLTag type", () => {
   let pool: any;
@@ -37,14 +31,20 @@ describe ("RQLTag type", () => {
     querier = pgQuerier (pool);
   }
 
-  setDefaultQuerier (querier);
+  const { Table, sql } = RefQL ({ querier });
+
+  const {
+    Game, Goal, League,
+    Player, Player2,
+    Rating, Team, XGame
+  } = makeTestTables (Table, sql);
 
   afterAll (() => {
     pool.end ();
   });
 
   test ("create RQLTag", () => {
-    const tag = createRQLTag (Player, []);
+    const tag = createRQLTag (Player, [], querier);
 
     expect (tag.nodes).toEqual ([]);
     expect (tag.table.equals (Player)).toBe (true);
@@ -797,20 +797,19 @@ describe ("RQLTag type", () => {
       const tag = Table ("playerr", []) ([]);
       await tag ({}, () => Promise.reject (message));
     } catch (err: any) {
-      expect (err).toBe (message);
+      expect (err.message).toBe (message);
     }
   });
 
   test ("no querier provided error", async () => {
     const message = "There was no Querier provided";
     try {
-      setDefaultQuerier (undefined as any);
+      RefQL ({} as any);
       const tag = Player ([]);
       await tag ({});
     } catch (err: any) {
       expect (err.message).toBe (message);
     }
-    setDefaultQuerier (querier);
   });
 
   test ("multiple refs to same table", async () => {

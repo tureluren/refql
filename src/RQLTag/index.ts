@@ -7,8 +7,8 @@ import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
 import { isSQLTag, SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
-import Table from "../Table";
+import { sqlX } from "../SQLTag/sql";
+import { Table } from "../Table";
 import Limit from "./Limit";
 import Offset from "./Offset";
 import OrderBy from "./OrderBy";
@@ -29,18 +29,19 @@ interface InterpretedRQLTag<Params = any, Output = any> {
 }
 
 export interface RQLTag<TableId extends string = any, Params = any, Output = any> extends RQLNode {
-  (params: {} extends Params ? Params | void : Params, querier?: Querier): Promise<Output[]>;
+  (params: {} extends Params ? Params | void : Params): Promise<Output[]>;
   tableId: TableId;
   params: Params;
   output: Output;
   table: Table<TableId>;
   nodes: RQLNode[];
+  querier: Querier;
   interpreted: InterpretedRQLTag<Params, Output>;
   concat<Params2, Output2>(other: RQLTag<TableId, Params2, Output2>): RQLTag<TableId, Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<TableId, Params, Output>["concat"];
   interpret(where?: SQLTag<Params>): InterpretedRQLTag<Params, Output>;
   compile(params: Params): [string, any[], Next[]];
-  run(params: Params, querier: Querier): Promise<Output[]>;
+  run(params: Params): Promise<Output[]>;
 }
 
 const type = "refql/RQLTag";
@@ -55,14 +56,15 @@ let prototype = Object.assign ({}, rqlNodePrototype, {
   run
 });
 
-export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
+export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier) {
   const tag = runnableTag<RQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
       table,
-      nodes
+      nodes,
+      querier
     })
   );
 
@@ -99,23 +101,24 @@ function concat(this: RQLTag, other: RQLTag) {
   const refNodes = Object.values (this.table.props)
     .filter (prop => RefProp.isRefProp (prop) && refs[prop.child.toString ()])
     .map ((prop: any) =>
-      RefNode (createRQLTag (prop.child, refs[prop.child.toString ()].nodes), prop, this.table));
+      RefNode (createRQLTag (prop.child, refs[prop.child.toString ()].nodes, this.querier), prop, this.table));
 
   return createRQLTag (
     this.table,
-    [...nodes, ...refNodes as RefNode[]]
+    [...nodes, ...refNodes as RefNode[]],
+    this.querier
   );
 }
 
-function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
+function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
   const { nodes, table } = this,
     next = [] as Next[],
     members = [] as { as: string; node: Raw | SQLTag; isOmitted: boolean }[];
 
-  let filters = sql``;
-  let orderBies = sql``;
-  let limit = sql``;
-  let offset = sql``;
+  let filters = sqlX``;
+  let orderBies = sqlX``;
+  let limit = sqlX``;
+  let offset = sqlX``;
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     members.push ({ as: info.lRef.as, node: Raw (info.lRef), isOmitted: false });
@@ -126,10 +129,10 @@ function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
   for (const node of nodes) {
     if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
       const col = isSQLTag (node.col)
-        ? sql`(${node.col})`
+        ? sqlX`(${node.col})`
         : Raw (`${table.name}.${node.col || node.as}`);
 
-      members.push ({ as: node.as, node: sql`${col} ${Raw (`"${node.as}"`)}`, isOmitted: node.isOmitted });
+      members.push ({ as: node.as, node: sqlX`${col} ${Raw (`"${node.as}"`)}`, isOmitted: node.isOmitted });
 
       for (const op of node.operations) {
         if (OrderBy.isOrderBy (op)) {
@@ -163,7 +166,7 @@ function interpret(this: RQLTag, where = sql`where 1 = 1`): InterpretedRQLTag {
     }
   }
 
-  let tag = sql`
+  let tag = sqlX`
     select ${joinMembers (members)}
     from ${Raw (table)}
   `
@@ -196,16 +199,16 @@ function compile(this: RQLTag, params: StringMap) {
   ];
 }
 
-async function run(this: RQLTag, params: StringMap, querier: Querier): Promise<any[]> {
+async function run(this: RQLTag, params: StringMap): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
-  const refQLRows = await querier (query, values);
+  const refQLRows = await this.querier (query, values);
 
   if (!refQLRows.length) return [];
 
   const nextData = await Promise.all (next.map (
     // { ...null } = {}
-    n => n.tag.run ({ ...params, refQLRows }, querier)
+    n => n.tag.run ({ ...params, refQLRows })
   )) as any[][];
 
   return refQLRows.map (row =>

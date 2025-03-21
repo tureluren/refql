@@ -1,10 +1,10 @@
 import { isRQLTag, RQLTag } from ".";
 import { refqlType } from "../common/consts";
-import { InterpretedCUD } from "../common/types";
+import { InterpretedCUD, Querier } from "../common/types";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import Values2D from "../SQLTag/Values2D";
-import Table from "../Table";
+import { Table } from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
 import RQLNode from "./RQLNode";
@@ -22,14 +22,15 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createInsertRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[]) {
+export function createInsertRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier) {
   const tag = runnableTag<InsertRQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
       table,
-      nodes
+      nodes,
+      querier
     })
   );
 
@@ -50,7 +51,7 @@ function interpret(this: InsertRQLTag): InterpretedCUD {
 
   const props = getStandardProps (table);
 
-  let tag = sql`
+  let tag = sqlX`
     insert into ${Raw (`${table} (${props.map (f => f.col || f.as).join (", ")})`)}
     values ${Values2D ((params: { data: any[]}) => params.data.map (x => props.map (f => x[f.as] == null ? Raw ("DEFAULT") : x[f.as])))}
     returning ${Raw (`${props.map (p => `${table.name}.${p.col || p.as} "${p.as}"`).join (", ")}`)}
