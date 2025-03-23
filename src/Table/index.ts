@@ -1,6 +1,6 @@
 import { flEquals, refqlType } from "../common/consts";
 import dummyQuerier from "../common/dummyQuerier";
-import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, Querier, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
+import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, Querier, Runner, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
 import validateTable, { validateComponents } from "../common/validateTable";
 import Prop from "../Prop";
 import PropType from "../Prop/PropType";
@@ -31,7 +31,7 @@ export interface Table<TableId extends string = any, Props = any> {
 
 const type = "refql/Table";
 
-const makeTable = (querier: Querier) => {
+const makeTable = (querier: Querier, runner: Runner) => {
   const prototype = Object.assign (Object.create (Function.prototype), {
     constructor: Table,
     [refqlType]: type,

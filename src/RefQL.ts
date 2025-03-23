@@ -1,10 +1,13 @@
+import NumberProp from "./Prop/NumberProp";
 import makeSQL from "./SQLTag/sql";
 import makeTable from "./Table";
-import { Querier } from "./common/types";
+import defaultRunner from "./common/defaultRunner";
+import { Querier, Runner } from "./common/types";
 import { getTables } from "./generated/tables";
 
 export interface RefQLOptions {
   querier: Querier;
+  runner?: Runner;
 }
 
 const RefQL = (options: RefQLOptions) => {
@@ -16,7 +19,7 @@ const RefQL = (options: RefQLOptions) => {
     throw new Error ("There was no Querier provided");
   }
 
-  const Table = makeTable (options.querier);
+  const Table = makeTable (options.querier, options.runner || defaultRunner);
 
   return {
     Table,

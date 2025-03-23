@@ -1,5 +1,4 @@
 import { RQLTag } from ".";
-import { getConvertPromise } from "../common/convertPromise";
 import CUD from "./CUD";
 
 const runnableTag = <TagType extends RQLTag | CUD>() => {

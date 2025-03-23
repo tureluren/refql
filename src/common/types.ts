@@ -2,6 +2,7 @@ import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
+import CUD from "../RQLTag/CUD";
 import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
 import RefField from "../RQLTag/RefField";
@@ -83,6 +84,9 @@ export type Deletable<T> =
 
 export type Querier =
   <T = any>(query: string, values: ValueType[]) => Promise<T[]>;
+
+export type Runner =
+  <TagType extends RQLTag | CUD, T>(tag: TagType, params: TagType["params"]) => T;
 
 export interface RefQLRows {
   refQLRows: any[];
