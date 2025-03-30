@@ -17,6 +17,7 @@ import makeTestTables from "../test/tables";
 import RefQL from "../RefQL";
 import dummyQuerier from "../common/dummyQuerier";
 import { Table } from "../Table";
+import defaultRunner from "../common/defaultRunner";
 
 describe ("SQLTag type", () => {
   let pool: any;
@@ -48,7 +49,7 @@ describe ("SQLTag type", () => {
 
   test ("create SQLTag", () => {
     const nodes = [Raw ("select first_name, last_name"), Raw ("from player")];
-    const tag = createSQLTag (nodes, dummyQuerier);
+    const tag = createSQLTag (nodes, dummyQuerier, defaultRunner);
 
     expect (tag.nodes).toEqual (nodes);
     expect (tag.interpreted).toBe (undefined);
@@ -282,7 +283,7 @@ describe ("SQLTag type", () => {
   test ("database error", async () => {
     const message = 'relation "playerr" does not exist';
     try {
-      const tag = makeSQL (() => Promise.reject (message))`
+      const tag = makeSQL (() => Promise.reject (message), defaultRunner)`
         select * from playerr
         where playerr.id = 1
       `;

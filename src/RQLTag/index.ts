@@ -41,7 +41,7 @@ export interface RQLTag<TableId extends string = any, Params = any, Output = any
   [flConcat]: RQLTag<TableId, Params, Output>["concat"];
   interpret(where?: SQLTag<Params>): InterpretedRQLTag<Params, Output>;
   compile(params: Params): [string, any[], Next[]];
-  run(params: Params): Promise<Output[]>;
+  run(params: Params, querier?: Querier): Promise<Output[]>;
 }
 
 const type = "refql/RQLTag";
@@ -58,11 +58,8 @@ let prototype = Object.assign ({}, rqlNodePrototype, {
 
 export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier, runner: Runner) {
   const tag = ((params: Params) => {
-
     return runner (tag, params);
-
   }) as RQLTag<TableId, Params, Output>;
-
 
   Object.setPrototypeOf (
     tag,
@@ -206,10 +203,10 @@ function compile(this: RQLTag, params: StringMap) {
   ];
 }
 
-async function run(this: RQLTag, params: StringMap): Promise<any[]> {
+async function run(this: RQLTag, params: StringMap, querier?: Querier): Promise<any[]> {
   const [query, values, next] = this.compile (params);
 
-  const refQLRows = await this.querier (query, values);
+  const refQLRows = await (querier || this.querier) (query, values);
 
   if (!refQLRows.length) return [];
 

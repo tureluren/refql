@@ -24,7 +24,7 @@ const RefQL = (options: RefQLOptions) => {
 
   return {
     Table,
-    sql: makeSQL (options.querier),
+    sql: makeSQL (options.querier, options.runner || defaultRunner),
     tables: getTables (Table)
   };
   // return Table with default querier (om tables met te maken)

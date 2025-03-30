@@ -1,11 +1,12 @@
 import { createSQLTag, isSQLTag } from ".";
-import { Querier, SQLTagVariable, TagFunctionVariable } from "../common/types";
+import { Querier, Runner, SQLTagVariable, TagFunctionVariable } from "../common/types";
 import { isRQLTag } from "../RQLTag";
 import { isTable } from "../Table";
 import Raw from "./Raw";
 import Value from "./Value";
 import SQLNode, { isSQLNode } from "./SQLNode";
 import dummyQuerier from "../common/dummyQuerier";
+import defaultRunner from "../common/defaultRunner";
 
 export function parse<Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params>[]) {
   const nodes = [] as SQLNode<Params>[];
@@ -48,10 +49,10 @@ export function parse<Params, Output>(strings: TemplateStringsArray, variables: 
   return nodes;
 }
 
-const makeSQL = (querier: Querier) => {
+const makeSQL = (querier: Querier, runner: Runner) => {
   function sql <Params = {}, Output = unknown>(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) {
     const nodes = parse<Params, Output> (strings, variables);
-    return createSQLTag<Params, Output> (nodes, querier);
+    return createSQLTag<Params, Output> (nodes, querier, runner);
   }
 
   return sql;
@@ -62,10 +63,10 @@ export function sqlP <Params = {}, Output = unknown>(pred: TagFunctionVariable<P
     const nodes = parse<Params, Output> (strings, variables);
     const withPred = nodes.map (n => n.setPred (pred));
 
-    return createSQLTag<Params, Output> (withPred, dummyQuerier);
+    return createSQLTag<Params, Output> (withPred, dummyQuerier, defaultRunner);
   };
 }
 
-export const sqlX = makeSQL (dummyQuerier);
+export const sqlX = makeSQL (dummyQuerier, defaultRunner);
 
 export default makeSQL;

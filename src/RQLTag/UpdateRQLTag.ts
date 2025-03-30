@@ -12,7 +12,6 @@ import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
 import rawSpace from "./RawSpace";
 import RQLNode from "./RQLNode";
-import runnableTag from "./runnableTag";
 
 export interface UpdateRQLTag<TableId extends string = any, Params = any, Output = any> extends CUD<TableId, Params, Output> {
   nodes: RQLNode[];
@@ -27,7 +26,9 @@ let prototype = Object.assign ({}, CUDPrototype, {
 });
 
 export function createUpdateRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier, runner: Runner) {
-  const tag = runnableTag<UpdateRQLTag<TableId, Params, Output>> ();
+  const tag = ((params: Params) => {
+    return runner (tag, params);
+  }) as UpdateRQLTag<TableId, Params, Output>;
 
   Object.setPrototypeOf (
     tag,

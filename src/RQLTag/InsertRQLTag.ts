@@ -8,7 +8,6 @@ import { Table } from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
 import RQLNode from "./RQLNode";
-import runnableTag from "./runnableTag";
 
 export interface InsertRQLTag<TableId extends string = any, Params = any, Output = any> extends CUD<TableId, Params, Output> {
   nodes: RQLNode[];
@@ -23,7 +22,9 @@ let prototype = Object.assign ({}, CUDPrototype, {
 });
 
 export function createInsertRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier, runner: Runner) {
-  const tag = runnableTag<InsertRQLTag<TableId, Params, Output>> ();
+  const tag = ((params: Params) => {
+    return runner (tag, params);
+  }) as InsertRQLTag<TableId, Params, Output>;
 
   Object.setPrototypeOf (
     tag,

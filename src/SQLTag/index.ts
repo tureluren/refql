@@ -1,7 +1,6 @@
 import { flConcat, refqlType } from "../common/consts";
-import { getConvertPromise } from "../common/convertPromise";
 import isEmptyTag from "../common/isEmptyTag";
-import { Querier, StringMap, TagFunctionVariable } from "../common/types";
+import { Querier, Runner, StringMap, TagFunctionVariable } from "../common/types";
 import rawSpace from "../RQLTag/RawSpace";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import Raw from "./Raw";
@@ -34,6 +33,8 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode {
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params): [string, any[]];
   querier: Querier;
+  runner: Runner;
+  run(params: Params, querier?: Querier): Promise<Output[]>;
 }
 
 const type = "refql/SQLTag";
@@ -45,23 +46,21 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   join,
   [flConcat]: concat,
   interpret,
-  compile
+  compile,
+  run
 });
 
-export function createSQLTag<Params = {}, Output = any>(nodes: SQLNode<Params>[], querier: Querier) {
-  const tag = ((params = {} as Params) => {
-    const convertPromise = getConvertPromise ();
-
-    const [query, values] = tag.compile (params as any);
-
-    return convertPromise (querier (query, values) as Promise<Output[]>);
+export function createSQLTag<Params = {}, Output = any>(nodes: SQLNode<Params>[], querier: Querier, runner: Runner) {
+  const tag = ((params: Params) => {
+    return runner (tag, params);
   }) as SQLTag<Params, Output>;
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
       nodes,
-      querier
+      querier,
+      runner
     })
   );
 
@@ -73,7 +72,8 @@ function join(this: SQLTag, delimiter: Raw | string, other: SQLTag) {
 
   return createSQLTag (
     this.nodes.concat (raw, ...other.nodes),
-    this.querier
+    this.querier,
+    this.runner
   );
 }
 
@@ -201,6 +201,12 @@ function compile(this: SQLTag, params: StringMap) {
     values
       .map (({ run }) => run (params)).flat (1)
   ];
+}
+
+async function run(this: SQLTag, params: StringMap, querier?: Querier): Promise<any[]> {
+  const [query, values] = this.compile (params);
+
+  return (querier || this.querier) (query, values);
 }
 
 export const isSQLTag = function <Params = any, Output = any> (x: any): x is SQLTag<Params, Output> {

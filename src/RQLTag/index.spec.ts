@@ -4,7 +4,6 @@ import pg from "pg";
 import { createRQLTag, isRQLTag } from ".";
 import Raw from "../SQLTag/Raw";
 import { flConcat } from "../common/consts";
-import setConvertPromise from "../common/convertPromise";
 import { Querier } from "../common/types";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
@@ -15,6 +14,7 @@ import userConfig from "../test/userConfig";
 import Limit from "./Limit";
 import Offset from "./Offset";
 import RefQL from "../RefQL";
+import defaultRunner from "../common/defaultRunner";
 
 describe ("RQLTag type", () => {
   let pool: any;
@@ -44,7 +44,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("create RQLTag", () => {
-    const tag = createRQLTag (Player, [], querier);
+    const tag = createRQLTag (Player, [], querier, defaultRunner);
 
     expect (tag.nodes).toEqual ([]);
     expect (tag.table.equals (Player)).toBe (true);
@@ -76,7 +76,7 @@ describe ("RQLTag type", () => {
 
     expect (values).toEqual ([9]);
 
-    const [player] = await tag ({ id: 9, delimiter: " " }, querier);
+    const [player] = await tag.run ({ id: 9, delimiter: " " }, querier);
 
     expect (Number (player.goalCount)).toBeGreaterThan (0);
     expect (Object.keys (player)).toEqual (["fullName", "goalCount", "firstGoalId"]);
@@ -795,9 +795,9 @@ describe ("RQLTag type", () => {
     const message = 'relation "playerr" does not exist';
     try {
       const tag = Table ("playerr", []) ([]);
-      await tag ({}, () => Promise.reject (message));
+      await tag.run ({}, () => Promise.reject (message));
     } catch (err: any) {
-      expect (err.message).toBe (message);
+      expect (err).toBe (message);
     }
   });
 
@@ -959,13 +959,19 @@ describe ("RQLTag type", () => {
   test ("convert result", async () => {
     const convert = jest.fn ();
 
-    const id = (x: Promise<any>) => {
+    const id = (tag: any, params: any) => {
       convert ();
-      return x;
+      return tag.run (params);
     };
 
-    setConvertPromise (id);
-    const tag = Player ([]);
+    const RefqQLWithRunner = RefQL ({
+      querier,
+      runner: id
+    });
+
+    const PlayerWithRunner = RefqQLWithRunner.Table ("player", []);
+
+    const tag = PlayerWithRunner ([]);
 
     await tag ({});
 
