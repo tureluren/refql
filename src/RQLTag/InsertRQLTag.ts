@@ -1,6 +1,6 @@
 import { isRQLTag, RQLTag } from ".";
 import { refqlType } from "../common/consts";
-import { InterpretedCUD, Querier } from "../common/types";
+import { InterpretedCUD, Querier, Runner } from "../common/types";
 import Raw from "../SQLTag/Raw";
 import { sqlX } from "../SQLTag/sql";
 import Values2D from "../SQLTag/Values2D";
@@ -22,7 +22,7 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createInsertRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier) {
+export function createInsertRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier, runner: Runner) {
   const tag = runnableTag<InsertRQLTag<TableId, Params, Output>> ();
 
   Object.setPrototypeOf (
@@ -30,7 +30,8 @@ export function createInsertRQLTag<TableId extends string, Params = {}, Output =
     Object.assign (Object.create (Function.prototype), prototype, {
       table,
       nodes,
-      querier
+      querier,
+      runner
     })
   );
 

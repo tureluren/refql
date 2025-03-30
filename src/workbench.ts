@@ -5,6 +5,7 @@ import RefQL, {
   Offset,
   Prop,
   Raw,
+  Runner,
   StringProp,
   Value,
   Values,
@@ -19,6 +20,15 @@ const pool = new Pool ({
   port: 3308
 });
 
+class Task<Output> {
+  fork: (rej: (e: any) => void, res: (x: Output) => void) => void;
+
+  constructor(fork: (rej: (e: any) => void, res: (x: Output) => void) => void) {
+    this.fork = fork;
+  }
+}
+
+// natural transformation
 const querier = async (query: string, values: any[]) => {
   console.log ("'" + query + "'");
   console.log (values);
@@ -28,9 +38,18 @@ const querier = async (query: string, values: any[]) => {
   return res.rows;
 };
 
-const { tables, sql } = RefQL ({ querier });
+const promiseToTask = <Output>(p: Promise<Output>) =>
+  new Task<Output> ((rej, res) => p.then (res).catch (rej));
+
+const { tables, sql, Table } = RefQL ({
+  querier,
+  runner: tag => promiseToTask (tag.run ({}))
+  // runner: promiseToTask
+});
+
 
 const { Player, Game, Team } = tables.public;
+
 
 const { id: playerId, birthday } = Player.props;
 

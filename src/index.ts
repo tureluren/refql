@@ -1,4 +1,3 @@
-import setConvertPromise from "./common/convertPromise";
 import isEmptyTag from "./common/isEmptyTag";
 import Prop from "./Prop";
 import BelongsTo from "./Prop/BelongsTo";
@@ -35,7 +34,7 @@ export {
   Eq, HasMany, HasOne, isEmptyTag, IsNull, isRQLTag,
   isSQLNode, isSQLTag, Limit, makeTable, NumberProp,
   Offset, parse, Prop, PropType, Raw, RefField, RefNode,
-  RefProp, RQLTag, setConvertPromise, SQLTag, StringProp, Value, Values, Values2D
+  RefProp, RQLTag, SQLTag, StringProp, Value, Values, Values2D
 };
 
 // export introspect (querier, dbCasing, jsCasing, dbType)

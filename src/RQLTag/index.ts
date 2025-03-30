@@ -1,7 +1,7 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows, StringMap } from "../common/types";
+import { Querier, RefInfo, RefQLRows, Runner, StringMap } from "../common/types";
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
@@ -15,7 +15,6 @@ import OrderBy from "./OrderBy";
 import rawSpace from "./RawSpace";
 import RefNode from "./RefNode";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
-import runnableTag from "./runnableTag";
 
 export interface Next {
   tag: RQLTag<any, RefQLRows>;
@@ -36,6 +35,7 @@ export interface RQLTag<TableId extends string = any, Params = any, Output = any
   table: Table<TableId>;
   nodes: RQLNode[];
   querier: Querier;
+  runner: Runner;
   interpreted: InterpretedRQLTag<Params, Output>;
   concat<Params2, Output2>(other: RQLTag<TableId, Params2, Output2>): RQLTag<TableId, Params & Params2, Output & Output2>;
   [flConcat]: RQLTag<TableId, Params, Output>["concat"];
@@ -56,15 +56,21 @@ let prototype = Object.assign ({}, rqlNodePrototype, {
   run
 });
 
-export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier) {
-  const tag = runnableTag<RQLTag<TableId, Params, Output>> ();
+export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier, runner: Runner) {
+  const tag = ((params: Params) => {
+
+    return runner (tag, params);
+
+  }) as RQLTag<TableId, Params, Output>;
+
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
       table,
       nodes,
-      querier
+      querier,
+      runner
     })
   );
 
@@ -101,12 +107,13 @@ function concat(this: RQLTag, other: RQLTag) {
   const refNodes = Object.values (this.table.props)
     .filter (prop => RefProp.isRefProp (prop) && refs[prop.child.toString ()])
     .map ((prop: any) =>
-      RefNode (createRQLTag (prop.child, refs[prop.child.toString ()].nodes, this.querier), prop, this.table));
+      RefNode (createRQLTag (prop.child, refs[prop.child.toString ()].nodes, this.querier, this.runner), prop, this.table));
 
   return createRQLTag (
     this.table,
     [...nodes, ...refNodes as RefNode[]],
-    this.querier
+    this.querier,
+    this.runner
   );
 }
 

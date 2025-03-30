@@ -86,7 +86,7 @@ export type Querier =
   <T = any>(query: string, values: ValueType[]) => Promise<T[]>;
 
 export type Runner =
-  <TagType extends RQLTag | CUD, T>(tag: TagType, params: TagType["params"]) => T;
+  <TagType extends RQLTag | CUD>(tag: TagType, params: TagType["params"]) => any;
 
 export interface RefQLRows {
   refQLRows: any[];

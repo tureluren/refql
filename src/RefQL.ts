@@ -1,4 +1,3 @@
-import NumberProp from "./Prop/NumberProp";
 import makeSQL from "./SQLTag/sql";
 import makeTable from "./Table";
 import defaultRunner from "./common/defaultRunner";
@@ -14,6 +13,8 @@ const RefQL = (options: RefQLOptions) => {
   // wrapper instead of convertPromise zodat tag kan gerund worden in environment
   // querier
   // tables
+  // parameterSign, "?" : $
+  // run kan nog querier providen als 2e argument
 
   if (!options.querier) {
     throw new Error ("There was no Querier provided");

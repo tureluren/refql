@@ -1,6 +1,6 @@
 import { RQLTag } from ".";
 import { Table } from "../Table";
-import { InterpretedCUD, Querier, StringMap } from "../common/types";
+import { InterpretedCUD, Querier, Runner, StringMap } from "../common/types";
 
 const CUDSymbol: unique symbol = Symbol ("@@CUD");
 
@@ -11,6 +11,7 @@ interface CUD<TableId extends string = any, Params = any, Output = any> {
   params: Params;
   output: Output;
   querier: Querier;
+  runner: Runner;
   [CUDSymbol]: true;
   interpret(): InterpretedCUD<Params, Output>;
   interpreted: InterpretedCUD<Params, Output>;

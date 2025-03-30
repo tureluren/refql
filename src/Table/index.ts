@@ -1,4 +1,5 @@
 import { flEquals, refqlType } from "../common/consts";
+import defaultRunner from "../common/defaultRunner";
 import dummyQuerier from "../common/dummyQuerier";
 import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, Querier, Runner, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
 import validateTable, { validateComponents } from "../common/validateTable";
@@ -82,7 +83,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
               const fieldProps = Object.entries (comp.props as any)
                 .map (([, prop]) => prop as Prop)
                 .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
-              return RefNode (createRQLTag (comp, [...fieldProps], querier), refProp as any, table as any);
+              return RefNode (createRQLTag (comp, [...fieldProps], querier, runner), refProp as any, table as any);
             }));
 
           if (!refNodes.length) {
@@ -96,7 +97,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
           const refNodes = Object.keys (properties)
             .map (key => properties[key as keyof typeof properties])
             .filter (prop => RefProp.isRefProp (prop) && comp.table.equals (prop.child))
-            .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, querier), refProp as any, table as any)));
+            .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, querier, runner), refProp as any, table as any)));
 
           if (!refNodes.length) {
             throw new Error (
@@ -116,7 +117,8 @@ const makeTable = (querier: Querier, runner: Runner) => {
         nodes.push (...fieldProps);
       }
 
-      return createRQLTag (table, nodes, querier);
+      return createRQLTag (table, nodes, querier, runner);
+
     }) as Table<TableId, typeof properties>;
 
     Object.setPrototypeOf (table, prototype);
@@ -154,7 +156,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
       }
     }
 
-    return createInsertRQLTag (this, nodes, querier);
+    return createInsertRQLTag (this, nodes, querier, runner);
   }
 
   function update(this: Table, components: any) {
@@ -178,7 +180,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
       }
     }
 
-    return createUpdateRQLTag (this, nodes, querier);
+    return createUpdateRQLTag (this, nodes, querier, runner);
   }
 
   function remove(this: Table, components: any) {
@@ -196,7 +198,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
       }
     }
 
-    return createDeleteRQLTag (this, nodes, querier);
+    return createDeleteRQLTag (this, nodes, querier, runner);
   }
 
   function toString<Name extends string, S>(this: Table<Name, S>) {
@@ -212,7 +214,6 @@ const makeTable = (querier: Querier, runner: Runner) => {
     );
   }
 
-
   return Table;
 };
 
@@ -220,6 +221,6 @@ export function isTable<Name extends string, S>(x: any): x is Table<Name, S> {
   return x != null && x[refqlType] === type;
 }
 
-export const TableX = makeTable (dummyQuerier);
+export const TableX = makeTable (dummyQuerier, defaultRunner);
 
 export default makeTable;
