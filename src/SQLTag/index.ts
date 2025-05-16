@@ -1,6 +1,6 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
-import { Querier, Runner, StringMap, TagFunctionVariable } from "../common/types";
+import { Querier, RequiredRefQLOptions, StringMap, TagFunctionVariable } from "../common/types";
 import rawSpace from "../RQLTag/RawSpace";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import Raw from "./Raw";
@@ -32,8 +32,7 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode {
   [flConcat]: SQLTag<Params, Output>["concat"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params): [string, any[]];
-  querier: Querier;
-  runner: Runner;
+  options: RequiredRefQLOptions;
   run(params: Params, querier?: Querier): Promise<Output[]>;
 }
 
@@ -50,17 +49,20 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
   run
 });
 
-export function createSQLTag<Params = {}, Output = any>(nodes: SQLNode<Params>[], querier: Querier, runner: Runner) {
+const getParameterSign = (options: RequiredRefQLOptions) => (i: number) => {
+  return options.parameterSign + (options.indexedParameters ? i : "");
+};
+
+export function createSQLTag<Params = {}, Output = any>(nodes: SQLNode<Params>[], options: RequiredRefQLOptions) {
   const tag = ((params: Params) => {
-    return runner (tag, params);
+    return options.runner (tag, params);
   }) as SQLTag<Params, Output>;
 
   Object.setPrototypeOf (
     tag,
     Object.assign (Object.create (Function.prototype), prototype, {
       nodes,
-      querier,
-      runner
+      options
     })
   );
 
@@ -72,8 +74,7 @@ function join(this: SQLTag, delimiter: Raw | string, other: SQLTag) {
 
   return createSQLTag (
     this.nodes.concat (raw, ...other.nodes),
-    this.querier,
-    this.runner
+    this.options
   );
 }
 
@@ -86,7 +87,9 @@ function concat(this: SQLTag, other: SQLTag) {
 
 function interpret(this: SQLTag): InterpretedSQLTag {
   const strings = [] as InterpretedSQLTagString[],
-    values = [] as InterpretedSQLTagValue[];
+    values = [] as InterpretedSQLTagValue[],
+    getPSign = getParameterSign (this.options);
+
 
   for (const node of this.nodes) {
     const { pred, run } = node;
@@ -118,7 +121,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
           const pr = pred (p);
           if (!pr) return ["", 0];
 
-          return [`$${i + 1}`, 1];
+          return [getPSign (i + 1), 1];
         }
       });
     } else if (Values.isValues (node)) {
@@ -139,7 +142,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
 
           const xs = run (p);
           return [
-            `(${xs.map ((_x: any, j: number) => `$${i + j + 1}`).join (", ")})`,
+            `(${xs.map ((_x: any, j: number) => getPSign (i + j + 1)).join (", ")})`,
             xs.length
           ];
         }
@@ -165,7 +168,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
                   return v.run (p);
                 } else {
                   n += 1;
-                  return `$${i + n}`;
+                  return getPSign (i + n);
                 }
               }).join (", ")})`
             );
@@ -206,7 +209,7 @@ function compile(this: SQLTag, params: StringMap) {
 async function run(this: SQLTag, params: StringMap, querier?: Querier): Promise<any[]> {
   const [query, values] = this.compile (params);
 
-  return (querier || this.querier) (query, values);
+  return (querier || this.options.querier) (query, values);
 }
 
 export const isSQLTag = function <Params = any, Output = any> (x: any): x is SQLTag<Params, Output> {

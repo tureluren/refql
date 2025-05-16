@@ -30,7 +30,7 @@ describe ("CUD", () => {
     querier = pgQuerier (pool);
   }
 
-  const { Table, sql } = RefQL ({ querier });
+  const { Table, sql, options } = RefQL ({ querier });
 
   const {
     Game, Player
@@ -40,25 +40,25 @@ describe ("CUD", () => {
     pool.end ();
   });
   test ("is CUD", () => {
-    expect (isCUD (createInsertRQLTag (Player, [], querier))).toBe (true);
+    expect (isCUD (createInsertRQLTag (Player, [], options))).toBe (true);
     expect (isCUD ("cud")).toBe (false);
   });
 
   test ("is InsertRQLTag", () => {
-    expect (isInsertRQLTag (createInsertRQLTag (Player, [], querier))).toBe (true);
-    expect (isUpdateRQLTag (createInsertRQLTag (Player, [], querier))).toBe (false);
+    expect (isInsertRQLTag (createInsertRQLTag (Player, [], options))).toBe (true);
+    expect (isUpdateRQLTag (createInsertRQLTag (Player, [], options))).toBe (false);
     expect (isInsertRQLTag ("insertSQLTag")).toBe (false);
   });
 
   test ("is UpdateRQLTag", () => {
-    expect (isUpdateRQLTag (createUpdateRQLTag (Player, [], querier))).toBe (true);
-    expect (isInsertRQLTag (createUpdateRQLTag (Player, [], querier))).toBe (false);
+    expect (isUpdateRQLTag (createUpdateRQLTag (Player, [], options))).toBe (true);
+    expect (isInsertRQLTag (createUpdateRQLTag (Player, [], options))).toBe (false);
     expect (isUpdateRQLTag ("updateSQLTag")).toBe (false);
   });
 
   test ("is DeleteRQLTag", () => {
-    expect (isDeleteRQLTag (createDeleteRQLTag (Player, [], querier))).toBe (true);
-    expect (isDeleteRQLTag (createUpdateRQLTag (Player, [], querier))).toBe (false);
+    expect (isDeleteRQLTag (createDeleteRQLTag (Player, [], options))).toBe (true);
+    expect (isDeleteRQLTag (createUpdateRQLTag (Player, [], options))).toBe (false);
     expect (isDeleteRQLTag ("deleteSQLTag")).toBe (false);
   });
 

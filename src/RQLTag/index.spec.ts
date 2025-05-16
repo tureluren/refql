@@ -2,6 +2,7 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import { createRQLTag, isRQLTag } from ".";
+import RefQL from "../RefQL";
 import Raw from "../SQLTag/Raw";
 import { flConcat } from "../common/consts";
 import { Querier } from "../common/types";
@@ -13,8 +14,6 @@ import makeTestTables from "../test/tables";
 import userConfig from "../test/userConfig";
 import Limit from "./Limit";
 import Offset from "./Offset";
-import RefQL from "../RefQL";
-import defaultRunner from "../common/defaultRunner";
 
 describe ("RQLTag type", () => {
   let pool: any;
@@ -31,7 +30,7 @@ describe ("RQLTag type", () => {
     querier = pgQuerier (pool);
   }
 
-  const { Table, sql } = RefQL ({ querier });
+  const { Table, sql, options } = RefQL ({ querier });
 
   const {
     Game, Goal, League,
@@ -44,7 +43,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("create RQLTag", () => {
-    const tag = createRQLTag (Player, [], querier, defaultRunner);
+    const tag = createRQLTag (Player, [], options);
 
     expect (tag.nodes).toEqual ([]);
     expect (tag.table.equals (Player)).toBe (true);

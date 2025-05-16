@@ -7,9 +7,9 @@
   "types": "build/index.d.ts",
   "version": "4.0.5",
   "scripts": {
-    "start": "NODE_ENV=development nodemon src/workbench.ts",
-    "introspect": "NODE_ENV=development ts-node src/introspection/index.ts",
-    "test": "NODE_ENV=test jest --setupFiles dotenv/config --watch --detectOpenHandles",
+    "start": "NODE_ENV=dev-refql nodemon src/workbench.ts",
+    "introspect": "NODE_ENV=dev-refql ts-node src/introspection/index.ts",
+    "test": "NODE_ENV=test-refql jest --setupFiles dotenv/config --watch --detectOpenHandles",
     "test:pg": "DB_TYPE=pg && npm run test",
     "test:mysql": "DB_TYPE=mysql yarn test",
     "test:mariadb": "DB_TYPE=mariadb yarn test",

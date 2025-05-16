@@ -10,4 +10,4 @@ create table `rating` (
   `tackling` integer not null
 );
 
-update `setting` set `key_value` = '3' where `key_name` = 'db_schema_version';
+update `general`.`setting` set `key_value` = '3' where `key_name` = 'db_schema_version';

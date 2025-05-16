@@ -1,6 +1,6 @@
 import { RQLTag } from ".";
 import { refqlType } from "../common/consts";
-import { InterpretedCUD, Querier, Runner } from "../common/types";
+import { InterpretedCUD, RequiredRefQLOptions } from "../common/types";
 import Prop from "../Prop";
 import SQLProp from "../Prop/SQLProp";
 import { isSQLTag } from "../SQLTag";
@@ -24,9 +24,9 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createDeleteRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], querier: Querier, runner: Runner) {
+export function createDeleteRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], options: RequiredRefQLOptions) {
   const tag = ((params: Params) => {
-    return runner (tag, params);
+    return options.runner (tag, params);
   }) as DeleteRQLTag<TableId, Params, Output>;
 
   Object.setPrototypeOf (
@@ -34,8 +34,7 @@ export function createDeleteRQLTag<TableId extends string, Params = {}, Output =
     Object.assign (Object.create (Function.prototype), prototype, {
       table,
       nodes,
-      querier,
-      runner
+      options
     })
   );
 

@@ -215,3 +215,12 @@ export interface InterpretedCUD<Params = any, Output = any> {
   tag: SQLTag<Params, Output>;
   returning?: RQLTag<any, Output>;
 }
+
+export interface RefQLOptions {
+  querier: Querier;
+  runner?: Runner;
+  parameterSign?: string;
+  indexedParameters?: boolean;
+}
+
+export type RequiredRefQLOptions = Required<RefQLOptions>;

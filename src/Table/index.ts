@@ -1,8 +1,7 @@
 import { flEquals, refqlType } from "../common/consts";
-import defaultRunner from "../common/defaultRunner";
-import dummyQuerier from "../common/dummyQuerier";
-import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, Querier, Runner, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
+import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, RequiredRefQLOptions, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
 import validateTable, { validateComponents } from "../common/validateTable";
+import withDefaultOptions from "../common/withDefaultOptions";
 import Prop from "../Prop";
 import PropType from "../Prop/PropType";
 import RefProp from "../Prop/RefProp";
@@ -32,7 +31,7 @@ export interface Table<TableId extends string = any, Props = any> {
 
 const type = "refql/Table";
 
-const makeTable = (querier: Querier, runner: Runner) => {
+const makeTable = (options: RequiredRefQLOptions) => {
   const prototype = Object.assign (Object.create (Function.prototype), {
     constructor: Table,
     [refqlType]: type,
@@ -83,7 +82,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
               const fieldProps = Object.entries (comp.props as any)
                 .map (([, prop]) => prop as Prop)
                 .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
-              return RefNode (createRQLTag (comp, [...fieldProps], querier, runner), refProp as any, table as any);
+              return RefNode (createRQLTag (comp, [...fieldProps], options), refProp as any, table as any);
             }));
 
           if (!refNodes.length) {
@@ -97,7 +96,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
           const refNodes = Object.keys (properties)
             .map (key => properties[key as keyof typeof properties])
             .filter (prop => RefProp.isRefProp (prop) && comp.table.equals (prop.child))
-            .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, querier, runner), refProp as any, table as any)));
+            .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, options), refProp as any, table as any)));
 
           if (!refNodes.length) {
             throw new Error (
@@ -117,7 +116,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
         nodes.push (...fieldProps);
       }
 
-      return createRQLTag (table, nodes, querier, runner);
+      return createRQLTag (table, nodes, options);
 
     }) as Table<TableId, typeof properties>;
 
@@ -156,7 +155,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
       }
     }
 
-    return createInsertRQLTag (this, nodes, querier, runner);
+    return createInsertRQLTag (this, nodes, options);
   }
 
   function update(this: Table, components: any) {
@@ -180,7 +179,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
       }
     }
 
-    return createUpdateRQLTag (this, nodes, querier, runner);
+    return createUpdateRQLTag (this, nodes, options);
   }
 
   function remove(this: Table, components: any) {
@@ -198,7 +197,7 @@ const makeTable = (querier: Querier, runner: Runner) => {
       }
     }
 
-    return createDeleteRQLTag (this, nodes, querier, runner);
+    return createDeleteRQLTag (this, nodes, options);
   }
 
   function toString<Name extends string, S>(this: Table<Name, S>) {
@@ -221,6 +220,6 @@ export function isTable<Name extends string, S>(x: any): x is Table<Name, S> {
   return x != null && x[refqlType] === type;
 }
 
-export const TableX = makeTable (dummyQuerier, defaultRunner);
+export const TableX = makeTable (withDefaultOptions ({}));
 
 export default makeTable;

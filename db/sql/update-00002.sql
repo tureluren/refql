@@ -5,4 +5,4 @@ values
   ('Central midfielder'), ('Attacking midfielder'), ('Right winger'),
   ('Striker'), ('Left winger');
 
-update `setting` set `key_value` = '2' where `key_name` = 'db_schema_version';
+update `general`.`setting` set `key_value` = '2' where `key_name` = 'db_schema_version';

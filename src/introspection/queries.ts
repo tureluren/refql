@@ -1,13 +1,20 @@
+import { QueryResult } from "pg";
 import { query } from "./db";
 
 export async function getTables() {
-  const res = await query (`
+  const res: QueryResult<{table_schema: string; table_name: string}> = await query (`
     select table_schema, table_name
     from information_schema.tables
     where table_schema not in ('pg_catalog', 'information_schema')
     order by table_schema, table_name;
   `);
-  return res.rows;
+  return res.rows.reduce<Record<string, {table_schema: string; table_name: string}[]>> ((acc, item) => {
+    if (!acc[item.table_schema]) {
+      acc[item.table_schema] = [];
+    }
+    acc[item.table_schema].push (item);
+    return acc;
+  }, {});
 }
 
 export async function getColumns(tableName: string) {

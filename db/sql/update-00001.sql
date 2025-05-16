@@ -64,4 +64,4 @@ create table `assist` (
   constraint `assist_game_player_fkey` foreign key (`player_id`, `game_id`) references `game_player` (`player_id`, `game_id`)
 );
 
-update `setting` set `key_value` = '1' where `key_name` = 'db_schema_version';
+update `general`.`setting` set `key_value` = '1' where `key_name` = 'db_schema_version';

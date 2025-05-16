@@ -1,6 +1,6 @@
 import { RQLTag } from ".";
 import { Table } from "../Table";
-import { InterpretedCUD, Querier, Runner, StringMap } from "../common/types";
+import { InterpretedCUD, RequiredRefQLOptions, Runner, StringMap } from "../common/types";
 
 const CUDSymbol: unique symbol = Symbol ("@@CUD");
 
@@ -9,8 +9,7 @@ interface CUD<TableId extends string = any, Params = any, Output = any> {
   tableId: TableId;
   table: Table<TableId>;
   params: Params;
-  output: Output;
-  querier: Querier;
+  options: RequiredRefQLOptions;
   runner: Runner;
   [CUDSymbol]: true;
   interpret(): InterpretedCUD<Params, Output>;
@@ -44,7 +43,7 @@ function compile(this: CUD, params: StringMap) {
 async function run(this: CUD, params: StringMap): Promise<any[]> {
   const [query, values, returning] = this.compile (params);
 
-  const rows = await this.querier (query, values);
+  const rows = await this.options.querier (query, values);
 
   if (!returning) return rows;
 

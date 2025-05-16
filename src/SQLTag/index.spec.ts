@@ -35,7 +35,7 @@ describe ("SQLTag type", () => {
   }
 
 
-  const { Table, sql } = RefQL ({ querier });
+  const { Table, sql, options } = RefQL ({ querier });
 
   const {
     Player, Team
@@ -49,7 +49,7 @@ describe ("SQLTag type", () => {
 
   test ("create SQLTag", () => {
     const nodes = [Raw ("select first_name, last_name"), Raw ("from player")];
-    const tag = createSQLTag (nodes, dummyQuerier, defaultRunner);
+    const tag = createSQLTag (nodes, options);
 
     expect (tag.nodes).toEqual (nodes);
     expect (tag.interpreted).toBe (undefined);
@@ -283,7 +283,7 @@ describe ("SQLTag type", () => {
   test ("database error", async () => {
     const message = 'relation "playerr" does not exist';
     try {
-      const tag = makeSQL (() => Promise.reject (message), defaultRunner)`
+      const tag = makeSQL ({ ...options, querier: () => Promise.reject (message) })`
         select * from playerr
         where playerr.id = 1
       `;
