@@ -31,7 +31,7 @@ function toPascalCase(str: string): string {
 // }
 
 const inRefqlEnv = process.env.NODE_ENV === "refql";
-const prepath = inRefqlEnv ? ".." : "refql";
+const prepath = inRefqlEnv ? ".." : "refql/build";
 const outputDir = inRefqlEnv ? "./src/generated/client" : "../../../.refql/client";
 
 const headerJs = [
