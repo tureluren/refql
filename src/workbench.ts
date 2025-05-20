@@ -5,7 +5,6 @@ import RefQL, {
   Offset,
   Prop,
   Raw,
-  Runner,
   StringProp,
   Value,
   Values,

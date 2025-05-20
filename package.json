@@ -5,11 +5,11 @@
   "license": "MIT",
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "version": "4.0.5",
+  "version": "5.0.0",
   "scripts": {
-    "start": "NODE_ENV=dev-refql nodemon src/workbench.ts",
-    "introspect": "NODE_ENV=dev-refql ts-node src/introspection/index.ts",
-    "test": "NODE_ENV=test-refql jest --setupFiles dotenv/config --watch --detectOpenHandles",
+    "start": "NODE_ENV=refql nodemon src/workbench.ts",
+    "introspect": "NODE_ENV=refql ts-node -r dotenv/config src/test/introspect.ts",
+    "test": "NODE_ENV=refql jest --setupFiles dotenv/config --watch --detectOpenHandles",
     "test:pg": "DB_TYPE=pg && npm run test",
     "test:mysql": "DB_TYPE=mysql yarn test",
     "test:mariadb": "DB_TYPE=mariadb yarn test",
@@ -21,10 +21,11 @@
     "cover": "NODE_ENV=test DB_TYPE=pg jest --setupFiles dotenv/config --coverage",
     "build:node": "tsc --project tsconfig.build.json",
     "build:deno": "./bin/build-deno.sh",
-    "build": "rm -rf build && npm run build:node && npm run build:deno",
+    "build": "rm -rf build && npm run build:node && npm run build:deno && ./bin/afterbuild.sh",
     "lint": "eslint ./src --ext .js,.ts",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run lint"
+    "prepublishOnly": "npm run lint",
+    "postinstall": "node ./bin/init-refql.js"
   },
   "devDependencies": {
     "@babel/core": "^7.16.12",

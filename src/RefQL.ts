@@ -2,7 +2,8 @@ import makeSQL from "./SQLTag/sql";
 import makeTable from "./Table";
 import { RefQLOptions } from "./common/types";
 import withDefaultOptions from "./common/withDefaultOptions";
-import { getTables } from "./generated/tables";
+import { getTables } from "./generated/client";
+import introspect from "./introspection";
 
 const RefQL = (options: RefQLOptions) => {
   if (!options.querier) {
@@ -13,14 +14,19 @@ const RefQL = (options: RefQLOptions) => {
 
   const Table = makeTable (refQLOptions);
 
+  const sql = makeSQL (refQLOptions);
+
+  // make sure we're working with promises when introspecting
+  const sqlRunnerless = makeSQL (withDefaultOptions ({ querier: refQLOptions.querier }));
+
   return {
     Table,
-    sql: makeSQL (refQLOptions),
+    sql,
     tables: getTables (Table),
-    options: refQLOptions
+    options: refQLOptions,
+    introspect: () => introspect (sqlRunnerless)
   };
   // return Table with default querier (om tables met te maken)
-  // en tables.<schema>.table (met tables) indien introspect gebeurd is
   // met postinstall een lege .refql aanmaken, met een lege getTables, via programma (introspect van refql aanroepen die dan in .refql introspect plaatst)
 };
 

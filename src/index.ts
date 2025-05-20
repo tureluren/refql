@@ -27,7 +27,6 @@ import Values from "./SQLTag/Values";
 import Values2D from "./SQLTag/Values2D";
 import makeTable from "./Table";
 
-export * from "./common/types";
 export {
   BelongsTo, BelongsToMany, BooleanProp,
   createRQLTag, createSQLTag, DateProp,
@@ -36,7 +35,5 @@ export {
   Offset, parse, Prop, PropType, Raw, RefField, RefNode,
   RefProp, RQLTag, SQLTag, StringProp, Value, Values, Values2D
 };
-
-// export introspect (querier, dbCasing, jsCasing, dbType)
 
 export default RefQL;

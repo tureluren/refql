@@ -1,22 +1,30 @@
-import { query } from "./db.ts";
+import { sqlX } from "../SQLTag/sql.ts";
 
-export async function getTables() {
-  const res = await query (`
+export async function getTables(sql: typeof sqlX) {
+  const res = await sql<{}, {table_schema: string; table_name: string}>`
     select table_schema, table_name
     from information_schema.tables
     where table_schema not in ('pg_catalog', 'information_schema')
-    order by table_schema, table_name;
-  `);
-  return res.rows;
+    order by table_schema, table_name
+  ` ();
+
+  return res.reduce<Record<string, {table_schema: string; table_name: string}[]>> ((acc, item) => {
+    if (!acc[item.table_schema]) {
+      acc[item.table_schema] = [];
+    }
+    acc[item.table_schema].push (item);
+    return acc;
+  }, {});
 }
 
-export async function getColumns(tableName: string) {
-  const res = await query (`
+export async function getColumns(sql: typeof sqlX, tableName: string) {
+  const res = await sql<{tableName: string }, { column_name: string; data_type: string; is_nullable: string; column_default: string }>`
     SELECT column_name, data_type, is_nullable, column_default
     FROM information_schema.columns
-    WHERE table_name = $1
-  `, [tableName]);
-  return res.rows;
+    WHERE table_name = ${p => p.tableName}
+  ` ({ tableName });
+
+  return res;
 }
 
 /**
@@ -44,8 +52,8 @@ export async function getColumns(tableName: string) {
  *
  * @returns A list of foreign key relationships, including table and column details.
  */
-export async function getRelationships() {
-  const res = await query (`
+export async function getRelationships(sql: typeof sqlX) {
+  const res = await sql<{}, { table_name: string; table_schema: string; column_names: string; foreign_column_names: string; foreign_table_name: string; foreign_table_schema: string; constraint_name: string}>`
     WITH key_columns AS (
         SELECT
             kcu.constraint_name,
@@ -85,10 +93,10 @@ export async function getRelationships() {
     WHERE
         tc.constraint_type = 'FOREIGN KEY'
     ORDER BY
-        tc.table_name, tc.table_schema, tc.constraint_name;
-  `);
+        tc.table_name, tc.table_schema, tc.constraint_name
+  ` ();
 
-  return res.rows;
+  return res;
 }
 
 /**
@@ -115,23 +123,21 @@ export async function getRelationships() {
  *
  * @returns A list of one-to-one relationships with table and column details.
  */
-export async function getOneToOneRelationships(): Promise<
-  { fk_table: string; fk_column: string; ref_table: string; ref_column_pos: number; fk_name: string }[]
-  > {
-  const result = await query (`
+export async function getOneToOneRelationships(sql: typeof sqlX) {
+  const result = await sql<{}, { fk_table: string; fk_column: string; ref_table: string; ref_column_pos: number; fk_name: string }>`
     WITH unique_foreign_keys AS (
       SELECT
-        conname AS fk_name,                       -- Foreign key constraint name
-        conrelid::regclass::text AS fk_table,     -- Foreign key table
-        a.attname AS fk_column,                   -- Foreign key column
-        confrelid::regclass::text AS ref_table,   -- Referenced table
-        confkey[1] AS ref_column_pos              -- Referenced column position in index
+        conname AS fk_name,
+        conrelid::regclass::text AS fk_table,
+        a.attname AS fk_column,
+        confrelid::regclass::text AS ref_table,
+        confkey[1] AS ref_column_pos
       FROM
         pg_constraint
       JOIN pg_attribute a ON
         a.attnum = ANY(pg_constraint.conkey) AND a.attrelid = conrelid
       WHERE
-        contype = 'f' -- Foreign key constraints only
+        contype = 'f'
     ),
     unique_columns AS (
       SELECT DISTINCT
@@ -142,39 +148,38 @@ export async function getOneToOneRelationships(): Promise<
       JOIN pg_class t ON i.indrelid = t.oid
       JOIN pg_attribute a ON a.attnum = ANY(i.indkey) AND a.attrelid = t.oid
       WHERE
-        i.indisunique = TRUE -- Only unique indexes
-        AND i.indisprimary = FALSE -- Exclude primary keys
+        i.indisunique = TRUE
+        AND i.indisprimary = FALSE
     ),
     primary_foreign_keys AS (
       SELECT
-        conrelid::regclass::text AS fk_table,     -- Foreign key table
-        a.attname AS fk_column,                   -- Foreign key column
-        conname AS fk_name                        -- Foreign key constraint name
+        conrelid::regclass::text AS fk_table,
+        a.attname AS fk_column,
+        conname AS fk_name
       FROM
         pg_constraint
       JOIN pg_attribute a ON
         a.attnum = ANY(pg_constraint.conkey) AND a.attrelid = conrelid
       WHERE
-        contype = 'f' -- Foreign key constraints only
+        contype = 'f'
     ),
     primary_keys AS (
       SELECT
-        conrelid::regclass::text AS pk_table,     -- Primary key table
-        a.attname AS pk_column,                   -- Primary key column
-        COUNT(a.attname) OVER (PARTITION BY conrelid::regclass) AS pk_column_count  -- Count the number of columns in the primary key
+        conrelid::regclass::text AS pk_table,
+        a.attname AS pk_column,
+        COUNT(a.attname) OVER (PARTITION BY conrelid::regclass) AS pk_column_count
       FROM
         pg_constraint
       JOIN pg_attribute a ON
         a.attnum = ANY(pg_constraint.conkey) AND a.attrelid = conrelid
       WHERE
-        contype = 'p' -- Primary key constraints only
+        contype = 'p'
     )
-    -- Combine both unique foreign keys and primary foreign keys
     SELECT DISTINCT
       fk.fk_table,
       fk.fk_column,
       fk.ref_table,
-      fk.fk_name                                -- Include the constraint name
+      fk.fk_name
     FROM
       unique_foreign_keys fk
     JOIN
@@ -185,16 +190,15 @@ export async function getOneToOneRelationships(): Promise<
       fk.fk_table,
       fk.fk_column,
       pk.pk_table AS ref_table,
-      fk.fk_name                                -- Include the constraint name
+      fk.fk_name
     FROM
       primary_foreign_keys fk
     JOIN
       primary_keys pk
       ON fk.fk_table = pk.pk_table
       AND fk.fk_column = pk.pk_column
-      AND pk.pk_column_count = 1;
+      AND pk.pk_column_count = 1
+  ` ();
 
-  `);
-
-  return result.rows;
+  return result;
 }
