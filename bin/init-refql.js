@@ -1,7 +1,7 @@
 const fs = require ("fs");
 const path = require ("path");
 
-const clientDir = path.join (__dirname, "../../.prisma/client");
+const clientDir = path.join (__dirname, "../../.refql/client");
 
 // Create the directory recursively
 fs.mkdirSync (clientDir, { recursive: true });
