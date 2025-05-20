@@ -1,4 +1,6 @@
-import * as fs from "fs-extra";
+import fs from "fs-extra";
+import path from "path";
+
 import pluralize from "pluralize";
 import { getColumns, getOneToOneRelationships, getRelationships, getTables } from "./queries";
 import { sqlX } from "../SQLTag/sql";
@@ -32,7 +34,7 @@ function toPascalCase(str: string): string {
 
 const inRefqlEnv = process.env.NODE_ENV === "refql";
 const prepath = inRefqlEnv ? ".." : "refql/build";
-const outputDir = inRefqlEnv ? "./src/generated/client" : "../../../.refql/client";
+const outputDir = inRefqlEnv ? "./src/generated/client" : path.resolve (process.cwd (), "node_modules/.refql/client");
 
 const headerJs = [
   `"use strict";`,
