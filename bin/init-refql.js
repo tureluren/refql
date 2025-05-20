@@ -33,9 +33,7 @@ exports.getTables = getTables;
 fs.writeFileSync (path.join (clientDir, "index.js"), indexJsContent);
 
 // Create index.d.ts
-const indexDtsContent = `import Prop from "refql/Prop";
-import PropType from "refql/build/Prop/PropType";
-import RefProp from "refql/build/Prop/RefProp";
+const indexDtsContent = `import PropType from "refql/build/Prop/PropType";
 import { Table } from "refql/build/Table";
 
 export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(
