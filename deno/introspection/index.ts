@@ -32,7 +32,7 @@ function toPascalCase(str: string): string {
 
 const inRefqlEnv = process.env.NODE_ENV === "refql";
 const prepath = inRefqlEnv ? ".." : "refql";
-const outputDir = inRefqlEnv ? "./src/generated/client" : "../../.refql/client";
+const outputDir = inRefqlEnv ? "./src/generated/client" : "../../../.refql/client";
 
 const headerJs = [
   `"use strict";`,
