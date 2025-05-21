@@ -20,12 +20,12 @@ const makeTestTables = (
   Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, { [P in Props[number] as P["as"]]: P; }>,
   sql: <Params = {}, Output = unknown>(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) => SQLTag<Params, Output>
 ) => {
-  const Position = Table ("position", [
+  const Position = Table ("public.position", [
     id,
     name
   ]);
 
-  const Rating = Table ("rating", [
+  const Rating = Table ("public.rating", [
     NumberProp ("playerId", "player_id"),
     NumberProp ("acceleration"),
     NumberProp ("finishing"),
@@ -37,7 +37,7 @@ const makeTestTables = (
     NumberProp ("tackling")
   ]);
 
-  const League = Table ("league", [
+  const League = Table ("public.league", [
     id,
     name,
     HasMany ("teams", "public.team")
@@ -48,17 +48,17 @@ const makeTestTables = (
     name,
     BooleanProp ("active").hasDefault (),
     NumberProp ("leagueId", "league_id"),
-    HasMany ("players", "player"),
-    BelongsTo ("league", "league"),
-    HasMany ("homeGames", "game", { rRef: "home_team_id" }),
-    HasMany ("awayGames", "game", { rRef: "away_team_id" }),
+    HasMany ("players", "public.player"),
+    BelongsTo ("league", "public.league"),
+    HasMany ("homeGames", "public.game", { rRef: "home_team_id" }),
+    HasMany ("awayGames", "public.game", { rRef: "away_team_id" }),
     NumberProp ("playerCount", sql`
       select cast(count(*) as int) from player
       where player.team_id = team.id
     `)
   ]);
 
-  const Player = Table ("player", [
+  const Player = Table ("public.player", [
     id,
     StringProp ("firstName", "first_name"),
     StringProp ("lastName", "last_name"),
@@ -85,13 +85,13 @@ const makeTestTables = (
     NumberProp ("teamId", "team_id").nullable (),
     BelongsTo ("team", "public.team").nullable (),
     NumberProp ("positionId", "position_id"),
-    BelongsTo ("position", "position"),
-    HasOne ("rating", "rating"),
-    HasMany ("goals", "goal"),
-    BelongsToMany ("games", "game")
+    BelongsTo ("position", "public.position"),
+    HasOne ("rating", "public.rating"),
+    HasMany ("goals", "public.goal"),
+    BelongsToMany ("games", "public.game")
   ]);
 
-  const Player2 = Table ("player", [
+  const Player2 = Table ("public.player", [
     id,
     StringProp ("firstName", "first_name"),
     StringProp ("lastName", "last_name"),
@@ -102,18 +102,18 @@ const makeTestTables = (
       rRef: "ID"
     }),
     NumberProp ("positionId", "position_id"),
-    HasOne ("rating", "rating", {
+    HasOne ("rating", "public.rating", {
       lRef: "ID",
       rRef: "PLAYER_ID"
     }),
-    HasMany ("goals", "goal", {
+    HasMany ("goals", "public.goal", {
       lRef: "ID",
       rRef: "PLAYER_ID"
     }),
-    BelongsToMany ("games", "game", {
+    BelongsToMany ("games", "public.game", {
       xTable: "GAME_PLAYER"
     }),
-    BelongsToMany ("xgames", "xgame", {
+    BelongsToMany ("xgames", "public.xgame", {
       lRef: "ID",
       lxRef: "PLAYER_ID",
       rxRef: "XGAME_ID",
@@ -121,7 +121,7 @@ const makeTestTables = (
     })
   ]);
 
-  const XGame = Table ("xgame", [
+  const XGame = Table ("public.xgame", [
     id,
     StringProp ("result"),
     NumberProp ("homeTeamId", "home_team_id"),
@@ -129,43 +129,43 @@ const makeTestTables = (
     BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
     BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
     NumberProp ("leagueId", "league_id"),
-    BelongsTo ("league", "league")
+    BelongsTo ("league", "public.league")
   ]);
 
-  const Game = Table ("game", [
+  const Game = Table ("public.game", [
     id,
-    StringProp ("result"),
-    NumberProp ("homeTeamId", "home_team_id"),
-    NumberProp ("awayTeamId", "away_team_id"),
-    BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
-    BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
-    NumberProp ("leagueId", "league_id"),
     DateProp ("date"),
-    BelongsTo ("league", "league")
+    StringProp ("result"),
+    NumberProp ("homeTeamId", "home_team_id"),
+    NumberProp ("awayTeamId", "away_team_id"),
+    BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
+    BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
+    NumberProp ("leagueId", "league_id"),
+    BelongsTo ("league", "public.league")
   ]);
 
-  const Goal = Table ("goal", [
+  const Goal = Table ("public.goal", [
     id,
     NumberProp ("minute"),
     NumberProp ("playerId", "player_id"),
     NumberProp ("gameId", "game_id"),
     BooleanProp ("ownGoal", "own_goal").hasDefault (),
-    BelongsTo ("game", "game"),
-    BelongsTo ("player", "player")
+    BelongsTo ("game", "public.game"),
+    BelongsTo ("player", "public.player")
   ]);
 
-  const Assist = Table ("assist", [
+  const Assist = Table ("public.assist", [
     id,
     NumberProp ("playerId", "player_id"),
     NumberProp ("gameId", "game_id"),
     NumberProp ("goalId", "goal_id"),
-    BelongsTo ("game", "game"),
-    BelongsTo ("player", "player"),
-    BelongsTo ("goal", "goal")
+    BelongsTo ("game", "public.game"),
+    BelongsTo ("player", "public.player"),
+    BelongsTo ("goal", "public.goal")
   ]);
 
 
-  const GamePlayer = Table ("game_player", []);
+  const GamePlayer = Table ("public.game_player", []);
 
   return {
     Assist,

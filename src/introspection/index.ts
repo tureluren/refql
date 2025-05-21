@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import path from "path";
 
 import pluralize from "pluralize";
-import { getColumns, getOneToOneRelationships, getRelationships, getTables } from "./queries";
+import { getColumns, getRelationships, getTables } from "./queries";
 import { sqlX } from "../SQLTag/sql";
 
 function toCamelCase(str: string): string {
@@ -33,7 +33,7 @@ function toPascalCase(str: string): string {
 // }
 
 const inRefqlEnv = process.env.NODE_ENV === "refql";
-const prepath = inRefqlEnv ? ".." : "refql/build";
+const prepath = inRefqlEnv ? "../.." : "refql/build";
 const outputDir = inRefqlEnv ? "./src/generated/client" : path.resolve (process.cwd (), "node_modules/.refql/client");
 
 const headerJs = [
@@ -74,144 +74,156 @@ const footerJs = [
 ];
 
 
-// add try catch! (restore defaults uit init refql)
 async function introspect(sql: typeof sqlX) {
   const outputJs = `${outputDir}/index.js`;
   const outputTs = `${outputDir}/index.d.ts`;
 
-  // header
-  await fs.outputFile (outputJs, headerJs.join ("\n"));
-  await fs.outputFile (outputTs, headerTs.join ("\n"));
+  const originalJs = fs.readFileSync (outputJs, "utf-8");
+  const originalTs = fs.readFileSync (outputTs, "utf-8");
 
-  const schemas = await getTables (sql);
+  try {
 
-  const relationships = await getRelationships (sql).then (rels => rels.map (rel => ({
-    ...rel,
-    column_names: rel.column_names.replace (/^{|}$/g, "").split (","),
-    foreign_column_names: rel.foreign_column_names.replace (/^{|}$/g, "").split (",")
-  })));
+    // header
+    await fs.outputFile (outputJs, headerJs.join ("\n"));
+    await fs.outputFile (outputTs, headerTs.join ("\n"));
 
-  const uniqueKeys = await getOneToOneRelationships (sql);
+    const schemas = await getTables (sql);
 
-  const schemaMap = await Promise.all (
-    Object.keys (schemas).map (async schema => {
-      const tables = schemas[schema];
-      const interfacesNew = await Promise.all (
+    const relationships = await getRelationships (sql).then (rels => rels.map (rel => ({
+      ...rel,
+      column_names: rel.column_names.replace (/^{|}$/g, "").split (","),
+      foreign_column_names: rel.foreign_column_names.replace (/^{|}$/g, "").split (",")
+    })));
 
-        tables.map (async ({ table_name: table, table_schema }) => {
-          const tableName = toPascalCase (table);
-          const columns = await getColumns (sql, table);
-          const foreignKeys = relationships.filter (rel => rel.table_name === table);
-          const reversedForeignKeys = relationships.filter (rel => rel.foreign_table_name === table);
+    const schemaMap = await Promise.all (
+      Object.keys (schemas).map (async schema => {
+        const tables = schemas[schema];
+        const interfacesNew = await Promise.all (
 
-          const intermediateForeignKeys = relationships
-            .filter (rel => {
-              const table1 = `${table}_${rel.foreign_table_name}`;
-              const table2 = `${rel.foreign_table_name}_${table}`;
-              return rel.table_name === table1 || rel.table_name === table2;
-            })
-            .map (rRel => {
-              const lRel = relationships.find (rel => rel.table_name === rRel.table_name && rel.foreign_table_name === table);
-              return [lRel, rRel];
-            });
+          tables.map (async ({ table_name: table, table_schema }) => {
+            const tableName = toPascalCase (table);
+            const columns = await getColumns (sql, table);
+            const foreignKeys = relationships.filter (rel => rel.table_name === table);
+            const reversedForeignKeys = relationships.filter (rel => rel.foreign_table_name === table);
 
-          const props: {[propertyName: string]: string[]} = {};
+            const intermediateForeignKeys = relationships
+              .filter (rel => {
+                const table1 = `${table}_${rel.foreign_table_name}`;
+                const table2 = `${rel.foreign_table_name}_${table}`;
+                return rel.table_name === table1 || rel.table_name === table2;
+              })
+              .map (rRel => {
+                const lRel = relationships.find (rel => rel.table_name === rRel.table_name && rel.foreign_table_name === table);
+                return [lRel, rRel];
+              });
 
-          for (const col of columns) {
-            const propertyName = toCamelCase (col.column_name);
-            const nullable = col.is_nullable === "YES";
-            const hasDefault = col.column_default != null;
+            const props: {[propertyName: string]: string[]} = {};
 
-            const [propTypeJs, propTypeTs] = mapPostgresTypeToPropType (col.data_type, nullable);
+            for (const col of columns) {
+              const propertyName = toCamelCase (col.column_name);
+              const nullable = col.is_nullable === "YES";
+              const hasDefault = col.column_default != null;
 
-            props[propertyName] = [
-              `${propTypeJs} ("${propertyName}", "${col.column_name}")${hasDefault ? `.hasDefault ()` : nullable ? `.nullable ()` : ""}`,
-              `${propertyName}: Prop<"${propertyName}", ${propTypeTs}, {}, false, ${hasDefault ? "true" : "false"}, false>;`
-            ];
-          }
+              const [propTypeJs, propTypeTs] = mapPostgresTypeToPropType (col.data_type, nullable);
 
-          for (const fk of foreignKeys) {
-            const lRef = fk.column_names[0];
-            const rRef = fk.foreign_column_names[0];
-
-            // homeTeamId -> homeTeam
-            const propertyName = toCamelCase (lRef).replace (`${toPascalCase (rRef)}`, "");
-
-            const col = columns.find (c => c.column_name === lRef);
-
-            if (!col) continue;
-
-            const nullable = col.is_nullable === "YES";
-
-            props[propertyName] = [
-              `(0, BelongsTo_1.default) ("${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", { lRef: "${lRef}", rRef: "${rRef}" })${nullable ? `.nullable ()` : ""}`,
-              `${propertyName}: RefProp<"${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", "BelongsTo", ${nullable ? "true" : "false"}>;`
-            ];
-          }
-
-          for (const fk of reversedForeignKeys) {
-            const ufk = uniqueKeys.find (uk => uk.fk_name === fk.constraint_name);
-            const lRef = fk.foreign_column_names[0];
-            const rRef = fk.column_names[0];
-
-            if (ufk) {
-              const propertyName = toCamelCase (fk.table_name);
               props[propertyName] = [
-                `(0, HasOne_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
-                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasOne", false>;`
-              ];
-
-            } else {
-              const propertyName = pluralize (toCamelCase (fk.table_name));
-              props[propertyName] = [
-                `(0, HasMany_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
-                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasMany", false>;`
+                `${propTypeJs} ("${propertyName}", "${col.column_name}")${hasDefault ? `.hasDefault ()` : nullable ? `.nullable ()` : ""}`,
+                `${propertyName}: Prop<"${propertyName}", ${propTypeTs}, {}, false, ${hasDefault ? "true" : "false"}, false>;`
               ];
             }
-          }
 
-          for (const fk of intermediateForeignKeys) {
-            const [lRel, rRel] = fk;
-            if (!lRel || !rRel) continue;
-            const lRef = lRel.foreign_column_names[0];
-            const lxRef = lRel.column_names[0];
-            const xTable = `${lRel.table_schema}.${lRel.table_name}`;
-            const rxRef = rRel.column_names[0];
-            const rRef = rRel.foreign_column_names[0];
 
-            const propertyName = pluralize (toCamelCase (rRel.foreign_table_name));
+            for (const fk of reversedForeignKeys) {
+              const lRef = fk.foreign_column_names[0];
+              const rRef = fk.column_names[0];
 
-            props[propertyName] = [
-              `(0, BelongsToMany_1.default) ("${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", { lRef: "${lRef}", lxRef: "${lxRef}", xTable: "${xTable}", rxRef: "${rxRef}", rRef: "${rRef}" })`,
-              `${propertyName}: RefProp<"${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", "BelongsToMany", false>;`
+              if (fk.unique) {
+                const propertyName = toCamelCase (fk.table_name);
+                props[propertyName] = [
+                  `(0, HasOne_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
+                  `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasOne", false>;`
+                ];
+
+              } else {
+                const propertyName = pluralize (toCamelCase (fk.table_name));
+                if (propertyName === "members" && tableName === "CaregiverLocation") {
+                  console.log (fk);
+                }
+                props[propertyName] = [
+                  `(0, HasMany_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
+                  `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasMany", false>;`
+                ];
+              }
+            }
+
+            // after reversedKeys to overwrite possible false HasOne's
+            for (const fk of foreignKeys) {
+              const lRef = fk.column_names[0];
+              const rRef = fk.foreign_column_names[0];
+
+              // homeTeamId -> homeTeam
+              const propertyName = toCamelCase (lRef).replace (`${toPascalCase (rRef)}`, "");
+
+              const col = columns.find (c => c.column_name === lRef);
+
+              if (!col) continue;
+
+              const nullable = col.is_nullable === "YES";
+
+              props[propertyName] = [
+                `(0, BelongsTo_1.default) ("${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", { lRef: "${lRef}", rRef: "${rRef}" })${nullable ? `.nullable ()` : ""}`,
+                `${propertyName}: RefProp<"${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", "BelongsTo", ${nullable ? "true" : "false"}>;`
+              ];
+            }
+
+            for (const fk of intermediateForeignKeys) {
+              const [lRel, rRel] = fk;
+              if (!lRel || !rRel) continue;
+              const lRef = lRel.foreign_column_names[0];
+              const lxRef = lRel.column_names[0];
+              const xTable = `${lRel.table_schema}.${lRel.table_name}`;
+              const rxRef = rRel.column_names[0];
+              const rRef = rRel.foreign_column_names[0];
+
+              const propertyName = pluralize (toCamelCase (rRel.foreign_table_name));
+
+              props[propertyName] = [
+                `(0, BelongsToMany_1.default) ("${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", { lRef: "${lRef}", lxRef: "${lxRef}", xTable: "${xTable}", rxRef: "${rxRef}", rRef: "${rRef}" })`,
+                `${propertyName}: RefProp<"${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", "BelongsToMany", false>;`
+              ];
+            }
+
+            const interfaceProperties = Object.values (props);
+
+            return [
+              `      ${tableName}: Table ("${table_schema}.${table}", [\n        ${interfaceProperties.map (([js]) => js).join (",\n        ")}\n      ])`,
+              `    ${tableName}: Table<"${table_schema}.${table}", {\n      ${interfaceProperties.map (([_js, ts]) => ts).join ("\n      ")}\n    }>;`
             ];
-          }
+          }));
 
-          const interfaceProperties = Object.values (props);
+        const schemaContent = [
+          `    ${schema}: {\n${interfacesNew.map (([js]) => js).join (",\n")}\n    }`,
+          `  ${schema}: {\n${interfacesNew.map (([_js, ts]) => ts).join ("\n")}\n  };`
+        ];
 
-          return [
-            `      ${tableName}: Table ("${table_schema}.${table}", [\n        ${interfaceProperties.map (([js]) => js).join (",\n        ")}\n      ])`,
-            `    ${tableName}: Table<"${table_schema}.${table}", {\n      ${interfaceProperties.map (([_js, ts]) => ts).join ("\n      ")}\n    }>;`
-          ];
-        }));
+        return schemaContent;
+      })
+    );
 
-      const schemaContent = [
-        `    ${schema}: {\n${interfacesNew.map (([js]) => js).join (",\n")}\n    }`,
-        `  ${schema}: {\n${interfacesNew.map (([_js, ts]) => ts).join ("\n")}\n  };`
-      ];
+    await fs.appendFile (outputJs, schemaMap.map (([js]) => js).join (",\n"));
+    await fs.appendFile (outputTs, schemaMap.map (([_js, ts]) => ts).join ("\n"));
 
-      return schemaContent;
-    })
-  );
+    // footer
+    await fs.appendFile (outputJs, footerJs.join ("\n"));
+    await fs.appendFile (outputTs, "\n};");
 
-  await fs.appendFile (outputJs, schemaMap.map (([js]) => js).join (",\n"));
-  await fs.appendFile (outputTs, schemaMap.map (([_js, ts]) => ts).join ("\n"));
+    console.log ("RefQL introspect completed!");
+  } catch (e) {
+    console.error (`RefQL introspect failed!`);
 
-  // footer
-  await fs.appendFile (outputJs, footerJs.join ("\n"));
-  await fs.appendFile (outputTs, "\n};");
-
-  console.log ("RefQL introspect completed!");
+    await fs.outputFile (outputJs, originalJs);
+    await fs.outputFile (outputTs, originalTs);
+  }
 }
 
 function mapPostgresTypeToPropType(pgType: string, nullable: boolean): string[] {

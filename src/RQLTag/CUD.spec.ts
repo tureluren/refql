@@ -30,11 +30,9 @@ describe ("CUD", () => {
     querier = pgQuerier (pool);
   }
 
-  const { Table, sql, options } = RefQL ({ querier });
+  const { Table, sql, options, tables } = RefQL ({ querier });
 
-  const {
-    Game, Player
-  } = makeTestTables (Table, sql);
+  const { Game, Player } = tables.public;
 
   afterAll (() => {
     pool.end ();
@@ -70,9 +68,9 @@ describe ("CUD", () => {
     const [query] = tag.compile ({ data: insertData });
 
     expect (query).toBe (format (`
-      insert into game (id, result, home_team_id, away_team_id, league_id, date) 
+      insert into public.game (id, date, home_team_id, away_team_id, league_id, result) 
       values (DEFAULT, $1, $2, $3, $4, $5) 
-      returning game.id "id", game.result "result", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.date "date"
+      returning game.id "id", game.date "date", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.result "result"
     `));
 
     const games = await tag ({ data: insertData });
@@ -81,7 +79,7 @@ describe ("CUD", () => {
     expect (games.length).toBe (1);
     expect (game1.homeTeamId).toBe (1);
     expect (game1.awayTeamId).toBe (2);
-    expect (Object.keys (game1)).toEqual (["id", "result", "homeTeamId", "awayTeamId", "leagueId", "date"]);
+    expect (Object.keys (game1)).toEqual (["id", "date", "homeTeamId", "awayTeamId", "leagueId", "result"]);
 
     const tag2 = Game.update ([
       Game.props.id.eq<{ id: number }> (p => p.id),
@@ -91,13 +89,13 @@ describe ("CUD", () => {
       ])
     ]);
 
-    const updateData = { result: "2-1", leagueId: 2 };
+    const updateData = { leagueId: 2, result: "2-1" };
     const [query2] = tag2.compile ({ data: updateData, id: game1.id });
 
     expect (query2).toBe (format (`
-      update game set result = $1, league_id = $2
+      update public.game set league_id = $1, result = $2
       where 1 = 1 and game.id = $3 
-      returning game.id "id", game.result "result", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.date "date"
+      returning game.away_team_id "awayTeamId", game.date "date", game.home_team_id "homeTeamId", game.id "id", game.league_id "leagueId", game.result "result"
     `));
 
     const games2 = await tag2 ({ data: updateData, id: game1.id });
@@ -114,10 +112,10 @@ describe ("CUD", () => {
     const [query3] = tag3.compile ({ id: game1.id });
 
     expect (query3).toBe (format (`
-      delete from game 
+      delete from public.game 
       where 1 = 1 
       and game.id = $1 
-      returning game.id "id", game.result "result", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.date "date"
+      returning game.id "id", game.date "date", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.result "result"
     `));
 
     const games3 = await tag3 ({ id: game1.id });
@@ -125,7 +123,7 @@ describe ("CUD", () => {
 
     expect (games3.length).toBe (1);
     expect (game3.id).toBe (game1.id);
-    expect (Object.keys (game3)).toEqual (["id", "result", "homeTeamId", "awayTeamId", "leagueId", "date"]);
+    expect (Object.keys (game3)).toEqual (["id", "date", "homeTeamId", "awayTeamId", "leagueId", "result"]);
   });
 
   test ("Insert, update and delete with SQLProps and SQLTags", async () => {
@@ -142,9 +140,9 @@ describe ("CUD", () => {
     const [query] = tag.compile ({ data: insertData });
 
     expect (query).toBe (format (`
-      insert into game (id, result, home_team_id, away_team_id, league_id, date) 
+      insert into public.game (id, date, home_team_id, away_team_id, league_id, result) 
       values (DEFAULT, $1, $2, $3, $4, $5) 
-      returning game.id "id", game.result "result", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.date "date"
+      returning game.id "id", game.date "date", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.result "result"
     `));
 
     const games = await tag ({ data: insertData });
@@ -169,15 +167,15 @@ describe ("CUD", () => {
       Game (["id"])
     ]);
 
-    const updateData = { result: "2-1", leagueId: 2 };
+    const updateData = { leagueId: 2, result: "2-1" };
     const [query2] = tag2.compile ({ data: updateData, id: game1.id });
 
     expect (query2).toBe (format (`
-      update game set result = $1, league_id = $2
+      update public.game set league_id = $1, result = $2
       where 1 = 1 
       and game.id = $3 
       and (game.result = '1-1') = $4
-      returning game.id "id", game.result "result", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.date "date"
+      returning game.away_team_id "awayTeamId", game.date "date", game.home_team_id "homeTeamId", game.id "id", game.league_id "leagueId", game.result "result"
     `));
 
     const games2 = await tag2 ({ data: updateData, id: game1.id });
@@ -195,11 +193,11 @@ describe ("CUD", () => {
     const [query3] = tag3.compile ({ id: game1.id });
 
     expect (query3).toBe (format (`
-      delete from game 
+      delete from public.game 
       where 1 = 1 
       and game.id = $1 
       and (game.result = '1-1') = $2
-      returning game.id "id", game.result "result", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.date "date"
+      returning game.id "id", game.date "date", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.result "result"
     `));
 
     const games3 = await tag3 ({ id: game1.id });
@@ -207,7 +205,7 @@ describe ("CUD", () => {
 
     expect (games3.length).toBe (1);
     expect (game3.id).toBe (game1.id);
-    expect (Object.keys (game3)).toEqual (["id", "result", "homeTeamId", "awayTeamId", "leagueId", "date"]);
+    expect (Object.keys (game3)).toEqual (["id", "date", "homeTeamId", "awayTeamId", "leagueId", "result" ]);
   });
 
   test ("errors", () => {

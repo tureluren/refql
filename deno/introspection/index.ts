@@ -2,7 +2,7 @@ import fs from "fs-extra.ts";
 import path from "path.ts";
 
 import pluralize from "pluralize.ts";
-import { getColumns, getOneToOneRelationships, getRelationships, getTables } from "./queries.ts";
+import { getColumns, getRelationships, getTables } from "./queries.ts";
 import { sqlX } from "../SQLTag/sql.ts";
 
 function toCamelCase(str: string): string {
@@ -33,7 +33,7 @@ function toPascalCase(str: string): string {
 // }
 
 const inRefqlEnv = process.env.NODE_ENV === "refql";
-const prepath = inRefqlEnv ? ".." : "refql/build";
+const prepath = inRefqlEnv ? "../.." : "refql/build";
 const outputDir = inRefqlEnv ? "./src/generated/client" : path.resolve (process.cwd (), "node_modules/.refql/client");
 
 const headerJs = [
@@ -91,8 +91,6 @@ async function introspect(sql: typeof sqlX) {
     foreign_column_names: rel.foreign_column_names.replace (/^{|}$/g, "").split (",")
   })));
 
-  const uniqueKeys = await getOneToOneRelationships (sql);
-
   const schemaMap = await Promise.all (
     Object.keys (schemas).map (async schema => {
       const tables = schemas[schema];
@@ -130,6 +128,31 @@ async function introspect(sql: typeof sqlX) {
             ];
           }
 
+
+          for (const fk of reversedForeignKeys) {
+            const lRef = fk.foreign_column_names[0];
+            const rRef = fk.column_names[0];
+
+            if (fk.unique) {
+              const propertyName = toCamelCase (fk.table_name);
+              props[propertyName] = [
+                `(0, HasOne_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
+                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasOne", false>;`
+              ];
+
+            } else {
+              const propertyName = pluralize (toCamelCase (fk.table_name));
+              if (propertyName === "members" && tableName === "CaregiverLocation") {
+                console.log (fk);
+              }
+              props[propertyName] = [
+                `(0, HasMany_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
+                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasMany", false>;`
+              ];
+            }
+          }
+
+          // after reversedKeys to overwrite possible false HasOne's
           for (const fk of foreignKeys) {
             const lRef = fk.column_names[0];
             const rRef = fk.foreign_column_names[0];
@@ -147,27 +170,6 @@ async function introspect(sql: typeof sqlX) {
               `(0, BelongsTo_1.default) ("${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", { lRef: "${lRef}", rRef: "${rRef}" })${nullable ? `.nullable ()` : ""}`,
               `${propertyName}: RefProp<"${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", "BelongsTo", ${nullable ? "true" : "false"}>;`
             ];
-          }
-
-          for (const fk of reversedForeignKeys) {
-            const ufk = uniqueKeys.find (uk => uk.fk_name === fk.constraint_name);
-            const lRef = fk.foreign_column_names[0];
-            const rRef = fk.column_names[0];
-
-            if (ufk) {
-              const propertyName = toCamelCase (fk.table_name);
-              props[propertyName] = [
-                `(0, HasOne_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
-                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasOne", false>;`
-              ];
-
-            } else {
-              const propertyName = pluralize (toCamelCase (fk.table_name));
-              props[propertyName] = [
-                `(0, HasMany_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
-                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasMany", false>;`
-              ];
-            }
           }
 
           for (const fk of intermediateForeignKeys) {

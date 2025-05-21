@@ -1,7 +1,7 @@
-import Prop from "../Prop/index.ts";
-import PropType from "../Prop/PropType.ts";
-import RefProp from "../Prop/RefProp.ts";
-import { Table } from "../Table/index.ts";
+import Prop from "../../Prop/index.ts";
+import PropType from "../../Prop/PropType.ts";
+import RefProp from "../../Prop/RefProp.ts";
+import { Table } from "../../Table/index.ts";
 export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, { [P in Props[number] as P["as"]]: P; }>) => {
   general: {
     Setting: Table<"general.setting", {
@@ -27,21 +27,21 @@ export declare const getTables: (Table: <TableId extends string, Props extends P
       awayTeamId: Prop<"awayTeamId", number, {}, false, false, false>;
       leagueId: Prop<"leagueId", number, {}, false, false, false>;
       result: Prop<"result", string, {}, false, false, false>;
-      awayTeam: RefProp<"awayTeam", "public.team", "BelongsTo", false>;
-      homeTeam: RefProp<"homeTeam", "public.team", "BelongsTo", false>;
-      league: RefProp<"league", "public.league", "BelongsTo", false>;
       assists: RefProp<"assists", "public.assist", "HasMany", false>;
       gamePlayers: RefProp<"gamePlayers", "public.game_player", "HasMany", false>;
       goals: RefProp<"goals", "public.goal", "HasMany", false>;
+      awayTeam: RefProp<"awayTeam", "public.team", "BelongsTo", false>;
+      homeTeam: RefProp<"homeTeam", "public.team", "BelongsTo", false>;
+      league: RefProp<"league", "public.league", "BelongsTo", false>;
       players: RefProp<"players", "public.player", "BelongsToMany", false>;
     }>;
     GamePlayer: Table<"public.game_player", {
       playerId: Prop<"playerId", number, {}, false, false, false>;
       gameId: Prop<"gameId", number, {}, false, false, false>;
-      game: RefProp<"game", "public.game", "BelongsTo", false>;
-      player: RefProp<"player", "public.player", "BelongsTo", false>;
       assists: RefProp<"assists", "public.assist", "HasMany", false>;
       goals: RefProp<"goals", "public.goal", "HasMany", false>;
+      game: RefProp<"game", "public.game", "BelongsTo", false>;
+      player: RefProp<"player", "public.player", "BelongsTo", false>;
     }>;
     Goal: Table<"public.goal", {
       id: Prop<"id", number, {}, false, true, false>;
@@ -49,9 +49,9 @@ export declare const getTables: (Table: <TableId extends string, Props extends P
       playerId: RefProp<"playerId", "public.game_player", "BelongsTo", false>;
       ownGoal: Prop<"ownGoal", boolean | null, {}, false, true, false>;
       minute: Prop<"minute", number, {}, false, false, false>;
+      assists: RefProp<"assists", "public.assist", "HasMany", false>;
       game: RefProp<"game", "public.game", "BelongsTo", false>;
       player: RefProp<"player", "public.player", "BelongsTo", false>;
-      assists: RefProp<"assists", "public.assist", "HasMany", false>;
     }>;
     League: Table<"public.league", {
       id: Prop<"id", number, {}, false, true, false>;
@@ -67,12 +67,12 @@ export declare const getTables: (Table: <TableId extends string, Props extends P
       cars: Prop<"cars", any | null, {}, false, false, false>;
       firstName: Prop<"firstName", string, {}, false, false, false>;
       lastName: Prop<"lastName", string, {}, false, false, false>;
-      position: RefProp<"position", "public.position", "BelongsTo", true>;
-      team: RefProp<"team", "public.team", "BelongsTo", true>;
       assists: RefProp<"assists", "public.assist", "HasMany", false>;
       gamePlayers: RefProp<"gamePlayers", "public.game_player", "HasMany", false>;
       goals: RefProp<"goals", "public.goal", "HasMany", false>;
       rating: RefProp<"rating", "public.rating", "HasOne", false>;
+      position: RefProp<"position", "public.position", "BelongsTo", true>;
+      team: RefProp<"team", "public.team", "BelongsTo", true>;
       games: RefProp<"games", "public.game", "BelongsToMany", false>;
     }>;
     Position: Table<"public.position", {
@@ -97,9 +97,9 @@ export declare const getTables: (Table: <TableId extends string, Props extends P
       active: Prop<"active", boolean | null, {}, false, true, false>;
       leagueId: Prop<"leagueId", number | null, {}, false, false, false>;
       name: Prop<"name", string, {}, false, false, false>;
-      league: RefProp<"league", "public.league", "BelongsTo", true>;
       games: RefProp<"games", "public.game", "HasMany", false>;
       players: RefProp<"players", "public.player", "HasMany", false>;
+      league: RefProp<"league", "public.league", "BelongsTo", true>;
     }>;
   };
 };

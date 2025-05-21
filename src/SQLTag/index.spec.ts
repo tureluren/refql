@@ -208,7 +208,7 @@ describe ("SQLTag type", () => {
     const [query, values] = insert.compile (params);
 
     expect (query).toBe (format (`
-      insert into player (first_name, last_name, cars)
+      insert into public.player (first_name, last_name, cars)
       values ($1, $2, $3)
     `));
 
@@ -258,7 +258,7 @@ describe ("SQLTag type", () => {
     const [query, values] = insert.compile (params);
 
     expect (query).toBe (format (`
-      insert into player (first_name, last_name)
+      insert into public.player (first_name, last_name)
       values ($1, $2), ($3, $4), ($5, $6)
     `));
 

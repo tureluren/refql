@@ -186,6 +186,7 @@ const teamById = Team ([
 // insert, update
 // register subselect to Player ?
 // employee model
+// ONLY pg introspect
 
 // OrderBy rqlNode OrderBy(p => p.ordery) (kan ook gewoon een SQL worden he) (maar dan maakt volgorde wel uit)
 // const OrderBy = sql`

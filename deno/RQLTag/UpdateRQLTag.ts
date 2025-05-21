@@ -73,11 +73,13 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
 
   const props = getStandardProps (table);
 
+  const sortedProps = props.sort ((a, b) => a.as.localeCompare (b.as));
+
   const updateTable = sqlX`
     update ${Raw (table)} set
   `;
 
-  const updateFields = props
+  const updateFields = sortedProps
     .reduce ((t, field) => {
       const pred = (params: { data: any[]}) => params.data[field.as] != null;
 

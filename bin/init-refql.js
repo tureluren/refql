@@ -18,31 +18,15 @@ fs.writeFileSync (
   JSON.stringify (packageJsonContent, null, 2)
 );
 
-// Create index.js
-const indexJsContent = `"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTables = void 0;
-
-const getTables = _Table => {
-  return {};
+const readFromTxt = fileName => {
+  const filePath = path.join (__dirname, fileName);
+  return fs.readFileSync (filePath, "utf-8");
 };
 
-exports.getTables = getTables;
-`;
-
+const indexJsContent = readFromTxt ("index.js.txt");
 fs.writeFileSync (path.join (clientDir, "index.js"), indexJsContent);
 
-// Create index.d.ts
-const indexDtsContent = `import PropType from "refql/build/Prop/PropType";
-import { Table } from "refql/build/Table";
-
-export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(
-  name: TableId,
-  props: Props
-) => Table<TableId, { [P in Props[number] as P["as"]]: P; }>) => {
-};
-`;
-
+const indexDtsContent = readFromTxt ("index.d.ts.txt");
 fs.writeFileSync (path.join (clientDir, "index.d.ts"), indexDtsContent);
 
 console.log (".refql/client created in node_modules");

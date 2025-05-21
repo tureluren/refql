@@ -53,7 +53,7 @@ export async function getColumns(sql: typeof sqlX, tableName: string) {
  * @returns A list of foreign key relationships, including table and column details.
  */
 export async function getRelationships(sql: typeof sqlX) {
-  const res = await sql<{}, { table_name: string; table_schema: string; column_names: string; foreign_column_names: string; foreign_table_name: string; foreign_table_schema: string; constraint_name: string}>`
+  const res = await sql<{}, { table_name: string; table_schema: string; column_names: string; foreign_column_names: string; foreign_table_name: string; foreign_table_schema: string; constraint_name: string; unique: boolean}>`
     WITH key_columns AS (
         SELECT
             kcu.constraint_name,
@@ -75,6 +75,21 @@ export async function getRelationships(sql: typeof sqlX) {
             information_schema.constraint_column_usage ccu
         GROUP BY
             ccu.constraint_name, ccu.table_name, ccu.table_schema
+    ),
+    unique_constraints AS (
+        SELECT
+            tc.constraint_name,
+            tc.table_name,
+            tc.table_schema,
+            ARRAY_AGG(kcu.column_name ORDER BY kcu.ordinal_position) AS column_names
+        FROM
+            information_schema.table_constraints tc
+        JOIN
+            information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+        WHERE
+            tc.constraint_type IN ('UNIQUE', 'PRIMARY KEY')
+        GROUP BY
+            tc.constraint_name, tc.table_name, tc.table_schema
     )
     SELECT DISTINCT
         tc.table_name AS table_name,
@@ -83,7 +98,15 @@ export async function getRelationships(sql: typeof sqlX) {
         fc.foreign_column_names,
         fc.foreign_table_name,
         fc.foreign_table_schema,
-        tc.constraint_name
+        tc.constraint_name,
+        EXISTS (
+            SELECT 1
+            FROM unique_constraints uc
+            WHERE
+                uc.table_name = tc.table_name AND
+                uc.table_schema = tc.table_schema AND
+                uc.column_names = kc.column_names
+        ) AS "unique"
     FROM
         information_schema.table_constraints tc
     JOIN
@@ -93,112 +116,9 @@ export async function getRelationships(sql: typeof sqlX) {
     WHERE
         tc.constraint_type = 'FOREIGN KEY'
     ORDER BY
-        tc.table_name, tc.table_schema, tc.constraint_name
+        tc.table_name, tc.table_schema, tc.constraint_name;
+
   ` ();
 
   return res;
-}
-
-/**
- * Fetches all unique foreign key relationships for one-to-one mappings.
- *
- * This query identifies relationships where a foreign key is either:
- * 1. A unique key in its own table.
- * 2. Pointing to a primary key or unique key in the referenced table.
- *
- * The query uses PostgreSQL catalogs (`pg_constraint`, `pg_attribute`, and `pg_index`)
- * to ensure efficiency and precision. It combines:
- * - `pg_constraint`: To retrieve foreign key constraints.
- * - `pg_attribute`: To map constraints to specific columns.
- * - `pg_index`: To identify unique constraints and primary keys.
- *
- * The results include:
- * - `fk_table`: The table containing the foreign key.
- * - `fk_column`: The specific foreign key column.
- * - `ref_table`: The referenced (foreign) table.
- *
- * Notes:
- * - Filters only one-to-one relationships based on uniqueness constraints.
- * - Ensures single-column keys are distinguished from multi-column keys.
- *
- * @returns A list of one-to-one relationships with table and column details.
- */
-export async function getOneToOneRelationships(sql: typeof sqlX) {
-  const result = await sql<{}, { fk_table: string; fk_column: string; ref_table: string; ref_column_pos: number; fk_name: string }>`
-    WITH unique_foreign_keys AS (
-      SELECT
-        conname AS fk_name,
-        conrelid::regclass::text AS fk_table,
-        a.attname AS fk_column,
-        confrelid::regclass::text AS ref_table,
-        confkey[1] AS ref_column_pos
-      FROM
-        pg_constraint
-      JOIN pg_attribute a ON
-        a.attnum = ANY(pg_constraint.conkey) AND a.attrelid = conrelid
-      WHERE
-        contype = 'f'
-    ),
-    unique_columns AS (
-      SELECT DISTINCT
-        t.relname AS table_name,
-        a.attname AS column_name
-      FROM
-        pg_index i
-      JOIN pg_class t ON i.indrelid = t.oid
-      JOIN pg_attribute a ON a.attnum = ANY(i.indkey) AND a.attrelid = t.oid
-      WHERE
-        i.indisunique = TRUE
-        AND i.indisprimary = FALSE
-    ),
-    primary_foreign_keys AS (
-      SELECT
-        conrelid::regclass::text AS fk_table,
-        a.attname AS fk_column,
-        conname AS fk_name
-      FROM
-        pg_constraint
-      JOIN pg_attribute a ON
-        a.attnum = ANY(pg_constraint.conkey) AND a.attrelid = conrelid
-      WHERE
-        contype = 'f'
-    ),
-    primary_keys AS (
-      SELECT
-        conrelid::regclass::text AS pk_table,
-        a.attname AS pk_column,
-        COUNT(a.attname) OVER (PARTITION BY conrelid::regclass) AS pk_column_count
-      FROM
-        pg_constraint
-      JOIN pg_attribute a ON
-        a.attnum = ANY(pg_constraint.conkey) AND a.attrelid = conrelid
-      WHERE
-        contype = 'p'
-    )
-    SELECT DISTINCT
-      fk.fk_table,
-      fk.fk_column,
-      fk.ref_table,
-      fk.fk_name
-    FROM
-      unique_foreign_keys fk
-    JOIN
-      unique_columns uc
-      ON fk.fk_table = uc.table_name AND fk.fk_column = uc.column_name
-    UNION
-    SELECT
-      fk.fk_table,
-      fk.fk_column,
-      pk.pk_table AS ref_table,
-      fk.fk_name
-    FROM
-      primary_foreign_keys fk
-    JOIN
-      primary_keys pk
-      ON fk.fk_table = pk.pk_table
-      AND fk.fk_column = pk.pk_column
-      AND pk.pk_column_count = 1
-  ` ();
-
-  return result;
 }

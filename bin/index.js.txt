@@ -1,0 +1,9 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getTables = void 0;
+
+const getTables = _Table => {
+  return {};
+};
+
+exports.getTables = getTables;
