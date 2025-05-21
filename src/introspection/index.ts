@@ -74,6 +74,7 @@ const footerJs = [
 ];
 
 
+// add try catch! (restore defaults uit init refql)
 async function introspect(sql: typeof sqlX) {
   const outputJs = `${outputDir}/index.js`;
   const outputTs = `${outputDir}/index.d.ts`;

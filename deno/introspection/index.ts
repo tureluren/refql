@@ -1,4 +1,6 @@
-import * as fs from "fs-extra.ts";
+import fs from "fs-extra.ts";
+import path from "path.ts";
+
 import pluralize from "pluralize.ts";
 import { getColumns, getOneToOneRelationships, getRelationships, getTables } from "./queries.ts";
 import { sqlX } from "../SQLTag/sql.ts";
@@ -32,7 +34,7 @@ function toPascalCase(str: string): string {
 
 const inRefqlEnv = process.env.NODE_ENV === "refql";
 const prepath = inRefqlEnv ? ".." : "refql/build";
-const outputDir = inRefqlEnv ? "./src/generated/client" : "../../../.refql/client";
+const outputDir = inRefqlEnv ? "./src/generated/client" : path.resolve (process.cwd (), "node_modules/.refql/client");
 
 const headerJs = [
   `"use strict";`,
@@ -72,6 +74,7 @@ const footerJs = [
 ];
 
 
+// add try catch! (restore defaults uit init refql)
 async function introspect(sql: typeof sqlX) {
   const outputJs = `${outputDir}/index.js`;
   const outputTs = `${outputDir}/index.d.ts`;
