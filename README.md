@@ -6,58 +6,52 @@ A Node.js and Deno library for composing and running SQL queries.
 
 ## Installation
 ```bash
-yarn install refql
-# or
 npm install refql 
 ```
 
-## Getting started
+## Create RefQL Instance
 ```ts
+// refql.ts
 import { Pool } from "pg";
-import { 
-  BelongsTo, NumberProp, 
-  StringProp, Table 
-} from "refql";
-
-// id Prop
-const id = NumberProp ("id");
-
-// Tables
-const Player = Table ("player", [
-  id,
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  BelongsTo ("team", "team")
-]);
-
-const Team = Table ("team", [
-  id,
-  StringProp ("name")
-]);
-
-// select components
-const playerById = Player ([
-  id,
-  "firstName",
-  "lastName",
-  Team ([
-    id,
-    "name"
-  ]),
-  id.eq<{ id: number }> (p => p.id)
-]);
+import RefQL from "refql";
 
 const pool = new Pool ({
   // ...pool options
 });
 
-const querier = async (query: string, values: any[]) => {
-  const { rows } = await pool.query (query, values);
+const querier = (query: string, values: any[]) =>
+  pool.query (query, values).then(({ rows }) => rows)
 
-  return rows;
-};
+const refql = RefQL ({ querier });
 
-playerById ({ id: 1 }, querier).then(console.log);
+export default refql;
+```
+
+## Introspect database schema (Postgres only)
+```ts
+import refql from "./refql";
+
+refql.introspect().then(() => {
+  console.log("RefQL Tables stored inside node_modules/.refql");
+})
+```
+
+## Run queries
+```ts
+import refql from "./refql";
+
+const { Player, Team } = refql.tables.public;
+
+const { id } = Player.props;
+
+// select components
+const playerById = Player ([
+  Team,
+  id.eq<{ id: number }> (p => p.id)
+]);
+
+
+playerById ({ id: 1 }).then(console.log);
 
 // [
 //   {
@@ -80,25 +74,16 @@ playerById ({ id: 1 }, querier).then(console.log);
 * [SQLTag](#sqltag)
 
 ## Tables and References
-The example below shows how to define tables and describe their references to other tables. From then on, these references can be used in a `RQLTag`. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
+Right now, introspection only works for Postgres databases. The example below shows how u can define tables and describe their references to other tables. From then on, these references can be used in a `RQLTag`. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
 
 ```ts
-import { Pool } from "pg";
+import refql from "./refql";;
 import { 
-  BelongsTo, BelongsToMany, HasMany,
-  HasOne, Limit, NumberProp, Offset,
-  StringProp, Table
+  BelongsTo, BelongsToMany, HasMany, HasOne, 
+  Limit, NumberProp, Offset, StringProp,
 } from "refql";
 
-const pool = new Pool ({
-  // ...pool options
-});
-
-const querier = async (query: string, values: any[]) => {
-  const { rows } = await pool.query (query, values);
-
-  return rows;
-};
+const { Table } = refql;
 
 // construct RQLTag
 const Player = Table ("player", [
@@ -135,13 +120,13 @@ const fullPlayer = Player ([
   "lastName",
   Team (["name"]),
   Goal (["minute"]),
-  Rating (["*"]),
+  Rating,
   Game (["result"]),
   Limit (1),
   Offset (8)
 ]);
 
-fullPlayer ({}, querier).then (console.log);
+fullPlayer ({}).then (console.log);
 
 // [
 //   {
@@ -155,6 +140,7 @@ fullPlayer ({}, querier).then (console.log);
 //   }
 // ];
 ```
+
 ### Ref info
 RefQL tries to link 2 tables based on logical column names, using snake case. You can always point RefQL in the right direction if this doesn't work for you.
 
@@ -173,6 +159,7 @@ The querier should have the type signature `<T>(query: string, values: any[]) =>
 
 ```ts
 import mySQL from "mysql2";
+import RefQL from "refql";
 
 const mySQLPool = mySQL.createPool ({
   // ...pool options
@@ -180,7 +167,7 @@ const mySQLPool = mySQL.createPool ({
 
 const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
   new Promise ((res, rej) => {
-    mySQLPool.query (query.replace (/\$\d/g, "?"), values, (error, rows) => {
+    mySQLPool.query (query, values, (error, rows) => {
       if (error) {
         rej (error);
         return;
@@ -188,38 +175,19 @@ const mySQLQuerier = <T>(query: string, values: any[]): Promise<T[]> =>
       res (rows as T[]);
     });
   });
-```
 
-### Set a default querier
-
-```ts
-import { setDefaultQuerier } from "refql";
-
-const querier = async (query: string, values: any[]) => {
-  const { rows } = await pool.query (query, values);
-
-  return rows;
-};
-
-setDefaultQuerier (querier);
-
-const firstTeam = Player ([
-  id,
-  "firstName",
-  "lastName",
-  Limit (10),
-  id.asc ()
-]);
-
-// no need to provide a querier anymore
-firstTeam ({ limit: 10 }).then (console.log);
+const refql = RefQL ({
+  querier: mySQLQuerier,
+  parameterSign: "?",
+  indexedParameters: false
+});
 ```
 
 ### Convert Promise output to something else 
 U can use [Module augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation) in TypeScript to register another container type.
 
 ```ts
-import { setConvertPromise } from "refql";
+import RefQL from "refql";
 
 declare module "refql" {
   interface RQLTag<TableId extends string = any, Params = any, Output = any> {
@@ -235,11 +203,16 @@ class Task<Output> {
   }
 }
 
-// natural transformation
+// transformation function
 const promiseToTask = <Output>(p: Promise<Output>) =>
   new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
-setConvertPromise (promiseToTask);
+const { tables }  = RefQL ({
+  // ...refql options
+  runner: (tag, params) => promiseToTask (tag.run(params))
+});
+
+const { Player } = tables;
 
 const firstTeam = Player ([
   id,

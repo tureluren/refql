@@ -42,8 +42,10 @@ const promiseToTask = <Output>(p: Promise<Output>) =>
 
 const { tables, sql, Table } = RefQL ({
   querier,
-  runner: tag => promiseToTask (tag.run ({}))
+  runner: tag => promiseToTask (tag.run ({})),
   // runner: promiseToTask
+  parameterSign: "?",
+  indexedParameters: false
 });
 
 
@@ -187,6 +189,7 @@ const teamById = Team ([
 // register subselect to Player ?
 // employee model
 // ONLY pg introspect
+// different cases introspection
 
 // OrderBy rqlNode OrderBy(p => p.ordery) (kan ook gewoon een SQL worden he) (maar dan maakt volgorde wel uit)
 // const OrderBy = sql`
