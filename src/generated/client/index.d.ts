@@ -3,13 +3,6 @@ import PropType from "../../Prop/PropType";
 import RefProp from "../../Prop/RefProp";
 import { Table } from "../../Table";
 export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, { [P in Props[number] as P["as"]]: P; }>) => {
-  general: {
-    Setting: Table<"general.setting", {
-      id: Prop<"id", number, {}, false, true, false>;
-      keyName: Prop<"keyName", string, {}, false, false, false>;
-      keyValue: Prop<"keyValue", string, {}, false, false, false>;
-    }>;
-  };
   public: {
     Assist: Table<"public.assist", {
       id: Prop<"id", number, {}, false, true, false>;
@@ -91,6 +84,11 @@ export declare const getTables: (Table: <TableId extends string, Props extends P
       dribbling: Prop<"dribbling", number, {}, false, false, false>;
       tackling: Prop<"tackling", number, {}, false, false, false>;
       player: RefProp<"player", "public.player", "BelongsTo", false>;
+    }>;
+    Setting: Table<"public.setting", {
+      id: Prop<"id", number, {}, false, true, false>;
+      keyName: Prop<"keyName", string, {}, false, false, false>;
+      keyValue: Prop<"keyValue", string, {}, false, false, false>;
     }>;
     Team: Table<"public.team", {
       id: Prop<"id", number, {}, false, true, false>;

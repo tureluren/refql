@@ -29,7 +29,7 @@ const readSettingTable = () => query (
 ).then (rows => rows[0]);
 
 const readSchemaVersion = () => query (
-  `select key_value from general.setting ` +
+  `select key_value from setting ` +
   `where key_name = 'db_schema_version'`
 ).then (([{ key_value }]) => Number (key_value));
 

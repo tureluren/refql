@@ -16,19 +16,12 @@ const StringProp_1 = __importDefault (require ("../../Prop/StringProp"));
 
 const getTables = Table => {
   return {
-    general: {
-      Setting: Table ("general.setting", [
-        (0, NumberProp_1.default) ("id", "id").hasDefault (),
-        (0, StringProp_1.default) ("keyName", "key_name"),
-        (0, StringProp_1.default) ("keyValue", "key_value")
-      ])
-    },
     public: {
       Assist: Table ("public.assist", [
         (0, NumberProp_1.default) ("id", "id").hasDefault (),
         (0, NumberProp_1.default) ("gameId", "game_id"),
         (0, NumberProp_1.default) ("goalId", "goal_id"),
-        (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "game_id" }),
+        (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "player_id" }),
         (0, BelongsTo_1.default) ("game", "public.game", { lRef: "game_id", rRef: "id" }),
         (0, BelongsTo_1.default) ("goal", "public.goal", { lRef: "goal_id", rRef: "id" }),
         (0, BelongsTo_1.default) ("player", "public.player", { lRef: "player_id", rRef: "id" })
@@ -51,15 +44,15 @@ const getTables = Table => {
       GamePlayer: Table ("public.game_player", [
         (0, NumberProp_1.default) ("playerId", "player_id"),
         (0, NumberProp_1.default) ("gameId", "game_id"),
-        (0, HasMany_1.default) ("assists", "public.assist", { lRef: "game_id", rRef: "player_id" }),
-        (0, HasMany_1.default) ("goals", "public.goal", { lRef: "game_id", rRef: "player_id" }),
+        (0, HasMany_1.default) ("assists", "public.assist", { lRef: "player_id", rRef: "player_id" }),
+        (0, HasMany_1.default) ("goals", "public.goal", { lRef: "player_id", rRef: "player_id" }),
         (0, BelongsTo_1.default) ("game", "public.game", { lRef: "game_id", rRef: "id" }),
         (0, BelongsTo_1.default) ("player", "public.player", { lRef: "player_id", rRef: "id" })
       ]),
       Goal: Table ("public.goal", [
         (0, NumberProp_1.default) ("id", "id").hasDefault (),
         (0, NumberProp_1.default) ("gameId", "game_id"),
-        (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "game_id" }),
+        (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "player_id" }),
         (0, BooleanProp_1.default) ("ownGoal", "own_goal").hasDefault (),
         (0, NumberProp_1.default) ("minute", "minute"),
         (0, HasMany_1.default) ("assists", "public.assist", { lRef: "id", rRef: "goal_id" }),
@@ -104,6 +97,11 @@ const getTables = Table => {
         (0, NumberProp_1.default) ("dribbling", "dribbling"),
         (0, NumberProp_1.default) ("tackling", "tackling"),
         (0, BelongsTo_1.default) ("player", "public.player", { lRef: "player_id", rRef: "id" })
+      ]),
+      Setting: Table ("public.setting", [
+        (0, NumberProp_1.default) ("id", "id").hasDefault (),
+        (0, StringProp_1.default) ("keyName", "key_name"),
+        (0, StringProp_1.default) ("keyValue", "key_value")
       ]),
       Team: Table ("public.team", [
         (0, NumberProp_1.default) ("id", "id").hasDefault (),

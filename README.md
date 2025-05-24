@@ -27,7 +27,7 @@ const refql = RefQL ({ querier });
 export default refql;
 ```
 
-## Introspect database schema (Postgres only)
+## Introspect database schema (Postgres only, ran seperately from main project)
 ```ts
 import refql from "./refql";
 

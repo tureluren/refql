@@ -189,7 +189,7 @@ const teamById = Team ([
 // register subselect to Player ?
 // employee model
 // ONLY pg introspect
-// different cases introspection
+// different cases introspection (en ook voorbeeld readme over linken refinfo)
 
 // OrderBy rqlNode OrderBy(p => p.ordery) (kan ook gewoon een SQL worden he) (maar dan maakt volgorde wel uit)
 // const OrderBy = sql`
@@ -215,6 +215,8 @@ const teamById = Team ([
 // monoid weghalen uit spec
 // regels many_to_many opstellen
 // configuratie
+// lref, rref, ... array
+// in assist generated ???         (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "player_id" }),
 // tx
 
 // DECISIONS
