@@ -169,6 +169,9 @@ async function introspect(sql: typeof sqlX) {
               if (!col) continue;
 
               const nullable = col.is_nullable === "YES";
+              if (propertyName === "playerId") {
+                console.log (table, fk);
+              }
 
               props[propertyName] = [
                 `(0, BelongsTo_1.default) ("${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", { lRef: "${lRef}", rRef: "${rRef}" })${nullable ? `.nullable ()` : ""}`,
