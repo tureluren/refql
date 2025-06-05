@@ -21,10 +21,11 @@ const getTables = Table => {
         (0, NumberProp_1.default) ("id", "id").hasDefault (),
         (0, NumberProp_1.default) ("gameId", "game_id"),
         (0, NumberProp_1.default) ("goalId", "goal_id"),
-        (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "player_id" }),
-        (0, BelongsTo_1.default) ("game", "public.game", { lRef: "game_id", rRef: "id" }),
-        (0, BelongsTo_1.default) ("goal", "public.goal", { lRef: "goal_id", rRef: "id" }),
-        (0, BelongsTo_1.default) ("player", "public.player", { lRef: "player_id", rRef: "id" })
+        (0, NumberProp_1.default) ("playerId", "player_id"),
+        (0, BelongsTo_1.default) ("game", "public.game", { lRef: ["game_id"], rRef: ["id"] }),
+        (0, BelongsTo_1.default) ("goal", "public.goal", { lRef: ["goal_id"], rRef: ["id"] }),
+        (0, BelongsTo_1.default) ("player", "public.player", { lRef: ["player_id"], rRef: ["id"] }),
+        (0, BelongsTo_1.default) ("gamePlayer", "public.game_player", { lRef: ["player_id", "game_id"], rRef: ["player_id", "game_id"] })
       ]),
       Game: Table ("public.game", [
         (0, NumberProp_1.default) ("id", "id").hasDefault (),
@@ -36,9 +37,9 @@ const getTables = Table => {
         (0, HasMany_1.default) ("assists", "public.assist", { lRef: "id", rRef: "game_id" }),
         (0, HasMany_1.default) ("gamePlayers", "public.game_player", { lRef: "id", rRef: "game_id" }),
         (0, HasMany_1.default) ("goals", "public.goal", { lRef: "id", rRef: "game_id" }),
-        (0, BelongsTo_1.default) ("awayTeam", "public.team", { lRef: "away_team_id", rRef: "id" }),
-        (0, BelongsTo_1.default) ("homeTeam", "public.team", { lRef: "home_team_id", rRef: "id" }),
-        (0, BelongsTo_1.default) ("league", "public.league", { lRef: "league_id", rRef: "id" }),
+        (0, BelongsTo_1.default) ("awayTeam", "public.team", { lRef: ["away_team_id"], rRef: ["id"] }),
+        (0, BelongsTo_1.default) ("homeTeam", "public.team", { lRef: ["home_team_id"], rRef: ["id"] }),
+        (0, BelongsTo_1.default) ("league", "public.league", { lRef: ["league_id"], rRef: ["id"] }),
         (0, BelongsToMany_1.default) ("players", "public.player", { lRef: "id", lxRef: "game_id", xTable: "public.game_player", rxRef: "player_id", rRef: "id" })
       ]),
       GamePlayer: Table ("public.game_player", [
@@ -46,18 +47,19 @@ const getTables = Table => {
         (0, NumberProp_1.default) ("gameId", "game_id"),
         (0, HasMany_1.default) ("assists", "public.assist", { lRef: "player_id", rRef: "player_id" }),
         (0, HasMany_1.default) ("goals", "public.goal", { lRef: "player_id", rRef: "player_id" }),
-        (0, BelongsTo_1.default) ("game", "public.game", { lRef: "game_id", rRef: "id" }),
-        (0, BelongsTo_1.default) ("player", "public.player", { lRef: "player_id", rRef: "id" })
+        (0, BelongsTo_1.default) ("game", "public.game", { lRef: ["game_id"], rRef: ["id"] }),
+        (0, BelongsTo_1.default) ("player", "public.player", { lRef: ["player_id"], rRef: ["id"] })
       ]),
       Goal: Table ("public.goal", [
         (0, NumberProp_1.default) ("id", "id").hasDefault (),
         (0, NumberProp_1.default) ("gameId", "game_id"),
-        (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "player_id" }),
+        (0, NumberProp_1.default) ("playerId", "player_id"),
         (0, BooleanProp_1.default) ("ownGoal", "own_goal").hasDefault (),
         (0, NumberProp_1.default) ("minute", "minute"),
         (0, HasMany_1.default) ("assists", "public.assist", { lRef: "id", rRef: "goal_id" }),
-        (0, BelongsTo_1.default) ("game", "public.game", { lRef: "game_id", rRef: "id" }),
-        (0, BelongsTo_1.default) ("player", "public.player", { lRef: "player_id", rRef: "id" })
+        (0, BelongsTo_1.default) ("game", "public.game", { lRef: ["game_id"], rRef: ["id"] }),
+        (0, BelongsTo_1.default) ("player", "public.player", { lRef: ["player_id"], rRef: ["id"] }),
+        (0, BelongsTo_1.default) ("gamePlayer", "public.game_player", { lRef: ["player_id", "game_id"], rRef: ["player_id", "game_id"] })
       ]),
       League: Table ("public.league", [
         (0, NumberProp_1.default) ("id", "id").hasDefault (),
@@ -77,8 +79,8 @@ const getTables = Table => {
         (0, HasMany_1.default) ("gamePlayers", "public.game_player", { lRef: "id", rRef: "player_id" }),
         (0, HasMany_1.default) ("goals", "public.goal", { lRef: "id", rRef: "player_id" }),
         (0, HasOne_1.default) ("rating", "public.rating", { lRef: "id", rRef: "player_id" }),
-        (0, BelongsTo_1.default) ("position", "public.position", { lRef: "position_id", rRef: "id" }).nullable (),
-        (0, BelongsTo_1.default) ("team", "public.team", { lRef: "team_id", rRef: "id" }).nullable (),
+        (0, BelongsTo_1.default) ("position", "public.position", { lRef: ["position_id"], rRef: ["id"] }).nullable (),
+        (0, BelongsTo_1.default) ("team", "public.team", { lRef: ["team_id"], rRef: ["id"] }).nullable (),
         (0, BelongsToMany_1.default) ("games", "public.game", { lRef: "id", lxRef: "player_id", xTable: "public.game_player", rxRef: "game_id", rRef: "id" })
       ]),
       Position: Table ("public.position", [
@@ -96,7 +98,7 @@ const getTables = Table => {
         (0, NumberProp_1.default) ("stamina", "stamina"),
         (0, NumberProp_1.default) ("dribbling", "dribbling"),
         (0, NumberProp_1.default) ("tackling", "tackling"),
-        (0, BelongsTo_1.default) ("player", "public.player", { lRef: "player_id", rRef: "id" })
+        (0, BelongsTo_1.default) ("player", "public.player", { lRef: ["player_id"], rRef: ["id"] })
       ]),
       Setting: Table ("public.setting", [
         (0, NumberProp_1.default) ("id", "id").hasDefault (),
@@ -110,7 +112,7 @@ const getTables = Table => {
         (0, StringProp_1.default) ("name", "name"),
         (0, HasMany_1.default) ("games", "public.game", { lRef: "id", rRef: "home_team_id" }),
         (0, HasMany_1.default) ("players", "public.player", { lRef: "id", rRef: "team_id" }),
-        (0, BelongsTo_1.default) ("league", "public.league", { lRef: "league_id", rRef: "id" }).nullable ()
+        (0, BelongsTo_1.default) ("league", "public.league", { lRef: ["league_id"], rRef: ["id"] }).nullable ()
       ])
     }
   };

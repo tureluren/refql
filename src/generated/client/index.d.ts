@@ -8,10 +8,11 @@ export declare const getTables: (Table: <TableId extends string, Props extends P
       id: Prop<"id", number, {}, false, true, false>;
       gameId: Prop<"gameId", number, {}, false, false, false>;
       goalId: Prop<"goalId", number, {}, false, false, false>;
-      playerId: RefProp<"playerId", "public.game_player", "BelongsTo", false>;
+      playerId: Prop<"playerId", number, {}, false, false, false>;
       game: RefProp<"game", "public.game", "BelongsTo", false>;
       goal: RefProp<"goal", "public.goal", "BelongsTo", false>;
       player: RefProp<"player", "public.player", "BelongsTo", false>;
+      gamePlayer: RefProp<"gamePlayer", "public.game_player", "BelongsTo", false>;
     }>;
     Game: Table<"public.game", {
       id: Prop<"id", number, {}, false, true, false>;
@@ -39,12 +40,13 @@ export declare const getTables: (Table: <TableId extends string, Props extends P
     Goal: Table<"public.goal", {
       id: Prop<"id", number, {}, false, true, false>;
       gameId: Prop<"gameId", number, {}, false, false, false>;
-      playerId: RefProp<"playerId", "public.game_player", "BelongsTo", false>;
+      playerId: Prop<"playerId", number, {}, false, false, false>;
       ownGoal: Prop<"ownGoal", boolean | null, {}, false, true, false>;
       minute: Prop<"minute", number, {}, false, false, false>;
       assists: RefProp<"assists", "public.assist", "HasMany", false>;
       game: RefProp<"game", "public.game", "BelongsTo", false>;
       player: RefProp<"player", "public.player", "BelongsTo", false>;
+      gamePlayer: RefProp<"gamePlayer", "public.game_player", "BelongsTo", false>;
     }>;
     League: Table<"public.league", {
       id: Prop<"id", number, {}, false, true, false>;

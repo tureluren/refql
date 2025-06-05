@@ -97,11 +97,11 @@ export type TableIdMap<S, T extends OnlyRefProps<S> = OnlyRefProps<S>> = {
 };
 
 export interface RefInput {
-  lRef?: string;
-  rRef?: string;
+  lRef?: string[];
+  rRef?: string[];
   xTable?: string;
-  lxRef?: string;
-  rxRef?: string;
+  lxRef?: string[];
+  rxRef?: string[];
 }
 
 export type RefNodeInput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;

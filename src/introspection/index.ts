@@ -18,6 +18,44 @@ function toPascalCase(str: string): string {
   return camel.charAt (0).toUpperCase () + camel.slice (1);
 }
 
+/**
+ * Generates a relation key name based on foreign key columns and related table name.
+ * If an alias is provided, it is used directly as the relation key.
+ *
+ * @param tableName - Name of the related table (e.g. 'Team')
+ * @param lRef - Array of foreign key column names (e.g. ['home_team_id'])
+ * @param alias - Optional manual alias to override inference (e.g. 'home_team')
+ * @returns A string to use as the property name for the related object (e.g. 'home_team')
+ */
+function getRelationKey(tableName: string, lRef: string[], alias?: string): string {
+  if (alias) {
+    return alias;
+  }
+
+  const table = tableName.toLowerCase ();
+  const normalizedLRefs = lRef.map (col => col.toLowerCase ());
+
+  // Find columns that contain the table name
+  const matchCols = normalizedLRefs.filter (col => col.includes (table));
+
+  if (matchCols.length === 0) {
+    // No column hints — just use the table name
+    return table;
+  }
+
+  // Use the first matched column to extract a prefix
+  const first = matchCols[0];
+
+  // Strip off _<table>_id or <table>_id suffix
+  const prefix = first.replace (new RegExp (`${table}(_)?id$`), "").replace (/_+$/, "");
+
+  return prefix ? `${prefix}_${table}` : table;
+}
+
+function refsAsString(refs: string[]): string {
+  return `[${'"' + refs.join ('", "') + '"'}]`;
+}
+
 // function toSnakeCase(str: string): string {
 //   return str
 //     .replace (/([a-z])([A-Z])/g, "$1_$2")
@@ -158,23 +196,19 @@ async function introspect(sql: typeof sqlX) {
 
             // after reversedKeys to overwrite possible false HasOne's
             for (const fk of foreignKeys) {
-              const lRef = fk.column_names[0];
-              const rRef = fk.foreign_column_names[0];
+              const lRef = fk.column_names;
+              const rRef = fk.foreign_column_names;
 
-              // homeTeamId -> homeTeam
-              const propertyName = toCamelCase (lRef).replace (`${toPascalCase (rRef)}`, "");
+              const propertyName = toCamelCase (getRelationKey (fk.foreign_table_name, lRef));
 
-              const col = columns.find (c => c.column_name === lRef);
+              const cols = columns.filter (c => lRef.includes (c.column_name));
 
-              if (!col) continue;
+              if (cols.length === 0) continue;
 
-              const nullable = col.is_nullable === "YES";
-              if (propertyName === "playerId") {
-                console.log (table, fk);
-              }
+              const nullable = cols.reduce ((acc, col) => acc || col.is_nullable === "YES", false) ;
 
               props[propertyName] = [
-                `(0, BelongsTo_1.default) ("${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", { lRef: "${lRef}", rRef: "${rRef}" })${nullable ? `.nullable ()` : ""}`,
+                `(0, BelongsTo_1.default) ("${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })${nullable ? `.nullable ()` : ""}`,
                 `${propertyName}: RefProp<"${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", "BelongsTo", ${nullable ? "true" : "false"}>;`
               ];
             }

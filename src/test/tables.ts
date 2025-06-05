@@ -50,8 +50,8 @@ const makeTestTables = (
     NumberProp ("leagueId", "league_id"),
     HasMany ("players", "public.player"),
     BelongsTo ("league", "public.league"),
-    HasMany ("homeGames", "public.game", { rRef: "home_team_id" }),
-    HasMany ("awayGames", "public.game", { rRef: "away_team_id" }),
+    HasMany ("homeGames", "public.game", { rRef: ["home_team_id"] }),
+    HasMany ("awayGames", "public.game", { rRef: ["away_team_id"] }),
     NumberProp ("playerCount", sql`
       select cast(count(*) as int) from player
       where player.team_id = team.id
@@ -98,26 +98,26 @@ const makeTestTables = (
     StringProp ("birthday"),
     NumberProp ("teamId", "team_id"),
     BelongsTo ("team", "public.team", {
-      lRef: "TEAM_ID",
-      rRef: "ID"
+      lRef: ["TEAM_ID"],
+      rRef: ["ID"]
     }),
     NumberProp ("positionId", "position_id"),
     HasOne ("rating", "public.rating", {
-      lRef: "ID",
-      rRef: "PLAYER_ID"
+      lRef: ["ID"],
+      rRef: ["PLAYER_ID"]
     }),
     HasMany ("goals", "public.goal", {
-      lRef: "ID",
-      rRef: "PLAYER_ID"
+      lRef: ["ID"],
+      rRef: ["PLAYER_ID"]
     }),
     BelongsToMany ("games", "public.game", {
       xTable: "GAME_PLAYER"
     }),
     BelongsToMany ("xgames", "public.xgame", {
-      lRef: "ID",
-      lxRef: "PLAYER_ID",
-      rxRef: "XGAME_ID",
-      rRef: "ID"
+      lRef: ["ID"],
+      lxRef: ["PLAYER_ID"],
+      rxRef: ["XGAME_ID"],
+      rRef: ["ID"]
     })
   ]);
 
@@ -126,8 +126,8 @@ const makeTestTables = (
     StringProp ("result"),
     NumberProp ("homeTeamId", "home_team_id"),
     NumberProp ("awayTeamId", "away_team_id"),
-    BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
-    BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
+    BelongsTo ("homeTeam", "public.team", { lRef: ["home_team_id"] }),
+    BelongsTo ("awayTeam", "public.team", { lRef: ["away_team_id"] }),
     NumberProp ("leagueId", "league_id"),
     BelongsTo ("league", "public.league")
   ]);
@@ -138,8 +138,8 @@ const makeTestTables = (
     StringProp ("result"),
     NumberProp ("homeTeamId", "home_team_id"),
     NumberProp ("awayTeamId", "away_team_id"),
-    BelongsTo ("awayTeam", "public.team", { lRef: "away_team_id" }),
-    BelongsTo ("homeTeam", "public.team", { lRef: "home_team_id" }),
+    BelongsTo ("awayTeam", "public.team", { lRef: ["away_team_id"] }),
+    BelongsTo ("homeTeam", "public.team", { lRef: ["home_team_id"] }),
     NumberProp ("leagueId", "league_id"),
     BelongsTo ("league", "public.league")
   ]);

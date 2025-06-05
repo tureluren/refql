@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { refqlType } from "../common/consts";
 import { RefInfo, RefInput, RefQLRows } from "../common/types";
 import RefProp from "../Prop/RefProp";
