@@ -172,13 +172,13 @@ async function introspect(sql: typeof sqlX) {
 
 
             for (const fk of reversedForeignKeys) {
-              const lRef = fk.foreign_column_names[0];
-              const rRef = fk.column_names[0];
+              const lRef = fk.foreign_column_names;
+              const rRef = fk.column_names;
 
               if (fk.unique) {
                 const propertyName = toCamelCase (fk.table_name);
                 props[propertyName] = [
-                  `(0, HasOne_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
+                  `(0, HasOne_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })`,
                   `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasOne", false>;`
                 ];
 
@@ -188,7 +188,7 @@ async function introspect(sql: typeof sqlX) {
                   console.log (fk);
                 }
                 props[propertyName] = [
-                  `(0, HasMany_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: "${lRef}", rRef: "${rRef}" })`,
+                  `(0, HasMany_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })`,
                   `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasMany", false>;`
                 ];
               }
@@ -216,16 +216,16 @@ async function introspect(sql: typeof sqlX) {
             for (const fk of intermediateForeignKeys) {
               const [lRel, rRel] = fk;
               if (!lRel || !rRel) continue;
-              const lRef = lRel.foreign_column_names[0];
-              const lxRef = lRel.column_names[0];
+              const lRef = lRel.foreign_column_names;
+              const lxRef = lRel.column_names;
               const xTable = `${lRel.table_schema}.${lRel.table_name}`;
-              const rxRef = rRel.column_names[0];
-              const rRef = rRel.foreign_column_names[0];
+              const rxRef = rRel.column_names;
+              const rRef = rRel.foreign_column_names;
 
               const propertyName = pluralize (toCamelCase (rRel.foreign_table_name));
 
               props[propertyName] = [
-                `(0, BelongsToMany_1.default) ("${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", { lRef: "${lRef}", lxRef: "${lxRef}", xTable: "${xTable}", rxRef: "${rxRef}", rRef: "${rRef}" })`,
+                `(0, BelongsToMany_1.default) ("${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", { lRef: ${refsAsString (lRef)}, lxRef: ${refsAsString (lxRef)}, xTable: "${xTable}", rxRef: ${refsAsString (rxRef)}, rRef: ${refsAsString (rRef)} })`,
                 `${propertyName}: RefProp<"${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", "BelongsToMany", false>;`
               ];
             }
