@@ -1,28 +1,29 @@
+import isStringArray from "../common/isStringArray";
 import { RefInput } from "../common/types";
 
 const validateRefInput = (input: RefInput) => {
-  if (!(toString.call (input) === "[object Object]")) {
+  if (Object.prototype.toString.call (input) !== "[object Object]") {
     throw new Error ("Invalid input: input is not an object");
   }
 
-  if ("lRef" in input && typeof input.lRef !== "string") {
-    throw new Error ("Invalid input: lRef is not a string");
+  if ("lRef" in input && !isStringArray (input.lRef)) {
+    throw new Error ("Invalid input: lRef must be an array of strings");
   }
 
-  if ("rRef" in input && typeof input.rRef !== "string") {
-    throw new Error ("Invalid input: rRef is not a string");
+  if ("rRef" in input && !isStringArray (input.rRef)) {
+    throw new Error ("Invalid input: rRef must be an array of strings");
+  }
+
+  if ("lxRef" in input && !isStringArray (input.lxRef)) {
+    throw new Error ("Invalid input: lxRef must be an array of strings");
+  }
+
+  if ("rxRef" in input && !isStringArray (input.rxRef)) {
+    throw new Error ("Invalid input: rxRef must be an array of strings");
   }
 
   if ("xTable" in input && typeof input.xTable !== "string") {
-    throw new Error ("Invalid input: xTable is not a string");
-  }
-
-  if ("lxRef" in input && typeof input.lxRef !== "string") {
-    throw new Error ("Invalid input: lxRef is not a string");
-  }
-
-  if ("rxRef" in input && typeof input.rxRef !== "string") {
-    throw new Error ("Invalid input: rxRef is not a string");
+    throw new Error ("Invalid input: xTable must be a string");
   }
 };
 

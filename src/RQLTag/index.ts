@@ -122,9 +122,12 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
   let offset = sqlX``;
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
-    members.push ({ as: info.lRef.as, node: Raw (info.lRef), isOmitted: false });
+    for (const lr of info.lRef) {
+      members.push ({ as: lr.as, node: Raw (lr), isOmitted: false });
 
-    next.push ({ tag, link: [info.as, info.lRef.as], single });
+      // volgens mij moet dit uit de for en moet link ook array worde van awways
+      next.push ({ tag, link: [info.as, lr.as], single });
+    }
   };
 
   for (const node of nodes) {

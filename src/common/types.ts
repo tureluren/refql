@@ -108,12 +108,12 @@ export type RefNodeInput = Omit<RefInput, "lxRef" | "rxRef" | "xTable">;
 
 export interface RefInfo {
   parent: Table;
-  lRef: RefField;
-  rRef: RefField;
+  lRef: RefField[];
+  rRef: RefField[];
   as: string;
   xTable?: Table;
-  lxRef?: RefField;
-  rxRef?: RefField;
+  lxRef?: RefField[];
+  rxRef?: RefField[];
 }
 
 export type ParamsType<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
