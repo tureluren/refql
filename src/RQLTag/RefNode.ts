@@ -35,8 +35,8 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
 
   function getRef(refs: string[] | undefined, table: Table, type: string, fallback: string) {
     return refs && refs.length > 0
-      ? refs.map (ref => refOf (table, type, ref))
-      : [refOf (table, type, fallback)];
+      ? refs.map ((ref, idx) => refOf (table, type + (idx + 1), ref))
+      : [refOf (table, type + "1", fallback)];
   }
 
   switch (rel) {
@@ -82,24 +82,39 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
 
 function joinLateral(this: RefNode) {
   if (this.info.xTable) {
-    const { rRef: rr, lRef: lr, xTable, rxRef: rxr, lxRef: lxr, parent } = this.info as Required<RefInfo>;
+    const { rRef, lRef, xTable, rxRef, lxRef, parent } = this.info as Required<RefInfo>;
 
-    const lRef = lr[0];
-    const rRef = rr[0];
-    const rxRef = rxr[0];
-    const lxRef = lxr[0];
+    const l1 = lRef.reduce ((acc, lr, idx) => {
+      const kw = idx === 0 ? "where" : "and";
 
-    const l1 = sqlX<RefQLRows>`
-      select distinct ${Raw (lRef)}
+      return acc.concat (sqlX<RefQLRows>`
+        ${Raw (`${kw} ${lr.name}`)}
+        in ${Values (p => [...new Set (p.refQLRows.map (r => r[lr.as]))])}
+      `);
+    }, sqlX<RefQLRows>`
+      select distinct ${Raw (lRef.join (", "))}
       from ${Raw (parent)}
-      where ${Raw (lRef.name)}
-      in ${Values (p => [...new Set (p.refQLRows.map (r => r[lRef.as]))])}
-    `;
-
-    const { tag: l2, next } = this.tag.interpret (sqlX`
-      join ${Raw (`${xTable} on ${rxRef.name} = ${rRef.name}`)}
-      where ${Raw (`${lxRef.name} = refqll1.${lRef.as}`)}
     `);
+
+    const l2Join = rRef.reduce ((acc, rr, idx) => {
+      const kw = idx === 0 ? "on" : "and";
+      const rxr = rxRef[idx];
+
+      return acc.concat (sqlX<RefQLRows>`
+        ${Raw (`${kw} ${rxr.name} = ${rr.name}`)}
+      `);
+    }, sqlX<RefQLRows>`join ${Raw (xTable)}`);
+
+    const l2where = lRef.reduce ((acc, lr, idx) => {
+      const kw = idx === 0 ? "where" : "and";
+      const lxr = lxRef[idx];
+
+      return acc.concat (sqlX<RefQLRows>`
+        ${Raw (`${kw} ${lxr.name} = refqll1.${lr.as}`)}
+      `);
+    }, sqlX<RefQLRows>``);
+
+    const { tag: l2, next } = this.tag.interpret (l2Join.concat (l2where));
 
     const joined = sqlX`
       select * from (${l1}) refqll1,

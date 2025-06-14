@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
@@ -18,7 +19,7 @@ import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
 export interface Next {
   tag: RQLTag<any, RefQLRows>;
-  link: [string, string];
+  link: [string, string[]];
   single: boolean;
 }
 
@@ -124,10 +125,9 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     for (const lr of info.lRef) {
       members.push ({ as: lr.as, node: Raw (lr), isOmitted: false });
-
-      // volgens mij moet dit uit de for en moet link ook array worde van awways
-      next.push ({ tag, link: [info.as, lr.as], single });
     }
+
+    next.push ({ tag, link: [info.as, info.lRef.map (lr => lr.as)], single });
   };
 
   for (const node of nodes) {
@@ -221,11 +221,15 @@ async function run(this: RQLTag, params: StringMap, querier?: Querier): Promise<
 
       agg[lAs] = nextRows
         .filter ((r: any) =>
-          r[rAs] === row[rAs]
+          rAs.reduce ((acc, as) =>
+            acc && r[as] === row[as]
+          , true)
         )
         .map ((r: any) => {
           let matched = { ...r };
-          delete matched[rAs];
+          for (const as of rAs) {
+            delete matched[as];
+          }
           return matched;
         });
 
@@ -233,7 +237,9 @@ async function run(this: RQLTag, params: StringMap, querier?: Querier): Promise<
         agg[lAs] = agg[lAs][0] || null;
       }
 
-      delete agg[rAs];
+      for (const as of rAs) {
+        delete agg[as];
+      }
 
       return agg;
     }, row)

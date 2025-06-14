@@ -1,5 +1,8 @@
-import isStringArray from "../common/isStringArray";
 import { RefInput } from "../common/types";
+
+const isStringArray = (value: any): value is string[] => {
+  return Array.isArray (value) && value.every (item => typeof item === "string");
+};
 
 const validateRefInput = (input: RefInput) => {
   if (Object.prototype.toString.call (input) !== "[object Object]") {
@@ -24,6 +27,14 @@ const validateRefInput = (input: RefInput) => {
 
   if ("xTable" in input && typeof input.xTable !== "string") {
     throw new Error ("Invalid input: xTable must be a string");
+  }
+
+  if (input.lRef && input.rRef && input.lRef.length !== input.rRef.length) {
+    throw new Error ("Invalid input: lRef and rRef must have the same number of elements");
+  }
+
+  if (input.lxRef && input.rxRef && input.lxRef.length !== input.rxRef.length) {
+    throw new Error ("Invalid input: lxRef and rxRef must have the same number of elements");
   }
 };
 

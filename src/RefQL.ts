@@ -26,8 +26,6 @@ const RefQL = (options: RefQLOptions) => {
     options: refQLOptions,
     introspect: () => introspect (sqlRunnerless)
   };
-  // return Table with default querier (om tables met te maken)
-  // met postinstall een lege .refql aanmaken, met een lege getTables, via programma (introspect van refql aanroepen die dan in .refql introspect plaatst)
 };
 
 export default RefQL;

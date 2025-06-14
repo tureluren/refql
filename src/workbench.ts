@@ -41,15 +41,15 @@ const promiseToTask = <Output>(p: Promise<Output>) =>
   new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
 const { tables, sql, Table } = RefQL ({
-  querier,
-  runner: tag => promiseToTask (tag.run ({})),
+  querier
+  // runner: tag => promiseToTask (tag.run ({})),
   // runner: promiseToTask
-  parameterSign: "?",
-  indexedParameters: false
+  // parameterSign: "?",
+  // indexedParameters: false
 });
 
 
-const { Player, Game, Team } = tables.public;
+const { Player, Game, Team, GamePlayer } = tables.public;
 
 
 const { id: playerId, birthday } = Player.props;
@@ -65,7 +65,7 @@ const isVeteran = BooleanProp ("isVeteran", sql<{ year: number }>`
 `);
 
 const playerById = Player ([
-  playerId.eq (1),
+  playerId.eq (1)
   // "isVeteran"
   // isVeteran.eq (true)
   // "birthday",
@@ -75,13 +75,22 @@ const playerById = Player ([
   // isVeteran
   // Team (["active"]),
   // Goal (["id"])
-  // Team,
+  // Team
   // Goal,
-  Game (["awayTeamId"])
+  // Game (["awayTeamId"])
 ]);
 
-playerById ({ year: 2002 }).then (p => console.log (p));
+// playerById ({ year: 2002 }).then (p => console.log (p));
 
+const gameById = Game ([
+  Player,
+  Limit (2)
+]);
+
+gameById ({}).then (r =>
+  // console.log (JSON.stringify (r, null, 2))
+  console.log ()
+);
 // const Team = Table ("public.team", [
 //   NumberProp ("id").hasDefault (),
 //   StringProp ("name"),

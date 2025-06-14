@@ -77,4 +77,25 @@ describe ("validateRefInput", () => {
 
     expect (() => validateRefInput (input as any)).toThrow ("Invalid input: rxRef must be an array of strings");
   });
+
+  test ("lRef and rRef have different lengths", () => {
+    const input = {
+      lRef: ["id"],
+      rRef: ["user_id", "extra"]
+    };
+
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: lRef and rRef must have the same number of elements");
+  });
+
+  test ("lxRef and rxRef have different lengths", () => {
+    const input = {
+      lRef: ["id"],
+      rRef: ["id"],
+      xTable: "game_player",
+      lxRef: ["player_id", "alt_id"],
+      rxRef: ["game_id"]
+    };
+
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: lxRef and rxRef must have the same number of elements");
+  });
 });
