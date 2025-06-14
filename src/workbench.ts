@@ -226,7 +226,7 @@ const teamById = Team ([
 // configuratie
 // lref, rref, ... array
 // in assist generated ???         (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "player_id" }),
-// casing via options (db and js)
+// casing via options (db and js) ook bij fallback naam RefNode (xtable)
 // tx
 
 // DECISIONS

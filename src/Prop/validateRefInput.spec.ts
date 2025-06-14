@@ -87,7 +87,7 @@ describe ("validateRefInput", () => {
     expect (() => validateRefInput (input as any)).toThrow ("Invalid input: lRef and rRef must have the same number of elements");
   });
 
-  test ("lxRef and rxRef have different lengths", () => {
+  test ("lxRef and lRef have different lengths", () => {
     const input = {
       lRef: ["id"],
       rRef: ["id"],
@@ -96,6 +96,18 @@ describe ("validateRefInput", () => {
       rxRef: ["game_id"]
     };
 
-    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: lxRef and rxRef must have the same number of elements");
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: lRef and lxRef must have the same number of elements");
+  });
+
+  test ("rxRef and rRef have different lengths", () => {
+    const input = {
+      lRef: ["id"],
+      rRef: ["id", "id_2"],
+      xTable: "game_player",
+      lxRef: ["player_id"],
+      rxRef: ["game_id"]
+    };
+
+    expect (() => validateRefInput (input as any)).toThrow ("Invalid input: rRef and rxRef must have the same number of elements");
   });
 });

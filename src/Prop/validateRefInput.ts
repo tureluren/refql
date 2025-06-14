@@ -9,6 +9,8 @@ const validateRefInput = (input: RefInput) => {
     throw new Error ("Invalid input: input is not an object");
   }
 
+  const isXtable = "xTable" in input;
+
   if ("lRef" in input && !isStringArray (input.lRef)) {
     throw new Error ("Invalid input: lRef must be an array of strings");
   }
@@ -25,16 +27,22 @@ const validateRefInput = (input: RefInput) => {
     throw new Error ("Invalid input: rxRef must be an array of strings");
   }
 
-  if ("xTable" in input && typeof input.xTable !== "string") {
+  if (isXtable && typeof input.xTable !== "string") {
     throw new Error ("Invalid input: xTable must be a string");
   }
 
-  if (input.lRef && input.rRef && input.lRef.length !== input.rRef.length) {
-    throw new Error ("Invalid input: lRef and rRef must have the same number of elements");
-  }
+  if (isXtable) {
+    if (input.lRef && input.lxRef && input.lRef.length !== input.lxRef.length) {
+      throw new Error ("Invalid input: lRef and lxRef must have the same number of elements");
+    }
 
-  if (input.lxRef && input.rxRef && input.lxRef.length !== input.rxRef.length) {
-    throw new Error ("Invalid input: lxRef and rxRef must have the same number of elements");
+    if (input.rRef && input.rxRef && input.rRef.length !== input.rxRef.length) {
+      throw new Error ("Invalid input: rRef and rxRef must have the same number of elements");
+    }
+  } else {
+    if (input.lRef && input.rRef && input.lRef.length !== input.rRef.length) {
+      throw new Error ("Invalid input: lRef and rRef must have the same number of elements");
+    }
   }
 };
 
