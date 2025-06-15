@@ -82,7 +82,7 @@ const makeTable = (options: RequiredRefQLOptions) => {
               const fieldProps = Object.entries (comp.props as any)
                 .map (([, prop]) => prop as Prop)
                 .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
-              return RefNode (createRQLTag (comp, [...fieldProps], options), refProp as any, table as any);
+              return RefNode (createRQLTag (comp, [...fieldProps], options), refProp as any, table as any, options);
             }));
 
           if (!refNodes.length) {
@@ -96,7 +96,7 @@ const makeTable = (options: RequiredRefQLOptions) => {
           const refNodes = Object.keys (properties)
             .map (key => properties[key as keyof typeof properties])
             .filter (prop => RefProp.isRefProp (prop) && comp.table.equals (prop.child))
-            .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, options), refProp as any, table as any)));
+            .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, options), refProp as any, table as any, options)));
 
           if (!refNodes.length) {
             throw new Error (

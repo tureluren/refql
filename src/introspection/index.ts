@@ -1,22 +1,10 @@
 import fs from "fs-extra";
 import path from "path";
-
 import pluralize from "pluralize";
-import { getColumns, getRelationships, getTables } from "./queries";
 import { sqlX } from "../SQLTag/sql";
-
-function toCamelCase(str: string): string {
-  return str
-    .toLowerCase ()
-    .replace (/(?:[_\-\s]+([a-z]))|^[A-Z]/g, (_, letter, offset) =>
-      offset === 0 ? str.charAt (0).toLowerCase () : (letter ? letter.toUpperCase () : "")
-    );
-}
-
-function toPascalCase(str: string): string {
-  const camel = toCamelCase (str);
-  return camel.charAt (0).toUpperCase () + camel.slice (1);
-}
+import { toCamelCase, toPascalCase, toSnakeCase } from "../common/casing";
+import { RequiredRefQLOptions } from "../common/types";
+import { getColumns, getRelationships, getTables } from "./queries";
 
 /**
  * Generates a relation key name based on foreign key columns and related table name.
@@ -32,8 +20,9 @@ function getRelationKey(tableName: string, lRef: string[], alias?: string): stri
     return alias;
   }
 
-  const table = tableName.toLowerCase ();
-  const normalizedLRefs = lRef.map (col => col.toLowerCase ());
+  // to snake case and lower case to make it db casing independent
+  const table = toSnakeCase (tableName).toLowerCase ();
+  const normalizedLRefs = lRef.map (col => toSnakeCase (col).toLowerCase ());
 
   // Find columns that contain the table name
   const matchCols = normalizedLRefs.filter (col => col.includes (table));
@@ -55,20 +44,6 @@ function getRelationKey(tableName: string, lRef: string[], alias?: string): stri
 function refsAsString(refs: string[]): string {
   return `[${'"' + refs.join ('", "') + '"'}]`;
 }
-
-// function toSnakeCase(str: string): string {
-//   return str
-//     .replace (/([a-z])([A-Z])/g, "$1_$2")
-//     .replace (/[-\s]+/g, "_")
-//     .toLowerCase ();
-// }
-
-// function toKebabCase(str: string): string {
-//   return str
-//     .replace (/([a-z])([A-Z])/g, "$1-$2")
-//     .replace (/[_\s]+/g, "-")
-//     .toLowerCase ();
-// }
 
 const inRefqlEnv = process.env.NODE_ENV === "refql";
 const prepath = inRefqlEnv ? "../.." : "refql/build";
@@ -111,11 +86,9 @@ const footerJs = [
   "exports.getTables = getTables;"
 ];
 
-
-async function introspect(sql: typeof sqlX) {
+async function introspect(sql: typeof sqlX, options: RequiredRefQLOptions) {
   const outputJs = `${outputDir}/index.js`;
   const outputTs = `${outputDir}/index.d.ts`;
-
   const originalJs = fs.readFileSync (outputJs, "utf-8");
   const originalTs = fs.readFileSync (outputTs, "utf-8");
 
@@ -146,8 +119,8 @@ async function introspect(sql: typeof sqlX) {
 
             const intermediateForeignKeys = relationships
               .filter (rel => {
-                const table1 = `${table}_${rel.foreign_table_name}`;
-                const table2 = `${rel.foreign_table_name}_${table}`;
+                const table1 = options.toCase (`${table}_${rel.foreign_table_name}`);
+                const table2 = options.toCase (`${rel.foreign_table_name}_${table}`);
                 return rel.table_name === table1 || rel.table_name === table2;
               })
               .map (rRel => {
@@ -184,9 +157,6 @@ async function introspect(sql: typeof sqlX) {
 
               } else {
                 const propertyName = pluralize (toCamelCase (fk.table_name));
-                if (propertyName === "members" && tableName === "CaregiverLocation") {
-                  console.log (fk);
-                }
                 props[propertyName] = [
                   `(0, HasMany_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })`,
                   `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasMany", false>;`

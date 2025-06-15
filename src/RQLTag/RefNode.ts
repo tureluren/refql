@@ -1,5 +1,5 @@
 import { refqlType } from "../common/consts";
-import { RefInfo, RefInput, RefQLRows } from "../common/types";
+import { RefInfo, RefInput, RefQLRows, RequiredRefQLOptions } from "../common/types";
 import RefProp from "../Prop/RefProp";
 import { RQLTag } from "../RQLTag";
 import Raw from "../SQLTag/Raw";
@@ -24,7 +24,7 @@ const prototype = Object.assign ({}, rqlNodePrototype, {
 });
 
 
-function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
+function RefNode(tag: RQLTag, refProp: RefProp, parent: Table, options: RequiredRefQLOptions) {
   let refNode: RefNode = Object.create (prototype);
 
   const { as, rel, child, refInput } = refProp;
@@ -36,7 +36,7 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table) {
   function getRef(refs: string[] | undefined, table: Table, type: string, fallback: string) {
     return refs && refs.length > 0
       ? refs.map ((ref, idx) => refOf (table, type + (idx + 1), ref))
-      : [refOf (table, type + "1", fallback)];
+      : [refOf (table, type + "1", options.toCase (fallback))];
   }
 
   switch (rel) {

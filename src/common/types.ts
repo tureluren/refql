@@ -216,11 +216,14 @@ export interface InterpretedCUD<Params = any, Output = any> {
   returning?: RQLTag<any, Output>;
 }
 
+export type Casing = "PascalCase" | "camelCase" | "snake_case" | "kebap-case";
+
 export interface RefQLOptions {
   querier: Querier;
   runner?: Runner;
   parameterSign?: string;
   indexedParameters?: boolean;
+  casing?: Casing;
 }
 
-export type RequiredRefQLOptions = Required<RefQLOptions>;
+export type RequiredRefQLOptions = Omit<Required<RefQLOptions>, "casing"> & { toCase: (str: string) => string};

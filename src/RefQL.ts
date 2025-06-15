@@ -24,7 +24,7 @@ const RefQL = (options: RefQLOptions) => {
     sql,
     tables: getTables (Table),
     options: refQLOptions,
-    introspect: () => introspect (sqlRunnerless)
+    introspect: () => introspect (sqlRunnerless, refQLOptions)
   };
 };
 

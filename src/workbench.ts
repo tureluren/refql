@@ -10,6 +10,7 @@ import RefQL, {
   Values,
   Values2D
 } from ".";
+import { toKebabCase, toPascalCase, toSnakeCase } from "./common/casing";
 
 const pool = new Pool ({
   user: "test",
@@ -224,7 +225,6 @@ const teamById = Team ([
 // monoid weghalen uit spec
 // regels many_to_many opstellen
 // configuratie
-// lref, rref, ... array
 // in assist generated ???         (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "player_id" }),
 // casing via options (db and js) ook bij fallback naam RefNode (xtable)
 // tx
@@ -313,3 +313,7 @@ const deleteTeam = Team.delete ([
 // `;
 
 // justSql ().then (r => console.log (r));
+
+console.log (
+  toSnakeCase ("TableId")
+);
