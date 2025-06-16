@@ -192,14 +192,7 @@ const teamById = Team ([
 // teamById ({ id: 1 }).then (console.log);
 
 
-// REMOVE all -> *
-// afstappen van querier
 // count enzo toevoegen om subselects zonder sqlTag te doen
-// insert, update
-// register subselect to Player ?
-// employee model
-// ONLY pg introspect
-// different cases introspection (en ook voorbeeld readme over linken refinfo)
 
 // OrderBy rqlNode OrderBy(p => p.ordery) (kan ook gewoon een SQL worden he) (maar dan maakt volgorde wel uit)
 // const OrderBy = sql`
@@ -207,6 +200,7 @@ const teamById = Team ([
 // -> ` write in docs en tests miss ?
 
 
+// semigroup
 // paginated = allPlayers.concat([Limit, Offset])
 
 
@@ -218,16 +212,14 @@ const teamById = Team ([
 //     `;
 
 // TODO:
-// belongsto many kan volgens mij gwn gededecteerd worden
-// aggregation, grouping
 // refprops zitten ook op props, dit ook laten toevoegen aan query ?
 // const { id, name, playerCount, active, homeGames } = Team.props;
 // monoid weghalen uit spec
-// regels many_to_many opstellen
-// configuratie
-// in assist generated ???         (0, BelongsTo_1.default) ("playerId", "public.game_player", { lRef: "player_id", rRef: "player_id" }),
-// casing via options (db and js) ook bij fallback naam RefNode (xtable)
+
+// Future plans
+// aggregation, grouping
 // tx
+// or
 
 // DECISIONS
 // inc ipv omit, omdat bij update statements, byId, meestal wilt ge dan geen set id ={}, enkel op filteren en bij gewone selects kunt ge met * werken ipv incl()
