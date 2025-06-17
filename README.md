@@ -36,56 +36,78 @@ refql.introspect().then(() => {
 })
 ```
 
-## Run queries
+## Read referenced data easily
 ```ts
 import refql from "./refql";
 
-const { Player, Team } = refql.tables.public;
+const { Player, Team, League, Rating, Goal, Assist } = refql.tables.public;
 
-const { id } = Player.props;
+const { id } = Team.props;
 
 // select components
-const playerById = Player ([
-  Team,
+const teamById = Team ([
+  Player ([
+    Rating,
+    Goal,
+    Assist
+  ]),
+  League,
+  Game,
   id.eq<{ id: number }> (p => p.id)
 ]);
 
-
-playerById ({ id: 1 }).then(console.log);
+teamById ({ id: 1 }).then(console.log);
 
 // [
 //   {
-//     id: 1,
-//     firstName: "Christine",
-//     lastName: "Hubbard",
-//     team: { id: 1, name: "FC Agecissak" }
+//     name: "FC Horgawid",
+//     players: [
+//       {
+//         firstName: "Clifford",
+//         lastName: "Morton",
+//         rating: { acceleration: 71, finishing: 41, positioning: 83 },
+//         goals: [{  ownGoal: false, minute: 74 }, ...],
+//         assists: [{ goalId: 13, playerId: 9 }, ...]
+//       },
+//       ...
+//     ],
+//     league: { name: "Falkland Islands league" },
+//     games: [
+//       {
+//         homeTeamId: 1,
+//         awayTeamId: 8,
+//         result: "0 - 2"
+//       },
+//       ...
+//     ]
 //   }
 // ];
 ```
 
 ## Table of contents
-* [Tables and References](#tables-and-references)
+* [Options](#options)
 * [Querier](#querier)
+* [Tables and References](#tables-and-references)
 * [Fantasy Land Interoperability](#fantasy-land-interoperability)
+* [Insert, update and delete](#insert-update-and-delete)
 * [Compare](#compare)
 * [OrderBy, Limit and Offset](#orderby-limit-and-offset)
-* [When](#when)
+* [pred](#pred)
 * [Functions and subselects](#functions-and-subselects)
 * [SQLTag](#sqltag)
 
 ## Tables and References
-Right now, introspection only works for Postgres databases. The example below shows how u can define tables and describe their references to other tables. From then on, these references can be used in a `RQLTag`. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
+For now, introspection only works for PostgreSQL databases. The example below shows how u can define tables and describe their references to other tables. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
 
 ```ts
-import refql from "./refql";;
 import { 
   BelongsTo, BelongsToMany, HasMany, HasOne, 
-  Limit, NumberProp, Offset, StringProp,
+  NumberProp, Offset, StringProp,
 } from "refql";
+import refql from "./refql";;
 
 const { Table } = refql;
 
-// construct RQLTag
 const Player = Table ("player", [
   NumberProp ("id"),
   StringProp ("firstName", "first_name"),
@@ -95,62 +117,18 @@ const Player = Table ("player", [
   HasMany ("goals", "goal"),
   BelongsToMany ("games", "game")
 ]);
-
-const Team = Table ("public.team", [
-  StringProp ("name")
-]);
-
-const Rating = Table ("rating", [
-  NumberProp ("finishing"),
-  NumberProp ("dribbling"),
-  NumberProp ("tackling")
-]);
-
-const Game = Table ("game", [
-  StringProp ("result")
-]);
-
-const Goal = Table ("goal", [
-  NumberProp ("minute")
-]);
-
-const fullPlayer = Player ([
-  "id",
-  "firstName",
-  "lastName",
-  Team (["name"]),
-  Goal (["minute"]),
-  Rating,
-  Game (["result"]),
-  Limit (1),
-  Offset (8)
-]);
-
-fullPlayer ({}).then (console.log);
-
-// [
-//   {
-//     id: 9,
-//     firstName: "Leah",
-//     lastName: "Kennedy",
-//     team: { name: "FC Agecissak" },
-//     goals: [{ minute: 36 }, { minute: 20 }, { minute: 87 }, ...],
-//     rating: { finishing: 82, dribbling: 48, tackling: 47 },
-//     games: [{ result: "5 - 4" }, { result: "4 - 0" }, { result: "4 - 5" }, ...]
-//   }
-// ];
 ```
 
 ### Ref info
-RefQL tries to link 2 tables based on logical column names, using snake case. You can always point RefQL in the right direction if this doesn't work for you.
+RefQL tries to link 2 tables based on logical column names, using the "casing" option. You can always point RefQL in the right direction if this doesn't work for you by specifying refs yourself.
 
 ```ts
 const playerBelongsToManyGames = BelongsToMany ("games", "game", {
-  lRef: "id",
-  rRef: "id",
-  lxRef: "playerId",
-  rxRef: "gameId",
-  xTable: "gamePlayer"
+  lRef: ["id"],
+  rRef: ["id"],
+  lxRef: ["player_id"],
+  rxRef: ["game_id"],
+  xTable: ["game_player"]
 });
 ```
 
@@ -254,21 +232,26 @@ const part1 = Player ([
 
 const part2 = Player ([
   "lastName",
-  Team (["name"]),
-  id.eq<{ id: number }> (p => p.id)
+  Team (["name"])
 ]);
 
-const playerById = part1.concat (part2);
+const readPage =
+  part1
+    .concat (part2)
+    .concat (Player ([
+      Limit<{ limit: number }> (p => p.limit),
+      Offset<{ offset: number }> (p => p.offset)
+    ]));
 
-playerById ({ id: 1 }).then (console.log);
-
+readPage ({ limit: 5, offset: 0 }).then (console.log);
 // [
 //   {
 //     id: 1,
 //     firstName: "Christine",
 //     lastName: "Hubbard",
 //     team: { id: 1, name: "FC Agecissak" }
-//   }
+//   },
+//   ...
 // ];
 ```
 

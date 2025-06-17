@@ -10,7 +10,6 @@ import RefQL, {
   Values,
   Values2D
 } from ".";
-import { toKebabCase, toPascalCase, toSnakeCase } from "./common/casing";
 
 const pool = new Pool ({
   user: "test",
@@ -30,8 +29,8 @@ class Task<Output> {
 
 // natural transformation
 const querier = async (query: string, values: any[]) => {
-  console.log ("'" + query + "'");
-  console.log (values);
+  // console.log ("'" + query + "'");
+  // console.log (values);
   const res = await pool.query (query, values);
 
   // return rows;
@@ -50,7 +49,7 @@ const { tables, sql, Table } = RefQL ({
 });
 
 
-const { Player, Game, Team, GamePlayer } = tables.public;
+const { League, Player, Game, Team, GamePlayer, Goal, Rating, Assist } = tables.public;
 
 
 const { id: playerId, birthday } = Player.props;
@@ -65,23 +64,7 @@ const isVeteran = BooleanProp ("isVeteran", sql<{ year: number }>`
   limit 1
 `);
 
-const playerById = Player ([
-  playerId.eq (1)
-  // "isVeteran"
-  // isVeteran.eq (true)
-  // "birthday",
-  // birthday,
-  // playerId.omit (),
-  // playerId.omit ()
-  // isVeteran
-  // Team (["active"]),
-  // Goal (["id"])
-  // Team
-  // Goal,
-  // Game (["awayTeamId"])
-]);
 
-// playerById ({ year: 2002 }).then (p => console.log (p));
 
 const gameById = Game ([
   Player,
@@ -306,6 +289,23 @@ const deleteTeam = Team.delete ([
 
 // justSql ().then (r => console.log (r));
 
-console.log (
-  toSnakeCase ("TableId")
-);
+const part1 = Player ([
+  id,
+  "firstName",
+  Team (["id"])
+]);
+
+const part2 = Player ([
+  "lastName",
+  Team (["name"])
+]);
+
+const readPage =
+  part1
+    .concat (part2)
+    .concat (Player ([
+      Limit<{ limit: number }> (p => p.limit),
+      Offset<{ offset: number }> (p => p.offset)
+    ]));
+
+readPage ({ limit: 5, offset: 0 }).then (console.log);
