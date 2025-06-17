@@ -2,11 +2,10 @@ import { Casing } from "./types";
 
 export function toCamelCase(str: string): string {
   return str
-    .toLowerCase ()
-    .replace (/(?:[_\-\s]+([a-z]))|^[A-Z]/g, (_, letter, offset) =>
-      offset === 0 ? str.charAt (0).toLowerCase () : (letter ? letter.toUpperCase () : "")
-    );
+    .replace (/[-_\s]+(.)?/g, (_, chr) => chr ? chr.toUpperCase () : "")
+    .replace (/^./, match => match.toLowerCase ());
 }
+
 
 export function toPascalCase(str: string): string {
   const camel = toCamelCase (str);
