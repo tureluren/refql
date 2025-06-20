@@ -74,6 +74,9 @@ const makeTable = (options: RequiredRefQLOptions) => {
           if (comp.operations.length === 0 && !comp.isOmitted) {
             memberCount += 1;
           }
+        } else if (SQLProp.isSQLProp (comp)) {
+          nodes.push (comp);
+          memberCount += 1;
         } else if (isTable (comp)) {
           const refNodes = Object.keys (properties)
             .map (key => properties[key as keyof typeof properties])

@@ -1,7 +1,7 @@
 import { Pool } from "pg";
 import RefQL, {
-  BelongsTo, BooleanProp,
-  DateProp, HasMany, Limit, NumberProp,
+  BelongsTo, BelongsToMany, BooleanProp,
+  DateProp, HasMany, HasOne, Limit, NumberProp,
   Offset,
   Prop,
   Raw,
@@ -19,13 +19,6 @@ const pool = new Pool ({
   port: 3308
 });
 
-class Task<Output> {
-  fork: (rej: (e: any) => void, res: (x: Output) => void) => void;
-
-  constructor(fork: (rej: (e: any) => void, res: (x: Output) => void) => void) {
-    this.fork = fork;
-  }
-}
 
 // natural transformation
 const querier = async (query: string, values: any[]) => {
@@ -37,8 +30,6 @@ const querier = async (query: string, values: any[]) => {
   return res.rows;
 };
 
-const promiseToTask = <Output>(p: Promise<Output>) =>
-  new Task<Output> ((rej, res) => p.then (res).catch (rej));
 
 const { tables, sql, Table } = RefQL ({
   querier
@@ -66,15 +57,6 @@ const isVeteran = BooleanProp ("isVeteran", sql<{ year: number }>`
 
 
 
-const gameById = Game ([
-  Player,
-  Limit (2)
-]);
-
-gameById ({}).then (r =>
-  // console.log (JSON.stringify (r, null, 2))
-  console.log ()
-);
 // const Team = Table ("public.team", [
 //   NumberProp ("id").hasDefault (),
 //   StringProp ("name"),
@@ -200,7 +182,7 @@ const teamById = Team ([
 // monoid weghalen uit spec
 
 // Future plans
-// aggregation, grouping
+// aggregation, grouping, distinct
 // tx
 // or
 
@@ -267,16 +249,6 @@ const deleteTeam = Team.delete ([
 //   .then (r => console.log (r))
 //   .catch (console.log);
 
-// maak distinct mogelijk
-// const findCity = sql`
-//   select distinct city, zip
-//   from organisation.location
-//   where city ilike ${p => `%${p.q}%`}
-//   or zip ilike ${p => `%${p.q}%`}
-//   order by city, zip
-//   limit 50
-// `;
-
 
 // const justSql = sql`
 //   ${sql<{id: number}>`
@@ -288,24 +260,3 @@ const deleteTeam = Team.delete ([
 // `;
 
 // justSql ().then (r => console.log (r));
-
-const part1 = Player ([
-  id,
-  "firstName",
-  Team (["id"])
-]);
-
-const part2 = Player ([
-  "lastName",
-  Team (["name"])
-]);
-
-const readPage =
-  part1
-    .concat (part2)
-    .concat (Player ([
-      Limit<{ limit: number }> (p => p.limit),
-      Offset<{ offset: number }> (p => p.offset)
-    ]));
-
-readPage ({ limit: 5, offset: 0 }).then (console.log);

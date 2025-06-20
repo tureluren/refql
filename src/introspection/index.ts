@@ -5,6 +5,7 @@ import { sqlX } from "../SQLTag/sql";
 import { toCamelCase, toPascalCase, toSnakeCase } from "../common/casing";
 import { RequiredRefQLOptions } from "../common/types";
 import { getColumns, getRelationships, getTables } from "./queries";
+import sortObject from "../common/sortObj";
 
 /**
  * Generates a relation key name based on foreign key columns and related table name.
@@ -192,7 +193,7 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
             ];
           }
 
-          const interfaceProperties = Object.values (props);
+          const interfaceProperties = Object.values (sortObject (props)) as string[][];
 
           return [
             `      ${tableName}: Table ("${table_schema}.${table}", [\n        ${interfaceProperties.map (([js]) => js).join (",\n        ")}\n      ])`,

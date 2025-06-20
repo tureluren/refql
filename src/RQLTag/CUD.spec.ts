@@ -68,9 +68,9 @@ describe ("CUD", () => {
     const [query] = tag.compile ({ data: insertData });
 
     expect (query).toBe (format (`
-      insert into public.game (id, date, home_team_id, away_team_id, league_id, result) 
-      values (DEFAULT, $1, $2, $3, $4, $5) 
-      returning game.id "id", game.date "date", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.result "result"
+      insert into public.game (away_team_id, date, home_team_id, id, league_id, result) 
+      values ($1, $2, $3, DEFAULT, $4, $5) 
+      returning game.away_team_id "awayTeamId", game.date "date", game.home_team_id "homeTeamId", game.id "id", game.league_id "leagueId", game.result "result"
     `));
 
     const games = await tag ({ data: insertData });
@@ -79,7 +79,7 @@ describe ("CUD", () => {
     expect (games.length).toBe (1);
     expect (game1.homeTeamId).toBe (1);
     expect (game1.awayTeamId).toBe (2);
-    expect (Object.keys (game1)).toEqual (["id", "date", "homeTeamId", "awayTeamId", "leagueId", "result"]);
+    expect (Object.keys (game1)).toEqual (["awayTeamId", "date", "homeTeamId", "id", "leagueId", "result"]);
 
     const tag2 = Game.update ([
       Game.props.id.eq<{ id: number }> (p => p.id),
@@ -115,7 +115,7 @@ describe ("CUD", () => {
       delete from public.game 
       where 1 = 1 
       and game.id = $1 
-      returning game.id "id", game.date "date", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.result "result"
+      returning game.away_team_id "awayTeamId", game.date "date", game.home_team_id "homeTeamId", game.id "id", game.league_id "leagueId", game.result "result"
     `));
 
     const games3 = await tag3 ({ id: game1.id });
@@ -123,7 +123,7 @@ describe ("CUD", () => {
 
     expect (games3.length).toBe (1);
     expect (game3.id).toBe (game1.id);
-    expect (Object.keys (game3)).toEqual (["id", "date", "homeTeamId", "awayTeamId", "leagueId", "result"]);
+    expect (Object.keys (game3)).toEqual (["awayTeamId", "date", "homeTeamId", "id", "leagueId", "result"]);
   });
 
   test ("Insert, update and delete with SQLProps and SQLTags", async () => {
@@ -140,9 +140,9 @@ describe ("CUD", () => {
     const [query] = tag.compile ({ data: insertData });
 
     expect (query).toBe (format (`
-      insert into public.game (id, date, home_team_id, away_team_id, league_id, result) 
-      values (DEFAULT, $1, $2, $3, $4, $5) 
-      returning game.id "id", game.date "date", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.result "result"
+      insert into public.game (away_team_id, date, home_team_id, id, league_id, result) 
+      values ($1, $2, $3, DEFAULT, $4, $5) 
+      returning game.away_team_id "awayTeamId", game.date "date", game.home_team_id "homeTeamId", game.id "id", game.league_id "leagueId", game.result "result"
     `));
 
     const games = await tag ({ data: insertData });
@@ -197,7 +197,7 @@ describe ("CUD", () => {
       where 1 = 1 
       and game.id = $1 
       and (game.result = '1-1') = $2
-      returning game.id "id", game.date "date", game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.league_id "leagueId", game.result "result"
+      returning game.away_team_id "awayTeamId", game.date "date", game.home_team_id "homeTeamId", game.id "id", game.league_id "leagueId", game.result "result"
     `));
 
     const games3 = await tag3 ({ id: game1.id });
@@ -205,7 +205,7 @@ describe ("CUD", () => {
 
     expect (games3.length).toBe (1);
     expect (game3.id).toBe (game1.id);
-    expect (Object.keys (game3)).toEqual (["id", "date", "homeTeamId", "awayTeamId", "leagueId", "result" ]);
+    expect (Object.keys (game3)).toEqual (["awayTeamId", "date", "homeTeamId", "id", "leagueId", "result" ]);
   });
 
   test ("errors", () => {

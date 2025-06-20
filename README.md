@@ -169,7 +169,7 @@ import RefQL from "refql";
 
 declare module "refql" {
   interface RQLTag<TableId extends string = any, Params = any, Output = any> {
-    (params?: Params, querier?: Querier): Task<Output>;
+    (params?: Params): Task<Output>;
   }
 }
 
@@ -192,16 +192,15 @@ const { tables }  = RefQL ({
 
 const { Player } = tables;
 
-const firstTeam = Player ([
-  id,
+const firstTen = Player ([
+  id.asc(),
   "firstName",
   "lastName",
   Limit (10),
-  id.asc ()
 ]);
 
 // `fork` instead of `then`
-firstTeam ().fork (console.error, console.log);
+firstTen ().fork (console.error, console.log);
 
 // [
 //   { id: 1, firstName: "Christine", lastName: "Hubbard" },
@@ -213,8 +212,7 @@ firstTeam ().fork (console.error, console.log);
 //   { id: 7, firstName: "Fannie", lastName: "Guerrero" },
 //   { id: 8, firstName: "Lottie", lastName: "Warren" },
 //   { id: 9, firstName: "Leah", lastName: "Kennedy" },
-//   { id: 10, firstName: "Lottie", lastName: "Giraud" },
-//   { id: 11, firstName: "Marc", lastName: "Passeri" }
+//   { id: 10, firstName: "Lottie", lastName: "Giraud" }
 // ];
 ```
 

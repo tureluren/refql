@@ -10,10 +10,16 @@ import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import makeTestTables from "../test/tables";
 import userConfig from "../test/userConfig";
 import Limit from "./Limit";
 import Offset from "./Offset";
+import BooleanProp from "../Prop/BooleanProp";
+import NumberProp from "../Prop/NumberProp";
+import StringProp from "../Prop/StringProp";
+import BelongsTo from "../Prop/BelongsTo";
+import HasOne from "../Prop/HasOne";
+import HasMany from "../Prop/HasMany";
+import BelongsToMany from "../Prop/BelongsToMany";
 
 describe ("RQLTag type", () => {
   let pool: any;
@@ -32,11 +38,30 @@ describe ("RQLTag type", () => {
 
   const { Table, sql, options, tables } = RefQL ({ querier });
 
-  const { Game, Goal, League, Rating, Team, GamePlayer } = tables.public;
+  const { Game, Goal, League, Rating, Team, GamePlayer, Player } = tables.public;
 
-  const {
-    Player, Player2, XGame
-  } = makeTestTables (Table, sql);
+  const isVeteran = BooleanProp ("isVeteran", sql<{ year: number }>`
+    select case when extract(year from birthday) < ${p => p.year} then true else false end
+    from player
+    where id = player.id
+    limit 1
+  `);
+
+  const fullName = StringProp ("fullName", sql<{ delimiter: string }>`
+    concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
+  `);
+
+  const goalCount = NumberProp ("goalCount", sql`
+    select cast(count(*) as int) from goal
+    where goal.player_id = player.id
+  `);
+
+  const firstGoalId = NumberProp ("firstGoalId", sql`
+    select id from goal
+    where goal.player_id = player.id
+    limit 1
+  `).nullable ();
+
 
   afterAll (() => {
     pool.end ();
@@ -53,9 +78,9 @@ describe ("RQLTag type", () => {
 
   test ("calls and subselect", async () => {
     const tag = Player ([
-      "fullName",
-      "goalCount",
-      "firstGoalId",
+      fullName,
+      goalCount,
+      firstGoalId,
       sql<{ id: number }>`
         and id = ${p => p.id}
       `
@@ -213,7 +238,7 @@ describe ("RQLTag type", () => {
         select distinct player.id gameslref1 from public.player where player.id in ($1, $2)
       ) refqll1,
       lateral (
-        select game.result "result" from public.game join game_player on game_player.game_id = game.id where game_player.player_id = refqll1.gameslref1
+        select game.result "result" from public.game join public.game_player on game_player.game_id = game.id where game_player.player_id = refqll1.gameslref1
       ) refqll2
     `));
 
@@ -274,6 +299,47 @@ describe ("RQLTag type", () => {
   });
 
   test ("run - provided refs", async () => {
+    const Player2 = Table ("public.player", [
+      NumberProp ("id"),
+      StringProp ("firstName", "first_name"),
+      StringProp ("lastName", "last_name"),
+      StringProp ("birthday"),
+      NumberProp ("teamId", "team_id"),
+      BelongsTo ("team", "public.team", {
+        lRef: ["TEAM_ID"],
+        rRef: ["ID"]
+      }),
+      NumberProp ("positionId", "position_id"),
+      HasOne ("rating", "public.rating", {
+        lRef: ["ID"],
+        rRef: ["PLAYER_ID"]
+      }),
+      HasMany ("goals", "public.goal", {
+        lRef: ["ID"],
+        rRef: ["PLAYER_ID"]
+      }),
+      BelongsToMany ("games", "public.game", {
+        xTable: "GAME_PLAYER"
+      }),
+      BelongsToMany ("xgames", "public.xgame", {
+        lRef: ["ID"],
+        lxRef: ["PLAYER_ID"],
+        rxRef: ["XGAME_ID"],
+        rRef: ["ID"]
+      })
+    ]);
+
+    const XGame = Table ("public.xgame", [
+      NumberProp ("id"),
+      StringProp ("result"),
+      NumberProp ("homeTeamId", "home_team_id"),
+      NumberProp ("awayTeamId", "away_team_id"),
+      BelongsTo ("homeTeam", "public.team", { lRef: ["home_team_id"] }),
+      BelongsTo ("awayTeam", "public.team", { lRef: ["away_team_id"] }),
+      NumberProp ("leagueId", "league_id"),
+      BelongsTo ("league", "public.league")
+    ]);
+
     const tag = Player2 ([
       "id",
       Team (["name"]),
@@ -388,7 +454,7 @@ describe ("RQLTag type", () => {
     const players = await tag (undefined);
     const player = players[0];
 
-    expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "cars", "birthday", "teamId", "positionId"]);
+    expect (Object.keys (player)).toEqual (["birthday", "cars", "firstName", "id", "lastName", "positionId", "teamId"]);
   });
 
 
@@ -461,7 +527,6 @@ describe ("RQLTag type", () => {
   });
 
   test ("By fullName and isVeteran - using Eq", async () => {
-    const { fullName, isVeteran } = Player.props;
 
     const tag = Player ([
       "id",
@@ -484,7 +549,7 @@ describe ("RQLTag type", () => {
 
 
   test ("Where in and order by", async () => {
-    const { id, fullName, teamId, goalCount } = Player.props;
+    const { id, teamId } = Player.props;
 
     const tag = Player ([
       fullName.desc ().omit (),
@@ -543,7 +608,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("Ord numbers", async () => {
-    const { id, goalCount, teamId } = Player.props;
+    const { id, teamId } = Player.props;
 
     const tag = Player ([
       id.lte (100),
@@ -577,7 +642,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("Ord strings", async () => {
-    const { id, firstName, lastName, fullName, birthday } = Player.props;
+    const { id, firstName, lastName, birthday } = Player.props;
 
     const today = new Date ();
 
@@ -616,7 +681,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("Like", async () => {
-    const { fullName, lastName } = Player.props;
+    const { lastName } = Player.props;
     const { name } = Team.props;
 
     const tag = Player ([
@@ -648,7 +713,7 @@ describe ("RQLTag type", () => {
       select * from (
         select distinct player.team_id teamlref1 from public.player where player.team_id in ($1)
       ) refqll1,
-      lateral (select team.name "name", team.id "id", team.active "active", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and team.name not like $2
+      lateral (select team.name "name", team.active "active", team.id "id", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and team.name not like $2
       ) refqll2
     `));
 
@@ -656,7 +721,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("ILike", async () => {
-    const { fullName, lastName } = Player.props;
+    const { lastName } = Player.props;
     const { name } = Team.props;
 
     const tag = Player ([
@@ -688,7 +753,7 @@ describe ("RQLTag type", () => {
       select * from (
         select distinct player.team_id teamlref1 from public.player where player.team_id in ($1)
       ) refqll1,
-      lateral (select team.name "name", team.id "id", team.active "active", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and team.name not ilike $2
+      lateral (select team.name "name", team.active "active", team.id "id", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and team.name not ilike $2
       ) refqll2
     `));
 
@@ -696,7 +761,7 @@ describe ("RQLTag type", () => {
   });
 
   test ("IsNull", async () => {
-    const { fullName, lastName } = Player.props;
+    const { lastName } = Player.props;
     const { name } = Team.props;
 
     const tag = Player ([
@@ -728,7 +793,7 @@ describe ("RQLTag type", () => {
       select * from (
         select distinct player.team_id teamlref1 from public.player where player.team_id in ($1)
       ) refqll1,
-      lateral (select team.name "name", team.id "id", team.active "active", team.league_id "leagueId"  from public.team where team.id = refqll1.teamlref1 and team.name is not null
+      lateral (select team.name "name", team.active "active", team.id "id", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and team.name is not null
       ) refqll2
     `));
 
@@ -851,7 +916,7 @@ describe ("RQLTag type", () => {
     const [query, values] = tag.compile ({ limit: 5, offset: 10 });
 
     expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName", player.cars "cars", player.birthday "birthday", player.team_id "teamId", player.position_id "positionId"
+      select player.id "id", player.birthday "birthday", player.cars "cars", player.first_name "firstName", player.last_name "lastName", player.position_id "positionId", player.team_id "teamId"
       from public.player where 1 = 1 limit $1 offset $2`
     ));
 
@@ -860,7 +925,7 @@ describe ("RQLTag type", () => {
     const [query2, values2] = tag.compile ({ limit: 5, offset: 10, ids: [7, 8, 9] });
 
     expect (query2).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName", player.cars "cars", player.birthday "birthday", player.team_id "teamId", player.position_id "positionId"
+      select player.id "id", player.birthday "birthday", player.cars "cars", player.first_name "firstName", player.last_name "lastName", player.position_id "positionId", player.team_id "teamId"
       from public.player where 1 = 1
       and player.id in ($1, $2, $3)
       limit $4
@@ -880,7 +945,7 @@ describe ("RQLTag type", () => {
     const [query, values] = tag.compile ({});
 
     expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName", player.cars "cars", player.birthday "birthday", player.team_id "teamId", player.position_id "positionId" 
+      select player.id "id", player.birthday "birthday", player.cars "cars", player.first_name "firstName", player.last_name "lastName", player.position_id "positionId", player.team_id "teamId"
       from public.player where 1 = 1`
     ));
 
@@ -889,7 +954,7 @@ describe ("RQLTag type", () => {
     const [query2, values2] = tag.compile ({ id: 1 });
 
     expect (query2).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName", player.cars "cars", player.birthday "birthday", player.team_id "teamId", player.position_id "positionId" 
+      select player.id "id", player.birthday "birthday", player.cars "cars", player.first_name "firstName", player.last_name "lastName", player.position_id "positionId", player.team_id "teamId"
       from public.player
       where 1 = 1
       and player.id = $1
@@ -907,8 +972,8 @@ describe ("RQLTag type", () => {
 
     const [query, values] = tag.compile ({});
 
-    expect (query).toBe (format (
-      `select player.last_name "lastName", player.id "id", player.first_name "firstName", player.cars "cars", player.birthday "birthday", player.team_id "teamId", player.position_id "positionId" 
+    expect (query).toBe (format (`
+      select player.last_name "lastName", player.birthday "birthday", player.cars "cars", player.first_name "firstName", player.id "id", player.position_id "positionId", player.team_id "teamId"
       from public.player where 1 = 1`
     ));
 
@@ -917,7 +982,7 @@ describe ("RQLTag type", () => {
     const [query2, values2] = tag.compile ({ name: "Doe" });
 
     expect (query2).toBe (format (`
-      select player.last_name "lastName", player.id "id", player.first_name "firstName", player.cars "cars", player.birthday "birthday", player.team_id "teamId", player.position_id "positionId" 
+      select player.last_name "lastName", player.birthday "birthday", player.cars "cars", player.first_name "firstName", player.id "id", player.position_id "positionId", player.team_id "teamId"
       from public.player where 1 = 1
       and player.last_name like $1
     `));
@@ -935,7 +1000,7 @@ describe ("RQLTag type", () => {
     const [query, values] = tag.compile ({ isNull: false });
 
     expect (query).toBe (format (
-      `select player.last_name "lastName", player.id "id", player.first_name "firstName", player.cars "cars", player.birthday "birthday", player.team_id "teamId", player.position_id "positionId" 
+      `select player.last_name "lastName", player.birthday "birthday", player.cars "cars", player.first_name "firstName", player.id "id", player.position_id "positionId", player.team_id "teamId"
       from public.player where 1 = 1`
     ));
 
@@ -944,7 +1009,7 @@ describe ("RQLTag type", () => {
     const [query2, values2] = tag.compile ({ isNull: true });
 
     expect (query2).toBe (format (`
-      select player.last_name "lastName", player.id "id", player.first_name "firstName", player.cars "cars", player.birthday "birthday", player.team_id "teamId", player.position_id "positionId" 
+      select player.last_name "lastName", player.birthday "birthday", player.cars "cars", player.first_name "firstName", player.id "id", player.position_id "positionId", player.team_id "teamId"  
       from public.player
       where 1 = 1
       and player.last_name is null
@@ -980,18 +1045,19 @@ describe ("RQLTag type", () => {
     const { homeTeamId, awayTeamId } = Game.props;
     const tag = Game ([
       Team,
-      homeTeamId.eq (1),
       awayTeamId.eq (2),
+      homeTeamId.eq (1),
       Limit (1)
     ]);
 
     const [query] = tag.compile ({});
 
     expect (query).toBe (format (`
-      select game.away_team_id awayteamlref1, game.home_team_id hometeamlref1, game.home_team_id "homeTeamId", game.away_team_id "awayTeamId", game.id "id", game.date "date", game.league_id "leagueId", game.result "result" 
+      select game.away_team_id awayteamlref1, game.home_team_id hometeamlref1, game.away_team_id "awayTeamId", game.home_team_id "homeTeamId", game.date "date", game.id "id", game.league_id "leagueId", game.result "result" 
       from public.game where 1 = 1 
-      and game.home_team_id = $1 
-      and game.away_team_id = $2 limit $3
+      and game.away_team_id = $1
+      and game.home_team_id = $2 
+      limit $3
     `));
 
     const games = await tag ({});
@@ -1016,7 +1082,7 @@ describe ("RQLTag type", () => {
     const [query, values, next] = await tag.compile ({});
 
     expect (query).toBe (format (`
-      select goal.player_id gameplayerlref1, goal.game_id gameplayerlref2, goal.id "id", goal.game_id "gameId", goal.player_id "playerId", goal.own_goal "ownGoal", goal.minute "minute"
+      select goal.player_id gameplayerlref1, goal.game_id gameplayerlref2, goal.game_id "gameId", goal.id "id", goal.minute "minute", goal.own_goal "ownGoal", goal.player_id "playerId"
       from public.goal where 1 = 1 limit $1
     `));
 
@@ -1029,7 +1095,7 @@ describe ("RQLTag type", () => {
       select * from (
         select distinct goal.player_id gameplayerlref1, goal.game_id gameplayerlref2 from public.goal where goal.player_id in ($1) and goal.game_id in ($2)
       ) refqll1, lateral (
-        select game_player.player_id "playerId", game_player.game_id "gameId" from public.game_player where game_player.player_id = refqll1.gameplayerlref1 and game_player.game_id = refqll1.gameplayerlref2
+        select game_player.game_id "gameId", game_player.player_id "playerId" from public.game_player where game_player.player_id = refqll1.gameplayerlref1 and game_player.game_id = refqll1.gameplayerlref2
         ) refqll2
     `));
 

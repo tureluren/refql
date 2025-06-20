@@ -2,6 +2,8 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import { createSQLTag, isSQLTag } from ".";
+import RefQL from "../RefQL";
+import { Table } from "../Table";
 import { flConcat } from "../common/consts";
 import { OnlyProps, Querier, StringMap } from "../common/types";
 import format from "../test/format";
@@ -10,14 +12,9 @@ import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
 import userConfig from "../test/userConfig";
 import Raw from "./Raw";
-import makeSQL from "./sql";
 import Values from "./Values";
 import Values2D from "./Values2D";
-import makeTestTables from "../test/tables";
-import RefQL from "../RefQL";
-import dummyQuerier from "../common/dummyQuerier";
-import { Table } from "../Table";
-import defaultRunner from "../common/defaultRunner";
+import makeSQL from "./sql";
 
 describe ("SQLTag type", () => {
   let pool: any;
@@ -35,11 +32,9 @@ describe ("SQLTag type", () => {
   }
 
 
-  const { Table, sql, options } = RefQL ({ querier });
+  const { sql, options, tables } = RefQL ({ querier });
 
-  const {
-    Player, Team
-  } = makeTestTables (Table, sql);
+  const { Team, Player } = tables.public;
 
   const rawLastName = Raw ('last_name "lastName"');
 
