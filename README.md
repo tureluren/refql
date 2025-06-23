@@ -88,11 +88,8 @@ teamById ({ id: 1 }).then(console.log);
 * [Querier](#querier)
 * [Tables and References](#tables-and-references)
 * [Fantasy Land Interoperability](#fantasy-land-interoperability)
+* [Operator Mix](#operator-mix)
 * [Insert, update and delete](#insert-update-and-delete)
-* [Compare](#compare)
-* [OrderBy, Limit and Offset](#orderby-limit-and-offset)
-* [pred](#pred)
-* [Functions and subselects](#functions-and-subselects)
 * [SQLTag](#sqltag)
 
 ## Options
@@ -283,137 +280,50 @@ readPage ({ limit: 5, offset: 0 }).then (console.log);
 // ];
 ```
 
-## Operators mashup
+## Operator mix
 
 ```ts
-import { NumberProp, sql, StringProp, Table } from "refql";
+import { NumberProp, sql } from "refql";
 
-const Player = Table ("player", [
-  NumberProp ("id"),
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  NumberProp ("teamId", "team_id").nullable (),
-  NumberProp ("goalCount", sql`
-    select cast(count(*) as int) from goal
-    where goal.player_id = player.id
-  `)
-]);
+// subselect
+const goalCount = NumberProp ("goalCount", sql`
+  select cast(count(*) as int) from goal
+  where goal.player_id = player.id
+`);
 
-const { goalCount, lastName, teamId } = Player.props;
+const { teamId, firstName, lastName } = Player.props;
 
-const strikers = Player ([
-  "*",
-  goalCount,
-  teamId.eq (1),
+const readStrikers = Player ([
   goalCount.gt (7),
-  lastName.like ("Craw%")
+  teamId
+    .eq (1)
+    // "teamId" column will not be in the result
+    .omit (),
+
+  // the `like` operator takes a second argument which is a predicate
+  // that receives the parameters and returns true or false.
+  // When false, the `like` operation will be skipped in the query.
+  lastName
+    .like<{ q?: string}> (p => p.q, p => p.q != null)
+    // order by lastName asc
+    .asc (),
+
+  firstName.iLike ("ar%")
 ]);
 
-strikers ().then (console.log);
+const readStrikersPage = readStrikers
+  .concat (Player ([Limit (5), Offset (0)]));
+
+readStrikersPage ({ q: "Gra%" }).then (console.log);
 
 // [
 //   {
-//     id: 6,
-//     firstName: "Verna",
-//     lastName: "Crawford",
-//     teamId: 1,
-//     goalCount: 11
+//     id: 14,
+//     firstName: "Arthur",
+//     lastName: "Graham",
+//     goalCount: 14
 //   }
 // ];
-```
-
-## OrderBy, Limit and Offset
-```ts
-import { NumberProp, Limit, Offset, StringProp, Table } from "refql";
-
-const Player = Table ("player", [
-  NumberProp ("id"),
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name")
-]);
-
-const { lastName } = Player.props;
-
-const orderByLastName = Player ([
-  "*",
-  lastName.desc (),
-  Limit<{ limit: number }> (p => p.limit),
-  Offset<{ offset: number }> (p => p.offset)
-]);
-
-orderByLastName ({ limit: 5, offset: 30 }).then (console.log);
-
-// [
-//   { id: 410, firstName: "Marcus", lastName: "Volpe" },
-//   { id: 248, firstName: "Clarence", lastName: "Vogt" },
-//   { id: 615, firstName: "Daniel", lastName: "Vincent" },
-//   { id: 228, firstName: "Lloyd", lastName: "Vidal" },
-//   { id: 166, firstName: "Marian", lastName: "Vermeulen" }
-// ];
-```
-
-## Pred
-`When` takes a predicate and a list of operations. If the predicate returns true, the operations will be applied.
-
-```ts
-import { Limit, When } from "refql";
-
-const { id, lastName } = Player.props;
-
-const searchPlayer = Player ([
-  id,
-  lastName,
-  When (p => p.q != null, [
-    lastName.like<{ q: string }> (p => p.q)
-  ]),
-  Limit (5)
-]);
-
-searchPlayer ({ q: "Ba" }).then (console.log);
-
-// [
-//   { id: 11, lastName: "Bardi" },
-//   { id: 14, lastName: "Barchielli" },
-//   { id: 22, lastName: "Baronti" },
-//   { id: 23, lastName: "Baumann" },
-//   { id: 72, lastName: "Barrett" }
-// ];
-```
-
-## Functions and subselects
-U can pass a [`SQLTag`](#sqltag) as the second argument to a `Prop` builder to select functions and subselects.
-
-```ts
-import { NumberProp, Limit, Offset, StringProp, Table } from "refql";
-
-const Player = Table ("player", [
-  NumberProp ("id"),
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  StringProp ("fullName", sql`
-    concat (player.first_name, ' ', player.last_name)
-  `),
-  NumberProp ("goalCount", sql`
-    select count(*) from goal
-    where goal.player_id = player.id
-  `)
-]);
-
-const strikers = Player ([
-  "id",
-  "fullName",
-  "goalCount",
-  Limit (3),
-  Offset (8)
-]);
-
-strikers ().then (console.log);
-
-// [
-//   { id: 9, fullName: "Leah Kennedy", goalCount: 10 },
-//   { id: 10, fullName: "Lottie Giraud", goalCount: 7 },
-//   { id: 11, fullName: "Marc Passeri", goalCount: 5 }
-// ]
 ```
 
 ## SQLTag

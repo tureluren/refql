@@ -271,12 +271,22 @@ const { teamId, firstName, lastName } = Player.props;
 
 const readStrikers = Player ([
   goalCount.gt (7),
-  teamId.eq (1).omit (),
-  lastName.like ("Gra%").asc (),
+  teamId
+    .eq (1)
+    // "teamId" column will not be in the result
+    .omit (),
+
+  // the `like` operator takes a second argument which is a predicate
+  // that receives the parameters and returns true or false.
+  // When false, the `like` operation will be skipped in the query.
+  lastName
+    .like<{ q?: string}> (p => p.q, p => p.q != null)
+    // order by lastName asc
+    .asc (),
   firstName.iLike ("ar%")
 ]);
 
 const readStrikersPage = readStrikers
   .concat (Player ([Limit (5), Offset (0)]));
 
-readStrikers ().then (console.log);
+readStrikersPage ({ q: "Gra%" }).then (console.log);
