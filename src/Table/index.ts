@@ -58,25 +58,14 @@ const makeTable = (options: RequiredRefQLOptions) => {
 
       const nodes: RQLNode[] = [];
 
-      let memberCount = 0;
-      // isSQLTag kan weg als dit niet meer kan voorvallen bij gen schema
-      const fieldProps = Object.entries (properties)
-        .map (([, prop]) => prop as Prop)
-        .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
-
       for (const comp of components) {
         if (typeof comp === "string" && properties[comp]) {
           const prop = properties[comp] as unknown as Prop;
           nodes.push (prop);
-          memberCount += 1;
         } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
           nodes.push (comp);
-          if (comp.operations.length === 0 && !comp.isOmitted) {
-            memberCount += 1;
-          }
         } else if (SQLProp.isSQLProp (comp)) {
           nodes.push (comp);
-          memberCount += 1;
         } else if (isTable (comp)) {
           const refNodes = Object.keys (properties)
             .map (key => properties[key as keyof typeof properties])
@@ -113,10 +102,6 @@ const makeTable = (options: RequiredRefQLOptions) => {
         } else {
           throw new Error (`Unknown Selectable Type: "${String (comp)}"`);
         }
-      }
-
-      if (memberCount === 0) {
-        nodes.push (...fieldProps);
       }
 
       return createRQLTag (table, nodes, options);

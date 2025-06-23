@@ -1,8 +1,5 @@
 # RefQL
-A Node.js and Deno library for composing and running SQL queries.
-
-<img width="584" height="328" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
-
+A Node.js and Deno library for composing and running typesafe SQL queries.
 
 ## Installation
 ```bash
@@ -22,7 +19,9 @@ const pool = new Pool ({
 const querier = (query: string, values: any[]) =>
   pool.query (query, values).then(({ rows }) => rows)
 
-const refql = RefQL ({ querier });
+const refql = RefQL ({ 
+  querier
+});
 
 export default refql;
 ```
@@ -96,39 +95,33 @@ teamById ({ id: 1 }).then(console.log);
 * [Functions and subselects](#functions-and-subselects)
 * [SQLTag](#sqltag)
 
-## Tables and References
-For now, introspection only works for PostgreSQL databases. The example below shows how u can define tables and describe their references to other tables. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
-
+## Options
 ```ts
-import { 
-  BelongsTo, BelongsToMany, HasMany, HasOne, 
-  NumberProp, Offset, StringProp,
-} from "refql";
-import refql from "./refql";;
+import { Pool } from "pg";
+import RefQL from "refql";
 
-const { Table } = refql;
+const pool = new Pool ({
+  // ...pool options
+});
 
-const Player = Table ("player", [
-  NumberProp ("id"),
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  BelongsTo ("team", "public.team"),
-  HasOne ("rating", "rating"),
-  HasMany ("goals", "goal"),
-  BelongsToMany ("games", "game")
-]);
-```
+const pgQuerier = (query: string, values: any[]) =>
+  pool.query (query, values).then(({ rows }) => rows)
 
-### Ref info
-RefQL tries to link 2 tables based on logical column names, using the "casing" option. You can always point RefQL in the right direction if this doesn't work for you by specifying refs yourself.
+const refql = RefQL ({
+  // querier
+  querier: postgresQuerier,
 
-```ts
-const playerBelongsToManyGames = BelongsToMany ("games", "game", {
-  lRef: ["id"],
-  rRef: ["id"],
-  lxRef: ["player_id"],
-  rxRef: ["game_id"],
-  xTable: ["game_player"]
+  // database case type - optional
+  casing: "snake_case"
+
+  // sign used for parameterized queries - optional
+  parameterSign: "$",
+
+  // using indexed parameters or not ($1, $2, ...) - optional
+  indexedParameters: true,
+
+  // run tag and transform result - optional
+  runner: (tag, params) => tag.run(params)
 });
 ```
 
@@ -216,6 +209,43 @@ firstTen ().fork (console.error, console.log);
 // ];
 ```
 
+
+## Tables and References
+For now, introspection only works for PostgreSQL databases. The example below shows how u can define tables and describe their references to other tables. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
+
+```ts
+import { 
+  BelongsTo, BelongsToMany, HasMany, HasOne, 
+  NumberProp, Offset, StringProp,
+} from "refql";
+import refql from "./refql";;
+
+const { Table } = refql;
+
+const Player = Table ("player", [
+  NumberProp ("id"),
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  BelongsTo ("team", "public.team"),
+  HasOne ("rating", "rating"),
+  HasMany ("goals", "goal"),
+  BelongsToMany ("games", "game")
+]);
+```
+
+### Ref info
+RefQL tries to link 2 tables based on logical column names, using the "casing" option. You can always point RefQL in the right direction if this doesn't work for you by specifying refs yourself.
+
+```ts
+const playerBelongsToManyGames = BelongsToMany ("games", "game", {
+  lRef: ["id"],
+  rRef: ["id"],
+  lxRef: ["player_id"],
+  rxRef: ["game_id"],
+  xTable: ["game_player"]
+});
+```
+
 ## Fantasy Land Interoperability
 <a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
 
@@ -253,7 +283,7 @@ readPage ({ limit: 5, offset: 0 }).then (console.log);
 // ];
 ```
 
-## Compare
+## Operators mashup
 
 ```ts
 import { NumberProp, sql, StringProp, Table } from "refql";
@@ -322,7 +352,7 @@ orderByLastName ({ limit: 5, offset: 30 }).then (console.log);
 // ];
 ```
 
-## When
+## Pred
 `When` takes a predicate and a list of operations. If the predicate returns true, the operations will be applied.
 
 ```ts

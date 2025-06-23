@@ -22,7 +22,7 @@ const pool = new Pool ({
 
 // natural transformation
 const querier = async (query: string, values: any[]) => {
-  // console.log ("'" + query + "'");
+  console.log ("'" + query + "'");
   // console.log (values);
   const res = await pool.query (query, values);
 
@@ -170,6 +170,7 @@ const teamById = Team ([
 
 
 // know Issues:
+// - refprops zitten ook op table.props, maar we kunnen er niet veel mee omdat die geen weet heeft van de columns die op bv team zitten
 // - in delete no option to define returning RQLTag cause i don't see the point
 // - in returning rql tag (inserts, updates) params is any to no type info about returns, so we need
 //    const byIds = sql<{ id: number}[]>`
@@ -216,7 +217,6 @@ const insertTeam = Team.insert ([
 //   .then (r => console.log (r[0]))
 //   .catch (console.log);
 
-// .then (res => console.log (res));
 
 const updateTeam = Team.update ([
   id.eq<{ id: number }> (p => p.id),
@@ -260,3 +260,23 @@ const deleteTeam = Team.delete ([
 // `;
 
 // justSql ().then (r => console.log (r));
+
+// subselect
+const goalCount = NumberProp ("goalCount", sql`
+  select cast(count(*) as int) from goal
+  where goal.player_id = player.id
+`);
+
+const { teamId, firstName, lastName } = Player.props;
+
+const readStrikers = Player ([
+  goalCount.gt (7),
+  teamId.eq (1).omit (),
+  lastName.like ("Gra%").asc (),
+  firstName.iLike ("ar%")
+]);
+
+const readStrikersPage = readStrikers
+  .concat (Player ([Limit (5), Offset (0)]));
+
+readStrikers ().then (console.log);

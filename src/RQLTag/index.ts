@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
@@ -121,6 +120,7 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
   let orderBies = sqlX``;
   let limit = sqlX``;
   let offset = sqlX``;
+  let memberCount = 0;
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     for (const lr of info.lRef) {
@@ -137,6 +137,10 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
         : Raw (`${table.name}.${node.col || node.as}`);
 
       members.push ({ as: node.as, node: sqlX`${col} ${Raw (`"${node.as}"`)}`, isOmitted: node.isOmitted });
+
+      if (node.operations.length === 0 && !node.isOmitted) {
+        memberCount += 1;
+      }
 
       for (const op of node.operations) {
         if (OrderBy.isOrderBy (op)) {
@@ -169,6 +173,21 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
       throw new Error (`Unknown RQLNode Type: "${String (node)}"`);
     }
   }
+
+
+  if (memberCount === 0) {
+    const fieldProps = Object.entries (table.props)
+      .map (([, prop]) => prop as Prop)
+      .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col))
+      .map (prop => ({
+        as: prop.as,
+        node: Raw (`${table.name}.${prop.col || prop.as} "${prop.as}"`),
+        isOmitted: false
+      }));
+
+    members.push (...fieldProps);
+  }
+
 
   let tag = sqlX`
     select ${joinMembers (members)}
