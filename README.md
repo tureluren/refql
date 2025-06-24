@@ -26,7 +26,8 @@ const refql = RefQL ({
 export default refql;
 ```
 
-## Introspect database schema (PostgreSQL only, ran seperately from main project)
+## Introspect the database schema (PostgreSQL only; should be run separately from the main project)
+
 ```ts
 import refql from "./refql";
 
@@ -35,7 +36,8 @@ refql.introspect().then(() => {
 })
 ```
 
-## Read referenced data easily with `RQLTag`
+## Easily read referenced data using an `RQLTag`
+
 ```ts
 import refql from "./refql";
 
@@ -248,7 +250,6 @@ readFirstTen ().fork (console.error, console.log);
 //   { id: 10, firstName: "Lottie", lastName: "Giraud" }
 // ];
 ```
-
 
 ## Tables and references
 For now, introspection only works for PostgreSQL databases. The example below shows how u can define tables and describe their references to other tables. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
@@ -506,9 +507,12 @@ readPlayerById ({ id: 1 }).then (console.log);
 Useful when you want to create dynamic queries, such as inserts or queries with the `in` operator.
 
 ```ts
-import { sql, Table, Values } from "refql";
+import { Values } from "refql";
+import refql from "./refql";
 
-const Player = Table ("player", []);
+const { sql, tables } = refql;
+
+const { Player } = tables.public;
 
 // select id, last_name from player where id in ($1, $2, $3)
 const selectPlayers = sql<{ ids: number[]}>`
@@ -531,14 +535,17 @@ selectPlayers ({ ids: [1, 2, 3] }).then (console.log);
 Useful for batch inserts.
 
 ```ts
-import { Table, Raw, sql, Values2D } from "refql";
+import { Raw, Values, Values2D } from "refql";
+import refql from "./refql";
+
+const { sql, tables } = refql;
+
+const { Player } = tables.public;
 
 interface Player {
   first_name: string;
   last_name: string;
 }
-
-const Player = Table ("player", []);
 
 const insertBatch = sql<{ fields: (keyof Player)[]; data: Player[] }, Player[]>`
   insert into ${Player} (${Raw (p => p.fields.join (", "))})

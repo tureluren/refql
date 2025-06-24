@@ -2,7 +2,9 @@ import { Pool } from "pg";
 import RefQL, {
   BooleanProp,
   Limit, NumberProp,
-  Values
+  Raw,
+  Values,
+  Values2D
 } from ".";
 
 const pool = new Pool ({
@@ -90,8 +92,5 @@ const { result } = Game.props;
 
 // DECISIONS
 // inc ipv omit, omdat bij update statements, byId, meestal wilt ge dan geen set id ={}, enkel op filteren en bij gewone selects kunt ge met * werken ipv incl()
-
-
-
 
 
