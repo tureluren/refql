@@ -26,7 +26,7 @@ const refql = RefQL ({
 export default refql;
 ```
 
-## Introspect database schema (Postgres only, ran seperately from main project)
+## Introspect database schema (PostgreSQL only, ran seperately from main project)
 ```ts
 import refql from "./refql";
 
@@ -35,7 +35,7 @@ refql.introspect().then(() => {
 })
 ```
 
-## Read referenced data easily
+## Read referenced data easily with `RQLTag`
 ```ts
 import refql from "./refql";
 
@@ -43,8 +43,8 @@ const { Player, Team, League, Rating, Goal, Assist } = refql.tables.public;
 
 const { id } = Team.props;
 
-// select components
-const teamById = Team ([
+// select components to create a RQLTag
+const readTeamById = Team ([
   Player ([
     Rating,
     Goal,
@@ -55,7 +55,7 @@ const teamById = Team ([
   id.eq<{ id: number }> (p => p.id)
 ]);
 
-teamById ({ id: 1 }).then(console.log);
+readTeamById ({ id: 1 }).then(console.log);
 
 // [
 //   {
@@ -84,13 +84,56 @@ teamById ({ id: 1 }).then(console.log);
 ```
 
 ## Table of contents
+* [Fantasy Land Interoperability](#fantasy-land-interoperability)
 * [Options](#options)
 * [Querier](#querier)
 * [Tables and References](#tables-and-references)
-* [Fantasy Land Interoperability](#fantasy-land-interoperability)
 * [Operator Mix](#operator-mix)
 * [Insert, update and delete](#insert-update-and-delete)
 * [SQLTag](#sqltag)
+
+## Fantasy Land Interoperability
+<a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
+
+Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures.
+
+```ts
+import refql from "./refql";
+
+const { Player } = refql.tables.public;
+
+const readPart1 = Player ([
+  id,
+  "firstName",
+  Team (["id"])
+]);
+
+const readPart2 = Player ([
+  "lastName",
+  Team (["name"])
+]);
+
+const readPage =
+  readPart1
+    .concat (readPart2)
+    .concat (Player ([
+      Limit<{ limit: number }> (p => p.limit),
+      Offset<{ offset: number }> (p => p.offset)
+    ]));
+
+readPage ({ limit: 5, offset: 0 }).then (console.log);
+
+// [
+//   {
+//     id: 1,
+//     firstName: "Christine",
+//     lastName: "Hubbard",
+//     team: { id: 1, name: "FC Agecissak" }
+//   },
+//   ...
+// ];
+```
+
 
 ## Options
 ```ts
@@ -151,7 +194,7 @@ const refql = RefQL ({
 });
 ```
 
-### Convert Promise output to something else 
+### Convert Promise output to something else using the runner 
 U can use [Module augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation) in TypeScript to register another container type.
 
 ```ts
@@ -182,7 +225,7 @@ const { tables }  = RefQL ({
 
 const { Player } = tables;
 
-const firstTen = Player ([
+const readFirstTen = Player ([
   id.asc(),
   "firstName",
   "lastName",
@@ -190,7 +233,7 @@ const firstTen = Player ([
 ]);
 
 // `fork` instead of `then`
-firstTen ().fork (console.error, console.log);
+readFirstTen ().fork (console.error, console.log);
 
 // [
 //   { id: 1, firstName: "Christine", lastName: "Hubbard" },
@@ -239,51 +282,19 @@ const playerBelongsToManyGames = BelongsToMany ("games", "game", {
   rRef: ["id"],
   lxRef: ["player_id"],
   rxRef: ["game_id"],
-  xTable: ["game_player"]
+  xTable: "game_player"
 });
-```
-
-## Fantasy Land Interoperability
-<a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
-
-Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures.
-
-```ts
-const part1 = Player ([
-  id,
-  "firstName",
-  Team (["id"])
-]);
-
-const part2 = Player ([
-  "lastName",
-  Team (["name"])
-]);
-
-const readPage =
-  part1
-    .concat (part2)
-    .concat (Player ([
-      Limit<{ limit: number }> (p => p.limit),
-      Offset<{ offset: number }> (p => p.offset)
-    ]));
-
-readPage ({ limit: 5, offset: 0 }).then (console.log);
-// [
-//   {
-//     id: 1,
-//     firstName: "Christine",
-//     lastName: "Hubbard",
-//     team: { id: 1, name: "FC Agecissak" }
-//   },
-//   ...
-// ];
 ```
 
 ## Operator mix
 
 ```ts
-import { NumberProp, sql } from "refql";
+import { NumberProp } from "refql";
+import refql from "./refql";
+
+const { sql, tables } = refql;
+
+const { Player } = tables.public;
 
 // subselect
 const goalCount = NumberProp ("goalCount", sql`
@@ -330,23 +341,23 @@ readStrikersPage ({ q: "Gra%" }).then (console.log);
 If something can't be done by using the functions provided by RefQL, use `sql`.
 
 ```ts
-import { NumberProp, sql, StringProp, Table } from "refql";
+import { NumberProp } from "refql";
+import refql from "./refql";
 
-const Player = Table ("player", [
-  NumberProp ("id"),
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  NumberProp ("goalCount", sql`
-    select count(*) from goal
-    where goal.player_id = player.id
-  `)
-]);
+const { sql, tables } = refql;
 
-const topScorers = Player ([
+const { Player } = tables.public;
+
+const goalCount = NumberProp ("goalCount", sql`
+  select count(*) from goal
+  where goal.player_id = player.id
+`);
+
+const readTopScorers = Player ([
   "id",
   "firstName",
   "lastName",
-  "goalCount",
+  goalCount,
   sql`
     and (
       select count(*) from goal
@@ -355,7 +366,7 @@ const topScorers = Player ([
   `
 ]);
 
-topScorers ().then (console.log);
+readTopScorers ().then (console.log);
 
 // [
 //   { id: 44, firstName: "Lester", lastName: "Rhodes", goalCount: 16 },
@@ -368,15 +379,18 @@ topScorers ().then (console.log);
 With the Raw data type it's possible to inject values as raw text into the query.
 
 ```ts
-import { Raw, sql, Table } from "refql";
+import { Raw } from "refql";
+import refql from "./refql";
+
+const { sql, tables } = refql;
+
+const { Player } = tables.public;
 
 // dynamic properties
 const idField = "id";
 const bdField = "birthday";
 
-const Player = Table ("player", []);
-
-const playerById = sql<{ id: number }>`
+const readPlayerById = sql<{ id: number }>`
   select id, last_name, age (${Raw (bdField)})::text
   from ${Player} where ${Raw (idField)} = ${p => p.id}
 `;
@@ -384,7 +398,7 @@ const playerById = sql<{ id: number }>`
 // query: select id, last_name, age (birthday)::text from player where id = $1
 // values: [1]
 
-playerById ({ id: 1 }).then (console.log);
+readPlayerById ({ id: 1 }).then (console.log);
 
 // [ { id: 1, last_name: "Hubbard", age: "26 years 1 mon 15 days" } ];
 ```

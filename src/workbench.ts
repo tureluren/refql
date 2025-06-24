@@ -289,4 +289,16 @@ const readStrikers = Player ([
 const readStrikersPage = readStrikers
   .concat (Player ([Limit (5), Offset (0)]));
 
-readStrikersPage ({ q: "Gra%" }).then (console.log);
+// dynamic properties
+const idField = "id";
+const bdField = "birthday";
+
+const readPlayerById = sql<{ id: number }>`
+  select id, last_name, age (${Raw (bdField)})::text
+  from ${Player} where ${Raw (idField)} = ${p => p.id}
+`;
+
+// query: select id, last_name, age (birthday)::text from player where id = $1
+// values: [1]
+
+readPlayerById ({ id: 1 }).then (console.log);
