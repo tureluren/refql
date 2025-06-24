@@ -6,7 +6,7 @@ A Node.js and Deno library for composing and running typesafe SQL queries.
 npm install refql 
 ```
 
-## Create RefQL Instance
+## Create RefQL instance
 ```ts
 // refql.ts
 import { Pool } from "pg";
@@ -84,15 +84,15 @@ readTeamById ({ id: 1 }).then(console.log);
 ```
 
 ## Table of contents
-* [Fantasy Land Interoperability](#fantasy-land-interoperability)
+* [Fantasy Land interoperability](#fantasy-land-interoperability)
 * [Options](#options)
 * [Querier](#querier)
-* [Tables and References](#tables-and-references)
-* [Operator Mix](#operator-mix)
+* [Tables and references](#tables-and-references)
+* [Operator mix](#operator-mix)
 * [Insert, update and delete](#insert-update-and-delete)
 * [SQLTag](#sqltag)
 
-## Fantasy Land Interoperability
+## Fantasy Land interoperability
 <a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
 
 Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures.
@@ -149,7 +149,7 @@ const pgQuerier = (query: string, values: any[]) =>
 
 const refql = RefQL ({
   // querier
-  querier: postgresQuerier,
+  querier: pgQuerier,
 
   // database case type - optional
   casing: "snake_case"
@@ -250,7 +250,7 @@ readFirstTen ().fork (console.error, console.log);
 ```
 
 
-## Tables and References
+## Tables and references
 For now, introspection only works for PostgreSQL databases. The example below shows how u can define tables and describe their references to other tables. Relationships are created by passing the table name as a string instead of passing a `Table` object. This is to avoid circular dependency problems. `Tables` are uniquely identifiable by the combination schema and tableName `(<schema>.<tableName>)`.
 
 ```ts
@@ -335,6 +335,105 @@ readStrikersPage ({ q: "Gra%" }).then (console.log);
 //     goalCount: 14
 //   }
 // ];
+```
+
+## Insert, update and delete
+
+### Insert
+
+```ts
+import { Values } from "refql";
+import refql from "./refql";
+
+const { sql, tables } = refql;
+
+const { Team } = tables.public;
+
+// `rows` contains the inserted teams
+const byIds = sql<{rows: { id: number }[]}>`
+  and id in ${Values(({ rows }) => rows.map(r => r.id))} 
+`;
+
+// `RQLTags` created from `Team` will be concatenated and used for the return value.
+// If there are no `RQLTags`, all fields of the team will be returned.
+const insertTeam = Team.insert([
+  Team([
+    "id",
+    "name",
+    byIds
+  ]),
+
+  Team([
+    "active",
+    "leagueId"
+  ])
+]);
+
+// Fields that are not nullable and don't have a default value are required
+insertTeam({ data: [{ name: "New Team", leagueId: 1 }] })
+  .then(console.log);
+
+// [{
+//   id: 84,
+//   name: "New Team",
+//   active: true,
+//   leagueId: 1
+// }];
+```
+
+### Update
+```ts
+import { Values } from "refql";
+import refql from "./refql";
+
+const { sql, tables } = refql;
+
+const { Team } = tables.public;
+
+// `rows` contains the inserted teams
+const byIds = sql<{rows: { id: number }[]}>`
+  and id in ${Values (({ rows }) => rows.map (r => r.id))} 
+`;
+
+const updateTeamById = Team.update ([
+  // filter teams
+  id.eq<{ id: number }> (p => p.id),
+
+  // return value
+  Team ([byIds])
+]);
+
+updateTeamById ({ data: { name: "Updated Team" }, id: 86 })
+  .then (console.log);
+
+// [{
+//   id: 84,
+//   name: "Updated Team",
+//   active: true,
+//   leagueId: 1
+// }];
+```
+
+### delete
+```ts
+import refql from "./refql";
+
+const { Team } = refql.tables.public;
+
+// all team's fields will be returned
+const deleteTeam = Team.delete ([
+  id.eq<{ id: number }> (p => p.id)
+]);
+
+deleteTeam ({ id: 84 })
+  .then (console.log);
+
+// [{
+//   id: 84,
+//   name: "Updated Team",
+//   active: true,
+//   leagueId: 1
+// }];
 ```
 
 ## SQLTag
