@@ -8,7 +8,6 @@ import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
 import pgQuerier from "../test/pgQuerier";
-import makeTestTables from "../test/tables";
 import userConfig from "../test/userConfig";
 import { isCUD } from "./CUD";
 import { createDeleteRQLTag, isDeleteRQLTag } from "./DeleteRQLTag";
@@ -30,7 +29,7 @@ describe ("CUD", () => {
     querier = pgQuerier (pool);
   }
 
-  const { Table, sql, options, tables } = RefQL ({ querier });
+  const { sql, options, tables } = RefQL ({ querier });
 
   const { Game, Player } = tables.public;
 
