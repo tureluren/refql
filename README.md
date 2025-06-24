@@ -45,7 +45,7 @@ const { Player, Team, League, Rating, Goal, Assist } = refql.tables.public;
 
 const { id } = Team.props;
 
-// select components to create a RQLTag
+// select components to create an RQLTag
 const readTeamById = Team ([
   Player ([
     Rating,
