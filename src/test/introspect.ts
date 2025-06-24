@@ -10,6 +10,11 @@ const querier = pgQuerier (pool);
 const { introspect } = RefQL ({ querier });
 
 (async () => {
-  await introspect ();
-  process.exit (0);
+  try {
+    await introspect ();
+  } catch (e) {
+    console.log (e);
+  } finally {
+    process.exit (0);
+  }
 }) ();
