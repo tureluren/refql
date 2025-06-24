@@ -258,10 +258,10 @@ async function introspect(sql: typeof sqlX, options: RequiredRefQLOptions) {
     await fs.outputFile (outputJsFile, outputJs);
     await fs.outputFile (outputTsFile, outputTs);
     console.log ("RefQL introspect completed!");
-  } catch (e) {
+  } catch (e: any) {
     await fs.outputFile (outputJsFile, originalJs);
     await fs.outputFile (outputTsFile, originalTs);
-    console.error (`RefQL introspect failed!`);
+    throw `RefQL introspect failed: ${e.message}`;
   }
 }
 
