@@ -3,6 +3,7 @@ import In from "../RQLTag/In";
 import IsNull from "../RQLTag/IsNull";
 import Like from "../RQLTag/Like";
 import Operation from "../RQLTag/Operation";
+import Or from "../RQLTag/Or";
 import Ord from "../RQLTag/Ord";
 import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
@@ -10,36 +11,39 @@ import { refqlType } from "../common/consts";
 import copyObj from "../common/copyObj";
 import { OrdOperator, TagFunctionVariable } from "../common/types";
 import PropType, { propTypePrototype } from "./PropType";
+import SQLProp from "./SQLProp";
 
-interface Prop<As extends string = any, Output = any, Params = any, IsOmitted extends boolean = any, HasDefault extends boolean = any, HasOp extends boolean = any> extends RQLNode, PropType<As> {
+interface Prop<TableId extends string = any, As extends string = any, Output = any, Params = any, IsOmitted extends boolean = any, HasDefault extends boolean = any, HasOp extends boolean = any> extends RQLNode, PropType<As> {
+  tableId: TableId;
   params: Params;
   col?: string;
   output: Output;
   isOmitted: IsOmitted;
   hasDefaultValue: HasDefault;
-  arrayOf(): Prop<As, Output[], Params, IsOmitted, HasDefault, HasOp>;
-  nullable(): Prop<As, Output | null, Params, IsOmitted, HasDefault, HasOp>;
+  arrayOf(): Prop<TableId, As, Output[], Params, IsOmitted, HasDefault, HasOp>;
+  nullable(): Prop<TableId, As, Output | null, Params, IsOmitted, HasDefault, HasOp>;
   // Because of pred function, Output | undefined
-  eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output | undefined> | Output, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Output, Params & Params2, IsOmitted, HasDefault, true>;
-  notEq: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["eq"];
-  isNull<Params2 = {}>(pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Output, Params & Params2, IsOmitted, HasDefault, true>;
-  notIsNull: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["isNull"];
-  like<Params2 = {}>(run: TagFunctionVariable<Params & Params2, string | undefined> | string, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Output, Params & Params2, IsOmitted, HasDefault, true>;
-  notLike: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["like"];
-  iLike: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["like"];
-  notILike: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["like"];
-  in<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output[] | undefined> | Output[], pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<As, Output, Params & Params2, IsOmitted, HasDefault, true>;
-  notIn: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["in"];
-  gt<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output | undefined> | Output, pred?: TagFunctionVariable<Params & Params2>): Prop<As, Output, Params & Params2, IsOmitted, HasDefault, true>;
-  gte: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["gt"];
-  lt: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["gt"];
-  lte: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["gt"];
-  asc(): Prop<As, Output, Params, IsOmitted, HasDefault, true>;
-  desc: Prop<As, Output, Params, IsOmitted, HasDefault, HasOp>["asc"];
+  eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output | undefined> | Output, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<TableId, As, Output, Params & Params2, IsOmitted, HasDefault, true>;
+  notEq: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["eq"];
+  isNull<Params2 = {}>(pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<TableId, As, Output, Params & Params2, IsOmitted, HasDefault, true>;
+  notIsNull: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["isNull"];
+  like<Params2 = {}>(run: TagFunctionVariable<Params & Params2, string | undefined> | string, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<TableId, As, Output, Params & Params2, IsOmitted, HasDefault, true>;
+  notLike: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["like"];
+  iLike: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["like"];
+  notILike: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["like"];
+  in<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output[] | undefined> | Output[], pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<TableId, As, Output, Params & Params2, IsOmitted, HasDefault, true>;
+  notIn: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["in"];
+  gt<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output | undefined> | Output, pred?: TagFunctionVariable<Params & Params2>): Prop<TableId, As, Output, Params & Params2, IsOmitted, HasDefault, true>;
+  gte: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["gt"];
+  lt: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["gt"];
+  lte: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["gt"];
+  asc(): Prop<TableId, As, Output, Params, IsOmitted, HasDefault, true>;
+  desc: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["asc"];
   operations: Operation<Params>[];
   hasOp: HasOp;
-  omit(): Prop<As, Output, Params, true, HasDefault, HasOp>;
-  hasDefault(): Prop<As, Output, Params, IsOmitted, true, HasOp>;
+  omit(): Prop<TableId, As, Output, Params, true, HasDefault, HasOp>;
+  hasDefault(): Prop<TableId, As, Output, Params, IsOmitted, true, HasOp>;
+  or<Params2 = {}>(prop: Prop<TableId> | SQLProp<any, any, Params2>, pred?: TagFunctionVariable<Params & Params2, boolean>): Prop<TableId, As, Output, Params & Params2, true, HasDefault, HasOp>;
 }
 
 const type = "refql/Prop";
@@ -66,11 +70,12 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   asc: dir (),
   desc: dir (true),
   omit,
-  hasDefault
+  hasDefault,
+  or: or ()
 });
 
-function Prop<As extends string>(as: As, col?: string) {
-  let prop: Prop<As, any, {}, false, false, false> = Object.create (prototype);
+function Prop<TableId extends string, As extends string>(as: As, col?: string) {
+  let prop: Prop<TableId, As, any, {}, false, false, false> = Object.create (prototype);
 
   prop.as = as;
   prop.col = col;
@@ -156,6 +161,17 @@ export function omit(this: Prop) {
   prop.isOmitted = true;
 
   return prop;
+}
+
+export function or() {
+  return function (this: Prop, other: Prop, pred?: TagFunctionVariable<any, boolean>) {
+    const prop = copyObj (this);
+    const orOp = Or (other, pred);
+
+    prop.operations = prop.operations.concat (orOp);
+
+    return prop;
+  };
 }
 
 function hasDefault(this: Prop) {

@@ -1,5 +1,6 @@
 import { Pool } from "pg";
-import RefQL from ".";
+import RefQL, { Limit, NumberProp, StringProp } from ".";
+import Or from "./RQLTag/Or";
 
 const pool = new Pool ({
   user: "test",
@@ -19,6 +20,32 @@ const querier = async (query: string, values: any[]) => {
 };
 
 
-const _ = RefQL ({
+const { tables, Table, sql } = RefQL ({
   querier
 });
+
+const { Team } = tables.public;
+
+const { name } = Team.props;
+
+const Player = Table ("player", [
+  StringProp ("firstName", "first_name"),
+  StringProp ("lastName", "last_name"),
+  NumberProp ("nummerke", sql<{ nr: number} >`1`)
+]);
+
+const { firstName, nummerke } = Player.props;
+
+
+const readPlayer = Player ([
+  // "nummerke",
+  // nummerke,
+  firstName.iLike ("A%").or (firstName.like ("B%").gt ("a")),
+  Limit (1)
+]);
+
+readPlayer ().then (r => {
+  console.log (r);
+});
+
+

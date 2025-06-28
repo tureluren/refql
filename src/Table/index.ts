@@ -15,7 +15,7 @@ import { createUpdateRQLTag, UpdateRQLTag } from "../RQLTag/UpdateRQLTag";
 import { isSQLTag } from "../SQLTag";
 
 export interface Table<TableId extends string = any, Props = any> {
-  <Components extends Selectable<Props>[]>(components: Components): RQLTag<TableId, Params<Props, Components>, { [K in Output<Props, Components> as K["as"]]: K["type"] }>;
+  <Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Params<TableId, Props, Components>, { [K in Output<TableId, Props, Components> as K["as"]]: K["type"] }>;
   tableId: TableId;
   name: string;
   schema?: string;
@@ -24,9 +24,9 @@ export interface Table<TableId extends string = any, Props = any> {
   equals(other: Table<TableId, Props>): boolean;
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
-  insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
-  update<Components extends Updatable<TableId, Props>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
-  delete<Components extends Deletable<Props>[]>(components: Components): DeleteRQLTag<TableId, Params<Props, Components>, CUDOutput<TableId, Props, Components>["output"]>;
+  insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
+  update<Components extends Updatable<TableId, Props>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
+  delete<Components extends Deletable<Props>[]>(components: Components): DeleteRQLTag<TableId, Params<TableId, Props, Components>, CUDOutput<TableId, Props, Components>["output"]>;
 }
 
 const type = "refql/Table";
@@ -50,7 +50,7 @@ const makeTable = (options: RequiredRefQLOptions) => {
 
     let properties = props.reduce (
       (acc, prop) => ({ ...acc, [prop.as]: prop }),
-      {} as { [P in Props[number] as P["as"] ]: P }
+      {} as { [P in Props[number] as P["as"] ]: P extends Prop ? Prop<TableId, P["as"], P["output"], P["params"], P["isOmitted"], P["hasDefaultValue"], P["hasOp"]> : P; }
     );
 
     const table = (components => {

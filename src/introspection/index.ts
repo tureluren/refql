@@ -77,7 +77,7 @@ const headerTs = [
   `import PropType from "${prepath}/Prop/PropType";`,
   `import RefProp from "${prepath}/Prop/RefProp";`,
   `import { Table } from "${prepath}/Table";`,
-  'export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, { [P in Props[number] as P["as"]]: P; }>) => {\n'
+  'export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, { [P in Props[number] as P["as"]]: P extends Prop ? Prop<TableId, P["as"], P["output"], P["params"], P["isOmitted"], P["hasDefaultValue"], P["hasOp"]> : P; }>) => {\n'
 ];
 
 const footerJs = [
@@ -106,6 +106,7 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
 
         tables.map (async ({ table_name: table, table_schema }) => {
           const tableName = toPascalCase (table);
+          const tableId = `"${table_schema}.${table}"`;
           const columns = await getColumns (sql, table);
           const foreignKeys = relationships.filter (rel => rel.table_name === table);
           const reversedForeignKeys = relationships.filter (rel => rel.foreign_table_name === table);
@@ -132,7 +133,7 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
 
             props[propertyName] = [
               `${propTypeJs} ("${propertyName}", "${col.column_name}")${hasDefault ? `.hasDefault ()` : nullable ? `.nullable ()` : ""}`,
-              `${propertyName}: Prop<"${propertyName}", ${propTypeTs}, {}, false, ${hasDefault ? "true" : "false"}, false>;`
+              `${propertyName}: Prop<${tableId}, "${propertyName}", ${propTypeTs}, {}, false, ${hasDefault ? "true" : "false"}, false>;`
             ];
           }
 
@@ -196,7 +197,7 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
           const interfaceProperties = Object.values (sortObject (props)) as string[][];
 
           return [
-            `      ${tableName}: Table ("${table_schema}.${table}", [\n        ${interfaceProperties.map (([js]) => js).join (",\n        ")}\n      ])`,
+            `      ${tableName}: Table (${tableId}, [\n        ${interfaceProperties.map (([js]) => js).join (",\n        ")}\n      ])`,
             `    ${tableName}: Table<"${table_schema}.${table}", {\n      ${interfaceProperties.map (([_js, ts]) => ts).join ("\n      ")}\n    }>;`
           ];
         }));

@@ -4,5 +4,5 @@ import { Table } from "refql/build/Table";
 export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(
   name: TableId,
   props: Props
-) => Table<TableId, { [P in Props[number] as P["as"]]: P; }>) => {
+) => Table<TableId, { [P in Props[number] as P["as"]]: P extends Prop ? Prop<TableId, P["as"], P["output"], P["params"], P["isOmitted"], P["hasDefaultValue"], P["hasOp"]> : P; }>) => {
 };

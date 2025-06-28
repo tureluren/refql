@@ -59,9 +59,9 @@ export type SQLTagVariable<Params> =
 
 export type Pagination = Limit | Offset;
 
-export type Selectable<T> =
+export type Selectable<TableId extends string, T> =
   | keyof OnlyPropsOrSQLProps<T>
-  | Prop<keyof OnlyProps<T>>
+  | Prop<TableId>
   | SQLProp
   | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
   | Table<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
@@ -116,7 +116,7 @@ export interface RefInfo {
   rxRef?: RefField[];
 }
 
-export type ParamsType<S, T extends Selectable<S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
+export type ParamsType<TableId extends string, S, T extends Selectable<TableId, S>[], SQLProps extends OnlySQLProps<S> = OnlySQLProps<S>> = T extends (infer U)[]
   ? (U extends { params: any }
     ? { params: Simplify<U["params"]>}
     : U extends keyof SQLProps
@@ -124,7 +124,7 @@ export type ParamsType<S, T extends Selectable<S>[], SQLProps extends OnlySQLPro
       : { params: {}})[]
   : {params: {}};
 
-export type Params<S, T extends Selectable<S>[]> = Simplify<UnionToIntersection<ParamsType<S, T>[number]["params"]>>;
+export type Params<TableId extends string, S, T extends Selectable<TableId, S>[]> = Simplify<UnionToIntersection<ParamsType<TableId, S, T>[number]["params"]>>;
 
 export type InsertParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplify<
   { [K in keyof Props as Props[K]["hasDefaultValue"] extends true ? K : Extract<Props[K]["output"], null> extends never ? never : K]?: Exclude<Props[K]["output"], null> } &
@@ -135,14 +135,14 @@ export type UpdateParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplif
   { [K in keyof Props]?: Props[K]["output"] }
 >;
 
-export type ShouldSelectAll<S, T extends Selectable<S>[]> =
+export type ShouldSelectAll<TableId extends string, S, T extends Selectable<TableId, S>[]> =
   Extract<T[number], keyof OnlyPropsOrSQLProps<S> | OnlyWithEmptyOperations<S>[keyof OnlyWithEmptyOperations<S>]>[] extends never[] ? true : false;
 
-export type ExtractOmittedPropsMap<S, T extends Selectable<S>[]> =
+export type ExtractOmittedPropsMap<TableId extends string, S, T extends Selectable<TableId, S>[]> =
   { [K in T[number] as K extends Prop<infer Key, any, any, true> ? Key : never]: K extends Prop<any, any, any, true> ? K : never;}
   & { [K in T[number] as K extends SQLProp<infer Key, any, any, true> ? Key : never]: K extends SQLProp<any, any, any, true> ? K : never;};
 
-export type IgnoreOmitted<S, T extends Selectable<S>[], OmitMap = ExtractOmittedPropsMap<S, T>> = T extends (infer U)[]
+export type IgnoreOmitted<TableId extends string, S, T extends Selectable<TableId, S>[], OmitMap = ExtractOmittedPropsMap<TableId, S, T>> = T extends (infer U)[]
   ? (U extends keyof OmitMap
       ? never
       : U extends Prop | SQLProp
@@ -152,16 +152,17 @@ export type IgnoreOmitted<S, T extends Selectable<S>[], OmitMap = ExtractOmitted
         : U)[]
     : never;
 
-export type FinalComponents<Props, Components extends Selectable<Props>[]> = ShouldSelectAll<Props, Components> extends true
-  ? [Exclude<keyof OnlyProps<Props>, keyof ExtractOmittedPropsMap<Props, Components>>, ...IgnoreOmitted<Props, Components>]
-  : IgnoreOmitted<Props, Components>;
+export type FinalComponents<TableId extends string, Props, Components extends Selectable<TableId, Props>[]> = ShouldSelectAll<TableId, Props, Components> extends true
+  ? [Exclude<keyof OnlyProps<Props>, keyof ExtractOmittedPropsMap<TableId, Props, Components>>, ...IgnoreOmitted<TableId, Props, Components>]
+  : IgnoreOmitted<TableId, Props, Components>;
 
 export type Output<
+  TableId extends string,
   S,
-  T extends Selectable<S>[],
+  T extends Selectable<TableId, S>[],
   Props extends OnlyPropsOrSQLProps<S> = OnlyPropsOrSQLProps<S>,
   TableIds extends TableIdMap<S> = TableIdMap<S>
-> = FinalComponents<S, T> extends (infer U)[]
+> = FinalComponents<TableId, S, T> extends (infer U)[]
   ? U extends keyof Props
     ? {as: U; type: Props[U]["output"]}
 
