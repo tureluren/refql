@@ -1,16 +1,16 @@
 import { isRQLTag, RQLTag } from ".";
 import { refqlType } from "../common/consts";
-import isLastKey from "../common/isLastKey";
+import isFirstKey from "../common/isFirstKey";
+import RQLEmpty from "../common/RQLEmpty";
 import { InterpretedCUD, RequiredRefQLOptions } from "../common/types";
 import Prop from "../Prop";
 import SQLProp from "../Prop/SQLProp";
 import { isSQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import { sqlP, sqlX } from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import { Table } from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
-import rawSpace from "./RawSpace";
 import RQLNode from "./RQLNode";
 
 export interface UpdateRQLTag<TableId extends string = any, Params = any, Output = any> extends CUD<TableId, Params, Output> {
@@ -55,17 +55,15 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
         : Raw (`${table.name}.${node.col || node.as}`);
 
       for (const op of node.operations) {
-        const delimiter = rawSpace (op.pred);
-
         filters = filters.join (
-          delimiter,
+          " ",
           op.interpret (col)
         );
       }
     } else if (isRQLTag (node)) {
       returning = returning ? returning.concat (node) : node;
     } else if (isSQLTag (node)) {
-      filters = filters.join (rawSpace (), node);
+      filters = filters.join (" ", node);
     } else {
       throw new Error (`Unknown Updatable RQLNode Type: "${String (node)}"`);
     }
@@ -83,8 +81,8 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
     .reduce ((t, field) => {
       const pred = (params: { data: any[]}) => params.data[field.as] != null;
 
-      return t.join (rawSpace (pred), sqlP (pred)`
-        ${Raw (field.col || field.as)} = ${(p: any) => p.data[field.as]}${Raw (p => isLastKey (p.data, field.as) ? "" : ",")} 
+      return t.join ("", sqlX`
+        ${Raw ((p: any) => pred (p) ? `${isFirstKey (p.data, field.as) ? "" : ","} ${field.col || field.as} = ` : "")}${(p: any) => pred (p) ? p.data[field.as] : RQLEmpty} 
       ` as any);
     }, updateTable);
 

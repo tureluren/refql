@@ -57,15 +57,6 @@ const makeSQL = (options: RequiredRefQLOptions) => {
   return sql;
 };
 
-export function sqlP <Params = {}, Output = unknown>(pred: TagFunctionVariable<Params, boolean>) {
-  return function (strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) {
-    const nodes = parse<Params, Output> (strings, variables);
-    const withPred = nodes.map (n => n.setPred (pred));
-
-    return createSQLTag<Params, Output> (withPred, withDefaultOptions ({}));
-  };
-}
-
 export const sqlX = makeSQL (withDefaultOptions ({}));
 
 export default makeSQL;

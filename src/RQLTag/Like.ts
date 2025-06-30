@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import { sqlP } from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import Operation, { operationPrototype } from "./Operation";
 
 interface Like<Params = any> extends Operation<Params> {
@@ -19,16 +19,13 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function Like<Params>(run: TagFunctionVariable<Params, string> | string, pred?: TagFunctionVariable<Params, boolean>, caseSensitive = false, notLike = false) {
+function Like<Params>(run: TagFunctionVariable<Params, string> | string, caseSensitive = false, notLike = false) {
   let like: Like<Params> = Object.create (prototype);
 
   like.run = (
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params, string>;
 
-  if (pred) {
-    like.pred = pred;
-  }
 
   like.caseSensitive = caseSensitive;
   like.notLike = notLike;
@@ -37,11 +34,11 @@ function Like<Params>(run: TagFunctionVariable<Params, string> | string, pred?: 
 }
 
 function interpret(this: Like, col: Raw | SQLTag) {
-  const { pred, run, caseSensitive, notLike } = this;
+  const { run, caseSensitive, notLike } = this;
   const like = caseSensitive ? "like" : "ilike";
   const equality = notLike ? `not ${like}` : like;
 
-  return sqlP (pred)`
+  return sqlX`
     and ${col} ${Raw (equality)} ${run}
   `;
 }

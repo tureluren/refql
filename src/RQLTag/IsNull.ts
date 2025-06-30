@@ -1,8 +1,7 @@
 import { refqlType } from "../common/consts";
-import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import { sqlP } from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import Operation, { operationPrototype } from "./Operation";
 
 interface IsNull<Params = any> extends Operation<Params> {
@@ -17,12 +16,8 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function IsNull<Params>(pred?: TagFunctionVariable<Params, boolean>, notIsNull = false) {
+function IsNull<Params>(notIsNull = false) {
   let isNull: IsNull<Params> = Object.create (prototype);
-
-  if (pred) {
-    isNull.pred = pred;
-  }
 
   isNull.notIsNull = notIsNull;
 
@@ -30,10 +25,10 @@ function IsNull<Params>(pred?: TagFunctionVariable<Params, boolean>, notIsNull =
 }
 
 function interpret(this: IsNull, col: Raw | SQLTag) {
-  const { notIsNull, pred } = this;
+  const { notIsNull } = this;
   const equality = notIsNull ? "is not null" : "is null";
 
-  return sqlP (pred)`
+  return sqlX`
     and ${col} ${Raw (equality)}
   `;
 }

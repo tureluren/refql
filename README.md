@@ -312,11 +312,8 @@ const readStrikers = Player ([
     // "teamId" column will not be in the result
     .omit (),
 
-  // the `like` operator takes a second argument which is a predicate
-  // that receives the parameters and returns true or false.
-  // When false, the `like` operation will be skipped in the query.
   lastName
-    .like<{ q?: string}> (p => p.q, p => p.q != null)
+    .like<{ q?: string}> (p => p.q)
     // order by lastName asc
     .asc (),
 

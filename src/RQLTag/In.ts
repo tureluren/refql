@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import { sqlP } from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import Values from "../SQLTag/Values";
 import Operation, { operationPrototype } from "./Operation";
 
@@ -19,16 +19,12 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function In<Params, Output>(run: TagFunctionVariable<Params, Output[]> | Output[], pred?: TagFunctionVariable<Params, boolean>, notIn = false) {
+function In<Params, Output>(run: TagFunctionVariable<Params, Output[]> | Output[], notIn = false) {
   let whereIn: In<Params, Output> = Object.create (prototype);
 
   whereIn.run = (
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params, Output[]>;
-
-  if (pred) {
-    whereIn.pred = pred;
-  }
 
   whereIn.notIn = notIn;
 
@@ -36,10 +32,10 @@ function In<Params, Output>(run: TagFunctionVariable<Params, Output[]> | Output[
 }
 
 function interpret(this: In, col: Raw | SQLTag) {
-  const { notIn, pred, run } = this;
+  const { notIn, run } = this;
   const equality = notIn ? "not in" : "in";
 
-  return sqlP (pred)`
+  return sqlX`
     and ${col} ${Raw (equality)} ${Values (run)}
   `;
 }

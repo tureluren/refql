@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import { sqlP } from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import Operation, { operationPrototype } from "./Operation";
 
 interface Eq<Params = any, Output = any> extends Operation<Params> {
@@ -18,16 +18,12 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function Eq<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, pred?: TagFunctionVariable<Params, boolean>, notEq = false) {
+function Eq<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, notEq = false) {
   let eq: Eq<Params, Output> = Object.create (prototype);
 
   eq.run = (
     typeof run === "function" ? run : () => run
   ) as TagFunctionVariable<Params, Output>;
-
-  if (pred) {
-    eq.pred = pred;
-  }
 
   eq.notEq = notEq;
 
@@ -35,10 +31,10 @@ function Eq<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, p
 }
 
 function interpret(this: Eq, col: Raw | SQLTag) {
-  const { notEq, pred, run } = this;
+  const { notEq, run } = this;
   const equality = notEq ? "!=" : "=";
 
-  return sqlP (pred)`
+  return sqlX`
     and ${col} ${Raw (equality)} ${run}
   `;
 }

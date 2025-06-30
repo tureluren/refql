@@ -19,7 +19,8 @@ export type ValueType =
   | number
   | bigint
   | string
-  | StringMap;
+  | StringMap
+  | Symbol;
 
 export type OrdOperator = ">" | "<" | ">=" | "<=";
 
@@ -71,14 +72,14 @@ export type Selectable<TableId extends string, T> =
 export type Insertable<TableId extends string> =
   | RQLTag<TableId>;
 
-export type Updatable<TableId extends string, T> =
-  | Prop<keyof OnlyProps<T>>
+export type Updatable<TableId extends string> =
+  | Prop<TableId>
   | SQLProp
   | RQLTag<TableId>
   | SQLTag;
 
-export type Deletable<T> =
-  | Prop<keyof OnlyProps<T>>
+export type Deletable<TableId extends string> =
+  | Prop<TableId>
   | SQLProp
   | SQLTag;
 
@@ -199,14 +200,14 @@ export type Output<
         : never
   : never;
 
-export type OnlyTableRQLTags<TableId extends string, S, T extends (Insertable<TableId> | Updatable<TableId, S>)[]> =
+export type OnlyTableRQLTags<TableId extends string, T extends (Insertable<TableId> | Updatable<TableId>)[]> =
   Extract<T[number], RQLTag<TableId>>[];
 
 export type CUDOutput<
   TableId extends string,
   S,
-  T extends (Insertable<TableId> | Updatable<TableId, S>)[],
-  TableRQLTags extends OnlyTableRQLTags<TableId, S, T> = OnlyTableRQLTags<TableId, S, T>,
+  T extends (Insertable<TableId> | Updatable<TableId>)[],
+  TableRQLTags extends OnlyTableRQLTags<TableId, T> = OnlyTableRQLTags<TableId, T>,
   FinalOutput = Simplify<UnionToIntersection<TableRQLTags[number]["output"]>>
 > = TableRQLTags extends never[]
   ? RQLTag<TableId, {}, AllProps<S>>

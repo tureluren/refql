@@ -7,7 +7,6 @@ interface Raw<Params = any> extends SQLNode<Params> {
   run: TagFunctionVariable<Params, string>;
   map(f: (x: ValueType) => ValueType): Raw<Params>;
   [flMap]: Raw<Params>["map"];
-  setPred (fn: TagFunctionVariable<Params, boolean>): Raw<Params>;
 }
 
 const type = "refql/Raw";

@@ -2,7 +2,7 @@ import { refqlType } from "../common/consts";
 import { OrdOperator, TagFunctionVariable } from "../common/types";
 import { SQLTag } from "../SQLTag";
 import Raw from "../SQLTag/Raw";
-import { sqlP } from "../SQLTag/sql";
+import { sqlX } from "../SQLTag/sql";
 import Value from "../SQLTag/Value";
 import Operation, { operationPrototype } from "./Operation";
 
@@ -19,7 +19,7 @@ const prototype = Object.assign ({}, operationPrototype, {
   interpret
 });
 
-function Ord<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, operator: OrdOperator, pred?: TagFunctionVariable<Params, boolean>) {
+function Ord<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, operator: OrdOperator) {
   let ord: Ord<Params, Output> = Object.create (prototype);
 
   ord.run = (
@@ -28,17 +28,13 @@ function Ord<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, 
 
   ord.operator = operator;
 
-  if (pred) {
-    ord.pred = pred;
-  }
-
   return ord;
 }
 
 function interpret(this: Ord, col: Raw | SQLTag) {
-  const { operator, pred, run } = this;
+  const { operator, run } = this;
 
-  return sqlP (pred)`
+  return sqlX`
     and ${col} ${Raw (operator)} ${Value (run)}
   `;
 }

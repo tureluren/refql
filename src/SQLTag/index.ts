@@ -1,7 +1,7 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
+import RQLEmpty from "../common/RQLEmpty";
 import { Querier, RequiredRefQLOptions, StringMap, TagFunctionVariable } from "../common/types";
-import rawSpace from "../RQLTag/RawSpace";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import Raw from "./Raw";
 import SQLNode from "./SQLNode";
@@ -82,7 +82,7 @@ function concat(this: SQLTag, other: SQLTag) {
   if (isEmptyTag (this)) return other;
   if (isEmptyTag (other)) return this;
 
-  return this.join (rawSpace (), other);
+  return this.join (" ", other);
 }
 
 function interpret(this: SQLTag): InterpretedSQLTag {
@@ -92,54 +92,41 @@ function interpret(this: SQLTag): InterpretedSQLTag {
 
 
   for (const node of this.nodes) {
-    const { pred, run } = node;
     if (Raw.isRaw (node)) {
-      // move run 1ne hoger en definier on SQL node
-
       strings.push ({
         run: (p, _i) => {
-          const pr = pred (p);
-          if (!pr) return ["", 0];
-
-          let s = run (p);
-          return [s, 0];
+          return [node.run (p), 0];
         }
       });
     } else if (Value.isValue (node)) {
 
       values.push ({
         run: p => {
-          const pr = pred (p);
-          if (!pr) return [];
+          const ran = node.run (p);
 
-          return [run (p)];
+          // null is allowed, undefined not
+          if (ran === RQLEmpty) return [];
+
+          return [ran];
         }
       });
 
       strings.push ({
         run: (p, i) => {
-          const pr = pred (p);
-          if (!pr) return ["", 0];
+          const ran = node.run (p);
+
+          if (ran === RQLEmpty) return ["", 0];
 
           return [getPSign (i + 1), 1];
         }
       });
     } else if (Values.isValues (node)) {
+      const { run } = node;
 
-      values.push ({
-        run: p => {
-          const pr = pred (p);
-          if (!pr) return [];
-
-          return run (p);
-        }
-      });
+      values.push ({ run });
 
       strings.push ({
         run: (p, i) => {
-          const pr = pred (p);
-          if (!pr) return ["", 0];
-
           const xs = run (p);
           return [
             `(${xs.map ((_x: any, j: number) => getPSign (i + j + 1)).join (", ")})`,
@@ -148,15 +135,14 @@ function interpret(this: SQLTag): InterpretedSQLTag {
         }
       });
     } else if (Values2D.isValues2D (node)) {
-      const { run } = node;
 
       values.push ({
-        run: p => run (p).flat (1).filter (p => !Raw.isRaw (p))
+        run: p => node.run (p).flat (1).filter ((p: any) => !Raw.isRaw (p))
       });
 
       strings.push ({
         run: (p, i) => {
-          const values2D = run (p),
+          const values2D = node.run (p),
             s = [];
 
           let n = 0;

@@ -24,7 +24,6 @@ function OrderBy<Params = any>(descending: boolean = false) {
   return orderBy;
 }
 
-// hard to make pred work for orderby because of 'order by' keyword placement.
 function interpret(this: OrderBy, col: Raw | SQLTag) {
   const { descending } = this;
   const dir = descending ? "desc" : "asc";

@@ -9,7 +9,6 @@ import { sqlX } from "../SQLTag/sql";
 import { Table } from "../Table";
 import CUD, { CUDPrototype } from "./CUD";
 import getStandardProps from "./getStandardProps";
-import rawSpace from "./RawSpace";
 import RQLNode from "./RQLNode";
 
 export interface DeleteRQLTag<TableId extends string = any, Params = any, Output = any> extends CUD<TableId, Params, Output> {
@@ -54,15 +53,13 @@ function interpret(this: DeleteRQLTag): InterpretedCUD {
         : Raw (`${table.name}.${node.col || node.as}`);
 
       for (const op of node.operations) {
-        const delimiter = rawSpace (op.pred);
-
         filters = filters.join (
-          delimiter,
+          " ",
           op.interpret (col)
         );
       }
     } else if (isSQLTag (node)) {
-      filters = filters.join (rawSpace (), node);
+      filters = filters.join (" ", node);
     } else {
       throw new Error (`Unknown Deletable RQLNode Type: "${String (node)}"`);
     }

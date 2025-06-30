@@ -13,18 +13,17 @@ interface SQLProp<As extends string = any, Output = any, Params = any, IsOmitted
   isOmitted: IsOmitted;
   arrayOf(): SQLProp<As, Output[], Params, IsOmitted, HasOp>;
   nullable(): SQLProp<As, Output | null, Params, IsOmitted, HasOp>;
-  // Because of pred function, Output | undefined
-  eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output | undefined> | Output, pred?: TagFunctionVariable<Params & Params2, boolean>): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output> | Output): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
   notEq: SQLProp<As, Output, Params, IsOmitted, HasOp>["eq"];
-  isNull<Params2 = {}>(pred?: TagFunctionVariable<Params & Params2, boolean>): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  isNull<Params2 = {}>(): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
   notIsNull: SQLProp<As, Output, Params, IsOmitted, HasOp>["isNull"];
-  like<Params2 = {}>(run: TagFunctionVariable<Params & Params2, string | undefined> | string, pred?: TagFunctionVariable<Params & Params2, boolean>): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  like<Params2 = {}>(run: TagFunctionVariable<Params & Params2, string> | string): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
   notLike: SQLProp<As, Output, Params, IsOmitted, HasOp>["like"];
   iLike: SQLProp<As, Output, Params, IsOmitted, HasOp>["like"];
   notILike: SQLProp<As, Output, Params, IsOmitted, HasOp>["like"];
-  in<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output[] | undefined> | Output[], pred?: TagFunctionVariable<Params & Params2, boolean>): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  in<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output[]> | Output[]): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
   notIn: SQLProp<As, Output, Params, IsOmitted, HasOp>["in"];
-  gt<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output | undefined> | Output, pred?: TagFunctionVariable<Params & Params2>): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  gt<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output> | Output): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
   gte: SQLProp<As, Output, Params, IsOmitted, HasOp>["gt"];
   lt: SQLProp<As, Output, Params, IsOmitted, HasOp>["gt"];
   lte: SQLProp<As, Output, Params, IsOmitted, HasOp>["gt"];

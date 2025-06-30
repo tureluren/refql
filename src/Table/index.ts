@@ -25,8 +25,8 @@ export interface Table<TableId extends string = any, Props = any> {
   [flEquals]: Table<TableId, Props>["equals"];
   toString(): string;
   insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
-  update<Components extends Updatable<TableId, Props>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
-  delete<Components extends Deletable<Props>[]>(components: Components): DeleteRQLTag<TableId, Params<TableId, Props, Components>, CUDOutput<TableId, Props, Components>["output"]>;
+  update<Components extends Updatable<TableId>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
+  delete<Components extends Deletable<TableId>[]>(components: Components): DeleteRQLTag<TableId, Params<TableId, Props, Components>, CUDOutput<TableId, Props, Components>["output"]>;
 }
 
 const type = "refql/Table";

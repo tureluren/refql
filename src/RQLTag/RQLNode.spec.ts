@@ -24,7 +24,8 @@ describe ("RQLNodes", () => {
     expect (RefNode.isRefNode (RefNode (
       Team ([]),
       RefProp ("team", "public.team", "BelongsTo", { lRef: ["team_id"], rRef: ["id"] }, false),
-      Player
+      Player,
+      {} as any
     ))).toBe (true);
 
     expect (RefNode.isRefNode ("RefNode")).toBe (false);
