@@ -1,4 +1,4 @@
-import { dir, eq, isNull, like, nullable, omit, ord, whereIn } from ".";
+import Prop, { dir, eq, isNull, like, logic, nullable, omit, ord, whereIn } from ".";
 import Operation from "../RQLTag/Operation";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import { SQLTag } from "../SQLTag";
@@ -32,6 +32,8 @@ interface SQLProp<As extends string = any, Output = any, Params = any, IsOmitted
   operations: Operation<Params>[];
   hasOp: HasOp;
   omit(): SQLProp<As, Output, Params, true, HasOp>;
+  or<Params2 = {}>(prop: Prop | SQLProp<any, any, Params2>): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  and: SQLProp<As, Output, Params, IsOmitted, HasOp>["or"];
 }
 
 const type = "refql/SQLProp";
@@ -57,7 +59,9 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   lte: ord ("<="),
   asc: dir (),
   desc: dir (true),
-  omit
+  omit,
+  or: logic ("or"),
+  and: logic ("and")
 });
 
 function SQLProp<As extends string, Params = any>(as: As, col: SQLTag<Params>) {

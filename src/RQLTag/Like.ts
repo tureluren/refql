@@ -33,13 +33,13 @@ function Like<Params>(run: TagFunctionVariable<Params, string> | string, caseSen
   return like;
 }
 
-function interpret(this: Like, col: Raw | SQLTag) {
+function interpret(this: Like, col: Raw | SQLTag, displayAnd: boolean) {
   const { run, caseSensitive, notLike } = this;
   const like = caseSensitive ? "like" : "ilike";
   const equality = notLike ? `not ${like}` : like;
 
   return sqlX`
-    and ${col} ${Raw (equality)} ${run}
+    ${Raw (displayAnd ? "and " : "")}${col} ${Raw (equality)} ${run}
   `;
 }
 

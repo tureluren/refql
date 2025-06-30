@@ -30,12 +30,12 @@ function Eq<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, n
   return eq;
 }
 
-function interpret(this: Eq, col: Raw | SQLTag) {
+function interpret(this: Eq, col: Raw | SQLTag, displayAnd: boolean) {
   const { notEq, run } = this;
   const equality = notEq ? "!=" : "=";
 
   return sqlX`
-    and ${col} ${Raw (equality)} ${run}
+    ${Raw (displayAnd ? "and " : "")}${col} ${Raw (equality)} ${run}
   `;
 }
 

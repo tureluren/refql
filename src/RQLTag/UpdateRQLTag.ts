@@ -57,7 +57,7 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
       for (const op of node.operations) {
         filters = filters.join (
           " ",
-          op.interpret (col)
+          op.interpret (col, true, table.name)
         );
       }
     } else if (isRQLTag (node)) {

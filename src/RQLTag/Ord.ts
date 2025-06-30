@@ -31,11 +31,11 @@ function Ord<Params, Output>(run: TagFunctionVariable<Params, Output> | Output, 
   return ord;
 }
 
-function interpret(this: Ord, col: Raw | SQLTag) {
+function interpret(this: Ord, col: Raw | SQLTag, displayAnd: boolean) {
   const { operator, run } = this;
 
   return sqlX`
-    and ${col} ${Raw (operator)} ${Value (run)}
+    ${Raw (displayAnd ? "and " : "")}${col} ${Raw (operator)} ${Value (run)}
   `;
 }
 

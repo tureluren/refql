@@ -24,12 +24,12 @@ function IsNull<Params>(notIsNull = false) {
   return isNull;
 }
 
-function interpret(this: IsNull, col: Raw | SQLTag) {
+function interpret(this: IsNull, col: Raw | SQLTag, displayAnd: boolean) {
   const { notIsNull } = this;
   const equality = notIsNull ? "is not null" : "is null";
 
   return sqlX`
-    and ${col} ${Raw (equality)}
+    ${Raw (displayAnd ? "and " : "")}${col} ${Raw (equality)}
   `;
 }
 

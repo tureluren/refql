@@ -55,7 +55,7 @@ function interpret(this: DeleteRQLTag): InterpretedCUD {
       for (const op of node.operations) {
         filters = filters.join (
           " ",
-          op.interpret (col)
+          op.interpret (col, true, table.name)
         );
       }
     } else if (isSQLTag (node)) {

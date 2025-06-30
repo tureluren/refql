@@ -2,14 +2,14 @@ import Eq from "../RQLTag/Eq";
 import In from "../RQLTag/In";
 import IsNull from "../RQLTag/IsNull";
 import Like from "../RQLTag/Like";
+import Logic from "../RQLTag/Logic";
 import Operation from "../RQLTag/Operation";
-import Or from "../RQLTag/Or";
 import Ord from "../RQLTag/Ord";
 import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import { refqlType } from "../common/consts";
 import copyObj from "../common/copyObj";
-import { OrdOperator, TagFunctionVariable } from "../common/types";
+import { LogicOperator, OrdOperator, TagFunctionVariable } from "../common/types";
 import PropType, { propTypePrototype } from "./PropType";
 import SQLProp from "./SQLProp";
 
@@ -43,6 +43,7 @@ interface Prop<TableId extends string = any, As extends string = any, Output = a
   omit(): Prop<TableId, As, Output, Params, true, HasDefault, HasOp>;
   hasDefault(): Prop<TableId, As, Output, Params, IsOmitted, true, HasOp>;
   or<Params2 = {}>(prop: Prop<TableId> | SQLProp<any, any, Params2>): Prop<TableId, As, Output, Params & Params2, true, HasDefault, HasOp>;
+  and: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["or"];
 }
 
 const type = "refql/Prop";
@@ -70,7 +71,8 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   desc: dir (true),
   omit,
   hasDefault,
-  or: or ()
+  or: logic ("or"),
+  and: logic ("and")
 });
 
 function Prop<TableId extends string, As extends string>(as: As, col?: string) {
@@ -162,12 +164,12 @@ export function omit(this: Prop) {
   return prop;
 }
 
-export function or() {
-  return function (this: Prop, other: Prop) {
+export function logic(operator: LogicOperator) {
+  return function (this: Prop, run: any) {
     const prop = copyObj (this);
-    const orOp = Or (other);
+    const logicOp = Logic (run, operator);
 
-    prop.operations = prop.operations.concat (orOp);
+    prop.operations = prop.operations.concat (logicOp);
 
     return prop;
   };

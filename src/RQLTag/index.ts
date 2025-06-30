@@ -146,12 +146,12 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
           const delimiter = isEmptyTag (orderBies) ? "order by " : ", ";
           orderBies = orderBies.join (
             delimiter,
-            op.interpret (col)
+            op.interpret (col, true, table.name)
           );
         } else {
           filters = filters.join (
             " ",
-            op.interpret (col)
+            op.interpret (col, true, table.name)
           );
         }
       }

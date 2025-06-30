@@ -24,6 +24,8 @@ export type ValueType =
 
 export type OrdOperator = ">" | "<" | ">=" | "<=";
 
+export type LogicOperator = "and" | "or";
+
 export type RelType = "BelongsTo" | "HasMany" | "HasOne" | "BelongsToMany";
 
 // 0 extends (1 & T) = any

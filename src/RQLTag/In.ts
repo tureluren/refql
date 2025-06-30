@@ -31,12 +31,12 @@ function In<Params, Output>(run: TagFunctionVariable<Params, Output[]> | Output[
   return whereIn;
 }
 
-function interpret(this: In, col: Raw | SQLTag) {
+function interpret(this: In, col: Raw | SQLTag, displayAnd: boolean) {
   const { notIn, run } = this;
   const equality = notIn ? "not in" : "in";
 
   return sqlX`
-    and ${col} ${Raw (equality)} ${Values (run)}
+    ${Raw (displayAnd ? "and " : "")}${col} ${Raw (equality)} ${Values (run)}
   `;
 }
 
