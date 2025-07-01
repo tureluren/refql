@@ -1,5 +1,5 @@
 # RefQL
-A Node.js and Deno library for composing and running typesafe SQL queries.
+A library for composing and running typesafe SQL queries.
 
 ## Installation
 ```bash
@@ -106,7 +106,7 @@ import refql from "./refql";
 const { Player, Team } = refql.tables.public;
 
 const readPart1 = Player ([
-  id,
+  "id",
   "firstName",
   Team (["id"])
 ]);
