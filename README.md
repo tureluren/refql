@@ -103,7 +103,7 @@ Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures.
 ```ts
 import refql from "./refql";
 
-const { Player } = refql.tables.public;
+const { Player, Team } = refql.tables.public;
 
 const readPart1 = Player ([
   id,
