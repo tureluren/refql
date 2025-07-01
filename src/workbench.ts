@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import RefQL, { Limit, NumberProp, StringProp } from ".";
+import RefQL, { Limit, NumberProp, Offset, StringProp } from ".";
 
 const pool = new Pool ({
   user: "test",
@@ -23,29 +23,45 @@ const { tables, Table, sql } = RefQL ({
   querier
 });
 
-const { Team } = tables.public;
+const { Team, Player } = tables.public;
 
-const { name } = Team.props;
 
-const Player = Table ("player", [
-  StringProp ("firstName", "first_name"),
-  StringProp ("lastName", "last_name"),
-  NumberProp ("nummerke", sql<{ nr: number} >`3`)
+
+
+const { teamId, lastName } = Player.props;
+
+const goalCount = NumberProp ("goalCount", sql`
+  select cast(count(*) as int) from goal
+  where goal.player_id = player.id
+`);
+
+const readStrikers = Player ([
+  goalCount.gt (7),
+  teamId
+    .eq (1)
+    // "teamId" column will not be in the result
+    .omit ()
+
 ]);
 
-const { firstName, nummerke, lastName } = Player.props;
-
-
-const readPlayer = Player ([
-  // "nummerke",
-  // nummerke,
-  firstName.iLike ("A%").or (firstName.like ("B%").eq ("a").and (lastName.eq ("dd").or (nummerke.like ("loemp")))),
-  // nummerke.eq (3),
-  Limit (1)
+const searchStrikers = Player ([
+  lastName
+    .iLike<{ q: string }> (p => p.q)
+    // order by lastName asc
+    .asc ()
 ]);
 
-readPlayer ().then (r => {
-  console.log (r);
-});
+const readPlayerPage = Player ([
+  Limit (5),
+  Offset (0)
+]);
 
+const readStrikersPage =
+  readStrikers
+    .concat (searchStrikers)
+    .concat (readPlayerPage);
 
+// run
+readStrikersPage ({ q: "Gra%" }).then (console.log);
+
+// [

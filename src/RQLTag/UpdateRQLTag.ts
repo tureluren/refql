@@ -50,14 +50,12 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
 
   for (const node of nodes) {
     if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
-      const col = isSQLTag (node.col)
-        ? sqlX`(${node.col})`
-        : Raw (`${table.name}.${node.col || node.as}`);
+      const col = node.interpret ();
 
       for (const op of node.operations) {
         filters = filters.join (
           " ",
-          op.interpret (col, true, table.name)
+          op.interpret (col, true)
         );
       }
     } else if (isRQLTag (node)) {

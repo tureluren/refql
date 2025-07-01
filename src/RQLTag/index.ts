@@ -131,9 +131,7 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
 
   for (const node of nodes) {
     if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
-      const col = isSQLTag (node.col)
-        ? sqlX`(${node.col})`
-        : Raw (`${table.name}.${node.col || node.as}`);
+      const col = node.interpret ();
 
       members.push ({ as: node.as, node: sqlX`${col} ${Raw (`"${node.as}"`)}`, isOmitted: node.isOmitted });
 
@@ -146,12 +144,12 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
           const delimiter = isEmptyTag (orderBies) ? "order by " : ", ";
           orderBies = orderBies.join (
             delimiter,
-            op.interpret (col, true, table.name)
+            op.interpret (col, true)
           );
         } else {
           filters = filters.join (
             " ",
-            op.interpret (col, true, table.name)
+            op.interpret (col, true)
           );
         }
       }
@@ -178,7 +176,7 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
       .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col))
       .map (prop => ({
         as: prop.as,
-        node: Raw (`${table.name}.${prop.col || prop.as} "${prop.as}"`),
+        node: sqlX`${prop.interpret ()} ${Raw (`"${prop.as}"`)}`,
         isOmitted: false
       }));
 

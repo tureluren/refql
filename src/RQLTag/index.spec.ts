@@ -800,6 +800,53 @@ describe ("RQLTag type", () => {
     expect (teamValues).toEqual ([1]);
   });
 
+  test ("Or", async () => {
+    const { lastName } = Player.props;
+
+    const cars = StringProp ("cars");
+
+    const tag = Player ([
+      "id",
+      "lastName",
+      lastName.like ("A%").or (lastName.like ("B%")),
+      cars.desc ().omit ()
+    ]);
+
+    const [query, values] = await tag.compile ({});
+
+    expect (query).toBe (format (`
+      select player.id "id", player.last_name "lastName"
+      from public.player
+      where 1 = 1
+      and player.last_name like $1 or player.last_name like $2
+      order by cars desc
+    `));
+
+    expect (values).toEqual (["A%", "B%"]);
+  });
+
+  test ("And", async () => {
+    const { lastName, firstName } = Player.props;
+
+    const tag = Player ([
+      "id",
+      "lastName",
+      lastName.like ("A%").and (firstName.like ("B%").or (firstName.like ("C%")))
+    ]);
+
+    const [query, values] = await tag.compile ({});
+
+    expect (query).toBe (format (`
+      select player.id "id", player.last_name "lastName"
+      from public.player
+      where 1 = 1
+      and player.last_name like $1 and (player.first_name like $2 or player.first_name like $3)
+    `));
+
+    expect (values).toEqual (["A%", "B%", "C%"]);
+  });
+
+
   test ("No record found", async () => {
     const goals = Goal ([]);
 
@@ -833,6 +880,8 @@ describe ("RQLTag type", () => {
   });
 
   test ("errors", () => {
+    const { lastName } = Player.props;
+
     expect (() => Player (["id", "lastName"]).concat (Team (["id", "name"]) as any))
       .toThrowError (new Error ("U can't concat RQLTags that come from different tables"));
 
@@ -844,6 +893,18 @@ describe ("RQLTag type", () => {
 
     expect (() => Player (["id", "lastName", 1 as any]))
       .toThrowError (new Error ('Unknown Selectable Type: "1"'));
+
+    expect (() => Player ([lastName.or (lastName)]))
+      .toThrowError (new Error ('"or" called on Prop without operations'));
+
+    expect (() => Player ([lastName.iLike ("a%").or (lastName)]))
+      .toThrowError (new Error ("Prop without operations passed"));
+
+    expect (() => Player ([lastName.iLike ("a%").or (lastName.iLike ("b%").desc ())]).compile ({}))
+      .toThrowError (new Error ("No OrderBy operation allowed here"));
+
+    expect (() => Player ([]).concat (Team (["id", "name"]) as any))
+      .toThrowError (new Error ("U can't concat RQLTags that come from different tables"));
 
     expect (() => Player ({} as any))
       .toThrowError (new Error ("Invalid components: not an Array"));

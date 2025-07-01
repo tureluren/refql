@@ -7,6 +7,7 @@ import Operation from "../RQLTag/Operation";
 import Ord from "../RQLTag/Ord";
 import OrderBy from "../RQLTag/OrderBy";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
+import Raw from "../SQLTag/Raw";
 import { refqlType } from "../common/consts";
 import copyObj from "../common/copyObj";
 import { LogicOperator, OrdOperator, TagFunctionVariable } from "../common/types";
@@ -44,6 +45,7 @@ interface Prop<TableId extends string = any, As extends string = any, Output = a
   hasDefault(): Prop<TableId, As, Output, Params, IsOmitted, true, HasOp>;
   or<Params2 = {}>(prop: Prop<TableId> | SQLProp<any, any, Params2>): Prop<TableId, As, Output, Params & Params2, true, HasDefault, HasOp>;
   and: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["or"];
+  interpret: () => Raw;
 }
 
 const type = "refql/Prop";
@@ -72,7 +74,8 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   omit,
   hasDefault,
   or: logic ("or"),
-  and: logic ("and")
+  and: logic ("and"),
+  interpret
 });
 
 function Prop<TableId extends string, As extends string>(as: As, col?: string) {
@@ -166,8 +169,14 @@ export function omit(this: Prop) {
 
 export function logic(operator: LogicOperator) {
   return function (this: Prop, run: any) {
+
+    if (this.operations.length === 0) {
+      throw new Error (`"${operator}" called on Prop without operations`);
+    }
+
     const prop = copyObj (this);
     const logicOp = Logic (run, operator);
+
 
     prop.operations = prop.operations.concat (logicOp);
 
@@ -180,6 +189,16 @@ function hasDefault(this: Prop) {
   prop.hasDefaultValue = true;
 
   return prop;
+}
+
+function interpret(this: Prop) {
+  const { tableName, col, as } = this;
+
+  if (tableName) {
+    return Raw (`${tableName}.${col || as}`);
+  }
+
+  return Raw (col || as);
 }
 
 Prop.isProp = function <As extends string = any, Output = any> (x: any): x is Prop {

@@ -303,26 +303,35 @@ const goalCount = NumberProp ("goalCount", sql`
   where goal.player_id = player.id
 `);
 
-const { teamId, firstName, lastName } = Player.props;
+const { teamId, lastName } = Player.props;
 
 const readStrikers = Player ([
   goalCount.gt (7),
   teamId
     .eq (1)
     // "teamId" column will not be in the result
-    .omit (),
+    .omit ()
 
-  lastName
-    .like<{ q?: string}> (p => p.q)
-    // order by lastName asc
-    .asc (),
-
-  firstName.iLike ("ar%")
 ]);
 
-const readStrikersPage = readStrikers
-  .concat (Player ([Limit (5), Offset (0)]));
+const searchStrikers = Player ([
+  lastName
+    .iLike<{ q: string }> (p => p.q)
+    // order by lastName asc
+    .asc ()
+]);
 
+const readPlayerPage = Player ([
+  Limit (5),
+  Offset (0)
+]);
+
+const readStrikersPage =
+  readStrikers
+    .concat (searchStrikers)
+    .concat (readPlayerPage);
+
+// run
 readStrikersPage ({ q: "Gra%" }).then (console.log);
 
 // [

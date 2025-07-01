@@ -48,8 +48,10 @@ const makeTable = (options: RequiredRefQLOptions) => {
       throw new Error ("Invalid props: not an Array");
     }
 
+    const [tableName, schema] = name.trim ().split (".").reverse ();
+
     let properties = props.reduce (
-      (acc, prop) => ({ ...acc, [prop.as]: prop }),
+      (acc, prop) => ({ ...acc, [prop.as]: prop.setTableName (tableName) }),
       {} as { [P in Props[number] as P["as"] ]: P extends Prop ? Prop<TableId, P["as"], P["output"], P["params"], P["isOmitted"], P["hasDefaultValue"], P["hasOp"]> : P; }
     );
 
@@ -110,7 +112,6 @@ const makeTable = (options: RequiredRefQLOptions) => {
 
     Object.setPrototypeOf (table, prototype);
 
-    const [tableName, schema] = name.trim ().split (".").reverse ();
 
     Object.defineProperty (table, "name", {
       value: tableName,
