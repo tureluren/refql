@@ -1,6 +1,6 @@
 import { RQLTag } from "./index.ts";
 import { Table } from "../Table/index.ts";
-import { InterpretedCUD, RequiredRefQLOptions, Runner, StringMap } from "../common/types.ts";
+import { InterpretedCUD, Querier, RequiredRefQLOptions, Runner, StringMap } from "../common/types.ts";
 
 const CUDSymbol: unique symbol = Symbol ("@@CUD");
 
@@ -15,7 +15,7 @@ interface CUD<TableId extends string = any, Params = any, Output = any> {
   interpret(): InterpretedCUD<Params, Output>;
   interpreted: InterpretedCUD<Params, Output>;
   compile(params: Params): [string, any[], RQLTag<any, Output>];
-  run(params: Params): Promise<Output[]>;
+  run(params: Params, querier?: Querier): Promise<Output[]>;
 }
 
 export const CUDPrototype = {
@@ -40,14 +40,14 @@ function compile(this: CUD, params: StringMap) {
   ];
 }
 
-async function run(this: CUD, params: StringMap): Promise<any[]> {
+async function run(this: CUD, params: StringMap, querier?: Querier): Promise<any[]> {
   const [query, values, returning] = this.compile (params);
 
-  const rows = await this.options.querier (query, values);
+  const rows = await (querier || this.options.querier) (query, values);
 
   if (!returning) return rows;
 
-  return returning ({ rows, ...params });
+  return returning.run ({ rows, ...params }, querier);
 }
 
 export const isCUD = function (x: any): x is CUD {

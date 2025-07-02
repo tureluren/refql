@@ -9,6 +9,7 @@ import HasOne from "./Prop/HasOne";
 import NumberProp from "./Prop/NumberProp";
 import PropType from "./Prop/PropType";
 import RefProp from "./Prop/RefProp";
+import SQLProp from "./Prop/SQLProp";
 import StringProp from "./Prop/StringProp";
 import RefQL from "./RefQL";
 import { createRQLTag, isRQLTag, RQLTag } from "./RQLTag";
@@ -33,7 +34,7 @@ export {
   Eq, HasMany, HasOne, isEmptyTag, IsNull, isRQLTag,
   isSQLNode, isSQLTag, Limit, makeTable, NumberProp,
   Offset, parse, Prop, PropType, Raw, RefField, RefNode,
-  RefProp, RQLTag, SQLTag, StringProp, Value, Values, Values2D
+  RefProp, RQLTag, SQLProp, SQLTag, StringProp, Value, Values, Values2D
 };
 
 export default RefQL;

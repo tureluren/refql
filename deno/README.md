@@ -1,5 +1,5 @@
 # RefQL
-A Node.js and Deno library for composing and running typesafe SQL queries.
+A library for composing and running typesafe SQL queries.
 
 ## Installation
 ```bash
@@ -103,10 +103,10 @@ Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures.
 ```ts
 import refql from "./refql";
 
-const { Player } = refql.tables.public;
+const { Player, Team } = refql.tables.public;
 
 const readPart1 = Player ([
-  id,
+  "id",
   "firstName",
   Team (["id"])
 ]);
@@ -164,7 +164,7 @@ const refql = RefQL ({
   indexedParameters: true,
 
   // run tag and transform result - optional
-  runner: (tag, params) => tag.run(params)
+  runner: (tag, params) => tag.run (params)
 });
 ```
 
@@ -223,7 +223,7 @@ const promiseToTask = <Output>(p: Promise<Output>) =>
 
 const { tables }  = RefQL ({
   // ...refql options
-  runner: (tag, params) => promiseToTask (tag.run(params))
+  runner: (tag, params) => promiseToTask (tag.run (params))
 });
 
 const { Player } = tables;
@@ -304,7 +304,7 @@ const goalCount = NumberProp ("goalCount", sql`
   where goal.player_id = player.id
 `);
 
-const { teamId, lastName } = Player.props;
+const { teamId, firstName, lastName } = Player.props;
 
 const readStrikers = Player ([
   goalCount.gt (7),
@@ -318,6 +318,7 @@ const readStrikers = Player ([
 const searchStrikers = Player ([
   lastName
     .iLike<{ q: string }> (p => p.q)
+    .or (firstName.iLike<{ q: string }> (p => p.q))
     // order by lastName asc
     .asc ()
 ]);

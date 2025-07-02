@@ -225,7 +225,7 @@ async function run(this: RQLTag, params: StringMap, querier?: Querier): Promise<
 
   const nextData = await Promise.all (next.map (
     // { ...null } = {}
-    n => n.tag.run ({ ...params, refQLRows })
+    n => n.tag.run ({ ...params, refQLRows }, querier)
   )) as any[][];
 
   return refQLRows.map (row =>

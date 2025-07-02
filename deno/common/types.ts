@@ -47,7 +47,7 @@ export type OnlyRefProps<T> = Only<T, RefProp>;
 export type OnlyPropsOrSQLProps<T> = Only<T, Prop | SQLProp>;
 
 export type OnlyWithEmptyOperations<T> =
-  Only<T, Prop<any, any, any, any, any, false> | SQLProp<any, any, any, any, false>>;
+  Only<T, Prop<any, any, any, any, any, any, false> | SQLProp<any, any, any, any, false>>;
 
 export type AllProps<S> =
   Simplify<{ [K in OnlyProps<S>[keyof OnlyProps<S>] as K["as"]]: K["output"] }>;
@@ -142,7 +142,7 @@ export type ShouldSelectAll<TableId extends string, S, T extends Selectable<Tabl
   Extract<T[number], keyof OnlyPropsOrSQLProps<S> | OnlyWithEmptyOperations<S>[keyof OnlyWithEmptyOperations<S>]>[] extends never[] ? true : false;
 
 export type ExtractOmittedPropsMap<TableId extends string, S, T extends Selectable<TableId, S>[]> =
-  { [K in T[number] as K extends Prop<infer Key, any, any, true> ? Key : never]: K extends Prop<any, any, any, true> ? K : never;}
+  { [K in T[number] as K extends Prop<any, infer Key, any, any, true> ? Key : never]: K extends Prop<any, any, any, any, true> ? K : never;}
   & { [K in T[number] as K extends SQLProp<infer Key, any, any, true> ? Key : never]: K extends SQLProp<any, any, any, true> ? K : never;};
 
 export type IgnoreOmitted<TableId extends string, S, T extends Selectable<TableId, S>[], OmitMap = ExtractOmittedPropsMap<TableId, S, T>> = T extends (infer U)[]

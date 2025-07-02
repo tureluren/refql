@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import RefQL, { Limit, NumberProp, Offset, StringProp } from ".";
+import RefQL, { Limit, NumberProp, Offset, StringProp, Values } from ".";
 
 const pool = new Pool ({
   user: "test",
@@ -35,12 +35,13 @@ const goalCount = NumberProp ("goalCount", sql`
   where goal.player_id = player.id
 `);
 
+const buh = teamId
+
+    // "teamId" column will not be in the result
+  .omit ();
 const readStrikers = Player ([
   goalCount.gt (7),
-  teamId
-    .eq (1)
-    // "teamId" column will not be in the result
-    .omit ()
+  buh
 
 ]);
 
@@ -62,6 +63,27 @@ const readStrikersPage =
     .concat (readPlayerPage);
 
 // run
-readStrikersPage ({ q: "Gra%" }).then (console.log);
+// readStrikers ({ q: "Gra%" }).then (res => res[0]);
 
 // [
+const byIds = sql<{rows: { id: number }[]}>`
+  and id in ${Values (({ rows }) => rows.map (r => r.id))} 
+`;
+
+const insertTeam = Team.insert ([
+  Team ([
+    "id",
+    "name",
+    Player,
+    byIds
+  ])
+
+  // Team ([
+  //   "active",
+  //   "leagueId"
+  // ])
+]);
+
+// Fields that are not nullable and don't have a default value are required
+insertTeam ({ data: [{ name: "New Team", leagueId: 1 }] })
+  .then (console.log);

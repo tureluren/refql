@@ -9,6 +9,7 @@ import HasOne from "./Prop/HasOne.ts";
 import NumberProp from "./Prop/NumberProp.ts";
 import PropType from "./Prop/PropType.ts";
 import RefProp from "./Prop/RefProp.ts";
+import SQLProp from "./Prop/SQLProp.ts";
 import StringProp from "./Prop/StringProp.ts";
 import RefQL from "./RefQL.ts";
 import { createRQLTag, isRQLTag, RQLTag } from "./RQLTag/index.ts";
@@ -33,7 +34,7 @@ export {
   Eq, HasMany, HasOne, isEmptyTag, IsNull, isRQLTag,
   isSQLNode, isSQLTag, Limit, makeTable, NumberProp,
   Offset, parse, Prop, PropType, Raw, RefField, RefNode,
-  RefProp, RQLTag, SQLTag, StringProp, Value, Values, Values2D
+  RefProp, RQLTag, SQLProp, SQLTag, StringProp, Value, Values, Values2D
 };
 
 export default RefQL;
