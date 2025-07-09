@@ -1,4 +1,5 @@
 import { flEquals, refqlType } from "../common/consts.ts";
+import copyObj from "../common/copyObj.ts";
 import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, RequiredRefQLOptions, Selectable, Simplify, Updatable, UpdateParams } from "../common/types.ts";
 import validateTable, { validateComponents } from "../common/validateTable.ts";
 import withDefaultOptions from "../common/withDefaultOptions.ts";
@@ -31,6 +32,39 @@ export interface Table<TableId extends string = any, Props = any> {
 
 const type = "refql/Table";
 
+function upsertRQLNode(nodes: RQLNode[], newNode: RQLNode) {
+  if (Prop.isProp (newNode) || SQLProp.isSQLProp (newNode)) {
+    const index = nodes.findIndex (node => {
+      if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
+        return node.as === newNode.as;
+      }
+
+      return false;
+
+    });
+
+    if (index !== -1) {
+      // Merge operations if item exists
+      const existingNode = nodes[index] as Prop | SQLProp;
+
+      const prop = copyObj (existingNode) as Prop | SQLProp;
+
+      prop.operations = prop.operations.concat (newNode.operations);
+
+      // || the same prop can occur twice when selecting components, but if one is omitted, the output type wil always exclude the prop
+      prop.isOmitted = prop.isOmitted || newNode.isOmitted;
+
+      nodes[index] = prop;
+
+      return nodes;
+    }
+  }
+  // Add new item
+  nodes.push (newNode);
+
+  return nodes;
+}
+
 const makeTable = (options: RequiredRefQLOptions) => {
   const prototype = Object.assign (Object.create (Function.prototype), {
     constructor: Table,
@@ -58,16 +92,27 @@ const makeTable = (options: RequiredRefQLOptions) => {
     const table = (components => {
       validateComponents (components);
 
-      const nodes: RQLNode[] = [];
+      let nodes: RQLNode[] = [];
+
+      let memberCount = 0;
+
+      // isSQLTag kan weg als dit niet meer kan voorvallen bij gen schema
+      const fieldProps = Object.entries (properties)
+        .map (([, prop]) => prop as Prop)
+        .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
 
       for (const comp of components) {
         if (typeof comp === "string" && properties[comp]) {
           const prop = properties[comp] as unknown as Prop;
-          nodes.push (prop);
+          nodes = upsertRQLNode (nodes, prop);
+          memberCount += 1;
         } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
-          nodes.push (comp);
+          nodes = upsertRQLNode (nodes, comp);
+          if (comp.operations.length === 0 && !comp.isOmitted) {
+            memberCount += 1;
+          }
         } else if (SQLProp.isSQLProp (comp)) {
-          nodes.push (comp);
+          nodes = upsertRQLNode (nodes, comp);
         } else if (isTable (comp)) {
           const refNodes = Object.keys (properties)
             .map (key => properties[key as keyof typeof properties])
@@ -104,6 +149,10 @@ const makeTable = (options: RequiredRefQLOptions) => {
         } else {
           throw new Error (`Unknown Selectable Type: "${String (comp)}"`);
         }
+      }
+
+      if (memberCount === 0) {
+        nodes.push (...fieldProps);
       }
 
       return createRQLTag (table, nodes, options);
