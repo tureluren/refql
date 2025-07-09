@@ -35,17 +35,17 @@ const goalCount = NumberProp ("goalCount", sql`
   where goal.player_id = player.id
 `);
 
-const buh = teamId
+const buh = teamId;
 
-    // "teamId" column will not be in the result
-  .omit ();
+// "teamId" column will not be in the result
+// .omit ();
 const readStrikers = Player ([
   goalCount.gt (7),
-  buh
-
+  Player.props.id
 ]);
 
 const searchStrikers = Player ([
+  // Player.props.id,
   lastName
     .iLike<{ q: string }> (p => p.q)
     // order by lastName asc
@@ -63,7 +63,7 @@ const readStrikersPage =
     .concat (readPlayerPage);
 
 // run
-// readStrikers ({ q: "Gra%" }).then (res => res[0]);
+readStrikersPage ({ q: "Gra%" }).then (res => console.log (res[0]));
 
 // [
 const byIds = sql<{rows: { id: number }[]}>`
@@ -85,5 +85,5 @@ const insertTeam = Team.insert ([
 ]);
 
 // Fields that are not nullable and don't have a default value are required
-insertTeam ({ data: [{ name: "New Team", leagueId: 1 }] })
-  .then (console.log);
+// insertTeam ({ data: [{ name: "New Team", leagueId: 1 }] })
+//   .then (console.log);

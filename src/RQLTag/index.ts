@@ -135,7 +135,7 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
 
       members.push ({ as: node.as, node: sqlX`${col} ${Raw (`"${node.as}"`)}`, isOmitted: node.isOmitted });
 
-      if (node.operations.length === 0 && !node.isOmitted) {
+      if (node.operations.length === 0 && !node.isOmitted && !SQLProp.isSQLProp (node)) {
         memberCount += 1;
       }
 
