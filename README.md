@@ -113,16 +113,14 @@ const readPart1 = Player ([
 
 const readPart2 = Player ([
   "lastName",
-  Team (["name"])
+  Team (["name"]),
+  Limit<{ limit: number }> (p => p.limit),
+  Offset<{ offset: number }> (p => p.offset)
 ]);
 
 const readPage =
   readPart1
-    .concat (readPart2)
-    .concat (Player ([
-      Limit<{ limit: number }> (p => p.limit),
-      Offset<{ offset: number }> (p => p.offset)
-    ]));
+    .concat (readPart2);
 
 readPage ({ limit: 5, offset: 0 }).then (console.log);
 
@@ -308,11 +306,7 @@ const { teamId, firstName, lastName } = Player.props;
 
 const readStrikers = Player ([
   goalCount.gt (7),
-  teamId
-    .eq (1)
-    // "teamId" column will not be in the result
-    .omit ()
-
+  teamId.eq (1)
 ]);
 
 const searchStrikers = Player ([
@@ -341,7 +335,8 @@ readStrikersPage ({ q: "Gra%" }).then (console.log);
 //     id: 14,
 //     firstName: "Arthur",
 //     lastName: "Graham",
-//     goalCount: 14
+//     goalCount: 14,
+//     teamId: 1
 //   }
 // ];
 ```

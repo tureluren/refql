@@ -28,42 +28,26 @@ const { Team, Player } = tables.public;
 
 
 
-const { teamId, lastName } = Player.props;
+const { teamId, firstName, lastName } = Player.props;
 
-const goalCount = NumberProp ("goalCount", sql`
-  select cast(count(*) as int) from goal
-  where goal.player_id = player.id
-`);
-
-const buh = teamId;
-
-// "teamId" column will not be in the result
-// .omit ();
-const readStrikers = Player ([
-  goalCount.gt (7),
-  Player.props.id
+const readPart1 = Player ([
+  "id",
+  "firstName",
+  Team (["id"])
 ]);
 
-const searchStrikers = Player ([
-  // Player.props.id,
-  lastName
-    .iLike<{ q: string }> (p => p.q)
-    // order by lastName asc
-    .asc ()
+const readPart2 = Player ([
+  "lastName",
+  Team (["name"]),
+  Limit<{ limit: number }> (p => p.limit),
+  Offset<{ offset: number }> (p => p.offset)
 ]);
 
-const readPlayerPage = Player ([
-  Limit (5),
-  Offset (0)
-]);
+const readPage =
+  readPart1
+    .concat (readPart2);
 
-const readStrikersPage =
-  readStrikers
-    .concat (searchStrikers)
-    .concat (readPlayerPage);
-
-// run
-readStrikersPage ({ q: "Gra%" }).then (res => console.log (res[0]));
+readPage ({ limit: 5, offset: 0 }).then (res => console.log (res[0]));
 
 // [
 const byIds = sql<{rows: { id: number }[]}>`

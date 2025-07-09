@@ -145,6 +145,33 @@ describe ("RQLTag type", () => {
     expect (goalsValues).toEqual (goalsValues2);
   });
 
+  test ("overwrite omitted prop after concat", () => {
+    // idProp.isOmmited && idProp2.isOmitted
+    const { id, firstName, lastName } = Player.props;
+    const tag = Player ([id.omit (), firstName, lastName]);
+    const tag2 = Player (["id"]);
+
+    const res = tag.concat (tag2);
+
+    const [query] = res.compile ({});
+
+    expect (query).toBe (format (`
+      select player.id "id", player.first_name "firstName", player.last_name "lastName" from public.player where 1 = 1
+    `));
+  });
+
+  test ("merge on RQLTag creation", () => {
+    // idProp.isOmmited || idProp2.isOmitted
+    const { id, firstName, lastName } = Player.props;
+    const tag = Player ([id, id.omit (), firstName, lastName]);
+
+    const [query] = tag.compile ({});
+
+    expect (query).toBe (format (`
+      select player.first_name "firstName", player.last_name "lastName" from public.player where 1 = 1
+    `));
+  });
+
   test ("run", async () => {
     const { props } = Player;
 

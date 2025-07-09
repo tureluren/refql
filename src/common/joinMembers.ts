@@ -6,7 +6,9 @@ const joinMembers = (tempMembers: {as: string; node: Raw | SQLTag; isOmitted: bo
   const members = tempMembers
     .reduce ((acc, member) => {
       const existing = acc[member.as];
-      const nextIsOmmitted = existing ? existing.isOmitted || member.isOmitted : member.isOmitted;
+
+      // && otherwise impossible the construct output type after concatenation (output & output2) when dealing with ignored props
+      const nextIsOmmitted = existing ? existing.isOmitted && member.isOmitted : member.isOmitted;
 
       acc[member.as] = { node: member.node, isOmitted: nextIsOmmitted };
 
