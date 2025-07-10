@@ -66,7 +66,7 @@ export declare const getTables: (Table: <TableId extends string, Props extends P
       lastName: Prop<"public.player", "lastName", string, {}, false, false, false>;
       position: RefProp<"position", "public.position", "BelongsTo", true>;
       positionId: Prop<"public.player", "positionId", number | null, {}, false, false, false>;
-      rating: RefProp<"rating", "public.rating", "HasOne", false>;
+      rating: RefProp<"rating", "public.rating", "HasOne", true>;
       team: RefProp<"team", "public.team", "BelongsTo", true>;
       teamId: Prop<"public.player", "teamId", number | null, {}, false, false, false>;
     }>;

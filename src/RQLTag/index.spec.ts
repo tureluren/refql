@@ -297,7 +297,7 @@ describe ("RQLTag type", () => {
     const defender = playerTeam!.players[0];
     const teamLeague = player.team!.league;
     const playerGame = player.games[0];
-    const playerRating = player.rating;
+    const playerRating = player.rating!;
 
     expect (Object.keys (player)).toEqual (["id", "firstName", "lastName", "team", "games", "rating"]);
     expect (Object.keys (playerTeam!)).toEqual (["name", "league", "players"]);
