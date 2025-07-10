@@ -93,11 +93,7 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
 
   const schemas = await getTables (sql);
 
-  const relationships = await getRelationships (sql).then (rels => rels.map (rel => ({
-    ...rel,
-    column_names: rel.column_names.replace (/^{|}$/g, "").split (","),
-    foreign_column_names: rel.foreign_column_names.replace (/^{|}$/g, "").split (",")
-  })));
+  const relationships = await getRelationships (sql);
 
   const schemaMap = await Promise.all (
     Object.keys (schemas).map (async schema => {
@@ -139,6 +135,9 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
 
 
           for (const fk of reversedForeignKeys) {
+            if (table === "user") {
+              // console.log (fk);
+            }
             const lRef = fk.foreign_column_names;
             const rRef = fk.column_names;
 
@@ -146,7 +145,7 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
               const propertyName = toCamelCase (fk.table_name);
               props[propertyName] = [
                 `(0, HasOne_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })`,
-                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasOne", false>;`
+                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasOne", true>;`
               ];
 
             } else {
