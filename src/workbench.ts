@@ -47,7 +47,7 @@ const readPage =
   readPart1
     .concat (readPart2);
 
-readPage ({ limit: 5, offset: 0 }).then (res => console.log (res[0]));
+// readPage ({ limit: 5, offset: 0 }).then (res => console.log (res[0]));
 
 // [
 const byIds = sql<{rows: { id: number }[]}>`
@@ -71,3 +71,12 @@ const insertTeam = Team.insert ([
 // Fields that are not nullable and don't have a default value are required
 // insertTeam ({ data: [{ name: "New Team", leagueId: 1 }] })
 //   .then (console.log);
+
+
+const andd = Player ([
+  lastName.eq ("a"),
+  firstName.gt ("a").lt ("z").and (firstName.eq ("dd").or (firstName.lt ("z")))
+
+]);
+
+andd ({}).then (res => null);

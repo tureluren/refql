@@ -568,8 +568,8 @@ describe ("RQLTag type", () => {
       select player.id "id"
       from public.player
       where 1 = 1
-      and (concat (player.first_name, ' ', player.last_name)) = $1
-      and (select case when extract(year from birthday) < $2 then true else false end from player where id = player.id limit 1) = $3
+      and ((concat (player.first_name, ' ', player.last_name)) = $1)
+      and ((select case when extract(year from birthday) < $2 then true else false end from player where id = player.id limit 1) = $3)
     `));
 
     expect (values).toEqual (["John Doe", 1980, false]);
@@ -594,9 +594,9 @@ describe ("RQLTag type", () => {
       select player.id "id", player.first_name "firstName", player.last_name "lastName"
       from public.player
       where 1 = 1 
-      and player.id in ($1, $2, $3)
-      and (select cast(count(*) as int) from goal where goal.player_id = player.id) in ($4)
-      and player.team_id in ($5, $6)
+      and (player.id in ($1, $2, $3))
+      and ((select cast(count(*) as int) from goal where goal.player_id = player.id) in ($4))
+      and (player.team_id in ($5, $6))
       order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
     `));
 
@@ -623,9 +623,8 @@ describe ("RQLTag type", () => {
       select player.id "id", player.first_name "firstName", player.last_name "lastName", player.team_id "teamId"
       from public.player
       where 1 = 1 
-      and player.id not in ($1, $2, $3)
-      and player.id != $4
-      and player.team_id in ($5)
+      and (player.id not in ($1, $2, $3) and player.id != $4)
+      and (player.team_id in ($5))
     `));
 
     expect (values).toEqual ([2, 3, 4, 1, 1]);
@@ -654,10 +653,9 @@ describe ("RQLTag type", () => {
         (select cast(count(*) as int) from goal where goal.player_id = player.id) "goalCount"
       from public.player
       where 1 = 1
-      and player.id <= $1
-      and player.team_id < $2
-      and player.team_id >= $3
-      and (select cast(count(*) as int) from goal where goal.player_id = player.id) > $4
+      and (player.id <= $1)
+      and (player.team_id < $2 and player.team_id >= $3)
+      and ((select cast(count(*) as int) from goal where goal.player_id = player.id) > $4)
       limit $5
     `));
 
@@ -691,13 +689,10 @@ describe ("RQLTag type", () => {
         player.last_name "lastName"
       from public.player
       where 1 = 1
-      and player.first_name > $1
-      and player.first_name < $2
-      and (concat (player.first_name, ' ', player.last_name)) > $3
-      and (concat (player.first_name, ' ', player.last_name)) < $4
-      and player.last_name >= $5
-      and player.last_name <= $6
-      and player.birthday < $7
+      and (player.first_name > $1 and player.first_name < $2)
+      and ((concat (player.first_name, ' ', player.last_name)) > $3 and (concat (player.first_name, ' ', player.last_name)) < $4)
+      and (player.last_name >= $5 and player.last_name <= $6)
+      and (player.birthday < $7)
       limit $8
     `));
 
@@ -729,8 +724,8 @@ describe ("RQLTag type", () => {
         player.team_id teamlref1
       from public.player
       where 1 = 1
-      and player.last_name like $1
-      and (concat (player.first_name, ' ', player.last_name)) like $2
+      and (player.last_name like $1)
+      and ((concat (player.first_name, ' ', player.last_name)) like $2)
     `));
 
     expect (values).toEqual (["Be%", "%Be%"]);
@@ -741,7 +736,7 @@ describe ("RQLTag type", () => {
       select * from (
         select distinct player.team_id teamlref1 from public.player where player.team_id in ($1)
       ) refqll1,
-      lateral (select team.name "name", team.active "active", team.id "id", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and team.name not like $2
+      lateral (select team.name "name", team.active "active", team.id "id", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and (team.name not like $2)
       ) refqll2
     `));
 
@@ -769,8 +764,8 @@ describe ("RQLTag type", () => {
         player.team_id teamlref1
       from public.player
       where 1 = 1
-      and player.last_name ilike $1
-      and (concat (player.first_name, ' ', player.last_name)) ilike $2
+      and (player.last_name ilike $1)
+      and ((concat (player.first_name, ' ', player.last_name)) ilike $2)
     `));
 
     expect (values).toEqual (["Be%", "%Be%"]);
@@ -781,7 +776,7 @@ describe ("RQLTag type", () => {
       select * from (
         select distinct player.team_id teamlref1 from public.player where player.team_id in ($1)
       ) refqll1,
-      lateral (select team.name "name", team.active "active", team.id "id", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and team.name not ilike $2
+      lateral (select team.name "name", team.active "active", team.id "id", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and (team.name not ilike $2)
       ) refqll2
     `));
 
@@ -809,8 +804,8 @@ describe ("RQLTag type", () => {
         player.team_id teamlref1
       from public.player
       where 1 = 1
-      and player.last_name is null
-      and (concat (player.first_name, ' ', player.last_name)) is null
+      and (player.last_name is null)
+      and ((concat (player.first_name, ' ', player.last_name)) is null)
     `));
 
     expect (values).toEqual ([]);
@@ -821,7 +816,7 @@ describe ("RQLTag type", () => {
       select * from (
         select distinct player.team_id teamlref1 from public.player where player.team_id in ($1)
       ) refqll1,
-      lateral (select team.name "name", team.active "active", team.id "id", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and team.name is not null
+      lateral (select team.name "name", team.active "active", team.id "id", team.league_id "leagueId" from public.team where team.id = refqll1.teamlref1 and (team.name is not null)
       ) refqll2
     `));
 
@@ -846,7 +841,7 @@ describe ("RQLTag type", () => {
       select player.id "id", player.last_name "lastName"
       from public.player
       where 1 = 1
-      and player.last_name like $1 or (player.last_name like $2)
+      and (player.last_name like $1 or player.last_name like $2)
       order by cars desc
     `));
 
@@ -868,7 +863,7 @@ describe ("RQLTag type", () => {
       select player.id "id", player.last_name "lastName"
       from public.player
       where 1 = 1
-      and player.last_name like $1 and (player.first_name like $2 or (player.first_name like $3))
+      and (player.last_name like $1 and (player.first_name like $2 or player.first_name like $3))
     `));
 
     expect (values).toEqual (["A%", "B%", "C%"]);
@@ -1029,8 +1024,8 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select game.away_team_id awayteamlref1, game.home_team_id hometeamlref1, game.away_team_id "awayTeamId", game.home_team_id "homeTeamId", game.date "date", game.id "id", game.league_id "leagueId", game.result "result" 
       from public.game where 1 = 1 
-      and game.away_team_id = $1
-      and game.home_team_id = $2 
+      and (game.away_team_id = $1)
+      and (game.home_team_id = $2)
       limit $3
     `));
 

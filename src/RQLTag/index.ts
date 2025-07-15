@@ -134,6 +134,9 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
 
       members.push ({ as: node.as, node: sqlX`${col} ${Raw (`"${node.as}"`)}`, isOmitted: node.isOmitted });
 
+      let propFilters = sqlX``;
+      let filterIdx = 0;
+
       for (const op of node.operations) {
         if (OrderBy.isOrderBy (op)) {
           const delimiter = isEmptyTag (orderBies) ? "order by " : ", ";
@@ -142,12 +145,18 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
             op.interpret (col, true)
           );
         } else {
-          filters = filters.join (
-            " ",
-            op.interpret (col, true)
+          propFilters = propFilters.join (
+            filterIdx > 0 ? " " : "",
+            op.interpret (col, filterIdx > 0)
           );
+          filterIdx += 1;
         }
       }
+
+      if (!isEmptyTag (propFilters)) {
+        filters = filters.join (" ", sqlX`and (${propFilters})`);
+      }
+
     } else if (Limit.isLimit (node)) {
       limit = node.interpret ();
 
