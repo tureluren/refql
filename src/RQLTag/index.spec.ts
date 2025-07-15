@@ -846,7 +846,7 @@ describe ("RQLTag type", () => {
       select player.id "id", player.last_name "lastName"
       from public.player
       where 1 = 1
-      and player.last_name like $1 or player.last_name like $2
+      and player.last_name like $1 or (player.last_name like $2)
       order by cars desc
     `));
 
@@ -868,7 +868,7 @@ describe ("RQLTag type", () => {
       select player.id "id", player.last_name "lastName"
       from public.player
       where 1 = 1
-      and player.last_name like $1 and (player.first_name like $2 or player.first_name like $3)
+      and player.last_name like $1 and (player.first_name like $2 or (player.first_name like $3))
     `));
 
     expect (values).toEqual (["A%", "B%", "C%"]);

@@ -51,14 +51,8 @@ function interpret(this: Logic) {
     }
   });
 
-  if (prop.operations.length > 1) {
-    return sqlX`
-      ${Raw (operator)} (${filters})
-    `;
-  }
-
   return sqlX`
-    ${Raw (operator)} ${filters}
+    ${Raw (operator)} (${filters})
   `;
 }
 

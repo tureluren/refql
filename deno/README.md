@@ -41,7 +41,7 @@ refql.introspect().then(() => {
 ```ts
 import refql from "./refql";
 
-const { Player, Team, League, Rating, Goal, Assist } = refql.tables.public;
+const { Player, Team, League, Rating, Goal, Assist, Game } = refql.tables.public;
 
 const { id } = Team.props;
 
