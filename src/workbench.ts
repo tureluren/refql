@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import RefQL, { Limit, NumberProp, Offset, StringProp, Values } from ".";
+import RefQL, { Limit, NumberProp, Offset, Raw, StringProp, Values } from ".";
 
 const pool = new Pool ({
   user: "test",
@@ -72,11 +72,20 @@ const insertTeam = Team.insert ([
 // insertTeam ({ data: [{ name: "New Team", leagueId: 1 }] })
 //   .then (console.log);
 
+const fullName = StringProp ("fullName", sql<{ delimiter: string }>`
+    concat (player.first_name, ${Raw (p => `'${p.delimiter}'`)}, player.last_name)
+  `);
 
-const andd = Player ([
-  lastName.eq ("a"),
-  firstName.gt ("a").lt ("z").and (firstName.eq ("dd").or (firstName.lt ("z")))
 
+const PatchedPlayer = Player.addProps ([fullName]);
+const { fullName: fullNameP } = PatchedPlayer.props;
+
+const andd = PatchedPlayer ([
+  // firstName.gt ("a").lt ("z").and (firstName.eq ("dd").or (firstName.lt ("z"))),
+  // fullNameP
+  // "*",
+  "fullName",
+  Limit (1)
 ]);
 
-andd ({}).then (res => null);
+andd ({ delimiter: " " }).then (res => console.log (res[0]));

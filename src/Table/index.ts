@@ -1,6 +1,6 @@
 import { flEquals, refqlType } from "../common/consts";
 import copyObj from "../common/copyObj";
-import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, RequiredRefQLOptions, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
+import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, PropMap, RequiredRefQLOptions, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
 import validateTable, { validateComponents } from "../common/validateTable";
 import withDefaultOptions from "../common/withDefaultOptions";
 import Prop from "../Prop";
@@ -28,6 +28,7 @@ export interface Table<TableId extends string = any, Props = any> {
   insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
   update<Components extends Updatable<TableId>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
   delete<Components extends Deletable<TableId>[]>(components: Components): DeleteRQLTag<TableId, Params<TableId, Props, Components>, CUDOutput<TableId, Props, Components>["output"]>;
+  addProps<Props2 extends PropType<any>[]>(props: Props2): Table<TableId, Props & PropMap<TableId, Props2>>;
 }
 
 const type = "refql/Table";
@@ -72,7 +73,8 @@ const makeTable = (options: RequiredRefQLOptions) => {
     insert, update,
     delete: remove,
     equals, [flEquals]: equals,
-    toString
+    toString,
+    addProps
   });
 
   function Table<TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) {
@@ -86,7 +88,7 @@ const makeTable = (options: RequiredRefQLOptions) => {
 
     let properties = props.reduce (
       (acc, prop) => ({ ...acc, [prop.as]: prop.setTableName (tableName) }),
-      {} as { [P in Props[number] as P["as"] ]: P extends Prop ? Prop<TableId, P["as"], P["output"], P["params"], P["isOmitted"], P["hasDefaultValue"], P["hasOp"]> : P; }
+      {} as PropMap<TableId, Props>
     );
 
     const table = (components => {
@@ -105,7 +107,9 @@ const makeTable = (options: RequiredRefQLOptions) => {
         if (typeof comp === "string" && properties[comp]) {
           const prop = properties[comp] as unknown as Prop;
           nodes = upsertRQLNode (nodes, prop);
-          memberCount += 1;
+          if (!SQLProp.isSQLProp (prop)) {
+            memberCount += 1;
+          }
         } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
           nodes = upsertRQLNode (nodes, comp);
           if (comp.operations.length === 0 && !comp.isOmitted) {
@@ -161,7 +165,6 @@ const makeTable = (options: RequiredRefQLOptions) => {
 
     Object.setPrototypeOf (table, prototype);
 
-
     Object.defineProperty (table, "name", {
       value: tableName,
       writable: false,
@@ -175,6 +178,10 @@ const makeTable = (options: RequiredRefQLOptions) => {
     return table;
   }
 
+  function addProps<Props extends PropType<any>[]>(this: Table, props: Props) {
+    const schemaAndName = `${this.schema ? this.schema + "." : ""}${this.name}`;
+    return Table (schemaAndName, Object.values (this.props).concat (props) as Props);
+  }
 
   function insert(this: Table, components: any) {
     validateComponents (components);

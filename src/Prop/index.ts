@@ -39,12 +39,12 @@ interface Prop<TableId extends string = any, As extends string = any, Output = a
   lte: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["gt"];
   asc(): Prop<TableId, As, Output, Params, IsOmitted, HasDefault, true>;
   desc: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["asc"];
+  or<Params2 = {}>(prop: Prop<TableId> | SQLProp<any, any, Params2>): Prop<TableId, As, Output, Params & Params2, IsOmitted, HasDefault, true>;
+  and: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["or"];
   operations: Operation<Params>[];
   hasOp: HasOp;
   omit(): Prop<TableId, As, Output, Params, true, HasDefault, HasOp>;
   hasDefault(): Prop<TableId, As, Output, Params, IsOmitted, true, HasOp>;
-  or<Params2 = {}>(prop: Prop<TableId> | SQLProp<any, any, Params2>): Prop<TableId, As, Output, Params & Params2, true, HasDefault, HasOp>;
-  and: Prop<TableId, As, Output, Params, IsOmitted, HasDefault, HasOp>["or"];
   interpret: () => Raw;
 }
 

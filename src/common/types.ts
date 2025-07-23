@@ -1,4 +1,5 @@
 import Prop from "../Prop";
+import PropType from "../Prop/PropType";
 import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
 import { RQLTag } from "../RQLTag";
@@ -47,7 +48,7 @@ export type OnlyRefProps<T> = Only<T, RefProp>;
 export type OnlyPropsOrSQLProps<T> = Only<T, Prop | SQLProp>;
 
 export type OnlyWithEmptyOperations<T> =
-  Only<T, Prop<any, any, any, any, any, any, false> | SQLProp<any, any, any, any, false>>;
+  Only<T, Prop<any, any, any, any, any, any, false>>;
 
 export type AllProps<S> =
   Simplify<{ [K in OnlyProps<S>[keyof OnlyProps<S>] as K["as"]]: K["output"] }>;
@@ -139,7 +140,7 @@ export type UpdateParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplif
 >;
 
 export type ShouldSelectAll<TableId extends string, S, T extends Selectable<TableId, S>[]> =
-  Extract<T[number], keyof OnlyPropsOrSQLProps<S> | OnlyWithEmptyOperations<S>[keyof OnlyWithEmptyOperations<S>]>[] extends never[] ? true : false;
+  Extract<T[number], keyof OnlyProps<S> | OnlyWithEmptyOperations<S>[keyof OnlyWithEmptyOperations<S>]>[] extends never[] ? true : false;
 
 export type ExtractOmittedPropsMap<TableId extends string, S, T extends Selectable<TableId, S>[]> =
   { [K in T[number] as K extends Prop<any, infer Key, any, any, true> ? Key : never]: K extends Prop<any, any, any, any, true> ? K : never;}
@@ -231,3 +232,12 @@ export interface RefQLOptions {
 }
 
 export type RequiredRefQLOptions = Omit<Required<RefQLOptions>, "casing"> & { toCase: (str: string) => string};
+
+export type PropMap<TableId extends string, Props extends PropType<any>[]> = {
+  [P in Props[number] as P["as"] ]:
+    P extends Prop
+      ? Prop<TableId, P["as"], P["output"], P["params"], P["isOmitted"], P["hasDefaultValue"], P["hasOp"]>
+      : P extends SQLProp
+        ? SQLProp<P["as"], P["output"], P["params"], P["isOmitted"], P["hasOp"]>
+        : P
+};

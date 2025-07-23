@@ -38,7 +38,7 @@ describe ("RQLTag type", () => {
 
   const { Table, sql, options, tables } = RefQL ({ querier });
 
-  const { Game, Goal, League, Rating, Team, GamePlayer, Player } = tables.public;
+  const { Game, Goal, League, Rating, Team, GamePlayer, Player: PlayerLtd } = tables.public;
 
   const isVeteran = BooleanProp ("isVeteran", sql<{ year: number }>`
     select case when extract(year from birthday) < ${p => p.year} then true else false end
@@ -62,6 +62,7 @@ describe ("RQLTag type", () => {
     limit 1
   `).nullable ();
 
+  const Player = PlayerLtd.addProps ([fullName, goalCount, firstGoalId]);
 
   afterAll (() => {
     pool.end ();
@@ -78,8 +79,8 @@ describe ("RQLTag type", () => {
 
   test ("calls and subselect", async () => {
     const tag = Player ([
-      fullName,
-      goalCount,
+      "fullName",
+      Player.props.goalCount,
       firstGoalId,
       sql<{ id: number }>`
         and id = ${p => p.id}

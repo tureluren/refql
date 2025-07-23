@@ -1,8 +1,9 @@
+import { PropMap } from "../../common/types.ts";
 import Prop from "../../Prop/index.ts";
 import PropType from "../../Prop/PropType.ts";
 import RefProp from "../../Prop/RefProp.ts";
 import { Table } from "../../Table/index.ts";
-export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, { [P in Props[number] as P["as"]]: P extends Prop ? Prop<TableId, P["as"], P["output"], P["params"], P["isOmitted"], P["hasDefaultValue"], P["hasOp"]> : P; }>) => {
+export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, PropMap<TableId, Props>>) => {
   public: {
     Assist: Table<"public.assist", {
       game: RefProp<"game", "public.game", "BelongsTo", false>;

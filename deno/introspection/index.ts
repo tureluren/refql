@@ -73,11 +73,12 @@ const headerJs = [
 
 
 const headerTs = [
+  `import { PropMap } from "${prepath}/Common/types.ts";`,
   `import Prop from "${prepath}/Prop/index.ts";`,
   `import PropType from "${prepath}/Prop/PropType.ts";`,
   `import RefProp from "${prepath}/Prop/RefProp.ts";`,
   `import { Table } from "${prepath}/Table/index.ts";`,
-  'export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, { [P in Props[number] as P["as"]]: P extends Prop ? Prop<TableId, P["as"], P["output"], P["params"], P["isOmitted"], P["hasDefaultValue"], P["hasOp"]> : P; }>) => {\n'
+  "export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, PropMap<TableId, Props>>) => {\n"
 ];
 
 const footerJs = [
