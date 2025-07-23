@@ -162,7 +162,7 @@ exports.getTables = getTables;`
     );
 
     expect (outputTs).toEqual (
-`import { PropMap } from "../../Common/types";
+`import { PropMap } from "../../common/types";
 import Prop from "../../Prop";
 import PropType from "../../Prop/PropType";
 import RefProp from "../../Prop/RefProp";

@@ -73,7 +73,7 @@ const headerJs = [
 
 
 const headerTs = [
-  `import { PropMap } from "${prepath}/Common/types";`,
+  `import { PropMap } from "${prepath}/common/types";`,
   `import Prop from "${prepath}/Prop";`,
   `import PropType from "${prepath}/Prop/PropType";`,
   `import RefProp from "${prepath}/Prop/RefProp";`,
