@@ -169,7 +169,7 @@ type IsNullableForAs<Union, Key extends string> =
     : false;
 
 // We need to avoid using UnionToIntersection on primitives and fallback to U directly (as a union) if intersection doesn't make sense.
-type SafeUnionToIntersection<U> =
+type UnionIfObject<U> =
   [U] extends [object] ? Simplify<UnionToIntersection<U>> : U;
 
 /**
@@ -184,18 +184,18 @@ type SafeUnionToIntersection<U> =
  *
  * Example input union:
  *   | { as: "id", type: number, nullable: false }
- *   | { as: "profile", type: { name: string }, nullable: true }
+ *   | { as: "team", type: { name: string }, nullable: true }
  *
  * Resulting output:
  *   {
  *     id: number;
- *     profile: { name: string } | null;
+ *     team: { name: string } | null;
  *   }
  */
 type MergeByAsWithNullability<Union extends { as: string; type: any; nullable: boolean }> = Simplify<{
   [K in Union["as"]]: IsNullableForAs<Union, K> extends true
-    ? SafeUnionToIntersection<TypesWithAs<Union, K>> | null
-    : SafeUnionToIntersection<TypesWithAs<Union, K>>;
+    ? UnionIfObject<TypesWithAs<Union, K>> | null
+    : UnionIfObject<TypesWithAs<Union, K>>;
 }>;
 
 export type Output<

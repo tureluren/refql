@@ -40,6 +40,7 @@ const playerFields: Selectable<typeof Player.tableId, typeof Player.props>[] = [
 // + laat logic werken met sqlTag
 // this gebruiken
 // concat 2 van zelfde ref
+// monoid ?
 
 // const noSecrets = User ([
 //   password.omit (),
