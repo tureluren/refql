@@ -160,48 +160,87 @@ export type FinalComponents<TableId extends string, Props, Components extends Se
   ? [Exclude<keyof OnlyProps<Props>, keyof ExtractOmittedPropsMap<TableId, Props, Components>>, ...IgnoreOmitted<TableId, Props, Components>]
   : IgnoreOmitted<TableId, Props, Components>;
 
+type TypesWithAs<Union, Key extends string> =
+  Union extends { as: Key; type: infer T } ? T : never;
+
+type IsNullableForAs<Union, Key extends string> =
+  Extract<Union, { as: Key }> extends infer Entries
+    ? Entries extends { nullable: true } ? true : false
+    : false;
+
+// We need to avoid using UnionToIntersection on primitives and fallback to U directly (as a union) if intersection doesn't make sense.
+type SafeUnionToIntersection<U> =
+  [U] extends [object] ? Simplify<UnionToIntersection<U>> : U;
+
+/**
+ * Converts a union of `{ as, type, nullable }` entries into a flat object type,
+ * where each key corresponds to the `as` value and its value is the associated `type`.
+ *
+ * - If multiple entries share the same `as` key, their `type`s are merged:
+ *   - If all `type`s are object types, they're combined into an intersection.
+ *   - If any `type`s are primitives or incompatible, they remain a union.
+ *
+ * - If any entry for a given `as` has `nullable: true`, the final type includes `null`.
+ *
+ * Example input union:
+ *   | { as: "id", type: number, nullable: false }
+ *   | { as: "profile", type: { name: string }, nullable: true }
+ *
+ * Resulting output:
+ *   {
+ *     id: number;
+ *     profile: { name: string } | null;
+ *   }
+ */
+type MergeByAsWithNullability<Union extends { as: string; type: any; nullable: boolean }> = Simplify<{
+  [K in Union["as"]]: IsNullableForAs<Union, K> extends true
+    ? SafeUnionToIntersection<TypesWithAs<Union, K>> | null
+    : SafeUnionToIntersection<TypesWithAs<Union, K>>;
+}>;
+
 export type Output<
   TableId extends string,
   S,
   T extends Selectable<TableId, S>[],
   Props extends OnlyPropsOrSQLProps<S> = OnlyPropsOrSQLProps<S>,
   TableIds extends TableIdMap<S> = TableIdMap<S>
-> = FinalComponents<TableId, S, T> extends (infer U)[]
-  ? U extends keyof Props
-    ? {as: U; type: Props[U]["output"]}
-
+> = MergeByAsWithNullability<
+  FinalComponents<TableId, S, T>[number] extends infer U
+    ? U extends keyof Props
+      ? U extends string
+        ? { as: U; type: Props[U]["output"]; nullable: false }
+        : never
       : U extends Prop | SQLProp
-        ? { as: U["as"]; type: U["output"] }
-
-      : U extends RQLTag<infer TableId, any, infer Output>
-        ? TableIds[TableId] extends RefProp<infer As, any, infer RelType, infer IsNullable>
+        ? { as: U["as"]; type: U["output"]; nullable: false }
+      : U extends RQLTag<infer RefTableId>
+        ? TableIds[RefTableId] extends RefProp<
+            infer As, any, infer RelType, infer IsNullable
+          >
           ? {
               as: As;
-              type: IsNullable extends true
-                ? RelType extends "BelongsTo" | "HasOne"
-                  ? Output[][0] | null
-                  : Output[] | null
-                : RelType extends "BelongsTo" | "HasOne"
-                  ? Output[][0]
-                  : Output[];
-          }
-          : never
-
-        : U extends Table<infer TableId, infer Props>
-          ? TableIds[TableId] extends RefProp<infer As, any, infer RelType, infer IsNullable>
-            ? {
-                as: As;
-                type: IsNullable extends true
-                  ? RelType extends "BelongsTo" | "HasOne"
-                    ? AllProps<Props>[][0] | null
-                    : AllProps<Props>[] | null
-                  : RelType extends "BelongsTo" | "HasOne"
-                    ? AllProps<Props>[][0]
-                    : AllProps<Props>[];
+              type: RelType extends "BelongsTo" | "HasOne"
+                ? U["output"][][0]
+                : U["output"][];
+              nullable: IsNullable;
             }
-            : never
-        : never
-  : never;
+          : never
+      : U extends Table<infer RefTableId, infer RefProps>
+        ? TableIds[RefTableId] extends RefProp<
+            infer As, any, infer RelType, infer IsNullable
+          >
+          ? {
+              as: As;
+              type: RelType extends "BelongsTo" | "HasOne"
+                  ? AllProps<RefProps>[][0]
+                  : AllProps<RefProps>[];
+              nullable: IsNullable;
+            }
+          : never
+      : never
+    : never
+>;
+
+
 
 export type OnlyTableRQLTags<TableId extends string, T extends (Insertable<TableId> | Updatable<TableId>)[]> =
   Extract<T[number], RQLTag<TableId>>[];

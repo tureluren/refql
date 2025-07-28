@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import RefQL, { Limit, NumberProp, Offset, Raw, StringProp, Values } from ".";
+import { Selectable } from "./common/types";
 
 const pool = new Pool ({
   user: "test",
@@ -23,31 +24,61 @@ const { tables, Table, sql } = RefQL ({
   querier
 });
 
-const { Team, Player } = tables.public;
+const { Team, Player, Goal } = tables.public;
 
 
 
 
 const { teamId, firstName, lastName } = Player.props;
 
+const playerFields: Selectable<typeof Player.tableId, typeof Player.props>[] = [
+  "lastName",
+  "firstName"
+];
+
+
+// + laat logic werken met sqlTag
+// this gebruiken
+// concat 2 van zelfde ref
+
+// const noSecrets = User ([
+//   password.omit (),
+//   secrets2fa.omit ()
+// ]);
+// export const readUserPage = noSecrets.concat (User ([
+//   Caregiver,
+//   updatedAt.desc (),
+//   id.desc (),
+//   Limit (p => p.limit),
+//   Offset (p => p.limit * p.page)
+// ]));
+
+const justTeam = Team (["id", "name", "name"]) ({}).then (t => t[0]);
+
 const readPart1 = Player ([
-  "id",
-  "firstName",
+  // ...playerFields
+  // firstName.omit (),
+  // "firstName",
+  Team (["active"]),
   Team (["id"])
+  // Goal (["gameId"])
 ]);
 
+
+readPart1 ({}).then (res => console.log (res[0]));
+
 const readPart2 = Player ([
-  "lastName",
-  Team (["name"]),
-  Limit<{ limit: number }> (p => p.limit),
-  Offset<{ offset: number }> (p => p.offset)
+  // "lastName",
+  Team (["name"])
+  // Limit<{ limit: number }> (p => p.limit),
+  // Offset<{ offset: number }> (p => p.offset)
 ]);
 
 const readPage =
   readPart1
     .concat (readPart2);
 
-// readPage ({ limit: 5, offset: 0 }).then (res => console.log (res[0]));
+readPage ({ limit: 5, offset: 0 }).then (res => console.log (res[0]));
 
 // [
 const byIds = sql<{rows: { id: number }[]}>`
@@ -88,4 +119,4 @@ const andd = PatchedPlayer ([
   Limit (1)
 ]);
 
-andd ({ delimiter: " " }).then (res => console.log (res[0]));
+// andd ({ delimiter: " " }).then (res => console.log (res[0]));

@@ -1,6 +1,6 @@
 import { flEquals, refqlType } from "../common/consts";
 import copyObj from "../common/copyObj";
-import { CUDOutput, Deletable, Insertable, InsertParams, Output, Params, PropMap, RequiredRefQLOptions, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
+import { CUDOutput, Deletable, Insertable, InsertParams, PropMap, RequiredRefQLOptions, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
 import validateTable, { validateComponents } from "../common/validateTable";
 import withDefaultOptions from "../common/withDefaultOptions";
 import Prop from "../Prop";
@@ -16,7 +16,7 @@ import { createUpdateRQLTag, UpdateRQLTag } from "../RQLTag/UpdateRQLTag";
 import { isSQLTag } from "../SQLTag";
 
 export interface Table<TableId extends string = any, Props = any> {
-  <Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Params<TableId, Props, Components>, { [K in Output<TableId, Props, Components> as K["as"]]: K["type"] }>;
+  <Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Props, Components>;
   tableId: TableId;
   name: string;
   schema?: string;

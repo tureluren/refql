@@ -1,7 +1,7 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows, RequiredRefQLOptions, StringMap } from "../common/types";
+import { Querier, RefInfo, RefQLRows, RequiredRefQLOptions, StringMap, Params, Selectable, Output } from "../common/types";
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
@@ -26,20 +26,23 @@ interface InterpretedRQLTag<Params = any, Output = any> {
   next: Next[];
 }
 
-export interface RQLTag<TableId extends string = any, Params = any, Output = any> extends RQLNode {
-  (params: {} extends Params ? Params | void : Params): Promise<Output[]>;
-  tableId: TableId;
-  params: Params;
-  output: Output;
-  table: Table<TableId>;
-  nodes: RQLNode[];
-  options: RequiredRefQLOptions;
-  interpreted: InterpretedRQLTag<Params, Output>;
-  concat<Params2, Output2>(other: RQLTag<TableId, Params2, Output2>): RQLTag<TableId, Params & Params2, Output & Output2>;
-  [flConcat]: RQLTag<TableId, Params, Output>["concat"];
-  interpret(where?: SQLTag<Params>): InterpretedRQLTag<Params, Output>;
-  compile(params: Params): [string, any[], Next[]];
-  run(params: Params, querier?: Querier): Promise<Output[]>;
+export interface RQLTag<
+  TableId extends string = any, Props = any, Components extends Selectable<TableId, Props>[] = Selectable<TableId, Props>[]> extends RQLNode {
+    (params: {} extends this["params"] ? this["params"] | void : this["params"]): Promise<this["output"][]>;
+    tableId: TableId;
+    components: Components;
+    props: Props;
+    params: Params<TableId, Props, Components>;
+    output: Output<TableId, Props, Components>;
+    table: Table<TableId>;
+    nodes: RQLNode[];
+    options: RequiredRefQLOptions;
+    interpreted: InterpretedRQLTag<this["params"], this["output"]>;
+    concat<Components2 extends Selectable<TableId, Props>[]>(other: RQLTag<TableId, Props, Components2>): RQLTag<TableId, Props, [...Components, ...Components2]>;
+    [flConcat]: RQLTag<TableId, Params, Output>["concat"];
+    interpret(where?: SQLTag<Params>): InterpretedRQLTag<this["params"], this["output"]>;
+    compile(params: Params): [string, any[], Next[]];
+    run(params: Params, querier?: Querier): Promise<RQLTag<TableId, Props, Components, Params>["output"][]>;
 }
 
 const type = "refql/RQLTag";
