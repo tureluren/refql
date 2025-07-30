@@ -34,7 +34,7 @@ function map(this: Raw, f: (x: ValueType) => ValueType) {
   });
 }
 
-Raw.isRaw = function<Params = any> (x: any): x is Raw<Params> {
+Raw.isRaw = function (x: any): x is Raw {
   return x != null && x[refqlType] === type;
 };
 

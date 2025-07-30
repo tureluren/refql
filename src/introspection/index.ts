@@ -3,9 +3,9 @@ import path from "path";
 import pluralize from "pluralize";
 import { sqlX } from "../SQLTag/sql";
 import { toCamelCase, toPascalCase, toSnakeCase } from "../common/casing";
+import sortObject from "../common/sortObj";
 import { RequiredRefQLOptions } from "../common/types";
 import { getColumns, getRelationships, getTables } from "./queries";
-import sortObject from "../common/sortObj";
 
 /**
  * Generates a relation key name based on foreign key columns and related table name.

@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import RefQL, { Limit, NumberProp, Offset, Raw, StringProp, Values } from ".";
+import RefQL, { isRQLTag, Limit, NumberProp, Offset, Raw, RQLTag, SQLTag, StringProp, Values } from ".";
 import { Selectable } from "./common/types";
 
 const pool = new Pool ({
@@ -26,21 +26,45 @@ const { tables, Table, sql } = RefQL ({
 
 const { Team, Player, Goal } = tables.public;
 
+const TestTable = Table ("dd", [StringProp ("buhbuh")]);
+
+TestTable ([
+]);
 
 
+const { teamId, firstName, lastName, id } = Player.props;
 
-const { teamId, firstName, lastName } = Player.props;
+const insert = Player.insert ([
+  Player (["firstName"]),
+  Player (["lastName"])
+]);
 
-const playerFields: Selectable<typeof Player.tableId, typeof Player.props>[] = [
-  "lastName",
-  "firstName"
-];
+// insert ({ data: [{ firstName: "foemp", lastName: "ddd", cars: {} }] }).then (res => res[0]);
+
+const update = Player.update ([
+  id.eq<{ id: number}> (p => p.id),
+  Player ([
+    "birthday",
+    Team (["active"])
+  ])
+]);
+
+update ({ data: { firstName: "foemp", lastName: "ddd", cars: {} }, id: 2 }).then (res => res[0]);
+
+const deletes = Player.delete ([
+  id.eq<{ id: number}> (p => p.id)
+]);
+
+deletes ({ id: 2 }).then (res => res[0]);
 
 
 // + laat logic werken met sqlTag
 // this gebruiken
 // concat 2 van zelfde ref
-// monoid ?
+// monoid ? en sql tag ook ?
+// check for unused types and remove
+// generated terug nakijken
+// readme wijzigen
 
 // const noSecrets = User ([
 //   password.omit (),
@@ -56,17 +80,26 @@ const playerFields: Selectable<typeof Player.tableId, typeof Player.props>[] = [
 
 const justTeam = Team (["id", "name", "name"]) ({}).then (t => t[0]);
 
+const ta = Team (["active"]);
 const readPart1 = Player ([
-  // ...playerFields
-  // firstName.omit (),
-  // "firstName",
-  Team (["active"]),
-  Team (["id"])
-  // Goal (["gameId"])
+  "birthday",
+  Team (["id"]),
+  Goal (["gameId"])
+
+  // Team.props.active
+  // ta
 ]);
 
+const Buh: SQLTag<{ id: string }> | RQLTag<"Player"> = "d" as any;
 
-readPart1 ({}).then (res => console.log (res[0]));
+if (isRQLTag (Buh)) {
+  const buh = Buh;
+}
+
+// const comps = readPart1["components"][0]["components"];
+
+
+readPart1 ({}).then (res => res[0]);
 
 const readPart2 = Player ([
   // "lastName",
@@ -75,11 +108,12 @@ const readPart2 = Player ([
   // Offset<{ offset: number }> (p => p.offset)
 ]);
 
+
 const readPage =
   readPart1
     .concat (readPart2);
 
-readPage ({ limit: 5, offset: 0 }).then (res => console.log (res[0]));
+readPage ({ limit: 5, offset: 0 }).then (res => res[0]);
 
 // [
 const byIds = sql<{rows: { id: number }[]}>`
@@ -90,7 +124,6 @@ const insertTeam = Team.insert ([
   Team ([
     "id",
     "name",
-    Player,
     byIds
   ])
 

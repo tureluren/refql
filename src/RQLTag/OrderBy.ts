@@ -33,7 +33,7 @@ function interpret(this: OrderBy, col: Raw | SQLTag) {
   `;
 }
 
-OrderBy.isOrderBy = function <Params = any> (x: any): x is OrderBy<Params> {
+OrderBy.isOrderBy = function (x: any): x is OrderBy {
   return x != null && x[refqlType] === type;
 };
 

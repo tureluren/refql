@@ -62,7 +62,7 @@ function interpret(this: Logic) {
   `;
 }
 
-Logic.isLogic = function <TableId extends string = any, Params = any> (x: any): x is Logic<TableId, Params> {
+Logic.isLogic = function (x: any): x is Logic {
   return x != null && x[refqlType] === type;
 };
 

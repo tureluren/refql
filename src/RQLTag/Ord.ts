@@ -39,7 +39,7 @@ function interpret(this: Ord, col: Raw | SQLTag, displayAnd: boolean) {
   `;
 }
 
-Ord.isOrd = function <Params = any, Output = any> (x: any): x is Ord<Params, Output> {
+Ord.isOrd = function (x: any): x is Ord {
   return x != null && x[refqlType] === type;
 };
 

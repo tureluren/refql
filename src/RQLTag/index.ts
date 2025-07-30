@@ -1,7 +1,7 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows, RequiredRefQLOptions, StringMap, Params, Selectable, Output } from "../common/types";
+import { Querier, RefInfo, RefQLRows, RequiredRefQLOptions, RQLOutput, RQLParams, Selectable, StringMap } from "../common/types";
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
@@ -16,7 +16,7 @@ import RefNode from "./RefNode";
 import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
 export interface Next {
-  tag: RQLTag<any, RefQLRows>;
+  tag: RQLTag<any, any, any, RefQLRows>;
   link: [string, string[]];
   single: boolean;
 }
@@ -27,22 +27,21 @@ interface InterpretedRQLTag<Params = any, Output = any> {
 }
 
 export interface RQLTag<
-  TableId extends string = any, Props = any, Components extends Selectable<TableId, Props>[] = Selectable<TableId, Props>[]> extends RQLNode {
-    (params: {} extends this["params"] ? this["params"] | void : this["params"]): Promise<this["output"][]>;
+  TableId extends string = any, Props = any, Components extends Selectable<TableId, Props>[] = Selectable<TableId, Props>[], Params = any, Output = any> extends RQLNode {
+    (params: {} extends Params ? Params | void : Params): Promise<Output[]>;
     tableId: TableId;
-    components: Components;
     props: Props;
-    params: Params<TableId, Props, Components>;
-    output: Output<TableId, Props, Components>;
+    params: Params;
+    output: Output;
     table: Table<TableId>;
     nodes: RQLNode[];
     options: RequiredRefQLOptions;
-    interpreted: InterpretedRQLTag<this["params"], this["output"]>;
-    concat<Components2 extends Selectable<TableId, Props>[]>(other: RQLTag<TableId, Props, Components2>): RQLTag<TableId, Props, [...Components, ...Components2]>;
-    [flConcat]: RQLTag<TableId, Params, Output>["concat"];
-    interpret(where?: SQLTag<Params>): InterpretedRQLTag<this["params"], this["output"]>;
+    interpreted: InterpretedRQLTag<Params, Output>;
+    concat<Components2 extends Selectable<TableId, Props>[]>(other: RQLTag<TableId, Props, Components2>): RQLTag<TableId, Props, [...Components, ...Components2], RQLParams<TableId, Props, [...Components, ...Components2]>, RQLOutput<TableId, Props, [...Components, ...Components2]>>;
+    [flConcat]: this["concat"];
+    interpret(where?: SQLTag): InterpretedRQLTag<Params, Output>;
     compile(params: Params): [string, any[], Next[]];
-    run(params: Params, querier?: Querier): Promise<RQLTag<TableId, Props, Components, Params>["output"][]>;
+    run(params: Params, querier?: Querier): Promise<Output[]>;
 }
 
 const type = "refql/RQLTag";
@@ -57,10 +56,10 @@ let prototype = Object.assign ({}, rqlNodePrototype, {
   run
 });
 
-export function createRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], options: RequiredRefQLOptions) {
-  const tag = ((params: Params) => {
+export function createRQLTag(table: Table, nodes: RQLNode[], options: RequiredRefQLOptions) {
+  const tag = ((params: any) => {
     return options.runner (tag, params);
-  }) as RQLTag<TableId, Params, Output>;
+  }) as RQLTag;
 
   Object.setPrototypeOf (
     tag,
@@ -103,8 +102,9 @@ function concat(this: RQLTag, other: RQLTag) {
 
   const refNodes = Object.values (this.table.props)
     .filter (prop => RefProp.isRefProp (prop) && refs[prop.child.toString ()])
-    .map ((prop: any) =>
-      RefNode (createRQLTag (prop.child, refs[prop.child.toString ()].nodes, this.options), prop, this.table, this.options));
+    .map ((prop: any) => {
+      return RefNode (createRQLTag (prop.child, refs[prop.child.toString ()].nodes, this.options), prop, this.table, this.options);
+    });
 
   return createRQLTag (
     this.table,
@@ -252,6 +252,6 @@ async function run(this: RQLTag, params: StringMap, querier?: Querier): Promise<
   );
 }
 
-export const isRQLTag = function <As extends string = any, Params = any, Output = any> (x: any): x is RQLTag<As, Params, Output> {
+export const isRQLTag = function (x: any): x is RQLTag {
   return x != null && x[refqlType] === type;
 };

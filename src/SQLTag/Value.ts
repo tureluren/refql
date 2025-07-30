@@ -23,7 +23,7 @@ function Value<Params>(run: ValueType | TagFunctionVariable<Params>) {
   return value;
 }
 
-Value.isValue = function<Params = any> (x: any): x is Value<Params> {
+Value.isValue = function (x: any): x is Value {
   return x != null && x[refqlType] === type;
 };
 

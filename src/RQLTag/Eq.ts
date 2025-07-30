@@ -39,7 +39,7 @@ function interpret(this: Eq, col: Raw | SQLTag, displayAnd: boolean) {
   `;
 }
 
-Eq.isEq = function <Params = any, Output = any> (x: any): x is Eq<Params, Output> {
+Eq.isEq = function (x: any): x is Eq {
   return x != null && x[refqlType] === type;
 };
 

@@ -21,7 +21,7 @@ function Values2D<Params>(run: ValueType[][] | TagFunctionVariable<Params, any[]
   return values2D;
 }
 
-Values2D.isValues2D = function <Params = any> (x: any): x is Values2D<Params> {
+Values2D.isValues2D = function (x: any): x is Values2D {
   return x != null && x[refqlType] === type;
 };
 

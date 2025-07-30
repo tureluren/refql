@@ -1,6 +1,5 @@
 import { flMap } from "../common/consts";
 import Raw from "../SQLTag/Raw";
-import sql from "../SQLTag/sql";
 import { isSQLNode } from "./SQLNode";
 import Value from "./Value";
 import Values from "./Values";

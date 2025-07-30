@@ -25,10 +25,10 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createUpdateRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], options: RequiredRefQLOptions) {
-  const tag = ((params: Params) => {
+export function createUpdateRQLTag(table: Table, nodes: RQLNode[], options: RequiredRefQLOptions) {
+  const tag = ((params: any) => {
     return options.runner (tag, params);
-  }) as UpdateRQLTag<TableId, Params, Output>;
+  }) as UpdateRQLTag;
 
   Object.setPrototypeOf (
     tag,
@@ -97,6 +97,6 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
   };
 }
 
-export const isUpdateRQLTag = function <As extends string = any, Params = any, Output = any> (x: any): x is UpdateRQLTag<As, Params, Output> {
+export const isUpdateRQLTag = function (x: any): x is UpdateRQLTag {
   return x != null && x[refqlType] === type;
 };

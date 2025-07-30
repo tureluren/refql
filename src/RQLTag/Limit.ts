@@ -36,7 +36,7 @@ function interpret(this: Limit) {
   `;
 }
 
-Limit.isLimit = function <Params = any> (x: any): x is Limit<Params> {
+Limit.isLimit = function (x: any): x is Limit {
   return x != null && x[refqlType] === type;
 };
 

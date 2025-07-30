@@ -33,7 +33,7 @@ function interpret(this: IsNull, col: Raw | SQLTag, displayAnd: boolean) {
   `;
 }
 
-IsNull.isNull = function <Params = any> (x: any): x is IsNull<Params> {
+IsNull.isNull = function (x: any): x is IsNull {
   return x != null && x[refqlType] === type;
 };
 

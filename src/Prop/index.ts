@@ -201,7 +201,7 @@ function interpret(this: Prop) {
   return Raw (col || as);
 }
 
-Prop.isProp = function <As extends string = any, Output = any> (x: any): x is Prop {
+Prop.isProp = function (x: any): x is Prop {
   return x != null && x[refqlType] === type;
 };
 

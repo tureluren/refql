@@ -20,7 +20,7 @@ function Values<Params>(run: ValueType[] | TagFunctionVariable<Params, any[]>) {
   return values;
 }
 
-Values.isValues = function <Params = any> (x: any): x is Values<Params> {
+Values.isValues = function (x: any): x is Values {
   return x != null && x[refqlType] === type;
 };
 

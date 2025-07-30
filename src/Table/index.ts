@@ -1,6 +1,6 @@
 import { flEquals, refqlType } from "../common/consts";
 import copyObj from "../common/copyObj";
-import { CUDOutput, Deletable, Insertable, InsertParams, PropMap, RequiredRefQLOptions, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
+import { CUDOutput, Deletable, Insertable, InsertParams, PropMap, RequiredRefQLOptions, RQLOutput, RQLParams, Selectable, Simplify, Updatable, UpdateParams } from "../common/types";
 import validateTable, { validateComponents } from "../common/validateTable";
 import withDefaultOptions from "../common/withDefaultOptions";
 import Prop from "../Prop";
@@ -16,18 +16,17 @@ import { createUpdateRQLTag, UpdateRQLTag } from "../RQLTag/UpdateRQLTag";
 import { isSQLTag } from "../SQLTag";
 
 export interface Table<TableId extends string = any, Props = any> {
-  <Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Props, Components>;
+  <Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Props, Components, RQLParams<TableId, Props, Components>, RQLOutput<TableId, Props, Components>>;
   tableId: TableId;
   name: string;
   schema?: string;
   props: Props;
-  empty<Params, Output>(): RQLTag<TableId, Params, Output>;
   equals(other: Table<TableId, Props>): boolean;
-  [flEquals]: Table<TableId, Props>["equals"];
+  [flEquals]: this["equals"];
   toString(): string;
-  insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<Params<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
-  update<Components extends Updatable<TableId>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<Params<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>["output"]>;
-  delete<Components extends Deletable<TableId>[]>(components: Components): DeleteRQLTag<TableId, Params<TableId, Props, Components>, CUDOutput<TableId, Props, Components>["output"]>;
+  insert<Components extends Insertable<TableId>[]>(components: Components): InsertRQLTag<TableId, Simplify<{ data: InsertParams<Props>[] } & Omit<RQLParams<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>>;
+  update<Components extends Updatable<TableId>[]>(components: Components): UpdateRQLTag<TableId, Simplify<{ data: UpdateParams<Props> } & Omit<RQLParams<TableId, Props, Components>, "rows">>, CUDOutput<TableId, Props, Components>>;
+  delete<Components extends Deletable<TableId>[]>(components: Components): DeleteRQLTag<TableId, RQLParams<TableId, Props, Components>, CUDOutput<TableId, Props, Components>>;
   addProps<Props2 extends PropType<any>[]>(props: Props2): Table<TableId, Props & PropMap<TableId, Props2>>;
 }
 
@@ -245,11 +244,11 @@ const makeTable = (options: RequiredRefQLOptions) => {
     return createDeleteRQLTag (this, nodes, options);
   }
 
-  function toString<Name extends string, S>(this: Table<Name, S>) {
+  function toString(this: Table) {
     return `${this.schema ? `${this.schema}.` : ""}${this.name}`;
   }
 
-  function equals<Name extends string, S>(this: Table<Name, S>, other: Table<Name, S>) {
+  function equals(this: Table, other: Table) {
     if (!isTable (other)) return false;
 
     return (
@@ -261,7 +260,7 @@ const makeTable = (options: RequiredRefQLOptions) => {
   return Table;
 };
 
-export function isTable<Name extends string, S>(x: any): x is Table<Name, S> {
+export function isTable(x: any): x is Table {
   return x != null && x[refqlType] === type;
 }
 

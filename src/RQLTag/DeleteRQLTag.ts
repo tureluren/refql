@@ -23,10 +23,10 @@ let prototype = Object.assign ({}, CUDPrototype, {
   interpret
 });
 
-export function createDeleteRQLTag<TableId extends string, Params = {}, Output = any>(table: Table<TableId>, nodes: RQLNode[], options: RequiredRefQLOptions) {
-  const tag = ((params: Params) => {
+export function createDeleteRQLTag(table: Table, nodes: RQLNode[], options: RequiredRefQLOptions) {
+  const tag = ((params: any) => {
     return options.runner (tag, params);
-  }) as DeleteRQLTag<TableId, Params, Output>;
+  }) as DeleteRQLTag;
 
   Object.setPrototypeOf (
     tag,
@@ -82,6 +82,6 @@ function interpret(this: DeleteRQLTag): InterpretedCUD {
   };
 }
 
-export const isDeleteRQLTag = function <As extends string = any, Params = any, Output = any> (x: any): x is DeleteRQLTag<As, Params, Output> {
+export const isDeleteRQLTag = function (x: any): x is DeleteRQLTag {
   return x != null && x[refqlType] === type;
 };

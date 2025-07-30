@@ -43,7 +43,7 @@ function interpret(this: Like, col: Raw | SQLTag, displayAnd: boolean) {
   `;
 }
 
-Like.isLike = function <Params = any> (x: any): x is Like<Params> {
+Like.isLike = function (x: any): x is Like {
   return x != null && x[refqlType] === type;
 };
 

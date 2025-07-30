@@ -2,6 +2,13 @@ import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
 import { createRQLTag, isRQLTag } from ".";
+import BelongsTo from "../Prop/BelongsTo";
+import BelongsToMany from "../Prop/BelongsToMany";
+import BooleanProp from "../Prop/BooleanProp";
+import HasMany from "../Prop/HasMany";
+import HasOne from "../Prop/HasOne";
+import NumberProp from "../Prop/NumberProp";
+import StringProp from "../Prop/StringProp";
 import RefQL from "../RefQL";
 import Raw from "../SQLTag/Raw";
 import { flConcat } from "../common/consts";
@@ -13,13 +20,6 @@ import pgQuerier from "../test/pgQuerier";
 import userConfig from "../test/userConfig";
 import Limit from "./Limit";
 import Offset from "./Offset";
-import BooleanProp from "../Prop/BooleanProp";
-import NumberProp from "../Prop/NumberProp";
-import StringProp from "../Prop/StringProp";
-import BelongsTo from "../Prop/BelongsTo";
-import HasOne from "../Prop/HasOne";
-import HasMany from "../Prop/HasMany";
-import BelongsToMany from "../Prop/BelongsToMany";
 
 describe ("RQLTag type", () => {
   let pool: any;

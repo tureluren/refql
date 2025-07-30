@@ -198,6 +198,6 @@ async function run(this: SQLTag, params: StringMap, querier?: Querier): Promise<
   return (querier || this.options.querier) (query, values);
 }
 
-export const isSQLTag = function <Params = any, Output = any> (x: any): x is SQLTag<Params, Output> {
+export const isSQLTag = function (x: any): x is SQLTag {
   return x != null && x[refqlType] === type;
 };

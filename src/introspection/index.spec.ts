@@ -1,15 +1,14 @@
 import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
-import { Querier } from "../common/types";
-import userConfig from "../test/userConfig";
-import mySQLQuerier from "../test/mySQLQuerier";
-import mariaDBQuerier from "../test/mariaDBQuerier";
-import pgQuerier from "../test/pgQuerier";
-import RefQL from "../RefQL";
-import makeSQL from "../SQLTag/sql";
-import withDefaultOptions from "../common/withDefaultOptions";
 import { introspectPG } from ".";
+import makeSQL from "../SQLTag/sql";
+import { Querier } from "../common/types";
+import withDefaultOptions from "../common/withDefaultOptions";
+import mariaDBQuerier from "../test/mariaDBQuerier";
+import mySQLQuerier from "../test/mySQLQuerier";
+import pgQuerier from "../test/pgQuerier";
+import userConfig from "../test/userConfig";
 
 describe ("RQLTag type", () => {
   let pool: any;

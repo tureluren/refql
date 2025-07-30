@@ -2,7 +2,7 @@ import { TagFunctionVariable } from "../common/types";
 
 const SQLNodeSymbol: unique symbol = Symbol ("@@SQLNode");
 
-interface SQLNode<Params> {
+interface SQLNode<Params = any> {
   params: Params;
   run: TagFunctionVariable<Params, any>;
   [SQLNodeSymbol]: true;
@@ -12,7 +12,7 @@ export const sqlNodePrototype = {
   [SQLNodeSymbol]: true
 };
 
-export const isSQLNode = function <Params = any> (x: any): x is SQLNode<Params> {
+export const isSQLNode = function (x: any): x is SQLNode {
   return x != null && !!x[SQLNodeSymbol];
 };
 

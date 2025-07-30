@@ -1,13 +1,13 @@
 import { createSQLTag, isSQLTag } from ".";
 import { isRQLTag } from "../RQLTag";
 import { isTable } from "../Table";
-import { RequiredRefQLOptions, SQLTagVariable, TagFunctionVariable } from "../common/types";
+import { RequiredRefQLOptions, SQLTagVariable } from "../common/types";
 import withDefaultOptions from "../common/withDefaultOptions";
 import Raw from "./Raw";
 import SQLNode, { isSQLNode } from "./SQLNode";
 import Value from "./Value";
 
-export function parse<Params, Output>(strings: TemplateStringsArray, variables: SQLTagVariable<Params>[]) {
+export function parse<Params>(strings: TemplateStringsArray, variables: SQLTagVariable<Params>[]) {
   const nodes = [] as SQLNode<Params>[];
 
   for (let [idx, string] of strings.entries ()) {
@@ -27,21 +27,21 @@ export function parse<Params, Output>(strings: TemplateStringsArray, variables: 
       }
 
       if (string) {
-        nodes.push (Raw<Params> (string));
+        nodes.push (Raw (string));
       }
     }
 
     if (!x) {
-    } else if (isSQLTag<Params, Output> (x)) {
+    } else if (isSQLTag (x)) {
       nodes.push (...x.nodes);
     } else if (isRQLTag (x)) {
       throw new Error ("U can't use RQLTags inside SQLTags");
     } else if (isTable (x)) {
       nodes.push (Raw<Params> (x));
-    } else if (isSQLNode<Params> (x)) {
+    } else if (isSQLNode (x)) {
       nodes.push (x);
     } else {
-      nodes.push (Value<Params> (x));
+      nodes.push (Value (x));
     }
   }
 
@@ -50,7 +50,7 @@ export function parse<Params, Output>(strings: TemplateStringsArray, variables: 
 
 const makeSQL = (options: RequiredRefQLOptions) => {
   function sql <Params = {}, Output = unknown>(strings: TemplateStringsArray, ...variables: SQLTagVariable<Params>[]) {
-    const nodes = parse<Params, Output> (strings, variables);
+    const nodes = parse<Params> (strings, variables);
     return createSQLTag<Params, Output> (nodes, options);
   }
 

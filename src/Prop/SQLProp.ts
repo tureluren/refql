@@ -82,7 +82,7 @@ function interpret(this: SQLProp) {
   return sqlX`(${this.col})`;
 }
 
-SQLProp.isSQLProp = function <As extends string = any, Output = any> (x: any): x is SQLProp {
+SQLProp.isSQLProp = function (x: any): x is SQLProp {
   return x != null && x[refqlType] === type;
 };
 

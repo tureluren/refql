@@ -36,7 +36,7 @@ function interpret(this: Offset) {
   `;
 }
 
-Offset.isOffset = function <Params = any> (x: any): x is Offset<Params> {
+Offset.isOffset = function (x: any): x is Offset {
   return x != null && x[refqlType] === type;
 };
 

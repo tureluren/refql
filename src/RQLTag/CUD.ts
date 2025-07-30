@@ -14,7 +14,7 @@ interface CUD<TableId extends string = any, Params = any, Output = any> {
   [CUDSymbol]: true;
   interpret(): InterpretedCUD<Params, Output>;
   interpreted: InterpretedCUD<Params, Output>;
-  compile(params: Params): [string, any[], RQLTag<any, Output>];
+  compile(params: Params): [string, any[], RQLTag];
   run(params: Params, querier?: Querier): Promise<Output[]>;
 }
 

@@ -13,7 +13,7 @@ export const operationPrototype = {
   [OperationSymbol]: true
 };
 
-export const isOperation = function<Params = any> (x: any): x is Operation<Params> {
+export const isOperation = function (x: any): x is Operation {
   return x != null && !!x[OperationSymbol];
 };
 

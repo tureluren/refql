@@ -128,7 +128,7 @@ export type ParamsType<TableId extends string, S, T extends Selectable<TableId, 
       : { params: {}})[]
   : {params: {}};
 
-export type Params<TableId extends string, S, T extends Selectable<TableId, S>[]> = Simplify<UnionToIntersection<ParamsType<TableId, S, T>[number]["params"]>>;
+export type RQLParams<TableId extends string, S, T extends Selectable<TableId, S>[]> = Simplify<UnionToIntersection<ParamsType<TableId, S, T>[number]["params"]>>;
 
 export type InsertParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplify<
   { [K in keyof Props as Props[K]["hasDefaultValue"] extends true ? K : Extract<Props[K]["output"], null> extends never ? never : K]?: Exclude<Props[K]["output"], null> } &
@@ -198,7 +198,7 @@ type MergeByAsWithNullability<Union extends { as: string; type: any; nullable: b
     : UnionIfObject<TypesWithAs<Union, K>>;
 }>;
 
-export type Output<
+export type RQLOutput<
   TableId extends string,
   S,
   T extends Selectable<TableId, S>[],
@@ -212,34 +212,40 @@ export type Output<
         : never
       : U extends Prop | SQLProp
         ? { as: U["as"]; type: U["output"]; nullable: false }
+
       : U extends RQLTag<infer RefTableId>
         ? TableIds[RefTableId] extends RefProp<
             infer As, any, infer RelType, infer IsNullable
           >
-          ? {
-              as: As;
-              type: RelType extends "BelongsTo" | "HasOne"
-                ? U["output"][][0]
-                : U["output"][];
-              nullable: IsNullable;
-            }
+          ? As extends string
+            ? {
+                as: As;
+                type: RelType extends "BelongsTo" | "HasOne"
+                  ? U["output"]
+                  : U["output"][];
+                nullable: IsNullable;
+              }
+            : never
           : never
+
       : U extends Table<infer RefTableId, infer RefProps>
         ? TableIds[RefTableId] extends RefProp<
             infer As, any, infer RelType, infer IsNullable
           >
-          ? {
-              as: As;
-              type: RelType extends "BelongsTo" | "HasOne"
-                  ? AllProps<RefProps>[][0]
+          ? As extends string
+            ? {
+                as: As;
+                type: RelType extends "BelongsTo" | "HasOne"
+                  ? AllProps<RefProps>
                   : AllProps<RefProps>[];
-              nullable: IsNullable;
-            }
+                nullable: IsNullable;
+              }
+            : never
           : never
+
       : never
     : never
 >;
-
 
 
 export type OnlyTableRQLTags<TableId extends string, T extends (Insertable<TableId> | Updatable<TableId>)[]> =
@@ -249,11 +255,10 @@ export type CUDOutput<
   TableId extends string,
   S,
   T extends (Insertable<TableId> | Updatable<TableId>)[],
-  TableRQLTags extends OnlyTableRQLTags<TableId, T> = OnlyTableRQLTags<TableId, T>,
-  FinalOutput = Simplify<UnionToIntersection<TableRQLTags[number]["output"]>>
+  TableRQLTags extends OnlyTableRQLTags<TableId, T> = OnlyTableRQLTags<TableId, T>
 > = TableRQLTags extends never[]
-  ? RQLTag<TableId, {}, AllProps<S>>
-  : RQLTag<TableId, {}, FinalOutput>;
+  ? RQLOutput<TableId, S, T>
+  : Simplify<UnionToIntersection<TableRQLTags[number]["output"]>>;
 
 export interface InterpretedCUD<Params = any, Output = any> {
   tag: SQLTag<Params, Output>;

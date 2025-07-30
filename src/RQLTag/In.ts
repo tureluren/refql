@@ -40,7 +40,7 @@ function interpret(this: In, col: Raw | SQLTag, displayAnd: boolean) {
   `;
 }
 
-In.isIn = function <Params = any, Output = any> (x: any): x is In<Params, Output> {
+In.isIn = function (x: any): x is In {
   return x != null && x[refqlType] === type;
 };
 
