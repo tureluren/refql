@@ -1,19 +1,19 @@
-import Eq from "../RQLTag/Eq";
-import In from "../RQLTag/In";
-import IsNull from "../RQLTag/IsNull";
-import Like from "../RQLTag/Like";
-import Logic from "../RQLTag/Logic";
-import Operation from "../RQLTag/Operation";
-import Ord from "../RQLTag/Ord";
-import OrderBy from "../RQLTag/OrderBy";
-import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
-import { SQLTag } from "../SQLTag";
-import Raw from "../SQLTag/Raw";
-import { refqlType } from "../common/consts";
-import copyObj from "../common/copyObj";
-import { LogicOperator, OrdOperator, Simplify, TagFunctionVariable } from "../common/types";
-import PropType, { propTypePrototype } from "./PropType";
-import SQLProp from "./SQLProp";
+import Eq from "../RQLTag/Eq.ts";
+import In from "../RQLTag/In.ts";
+import IsNull from "../RQLTag/IsNull.ts";
+import Like from "../RQLTag/Like.ts";
+import Logic from "../RQLTag/Logic.ts";
+import Operation from "../RQLTag/Operation.ts";
+import Ord from "../RQLTag/Ord.ts";
+import OrderBy from "../RQLTag/OrderBy.ts";
+import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode.ts";
+import { SQLTag } from "../SQLTag/index.ts";
+import Raw from "../SQLTag/Raw.ts";
+import { refqlType } from "../common/consts.ts";
+import copyObj from "../common/copyObj.ts";
+import { LogicOperator, OrdOperator, Simplify, TagFunctionVariable } from "../common/types.ts";
+import PropType, { propTypePrototype } from "./PropType.ts";
+import SQLProp from "./SQLProp.ts";
 
 interface Prop<TableId extends string = any, As extends string = any, Output = any, Params = any, IsOmitted extends boolean = any, HasDefault extends boolean = any, HasOp extends boolean = any> extends RQLNode, PropType<As> {
   tableId: TableId;

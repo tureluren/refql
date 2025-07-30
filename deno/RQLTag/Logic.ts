@@ -1,12 +1,12 @@
-import { refqlType } from "../common/consts";
-import { LogicOperator } from "../common/types";
-import Prop from "../Prop";
-import SQLProp from "../Prop/SQLProp";
-import { isSQLTag, SQLTag } from "../SQLTag";
-import Raw from "../SQLTag/Raw";
-import { sqlX } from "../SQLTag/sql";
-import Operation, { operationPrototype } from "./Operation";
-import OrderBy from "./OrderBy";
+import { refqlType } from "../common/consts.ts";
+import { LogicOperator } from "../common/types.ts";
+import Prop from "../Prop/index.ts";
+import SQLProp from "../Prop/SQLProp.ts";
+import { isSQLTag, SQLTag } from "../SQLTag/index.ts";
+import Raw from "../SQLTag/Raw.ts";
+import { sqlX } from "../SQLTag/sql.ts";
+import Operation, { operationPrototype } from "./Operation.ts";
+import OrderBy from "./OrderBy.ts";
 
 interface Logic<TableId extends string = any, Params = any> extends Operation<Params> {
   prop: Prop<TableId> | SQLProp | SQLTag;

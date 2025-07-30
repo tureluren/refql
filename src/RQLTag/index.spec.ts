@@ -901,6 +901,31 @@ describe ("RQLTag type", () => {
     expect (values).toEqual (["A%", "B%", "C%"]);
   });
 
+  test ("And with SQLTag", async () => {
+    const { firstName } = Player.props;
+
+    const fullNameLike = sql<{ delimiter2: string; q: string }>`
+      concat (player.last_name, ${Raw (p => `'${p.delimiter2}'`)}, player.first_name) ilike ${p => p.q}
+    `;
+
+    const tag = Player ([
+      firstName.iLike ("a%").and (fullNameLike),
+      fullName.iLike ("a%"),
+      Limit<{ limit: number }> (p => p.limit)
+    ]);
+
+    const [query, values] = await tag.compile ({ delimiter: " ", delimiter2: " ", q: "G%", limit: 2 });
+
+    expect (query).toBe (format (`
+      select player.first_name "firstName", (concat (player.first_name, ' ', player.last_name)) "fullName", player.birthday "birthday", player.cars "cars", player.id "id", player.last_name "lastName", player.position_id "positionId", player.team_id "teamId"
+      from public.player
+      where 1 = 1
+      and (player.first_name ilike $1 and concat (player.last_name, ' ', player.first_name) ilike $2)
+      and ((concat (player.first_name, ' ', player.last_name)) ilike $3) limit $4
+    `));
+
+    expect (values).toEqual (["a%", "G%", "a%", 2 ]);
+  });
 
   test ("No record found", async () => {
     const goals = Goal ([]);

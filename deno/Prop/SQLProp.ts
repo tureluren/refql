@@ -1,11 +1,11 @@
-import Prop, { dir, eq, isNull, like, logic, nullable, omit, ord, whereIn } from ".";
-import Operation from "../RQLTag/Operation";
-import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
-import { SQLTag } from "../SQLTag";
-import { sqlX } from "../SQLTag/sql";
-import { refqlType } from "../common/consts";
-import { Simplify, TagFunctionVariable } from "../common/types";
-import PropType, { propTypePrototype } from "./PropType";
+import Prop, { dir, eq, isNull, like, logic, nullable, omit, ord, whereIn } from "./index.ts";
+import Operation from "../RQLTag/Operation.ts";
+import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode.ts";
+import { SQLTag } from "../SQLTag/index.ts";
+import { sqlX } from "../SQLTag/sql.ts";
+import { refqlType } from "../common/consts.ts";
+import { Simplify, TagFunctionVariable } from "../common/types.ts";
+import PropType, { propTypePrototype } from "./PropType.ts";
 
 interface SQLProp<As extends string = any, Output = any, Params = any, IsOmitted extends boolean = any, HasOp extends boolean = any> extends RQLNode, PropType<As> {
   params: Params;

@@ -5,7 +5,7 @@
   "license": "MIT",
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "version": "5.1.7",
+  "version": "5.1.8",
   "scripts": {
     "start": "NODE_ENV=refql nodemon src/workbench.ts",
     "introspect": "NODE_ENV=refql ts-node -r dotenv/config src/test/introspect.ts",
