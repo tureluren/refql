@@ -15,26 +15,26 @@ interface SQLProp<As extends string = any, Output = any, Params = any, IsOmitted
   arrayOf(): SQLProp<As, Output[], Params, IsOmitted, HasOp>;
   nullable(): SQLProp<As, Output | null, Params, IsOmitted, HasOp>;
   eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output> | Output): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
-  notEq: SQLProp<As, Output, Params, IsOmitted, HasOp>["eq"];
+  notEq: this["eq"];
   isNull<Params2 = {}>(): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
-  notIsNull: SQLProp<As, Output, Params, IsOmitted, HasOp>["isNull"];
+  notIsNull: this["isNull"];
   like<Params2 = {}>(run: TagFunctionVariable<Params & Params2, string> | string): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
-  notLike: SQLProp<As, Output, Params, IsOmitted, HasOp>["like"];
-  iLike: SQLProp<As, Output, Params, IsOmitted, HasOp>["like"];
-  notILike: SQLProp<As, Output, Params, IsOmitted, HasOp>["like"];
+  notLike: this["like"];
+  iLike: this["like"];
+  notILike: this["like"];
   in<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output[]> | Output[]): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
-  notIn: SQLProp<As, Output, Params, IsOmitted, HasOp>["in"];
+  notIn: this["in"];
   gt<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output> | Output): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
-  gte: SQLProp<As, Output, Params, IsOmitted, HasOp>["gt"];
-  lt: SQLProp<As, Output, Params, IsOmitted, HasOp>["gt"];
-  lte: SQLProp<As, Output, Params, IsOmitted, HasOp>["gt"];
+  gte: this["gt"];
+  lt: this["gt"];
+  lte: this["gt"];
   asc(): SQLProp<As, Output, Params, IsOmitted, true>;
-  desc: SQLProp<As, Output, Params, IsOmitted, HasOp>["asc"];
+  desc: this["asc"];
   operations: Operation<Params>[];
   hasOp: HasOp;
   omit(): SQLProp<As, Output, Params, true, HasOp>;
   or<Params2 = {}>(prop: Prop | SQLProp<any, any, Params2>): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
-  and: SQLProp<As, Output, Params, IsOmitted, HasOp>["or"];
+  and: this["or"];
   interpret: () => SQLTag;
 }
 

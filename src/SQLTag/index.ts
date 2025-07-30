@@ -29,7 +29,7 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode {
   interpreted?: InterpretedSQLTag<Params>;
   concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
   join<Params2, Output2>(delimiter: Raw | string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
-  [flConcat]: SQLTag<Params, Output>["concat"];
+  [flConcat]: this["concat"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params): [string, any[]];
   options: RequiredRefQLOptions;

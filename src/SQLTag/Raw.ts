@@ -6,7 +6,7 @@ import SQLNode, { sqlNodePrototype } from "./SQLNode";
 interface Raw<Params = any> extends SQLNode<Params> {
   run: TagFunctionVariable<Params, string>;
   map(f: (x: ValueType) => ValueType): Raw<Params>;
-  [flMap]: Raw<Params>["map"];
+  [flMap]: this["map"];
 }
 
 const type = "refql/Raw";

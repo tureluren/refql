@@ -1,6 +1,5 @@
 import { Pool } from "pg";
 import RefQL, { isRQLTag, Limit, NumberProp, Offset, Raw, RQLTag, SQLTag, StringProp, Values } from ".";
-import { Selectable } from "./common/types";
 
 const pool = new Pool ({
   user: "test",
@@ -59,7 +58,6 @@ deletes ({ id: 2 }).then (res => res[0]);
 
 
 // + laat logic werken met sqlTag
-// this gebruiken
 // concat 2 van zelfde ref
 // monoid ? en sql tag ook ?
 // check for unused types and remove
