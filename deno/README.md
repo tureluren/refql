@@ -9,10 +9,10 @@ npm install refql
 ## Create RefQL instance
 ```ts
 // refql.ts
-import { Pool } from "pg";
-import RefQL from "refql";
+import postgres from "https://deno.land/x/postgresjs/mod.js";
+import RefQL from "https://deno.land/x/refql/mod.ts";
 
-const pool = new Pool ({
+const pool = postgres ({
   // ...pool options
 });
 
@@ -138,10 +138,10 @@ readPage ({ limit: 5, offset: 0 }).then (console.log);
 
 ## Options
 ```ts
-import { Pool } from "pg";
-import RefQL from "refql";
+import postgres from "https://deno.land/x/postgresjs/mod.js";
+import RefQL from "https://deno.land/x/refql/mod.ts";
 
-const pool = new Pool ({
+const pool = postgres ({
   // ...pool options
 });
 
@@ -170,8 +170,8 @@ const refql = RefQL ({
 The querier should have the type signature `<T>(query: string, values: any[]) => Promise<T[]>`. This function is a necessary in-between piece to make RefQL independent from database clients. This allows you to choose your own client. This is also the place where you can debug or transform a query before it goes to the database or when the result is obtained. Example of a querier for mySQL:
 
 ```ts
-import mySQL from "mysql2";
-import RefQL from "refql";
+import * as mySQL from "https://deno.land/x/mysql2/mod.ts";
+import RefQL from "https://deno.land/x/refql/mod.ts";
 
 const mySQLPool = mySQL.createPool ({
   // ...pool options
@@ -199,7 +199,7 @@ const refql = RefQL ({
 U can use [Module augmentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation) in TypeScript to register another container type.
 
 ```ts
-import RefQL, { Selectable } from "refql";
+import RefQL, { Selectable } from "https://deno.land/x/refql/mod.ts";
 
 declare module "refql" {
   interface RQLTag<TableId extends string = any, Props = any, Components extends Selectable<TableId, Props>[] = Selectable<TableId, Props>[], Params = any, Output = any> {
@@ -257,7 +257,7 @@ For now, introspection only works for PostgreSQL databases. The example below sh
 import { 
   BelongsTo, BelongsToMany, HasMany, HasOne, 
   NumberProp, Offset, StringProp,
-} from "refql";
+} from "https://deno.land/x/refql/mod.ts";
 import refql from "./refql";;
 
 const { Table } = refql;
@@ -289,7 +289,7 @@ const playerBelongsToManyGames = BelongsToMany ("games", "game", {
 ## Operator mix
 
 ```ts
-import { NumberProp } from "refql";
+import { NumberProp } from "https://deno.land/x/refql/mod.ts";
 import refql from "./refql";
 
 const { sql, tables } = refql;
@@ -346,7 +346,7 @@ readStrikersPage ({ q: "Gra%" }).then (console.log);
 ### Insert
 
 ```ts
-import { Values } from "refql";
+import { Values } from "https://deno.land/x/refql/mod.ts";
 import refql from "./refql";
 
 const { sql, tables } = refql;
@@ -387,7 +387,7 @@ insertTeam({ data: [{ name: "New Team", leagueId: 1 }] })
 
 ### Update
 ```ts
-import { Values } from "refql";
+import { Values } from "https://deno.land/x/refql/mod.ts";
 import refql from "./refql";
 
 const { sql, tables } = refql;
@@ -444,7 +444,7 @@ deleteTeam ({ id: 84 })
 If something can't be done by using the functions provided by RefQL, use `sql`.
 
 ```ts
-import { NumberProp } from "refql";
+import { NumberProp } from "https://deno.land/x/refql/mod.ts";
 import refql from "./refql";
 
 const { sql, tables } = refql;
@@ -482,7 +482,7 @@ readTopScorers ().then (console.log);
 With the Raw data type it's possible to inject values as raw text into the query.
 
 ```ts
-import { Raw } from "refql";
+import { Raw } from "https://deno.land/x/refql/mod.ts";
 import refql from "./refql";
 
 const { sql, tables } = refql;
@@ -510,7 +510,7 @@ readPlayerById ({ id: 1 }).then (console.log);
 Useful when you want to create dynamic queries, such as inserts or queries with the `in` operator.
 
 ```ts
-import { Values } from "refql";
+import { Values } from "https://deno.land/x/refql/mod.ts";
 import refql from "./refql";
 
 const { sql, tables } = refql;
@@ -538,7 +538,7 @@ selectPlayers ({ ids: [1, 2, 3] }).then (console.log);
 Useful for batch inserts.
 
 ```ts
-import { Raw, Values, Values2D } from "refql";
+import { Raw, Values, Values2D } from "https://deno.land/x/refql/mod.ts";
 import refql from "./refql";
 
 const { sql, tables } = refql;

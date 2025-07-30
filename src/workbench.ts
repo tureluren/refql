@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import RefQL, { isRQLTag, Limit, NumberProp, Offset, Raw, RQLTag, SQLTag, StringProp, Values } from ".";
+import { Selectable } from "./common/types";
 
 const pool = new Pool ({
   user: "test",
@@ -60,7 +61,6 @@ deletes ({ id: 2 }).then (res => res[0]);
 // + laat logic werken met sqlTag
 // concat 2 van zelfde ref
 // monoid ? en sql tag ook ?
-// check for unused types and remove
 // generated terug nakijken
 // readme wijzigen
 
@@ -111,7 +111,7 @@ const readPage =
   readPart1
     .concat (readPart2);
 
-readPage ({ limit: 5, offset: 0 }).then (res => res[0]);
+readPage ({ limit: 5, offset: 0 }).fork (e => null, res => res[0]);
 
 // [
 const byIds = sql<{rows: { id: number }[]}>`
@@ -150,5 +150,3 @@ const andd = PatchedPlayer ([
   "fullName",
   Limit (1)
 ]);
-
-// andd ({ delimiter: " " }).then (res => console.log (res[0]));

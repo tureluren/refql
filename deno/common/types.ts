@@ -1,15 +1,15 @@
-import Prop from "../Prop";
-import PropType from "../Prop/PropType";
-import RefProp from "../Prop/RefProp";
-import SQLProp from "../Prop/SQLProp";
-import { RQLTag } from "../RQLTag";
-import CUD from "../RQLTag/CUD";
-import Limit from "../RQLTag/Limit";
-import Offset from "../RQLTag/Offset";
-import RefField from "../RQLTag/RefField";
-import { SQLTag } from "../SQLTag";
-import SQLNode from "../SQLTag/SQLNode";
-import { Table } from "../Table";
+import Prop from "../Prop/index.ts";
+import PropType from "../Prop/PropType.ts";
+import RefProp from "../Prop/RefProp.ts";
+import SQLProp from "../Prop/SQLProp.ts";
+import { RQLTag } from "../RQLTag/index.ts";
+import CUD from "../RQLTag/CUD.ts";
+import Limit from "../RQLTag/Limit.ts";
+import Offset from "../RQLTag/Offset.ts";
+import RefField from "../RQLTag/RefField.ts";
+import { SQLTag } from "../SQLTag/index.ts";
+import SQLNode from "../SQLTag/SQLNode.ts";
+import { Table } from "../Table/index.ts";
 
 export type StringMap = Record<string, any>;
 

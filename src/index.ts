@@ -1,4 +1,5 @@
 import isEmptyTag from "./common/isEmptyTag";
+import { Selectable } from "./common/types";
 import Prop from "./Prop";
 import BelongsTo from "./Prop/BelongsTo";
 import BelongsToMany from "./Prop/BelongsToMany";
@@ -34,7 +35,7 @@ export {
   Eq, HasMany, HasOne, isEmptyTag, IsNull, isRQLTag,
   isSQLNode, isSQLTag, Limit, makeTable, NumberProp,
   Offset, parse, Prop, PropType, Raw, RefField, RefNode,
-  RefProp, RQLTag, SQLProp, SQLTag, StringProp, Value, Values, Values2D
+  RefProp, RQLTag, Selectable, SQLProp, SQLTag, StringProp, Value, Values, Values2D
 };
 
 export default RefQL;
