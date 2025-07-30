@@ -29,6 +29,8 @@ export type LogicOperator = "and" | "or";
 
 export type RelType = "BelongsTo" | "HasMany" | "HasOne" | "BelongsToMany";
 
+// { id: string } & { name: string } becomes { id: string, name: string }
+// any & {} = {}
 // 0 extends (1 & T) = any
 export type Simplify<T> = 0 extends (1 & T) ? {} : { [K in keyof T]: T[K] };
 

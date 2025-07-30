@@ -4,7 +4,7 @@ import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import { SQLTag } from "../SQLTag";
 import { sqlX } from "../SQLTag/sql";
 import { refqlType } from "../common/consts";
-import { TagFunctionVariable } from "../common/types";
+import { Simplify, TagFunctionVariable } from "../common/types";
 import PropType, { propTypePrototype } from "./PropType";
 
 interface SQLProp<As extends string = any, Output = any, Params = any, IsOmitted extends boolean = any, HasOp extends boolean = any> extends RQLNode, PropType<As> {
@@ -14,17 +14,17 @@ interface SQLProp<As extends string = any, Output = any, Params = any, IsOmitted
   isOmitted: IsOmitted;
   arrayOf(): SQLProp<As, Output[], Params, IsOmitted, HasOp>;
   nullable(): SQLProp<As, Output | null, Params, IsOmitted, HasOp>;
-  eq<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output> | Output): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  eq<Params2 = {}>(run: TagFunctionVariable<Simplify<Params & Params2>, Output> | Output): SQLProp<As, Output, Simplify<Params & Params2>, IsOmitted, true>;
   notEq: this["eq"];
-  isNull<Params2 = {}>(): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  isNull<Params2 = {}>(): SQLProp<As, Output, Simplify<Params & Params2>, IsOmitted, true>;
   notIsNull: this["isNull"];
-  like<Params2 = {}>(run: TagFunctionVariable<Params & Params2, string> | string): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  like<Params2 = {}>(run: TagFunctionVariable<Simplify<Params & Params2>, string> | string): SQLProp<As, Output, Simplify<Params & Params2>, IsOmitted, true>;
   notLike: this["like"];
   iLike: this["like"];
   notILike: this["like"];
-  in<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output[]> | Output[]): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  in<Params2 = {}>(run: TagFunctionVariable<Simplify<Params & Params2>, Output[]> | Output[]): SQLProp<As, Output, Simplify<Params & Params2>, IsOmitted, true>;
   notIn: this["in"];
-  gt<Params2 = {}>(run: TagFunctionVariable<Params & Params2, Output> | Output): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  gt<Params2 = {}>(run: TagFunctionVariable<Simplify<Params & Params2>, Output> | Output): SQLProp<As, Output, Simplify<Params & Params2>, IsOmitted, true>;
   gte: this["gt"];
   lt: this["gt"];
   lte: this["gt"];
@@ -33,7 +33,7 @@ interface SQLProp<As extends string = any, Output = any, Params = any, IsOmitted
   operations: Operation<Params>[];
   hasOp: HasOp;
   omit(): SQLProp<As, Output, Params, true, HasOp>;
-  or<Params2 = {}>(prop: Prop | SQLProp<any, any, Params2>): SQLProp<As, Output, Params & Params2, IsOmitted, true>;
+  or<Params2 = {}>(prop: Prop | SQLProp<any, any, Params2>): SQLProp<As, Output, Simplify<Params & Params2>, IsOmitted, true>;
   and: this["or"];
   interpret: () => SQLTag;
 }

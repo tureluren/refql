@@ -1,7 +1,7 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import RQLEmpty from "../common/RQLEmpty";
-import { Querier, RequiredRefQLOptions, StringMap, TagFunctionVariable } from "../common/types";
+import { Querier, RequiredRefQLOptions, Simplify, StringMap, TagFunctionVariable } from "../common/types";
 import RQLNode, { rqlNodePrototype } from "../RQLTag/RQLNode";
 import Raw from "./Raw";
 import SQLNode from "./SQLNode";
@@ -27,8 +27,8 @@ export interface SQLTag<Params = any, Output = any> extends RQLNode {
   params: Params;
   nodes: SQLNode<Params>[];
   interpreted?: InterpretedSQLTag<Params>;
-  concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
-  join<Params2, Output2>(delimiter: Raw | string, other: SQLTag<Params2, Output2>): SQLTag<Params & Params2, Output & Output2>;
+  concat<Params2, Output2>(other: SQLTag<Params2, Output2>): SQLTag<Simplify<Params & Params2>, Simplify<Output & Output2>>;
+  join<Params2, Output2>(delimiter: Raw | string, other: SQLTag<Params2, Output2>): SQLTag<Simplify<Params & Params2>, Simplify<Output & Output2>>;
   [flConcat]: this["concat"];
   interpret(): InterpretedSQLTag<Params>;
   compile(params: Params): [string, any[]];

@@ -710,10 +710,10 @@ describe ("RQLTag type", () => {
       fullName.gt ("A").lt ("Z"),
       lastName.gte ("A").lte ("Z"),
       birthday.lt (today).omit (),
-      Limit (5)
+      Limit<{ limit: number}> (p => p.limit)
     ]);
 
-    const [query, values] = await tag.compile ({ delimiter: " " });
+    const [query, values] = await tag.compile ({ delimiter: " ", limit: 5 });
 
     expect (query).toBe (format (`
       select player.id "id", player.first_name "firstName",
@@ -886,16 +886,16 @@ describe ("RQLTag type", () => {
     const tag = Player ([
       "id",
       "lastName",
-      lastName.like ("A%").and (firstName.like ("B%").or (firstName.like ("C%")))
+      lastName.like ("A%").and (firstName.like ("B%").or (fullName.like ("C%")))
     ]);
 
-    const [query, values] = await tag.compile ({});
+    const [query, values] = await tag.compile ({ delimiter: " " });
 
     expect (query).toBe (format (`
       select player.id "id", player.last_name "lastName"
       from public.player
       where 1 = 1
-      and (player.last_name like $1 and (player.first_name like $2 or player.first_name like $3))
+      and (player.last_name like $1 and (player.first_name like $2 or (concat (player.first_name, ' ', player.last_name)) like $3))
     `));
 
     expect (values).toEqual (["A%", "B%", "C%"]);
