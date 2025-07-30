@@ -26,11 +26,6 @@ const { tables, Table, sql } = RefQL ({
 
 const { Team, Player, Goal } = tables.public;
 
-const TestTable = Table ("dd", [StringProp ("buhbuh")]);
-
-TestTable ([
-]);
-
 
 const { teamId, firstName, lastName, id } = Player.props;
 
@@ -51,42 +46,14 @@ const update = Player.update ([
 
 update ({ data: { firstName: "foemp", lastName: "ddd", cars: {} }, id: 2 }).then (res => res[0]);
 
-const deletes = Player.delete ([
-  id.eq<{ id: number}> (p => p.id)
-]);
-
-deletes ({ id: 2 }).then (res => res[0]);
 
 
 // + laat logic werken met sqlTag
-// concat 2 van zelfde ref
-// monoid ? en sql tag ook ?
-// generated terug nakijken
-// readme wijzigen
-
-// const noSecrets = User ([
-//   password.omit (),
-//   secrets2fa.omit ()
-// ]);
-// export const readUserPage = noSecrets.concat (User ([
-//   Caregiver,
-//   updatedAt.desc (),
-//   id.desc (),
-//   Limit (p => p.limit),
-//   Offset (p => p.limit * p.page)
-// ]));
 
 const justTeam = Team (["id", "name", "name"]) ({}).then (t => t[0]);
 
 const ta = Team (["active"]);
-const readPart1 = Player ([
-  "birthday",
-  Team (["id"]),
-  Goal (["gameId"])
 
-  // Team.props.active
-  // ta
-]);
 
 const Buh: SQLTag<{ id: string }> | RQLTag<"Player"> = "d" as any;
 
@@ -97,21 +64,7 @@ if (isRQLTag (Buh)) {
 // const comps = readPart1["components"][0]["components"];
 
 
-readPart1 ({}).then (res => res[0]);
 
-const readPart2 = Player ([
-  // "lastName",
-  Team (["name"])
-  // Limit<{ limit: number }> (p => p.limit),
-  // Offset<{ offset: number }> (p => p.offset)
-]);
-
-
-const readPage =
-  readPart1
-    .concat (readPart2);
-
-readPage ({ limit: 5, offset: 0 }).fork (e => null, res => res[0]);
 
 // [
 const byIds = sql<{rows: { id: number }[]}>`
@@ -150,3 +103,25 @@ const andd = PatchedPlayer ([
   "fullName",
   Limit (1)
 ]);
+
+
+const readPart1 = Player ([
+  "id",
+  "firstName",
+  Team (["id"])
+]);
+
+const readPart2 = Player ([
+  "lastName",
+  Team (["name"])
+]);
+
+const readPage =
+  readPart1
+    .concat (readPart2)
+    .concat (Player ([
+      Limit<{ limit: number }> (p => p.limit),
+      Offset<{ offset: number }> (p => p.offset)
+    ]));
+
+readPage ({ limit: 5, offset: 0 }).then (console.log);

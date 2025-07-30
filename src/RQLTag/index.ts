@@ -122,6 +122,7 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
   let orderBies = sqlX``;
   let limit = sqlX``;
   let offset = sqlX``;
+  let memberCount = 0;
 
   const caseOfRef = (tag: RQLTag, info: RefInfo, single: boolean) => {
     for (const lr of info.lRef) {
@@ -136,6 +137,10 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
       const col = node.interpret ();
 
       members.push ({ as: node.as, node: sqlX`${col} ${Raw (`"${node.as}"`)}`, isOmitted: node.isOmitted });
+
+      if (node.operations.length === 0 && !node.isOmitted && !SQLProp.isSQLProp (node)) {
+        memberCount += 1;
+      }
 
       let propFilters = sqlX``;
       let filterIdx = 0;
@@ -176,6 +181,19 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
     }
   }
 
+  // Select all columns
+  if (memberCount === 0) {
+    const fieldProps = Object.entries (table.props)
+      .map (([, prop]) => prop as Prop)
+      .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col))
+      .map (prop => ({
+        as: prop.as,
+        node: sqlX`${prop.interpret ()} ${Raw (`"${prop.as}"`)}`,
+        isOmitted: false
+      }));
+
+    members.push (...fieldProps);
+  }
 
   let tag = sqlX`
     select ${joinMembers (members)}

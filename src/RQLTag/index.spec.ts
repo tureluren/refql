@@ -474,6 +474,22 @@ describe ("RQLTag type", () => {
     expect (players.length).toBe (30);
   });
 
+  test ("concat within", async () => {
+    const tag = Player ([
+      "id",
+      "firstName",
+      Team (["id"]),
+      Team (["name"]),
+      Limit (1)
+    ]);
+
+    const players = await tag ({});
+    const player = players[0];
+    const playerTeam = player.team;
+
+    expect (Object.keys (playerTeam!)).toEqual (["id", "name"]);
+  });
+
   test ("all fields", async () => {
     const tag = Player ([
       sql`limit 1`
@@ -484,6 +500,21 @@ describe ("RQLTag type", () => {
     const player = players[0];
 
     expect (Object.keys (player)).toEqual (["birthday", "cars", "firstName", "id", "lastName", "positionId", "teamId"]);
+  });
+
+  test ("not all fields after concat", async () => {
+    const tag = Player ([
+      "id",
+      "firstName",
+      Limit (1)
+    ]);
+
+    const tag2 = Player ([]);
+
+    const players = await tag.concat (tag2) ({});
+    const player = players[0];
+
+    expect (Object.keys (player)).toEqual (["id", "firstName"]);
   });
 
 

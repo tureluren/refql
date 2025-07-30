@@ -95,25 +95,16 @@ const makeTable = (options: RequiredRefQLOptions) => {
 
       let nodes: RQLNode[] = [];
 
-      let memberCount = 0;
-
-      // isSQLTag kan weg als dit niet meer kan voorvallen bij gen schema
-      const fieldProps = Object.entries (properties)
-        .map (([, prop]) => prop as Prop)
-        .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col));
+      let rqlTagMap: { [key: string]: RQLTag } = {};
 
       for (const comp of components) {
         if (typeof comp === "string" && properties[comp]) {
           const prop = properties[comp] as unknown as Prop;
           nodes = upsertRQLNode (nodes, prop);
-          if (!SQLProp.isSQLProp (prop)) {
-            memberCount += 1;
-          }
+
         } else if (Prop.isProp (comp) && properties[comp.as as keyof typeof properties]) {
           nodes = upsertRQLNode (nodes, comp);
-          if (comp.operations.length === 0 && !comp.isOmitted) {
-            memberCount += 1;
-          }
+
         } else if (SQLProp.isSQLProp (comp)) {
           nodes = upsertRQLNode (nodes, comp);
         } else if (isTable (comp)) {
@@ -135,18 +126,11 @@ const makeTable = (options: RequiredRefQLOptions) => {
 
           nodes.push (...refNodes);
         } else if (isRQLTag (comp)) {
-          const refNodes = Object.keys (properties)
-            .map (key => properties[key as keyof typeof properties])
-            .filter (prop => RefProp.isRefProp (prop) && comp.table.equals (prop.child))
-            .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, options), refProp as any, table as any, options)));
+          const tableKey = comp.table.toString ();
+          const rqlTag = rqlTagMap[tableKey];
+          rqlTagMap[tableKey] = rqlTag == null ? comp : rqlTag.concat (comp);
 
-          if (!refNodes.length) {
-            throw new Error (
-              `${table.tableId} has no ref defined for: ${comp.table.tableId}`
-            );
-          }
 
-          nodes.push (...refNodes);
         } else if (isRQLNode (comp)) {
           nodes.push (comp);
         } else {
@@ -154,9 +138,20 @@ const makeTable = (options: RequiredRefQLOptions) => {
         }
       }
 
-      if (memberCount === 0) {
-        nodes.push (...fieldProps);
-      }
+      Object.values (rqlTagMap).forEach (comp => {
+        const refNodes = Object.keys (properties)
+          .map (key => properties[key as keyof typeof properties])
+          .filter (prop => RefProp.isRefProp (prop) && comp.table.equals (prop.child))
+          .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, options), refProp as any, table as any, options)));
+
+        if (!refNodes.length) {
+          throw new Error (
+            `${table.tableId} has no ref defined for: ${comp.table.tableId}`
+          );
+        }
+
+        nodes.push (...refNodes);
+      });
 
       return createRQLTag (table, nodes, options);
 

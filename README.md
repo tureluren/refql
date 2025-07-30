@@ -113,14 +113,16 @@ const readPart1 = Player ([
 
 const readPart2 = Player ([
   "lastName",
-  Team (["name"]),
-  Limit<{ limit: number }> (p => p.limit),
-  Offset<{ offset: number }> (p => p.offset)
+  Team (["name"])
 ]);
 
 const readPage =
   readPart1
-    .concat (readPart2);
+    .concat (readPart2)
+    .concat (Player ([
+      Limit<{ limit: number }> (p => p.limit),
+      Offset<{ offset: number }> (p => p.offset)
+    ]));
 
 readPage ({ limit: 5, offset: 0 }).then (console.log);
 
