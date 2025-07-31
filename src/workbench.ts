@@ -22,3 +22,14 @@ const querier = async (query: string, values: any[]) => {
 const { tables, Table, sql } = RefQL ({
   querier
 });
+
+const { Player, Team, Game } = tables.public;
+
+const test = Player ([
+  "birthday",
+  Team ([
+    Game
+  ])
+]);
+
+test ({}).then (res => res[0]);

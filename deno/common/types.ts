@@ -172,7 +172,11 @@ type IsNullableForAs<Union, Key extends string> =
 
 // We need to avoid using UnionToIntersection on primitives and fallback to U directly (as a union) if intersection doesn't make sense.
 type UnionIfObject<U> =
-  [U] extends [object] ? Simplify<UnionToIntersection<U>> : U;
+  [U] extends [Date]
+    ? U
+    : [U] extends [object]
+      ? Simplify<UnionToIntersection<U>>
+      : U;
 
 /**
  * Converts a union of `{ as, type, nullable }` entries into a flat object type,
