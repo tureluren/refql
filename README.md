@@ -132,7 +132,7 @@ readPage ({ limit: 1, offset: 0 }).then (console.log);
 //     firstName: "Christine",
 //     lastName: "Hubbard",
 //     team: { id: 1, name: "FC Agecissak" }
-//   },
+//   }
 // ];
 ```
 
