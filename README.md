@@ -124,7 +124,7 @@ const readPage =
       Offset<{ offset: number }> (p => p.offset)
     ]));
 
-readPage ({ limit: 5, offset: 0 }).then (console.log);
+readPage ({ limit: 1, offset: 0 }).then (console.log);
 
 // [
 //   {
@@ -133,7 +133,6 @@ readPage ({ limit: 5, offset: 0 }).then (console.log);
 //     lastName: "Hubbard",
 //     team: { id: 1, name: "FC Agecissak" }
 //   },
-//   ...
 // ];
 ```
 
