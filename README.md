@@ -419,7 +419,7 @@ updateTeamById ({ data: { name: "Updated Team" }, id: 86 })
 // }];
 ```
 
-### delete
+### Delete
 ```ts
 import refql from "./refql";
 
