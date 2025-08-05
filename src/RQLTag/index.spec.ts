@@ -517,6 +517,25 @@ describe ("RQLTag type", () => {
     expect (Object.keys (player)).toEqual (["id", "firstName"]);
   });
 
+  test ("Select all even if operations (and after concat)", async () => {
+    const { id } = Team.props;
+    const { id: leagueId } = League.props;
+
+    const tag = Team ([]).concat (Team ([
+      id.eq (1),
+      League ([
+        leagueId.gt (0)
+      ])
+    ]));
+
+    const teams = await tag ({});
+    const team = teams[0];
+    const league = team.league;
+
+    expect (Object.keys (team)).toEqual (["id", "active", "leagueId", "name", "league"]);
+    expect (Object.keys (league || {})).toEqual (["id", "name"]);
+  });
+
 
   test ("Nested limit, nested offset and cache", async () => {
     const tag = Team ([
