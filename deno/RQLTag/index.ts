@@ -103,7 +103,8 @@ function concat(this: RQLTag, other: RQLTag) {
   const refNodes = Object.values (this.table.props)
     .filter (prop => RefProp.isRefProp (prop) && refs[prop.child.toString ()])
     .map ((prop: any) => {
-      return RefNode (createRQLTag (prop.child, refs[prop.child.toString ()].nodes, this.options), prop, this.table, this.options);
+      const ref = refs[prop.child.toString ()];
+      return RefNode (createRQLTag (ref.table, ref.nodes, this.options), prop, this.table, this.options);
     });
 
   return createRQLTag (
