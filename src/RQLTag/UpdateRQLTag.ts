@@ -77,7 +77,7 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
 
   const updateFields = sortedProps
     .reduce ((t, field) => {
-      const pred = (params: { data: any[]}) => params.data[field.as] != null;
+      const pred = (params: { data: any[]}) => params.data[field.as] !== undefined;
 
       return t.join ("", sqlX`
         ${Raw ((p: any) => pred (p) ? `${isFirstKey (p.data, field.as) ? "" : ","} ${field.col || field.as} = ` : "")}${(p: any) => pred (p) ? p.data[field.as] : RQLEmpty} 

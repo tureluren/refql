@@ -31,7 +31,7 @@ describe ("CUD", () => {
 
   const { sql, options, tables } = RefQL ({ querier });
 
-  const { Game, Player } = tables.public;
+  const { Game, Player, Rating } = tables.public;
 
   afterAll (() => {
     pool.end ();
@@ -205,6 +205,22 @@ describe ("CUD", () => {
     expect (games3.length).toBe (1);
     expect (game3.id).toBe (game1.id);
     expect (Object.keys (game3)).toEqual (["awayTeamId", "date", "homeTeamId", "id", "leagueId", "result" ]);
+  });
+
+  test ("update null values and ignore not props", () => {
+    const tag = Rating.update ([
+      Rating.props.playerId.eq<{ playerId: number }> (p => p.playerId)
+    ]);
+
+    const [query, values] = tag.compile ({ playerId: 1, data: { playingGuitar: 10, acceleration: null, dribbling: 70, makingJokes: 30 } as any });
+
+    expect (query).toBe (format (`
+      update public.rating set acceleration = $1, dribbling = $2 where 1 = 1 and rating.player_id = $3 
+      returning rating.acceleration "acceleration", rating.dribbling "dribbling", rating.finishing "finishing", 
+      rating.free_kick "freeKick", rating.player_id "playerId", rating.positioning "positioning", rating.shot_power "shotPower", rating.stamina "stamina", rating.tackling "tackling"
+    `));
+
+    expect (values).toEqual ([null, 70, 1]);
   });
 
   test ("errors", () => {
