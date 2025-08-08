@@ -212,7 +212,7 @@ describe ("CUD", () => {
       Rating.props.playerId.eq<{ playerId: number }> (p => p.playerId)
     ]);
 
-    const [query, values] = tag.compile ({ playerId: 1, data: { playingGuitar: 10, acceleration: null, dribbling: 70, makingJokes: 30 } as any });
+    const [query, values] = tag.compile ({ playerId: 1, data: { aaa: 1, playingGuitar: 10, acceleration: null, dribbling: 70, makingJokes: 30 } as any });
 
     expect (query).toBe (format (`
       update public.rating set acceleration = $1, dribbling = $2 where 1 = 1 and rating.player_id = $3 

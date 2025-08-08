@@ -69,6 +69,8 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
 
   const props = getStandardProps (table);
 
+  const isFirstTableKey = isFirstKey (props);
+
   const sortedProps = props.sort ((a, b) => a.as.localeCompare (b.as));
 
   const updateTable = sqlX`
@@ -80,7 +82,7 @@ function interpret(this: UpdateRQLTag): InterpretedCUD {
       const pred = (params: { data: any[]}) => params.data[field.as] !== undefined;
 
       return t.join ("", sqlX`
-        ${Raw ((p: any) => pred (p) ? `${isFirstKey (p.data, field.as) ? "" : ","} ${field.col || field.as} = ` : "")}${(p: any) => pred (p) ? p.data[field.as] : RQLEmpty} 
+        ${Raw ((p: any) => pred (p) ? `${isFirstTableKey (p.data, field.as) ? "" : ","} ${field.col || field.as} = ` : "")}${(p: any) => pred (p) ? p.data[field.as] : RQLEmpty} 
       ` as any);
     }, updateTable);
 
