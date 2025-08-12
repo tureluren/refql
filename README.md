@@ -1,5 +1,5 @@
 # RefQL
-A library for composing and running typesafe SQL queries.
+A library for composing and running database queries with rich IntelliSense and type safety.
 
 ## Installation
 ```bash
