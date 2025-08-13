@@ -1,6 +1,8 @@
 # RefQL
 A library for composing and running database queries with rich IntelliSense and type safety.
 
+<img width="682" height="412" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
+
 ## Installation
 ```bash
 npm install refql 

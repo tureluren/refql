@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import RefQL from ".";
+import { captureRejections } from "mysql2/typings/mysql/lib/Connection";
 
 const pool = new Pool ({
   user: "test",
@@ -22,14 +23,3 @@ const querier = async (query: string, values: any[]) => {
 const { tables, Table, sql } = RefQL ({
   querier
 });
-
-const { Player, Team, Game } = tables.public;
-
-const test = Player ([
-  "birthday",
-  Team ([
-    Game
-  ])
-]);
-
-test ({}).then (res => res[0]);
