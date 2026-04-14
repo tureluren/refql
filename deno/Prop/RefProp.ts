@@ -21,7 +21,19 @@ const prototype = Object.assign ({}, propTypePrototype, {
   nullable
 });
 
+function uniqueRefInput<T extends RefInput>(input: T): T {
+  const result = { ...input };
+
+  if (result.lRef) result.lRef = [...new Set (result.lRef)];
+  if (result.rRef) result.rRef = [...new Set (result.rRef)];
+  if (result.lxRef) result.lxRef = [...new Set (result.lxRef)];
+  if (result.rxRef) result.rxRef = [...new Set (result.rxRef)];
+
+  return result;
+}
+
 function RefProp<As extends string, TableId extends string, Rel extends RelType, Nullable extends boolean>(as: As, tableId: TableId, rel: Rel, refInput: Rel extends "BelongsToMany" ? RefInput : RefNodeInput, isNullable: Nullable) {
+  refInput = uniqueRefInput (refInput);
   validateRefInput (refInput);
 
   let refProp: RefProp<As, TableId, Rel, Nullable> = Object.create (prototype);
