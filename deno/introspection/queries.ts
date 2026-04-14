@@ -128,8 +128,8 @@ export async function getRelationships(sql: typeof sqlX) {
   ` ().then (rows =>
         rows.map (rel => ({
           ...rel,
-          column_names: rel.column_names.replace (/^{|}$/g, "").split (","),
-          foreign_column_names: rel.foreign_column_names.replace (/^{|}$/g, "").split (",")
+          column_names: [...new Set (rel.column_names.replace (/^{|}$/g, "").split (","))],
+          foreign_column_names: [...new Set (rel.foreign_column_names.replace (/^{|}$/g, "").split (","))]
         })));
 
   /*
