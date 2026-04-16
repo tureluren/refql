@@ -30,6 +30,10 @@ interface SQLProp<As extends string = any, Output = any, Params = any, IsOmitted
   lte: this["gt"];
   asc(): SQLProp<As, Output, Params, IsOmitted, true>;
   desc: this["asc"];
+  ascNullsFirst: this["asc"];
+  ascNullsLast: this["asc"];
+  descNullsFirst: this["asc"];
+  descNullsLast: this["asc"];
   operations: Operation<Params>[];
   hasOp: HasOp;
   omit(): SQLProp<As, Output, Params, true, HasOp>;
@@ -61,6 +65,10 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   lte: ord ("<="),
   asc: dir (),
   desc: dir (true),
+  ascNullsFirst: dir (false, true),
+  ascNullsLast: dir (false, false, true),
+  descNullsFirst: dir (true, true),
+  descNullsLast: dir (true, false, true),
   omit,
   or: logic ("or"),
   and: logic ("and"),

@@ -628,7 +628,7 @@ describe ("RQLTag type", () => {
 
 
   test ("Where in and order by", async () => {
-    const { id, teamId } = Player.props;
+    const { id, teamId, birthday } = Player.props;
 
     const tag = Player ([
       fullName.desc ().omit (),
@@ -636,7 +636,8 @@ describe ("RQLTag type", () => {
       "firstName",
       "lastName",
       goalCount.in ([0]).omit (),
-      teamId.in ([1, 2]).omit ()
+      teamId.in ([1, 2]).omit (),
+      birthday.ascNullsFirst ().omit ().ascNullsLast ().descNullsLast ().descNullsFirst ()
     ]);
 
     const [query, values] = await tag.compile ({ ids: [1, 2, 3], delimiter: " " });
@@ -648,7 +649,12 @@ describe ("RQLTag type", () => {
       and (player.id in ($1, $2, $3))
       and ((select cast(count(*) as int) from goal where goal.player_id = player.id) in ($4))
       and (player.team_id in ($5, $6))
-      order by (concat (player.first_name, ' ', player.last_name)) desc, player.id asc
+      order by (concat (player.first_name, ' ', player.last_name)) desc, 
+        player.id asc, 
+        player.birthday asc nulls first,
+        player.birthday asc nulls last,
+        player.birthday desc nulls last,
+        player.birthday desc nulls first
     `));
 
     expect (values).toEqual ([1, 2, 3, 0, 1, 2]);

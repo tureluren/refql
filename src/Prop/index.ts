@@ -40,6 +40,10 @@ interface Prop<TableId extends string = any, As extends string = any, Output = a
   lte: this["gt"];
   asc(): Prop<TableId, As, Output, Params, IsOmitted, HasDefault, true>;
   desc: this["asc"];
+  ascNullsFirst: this["asc"];
+  ascNullsLast: this["asc"];
+  descNullsFirst: this["asc"];
+  descNullsLast: this["asc"];
   or<Params2 = {}>(prop: Prop<TableId> | SQLProp<any, any, Params2> | SQLTag<Params2>): Prop<TableId, As, Output, Simplify<Params & Params2>, IsOmitted, HasDefault, true>;
   and: this["or"];
   operations: Operation<Params>[];
@@ -72,6 +76,10 @@ const prototype = Object.assign ({}, rqlNodePrototype, propTypePrototype, {
   lte: ord ("<="),
   asc: dir (),
   desc: dir (true),
+  ascNullsFirst: dir (false, true),
+  ascNullsLast: dir (false, false, true),
+  descNullsFirst: dir (true, true),
+  descNullsLast: dir (true, false, true),
   omit,
   hasDefault,
   or: logic ("or"),
@@ -150,10 +158,10 @@ export function ord(operator: OrdOperator) {
   };
 }
 
-export function dir(descending?: boolean) {
+export function dir(descending?: boolean, nullsFirst?: boolean, nullsLast?: boolean) {
   return function (this: Prop) {
     const prop = copyObj (this);
-    const orderByOp = OrderBy (descending);
+    const orderByOp = OrderBy (descending, nullsFirst, nullsLast);
 
     prop.operations = prop.operations.concat (orderByOp);
 
