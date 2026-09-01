@@ -96,8 +96,11 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
 
   const relationships = await getRelationships (sql);
 
+  const schemaNames = Object.keys (schemas)
+    .filter (schema => options.schemas.length === 0 || options.schemas.includes (schema));
+
   const schemaMap = await Promise.all (
-    Object.keys (schemas).map (async schema => {
+    schemaNames.map (async schema => {
       const tables = schemas[schema];
       const interfacesNew = await Promise.all (
 

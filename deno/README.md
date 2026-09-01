@@ -156,7 +156,10 @@ const refql = RefQL ({
   querier: pgQuerier,
 
   // database case type - optional
-  casing: "snake_case"
+  casing: "snake_case",
+
+  // schemas to introspect; an empty array introspects all schemas - optional
+  schemas: ["public"],
 
   // sign used for parameterized queries - optional
   parameterSign: "$",

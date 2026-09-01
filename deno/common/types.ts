@@ -279,6 +279,7 @@ export interface RefQLOptions {
   parameterSign?: string;
   indexedParameters?: boolean;
   casing?: Casing;
+  schemas?: string[];
 }
 
 export type RequiredRefQLOptions = Omit<Required<RefQLOptions>, "casing"> & { toCase: (str: string) => string};
