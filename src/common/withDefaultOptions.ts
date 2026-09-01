@@ -9,6 +9,7 @@ const withDefaultOptions = (options: Partial<RefQLOptions>): RequiredRefQLOption
     runner: options.runner || defaultRunner,
     parameterSign: options.parameterSign || "$",
     indexedParameters: options.indexedParameters || true,
+    schemas: options.schemas || [],
     toCase: getCasingFn (options.casing || "snake_case")
   };
 };

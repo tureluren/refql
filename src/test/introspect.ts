@@ -7,7 +7,7 @@ const pool = new Pool (userConfig ("pg"));
 
 const querier = pgQuerier (pool);
 
-const { introspect } = RefQL ({ querier });
+const { introspect } = RefQL ({ querier, schemas: ["public"] });
 
 (async () => {
   try {
