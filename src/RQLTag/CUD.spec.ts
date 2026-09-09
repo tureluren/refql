@@ -4,6 +4,7 @@ import pg from "pg";
 import BooleanProp from "../Prop/BooleanProp";
 import RefQL from "../RefQL";
 import { Querier } from "../common/types";
+import Raw from "../SQLTag/Raw";
 import format from "../test/format";
 import mariaDBQuerier from "../test/mariaDBQuerier";
 import mySQLQuerier from "../test/mySQLQuerier";
@@ -221,6 +222,39 @@ describe ("CUD", () => {
     `));
 
     expect (values).toEqual ([null, 70, 1]);
+  });
+
+  test ("insert and update Raw values", () => {
+    const insert = Game.insert ([]);
+    const [insertQuery, insertValues] = insert.compile ({ data: [{
+      awayTeamId: 2,
+      date: Raw ("now()"),
+      homeTeamId: 1,
+      leagueId: 1,
+      result: "1-1"
+    }] });
+
+    expect (insertQuery).toBe (format (`
+      insert into public.game (away_team_id, date, home_team_id, id, league_id, result)
+      values ($1, now(), $2, DEFAULT, $3, $4)
+      returning game.away_team_id "awayTeamId", game.date "date", game.home_team_id "homeTeamId", game.id "id", game.league_id "leagueId", game.result "result"
+    `));
+    expect (insertValues).toEqual ([2, 1, 1, "1-1"]);
+
+    const update = Game.update ([
+      Game.props.id.eq<{ id: number }> (p => p.id)
+    ]);
+    const [updateQuery, updateValues] = update.compile ({
+      data: { date: Raw ("now()"), result: "2-1" },
+      id: 1
+    });
+
+    expect (updateQuery).toBe (format (`
+      update public.game set date = now(), result = $1
+      where 1 = 1 and game.id = $2
+      returning game.away_team_id "awayTeamId", game.date "date", game.home_team_id "homeTeamId", game.id "id", game.league_id "leagueId", game.result "result"
+    `));
+    expect (updateValues).toEqual (["2-1", 1]);
   });
 
   test ("errors", () => {

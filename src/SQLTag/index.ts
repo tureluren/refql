@@ -105,7 +105,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
           const ran = node.run (p);
 
           // null is allowed, undefined not
-          if (ran === RQLEmpty) return [];
+          if (ran === RQLEmpty || Raw.isRaw (ran)) return [];
 
           return [ran];
         }
@@ -116,6 +116,7 @@ function interpret(this: SQLTag): InterpretedSQLTag {
           const ran = node.run (p);
 
           if (ran === RQLEmpty) return ["", 0];
+          if (Raw.isRaw (ran)) return [ran.run (p), 0];
 
           return [getPSign (i + 1), 1];
         }

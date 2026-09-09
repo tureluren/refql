@@ -8,6 +8,7 @@ import Limit from "../RQLTag/Limit";
 import Offset from "../RQLTag/Offset";
 import RefField from "../RQLTag/RefField";
 import { SQLTag } from "../SQLTag";
+import { RawValue } from "../SQLTag/Raw";
 import SQLNode from "../SQLTag/SQLNode";
 import { Table } from "../Table";
 
@@ -133,12 +134,12 @@ export type ParamsType<TableId extends string, S, T extends Selectable<TableId, 
 export type RQLParams<TableId extends string, S, T extends Selectable<TableId, S>[]> = Simplify<UnionToIntersection<ParamsType<TableId, S, T>[number]["params"]>>;
 
 export type InsertParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplify<
-  { [K in keyof Props as Props[K]["hasDefaultValue"] extends true ? K : Extract<Props[K]["output"], null> extends never ? never : K]?: Exclude<Props[K]["output"], null> } &
-  { [K in keyof Props as Props[K]["hasDefaultValue"] extends false ? (Extract<Props[K]["output"], null> extends never ? K : never) : never]: Props[K]["output"] }
+  { [K in keyof Props as Props[K]["hasDefaultValue"] extends true ? K : Extract<Props[K]["output"], null> extends never ? never : K]?: Exclude<Props[K]["output"], null> | RawValue } &
+  { [K in keyof Props as Props[K]["hasDefaultValue"] extends false ? (Extract<Props[K]["output"], null> extends never ? K : never) : never]: Props[K]["output"] | RawValue }
 >;
 
 export type UpdateParams<S, Props extends OnlyProps<S> = OnlyProps<S>> = Simplify<
-  { [K in keyof Props]?: Props[K]["output"] }
+  { [K in keyof Props]?: Props[K]["output"] | RawValue }
 >;
 
 export type ShouldSelectAll<TableId extends string, S, T extends Selectable<TableId, S>[]> =

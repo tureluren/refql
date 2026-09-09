@@ -9,6 +9,8 @@ interface Raw<Params = any> extends SQLNode<Params> {
   [flMap]: this["map"];
 }
 
+export type RawValue<Params = any> = Raw<Params>;
+
 const type = "refql/Raw";
 
 const prototype = Object.assign ({}, sqlNodePrototype, {
