@@ -282,7 +282,6 @@ export type ConcatRQLOutput<
   & Pick<RightOutput, Extract<RightExplicitKeys, keyof RightOutput>>
 >;
 
-
 export type OnlyTableRQLTags<TableId extends string, T extends (Insertable<TableId> | Updatable<TableId>)[]> =
   Extract<T[number], RQLTag<TableId>>[];
 

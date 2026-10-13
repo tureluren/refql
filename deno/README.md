@@ -100,7 +100,7 @@ readTeamById ({ id: 1 }).then(console.log);
 ## Fantasy Land interoperability
 <a href="https://github.com/fantasyland/fantasy-land"><img width="82" height="82" alt="Fantasy Land" src="https://raw.github.com/puffnfresh/fantasy-land/master/logo.png"></a>
 
-Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` structures.
+Both `RQLTag` and [`SQLTag`](#sqltag) are `Semigroup` and `Monoid` structures. An empty tag is their identity; for an `RQLTag`, it must come from the same table as the other operand.
 
 ```ts
 import refql from "./refql";
@@ -136,6 +136,80 @@ readPage ({ limit: 1, offset: 0 }).then (console.log);
 //     team: { id: 1, name: "FC Agecissak" }
 //   }
 // ];
+```
+
+### Semigroup and Monoid laws
+
+`RQLTag.concat` is associative. For tags created from the same table, both groupings compile to the same query:
+
+```ts
+const a = Player (["id"]);
+const b = Player (["firstName"]);
+const c = Player (["lastName"]);
+
+const left = a.concat (b).concat (c);
+const right = a.concat (b.concat (c));
+
+left.compile ({}); // Same query and output as right.compile ({}).
+```
+
+An empty tag is the identity for `concat`, so `RQLTag` also satisfies the `Monoid` identity laws:
+
+```ts
+const empty = Player ([]);
+const tag = Player (["id", "firstName"]);
+
+empty.concat (tag); // Left identity: same query and output as tag.
+tag.concat (empty); // Right identity: same query and output as tag.
+```
+
+There is an intentional distinction between running an empty tag by itself and using it as a `concat` operand. `Player ([])` is an empty query description: it contains no selection, filter, ordering, limit, or offset nodes. When it is the final standalone query, RefQL's compiler applies its default projection and selects all table fields:
+
+```ts
+Player ([]) ();
+// Output: all Player fields.
+```
+
+During composition, the same empty description contributes no nodes and therefore acts as the `Monoid` identity:
+
+```ts
+Player (["id", "firstName"]).concat (Player ([])) ();
+// Output: { id, firstName }
+```
+
+The select-all behavior is thus a final compiler fallback, not an explicit selection stored in the empty tag. A filter-only tag similarly contributes its filter but does not change another tag's projection:
+
+```ts
+const { firstName } = Player.props;
+const namedPlayers = Player ([
+  firstName.eq ("Christine")
+]);
+
+Player (["id"]).concat (namedPlayers) ();
+// Output: { id }; the firstName filter is applied.
+```
+
+To add a field that another operand omitted, select it explicitly:
+
+```ts
+const { firstName } = Player.props;
+const withoutFirstName = Player ([firstName.omit ()]);
+
+withoutFirstName.concat (Player ([]));
+// firstName remains omitted because the empty tag is the identity.
+
+withoutFirstName.concat (Player (["firstName"]));
+// firstName is selected because the right operand explicitly requests it.
+```
+
+An empty `SQLTag` is empty both standalone and during composition. It satisfies the same left and right identity laws without an `RQLTag`-style select-all fallback:
+
+```ts
+const emptySQL = sql``;
+const query = sql`select id, first_name from player`;
+
+emptySQL.concat (query); // Left identity: the same SQLTag as query.
+query.concat (emptySQL); // Right identity: the same SQLTag as query.
 ```
 
 
