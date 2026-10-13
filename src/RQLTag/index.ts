@@ -1,7 +1,7 @@
 import { flConcat, refqlType } from "../common/consts";
 import isEmptyTag from "../common/isEmptyTag";
 import joinMembers from "../common/joinMembers";
-import { Querier, RefInfo, RefQLRows, RequiredRefQLOptions, RQLOutput, RQLParams, Selectable, StringMap } from "../common/types";
+import { ConcatRQLOutput, Querier, RefInfo, RefQLRows, RequiredRefQLOptions, RQLParams, Selectable, StringMap } from "../common/types";
 import Prop from "../Prop";
 import RefProp from "../Prop/RefProp";
 import SQLProp from "../Prop/SQLProp";
@@ -27,7 +27,13 @@ interface InterpretedRQLTag<Params = any, Output = any> {
 }
 
 export interface RQLTag<
-  TableId extends string = any, Props = any, Components extends Selectable<TableId, Props>[] = Selectable<TableId, Props>[], Params = any, Output = any> extends RQLNode {
+  TableId extends string = any,
+  Props = any,
+  Components extends Selectable<TableId, Props>[] = Selectable<TableId, Props>[],
+  Params = any,
+  Output = any,
+  ExplicitKeys extends PropertyKey = never
+> extends RQLNode {
     (params: {} extends Params ? Params | void : Params): Promise<Output[]>;
     tableId: TableId;
     props: Props;
@@ -37,7 +43,7 @@ export interface RQLTag<
     nodes: RQLNode[];
     options: RequiredRefQLOptions;
     interpreted: InterpretedRQLTag<Params, Output>;
-    concat<Components2 extends Selectable<TableId, Props>[]>(other: RQLTag<TableId, Props, Components2>): RQLTag<TableId, Props, [...Components, ...Components2], RQLParams<TableId, Props, [...Components, ...Components2]>, RQLOutput<TableId, Props, [...Components, ...Components2]>>;
+    concat<Components2 extends Selectable<TableId, Props>[], Params2, Output2, ExplicitKeys2 extends PropertyKey>(other: RQLTag<TableId, Props, Components2, Params2, Output2, ExplicitKeys2>): RQLTag<TableId, Props, [...Components, ...Components2], RQLParams<TableId, Props, [...Components, ...Components2]>, ConcatRQLOutput<TableId, Props, Components, Components2, Output, Output2, ExplicitKeys, ExplicitKeys2>, ExplicitKeys | ExplicitKeys2>;
     [flConcat]: this["concat"];
     interpret(where?: SQLTag): InterpretedRQLTag<Params, Output>;
     compile(params: Params): [string, any[], Next[]];
@@ -184,9 +190,13 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
 
   // Select all columns
   if (memberCount === 0) {
+    const omitted = new Set (nodes
+      .filter (node => (Prop.isProp (node) || SQLProp.isSQLProp (node)) && node.isOmitted)
+      .map (node => (node as Prop | SQLProp).as));
+
     const fieldProps = Object.entries (table.props)
       .map (([, prop]) => prop as Prop)
-      .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col))
+      .filter (prop => Prop.isProp (prop) && !isSQLTag (prop.col) && !omitted.has (prop.as))
       .map (prop => ({
         as: prop.as,
         node: sqlX`${prop.interpret ()} ${Raw (`"${prop.as}"`)}`,

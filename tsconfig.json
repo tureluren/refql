@@ -4,6 +4,7 @@
     "module": "commonjs",
     "rootDir": "./src",
     "moduleResolution": "node",
+    "types": ["jest"],
     "declaration": true,
     "outDir": "./build",
     "esModuleInterop": true,

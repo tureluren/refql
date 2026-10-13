@@ -254,6 +254,34 @@ export type RQLOutput<
     : never
 >;
 
+type ExplicitOutputKey<S, Component> = Component extends keyof OnlyPropsOrSQLProps<S>
+  ? Component
+  : Component extends Prop<any, infer As, any, any, false>
+    ? As
+    : Component extends SQLProp<infer As, any, any, false>
+      ? As
+      : never;
+
+export type ExplicitOutputKeys<TableId extends string, S, T extends Selectable<TableId, S>[]> = Exclude<
+  ExplicitOutputKey<S, T[number]>,
+  keyof ExtractOmittedPropsMap<TableId, S, T>
+>;
+
+export type ConcatRQLOutput<
+  TableId extends string,
+  S,
+  LeftComponents extends Selectable<TableId, S>[],
+  RightComponents extends Selectable<TableId, S>[],
+  LeftOutput,
+  RightOutput,
+  LeftExplicitKeys extends PropertyKey,
+  RightExplicitKeys extends PropertyKey
+> = Simplify<
+  RQLOutput<TableId, S, [...LeftComponents, ...RightComponents]>
+  & Pick<LeftOutput, Extract<LeftExplicitKeys, keyof LeftOutput>>
+  & Pick<RightOutput, Extract<RightExplicitKeys, keyof RightOutput>>
+>;
+
 
 export type OnlyTableRQLTags<TableId extends string, T extends (Insertable<TableId> | Updatable<TableId>)[]> =
   Extract<T[number], RQLTag<TableId>>[];

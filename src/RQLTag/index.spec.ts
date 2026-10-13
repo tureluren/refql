@@ -119,6 +119,28 @@ describe ("RQLTag type", () => {
     expect (res.compile ({})).toEqual (res2.compile ({}));
   });
 
+  test ("Semigroup with omitted prop", () => {
+    const { id } = Player.props;
+    const tag = Player ([id.omit ()]);
+    const tag2 = Player (["id"]);
+    const tag3 = Player (["firstName"]);
+
+    const left = tag.concat (tag2).concat (tag3);
+    const right = tag.concat (tag2.concat (tag3));
+    const leftOutput = (value: typeof left.output) => value;
+    const rightOutput = (value: typeof right.output) => value;
+
+    const [leftQuery] = left.compile ({});
+    const [rightQuery] = right.compile ({});
+
+    expect (leftOutput ({ id: 1, firstName: "John" })).toEqual ({ id: 1, firstName: "John" });
+    expect (rightOutput ({ id: 1, firstName: "John" })).toEqual ({ id: 1, firstName: "John" });
+    expect (leftQuery).toBe (rightQuery);
+    expect (leftQuery).toBe (format (`
+      select player.id "id", player.first_name "firstName" from public.player where 1 = 1
+    `));
+  });
+
   test ("Semigroup Nested", () => {
     const tag = Player (["id", Team (["id"]), Goal (["id"])]);
     const tag2 = Player (["firstName", Goal (["minute"]), "lastName", Team (["leagueId"])]);
@@ -148,16 +170,23 @@ describe ("RQLTag type", () => {
 
   test ("overwrite omitted prop after concat", () => {
     // idProp.isOmmited && idProp2.isOmitted
-    const { id, firstName, lastName } = Player.props;
-    const tag = Player ([id.omit (), firstName, lastName]);
-    const tag2 = Player (["id"]);
+    const { id } = Player.props;
+    const tag = Player ([id.omit ()]);
+    const tag2 = Player (["id", "firstName"]);
 
     const res = tag.concat (tag2);
+    const output = (value: typeof res.output) => value;
+    const getId = (value: typeof res.output): number => value.id;
 
     const [query] = res.compile ({});
 
+    expect (getId (output ({ id: 1, firstName: "John" }))).toBe (1);
+    expect (output ({ id: 1, firstName: "John" })).toEqual ({
+      id: 1,
+      firstName: "John"
+    });
     expect (query).toBe (format (`
-      select player.id "id", player.first_name "firstName", player.last_name "lastName" from public.player where 1 = 1
+      select player.id "id", player.first_name "firstName" from public.player where 1 = 1
     `));
   });
 
@@ -171,6 +200,21 @@ describe ("RQLTag type", () => {
     expect (query).toBe (format (`
       select player.first_name "firstName", player.last_name "lastName" from public.player where 1 = 1
     `));
+  });
+
+  test ("omit prop when selecting all columns implicitly", () => {
+    const { id, firstName } = Player.props;
+    const tag = Player ([id.omit (), firstName.eq ("John")]);
+
+    const [query, values] = tag.compile ({});
+
+    expect (query).toBe (format (`
+      select player.first_name "firstName", player.birthday "birthday", player.cars "cars", player.last_name "lastName", player.position_id "positionId", player.team_id "teamId"
+      from public.player
+      where 1 = 1
+      and (player.first_name = $1)
+    `));
+    expect (values).toEqual (["John"]);
   });
 
   test ("run", async () => {
