@@ -119,6 +119,21 @@ describe ("RQLTag type", () => {
     expect (res.compile ({})).toEqual (res2.compile ({}));
   });
 
+  test ("Monoid", () => {
+    const tag = Player (["id", "firstName", Limit (1)]);
+    const empty = Player ([]);
+
+    const leftIdentity = empty.concat (tag);
+    const rightIdentity = tag.concat (empty);
+    const leftOutput = (value: typeof leftIdentity.output) => [value.id, value.firstName];
+    const rightOutput = (value: typeof rightIdentity.output) => [value.id, value.firstName];
+
+    expect (leftOutput).toBeDefined ();
+    expect (rightOutput).toBeDefined ();
+    expect (leftIdentity.compile ({})).toEqual (tag.compile ({}));
+    expect (rightIdentity.compile ({})).toEqual (tag.compile ({}));
+  });
+
   test ("Semigroup with omitted prop", () => {
     const { id } = Player.props;
     const tag = Player ([id.omit ()]);
@@ -127,14 +142,14 @@ describe ("RQLTag type", () => {
 
     const left = tag.concat (tag2).concat (tag3);
     const right = tag.concat (tag2.concat (tag3));
-    const leftOutput = (value: typeof left.output) => value;
-    const rightOutput = (value: typeof right.output) => value;
+    const leftOutput = (value: typeof left.output) => [value.id, value.firstName];
+    const rightOutput = (value: typeof right.output) => [value.id, value.firstName];
 
     const [leftQuery] = left.compile ({});
     const [rightQuery] = right.compile ({});
 
-    expect (leftOutput ({ id: 1, firstName: "John" })).toEqual ({ id: 1, firstName: "John" });
-    expect (rightOutput ({ id: 1, firstName: "John" })).toEqual ({ id: 1, firstName: "John" });
+    expect (leftOutput).toBeDefined ();
+    expect (rightOutput).toBeDefined ();
     expect (leftQuery).toBe (rightQuery);
     expect (leftQuery).toBe (format (`
       select player.id "id", player.first_name "firstName" from public.player where 1 = 1
@@ -175,18 +190,28 @@ describe ("RQLTag type", () => {
     const tag2 = Player (["id", "firstName"]);
 
     const res = tag.concat (tag2);
-    const output = (value: typeof res.output) => value;
-    const getId = (value: typeof res.output): number => value.id;
+    const output = (value: typeof res.output) => [value.id, value.firstName];
 
     const [query] = res.compile ({});
 
-    expect (getId (output ({ id: 1, firstName: "John" }))).toBe (1);
-    expect (output ({ id: 1, firstName: "John" })).toEqual ({
-      id: 1,
-      firstName: "John"
-    });
+    expect (output).toBeDefined ();
     expect (query).toBe (format (`
       select player.id "id", player.first_name "firstName" from public.player where 1 = 1
+    `));
+  });
+
+  test ("preserve omitted prop after concat with empty tag", () => {
+    const { id } = Player.props;
+    const tag = Player ([id.omit ()]).concat (Player ([]));
+    const output = (value: typeof tag.output) => value.firstName;
+
+    const [query] = tag.compile ({});
+
+    expect (output).toBeDefined ();
+    expect (query).toBe (format (`
+      select player.birthday "birthday", player.cars "cars", player.first_name "firstName", player.last_name "lastName", player.position_id "positionId", player.team_id "teamId"
+      from public.player
+      where 1 = 1
     `));
   });
 
@@ -546,7 +571,7 @@ describe ("RQLTag type", () => {
     expect (Object.keys (player)).toEqual (["birthday", "cars", "firstName", "id", "lastName", "positionId", "teamId"]);
   });
 
-  test ("not all fields after concat", async () => {
+  test ("empty tag is identity after concat", async () => {
     const tag = Player ([
       "id",
       "firstName",
@@ -554,10 +579,13 @@ describe ("RQLTag type", () => {
     ]);
 
     const tag2 = Player ([]);
+    const res = tag.concat (tag2);
+    const output = (value: typeof res.output) => [value.id, value.firstName];
 
-    const players = await tag.concat (tag2) ({});
+    const players = await res ({});
     const player = players[0];
 
+    expect (output).toBeDefined ();
     expect (Object.keys (player)).toEqual (["id", "firstName"]);
   });
 

@@ -1,6 +1,6 @@
 import { flEquals, refqlType } from "../common/consts.ts";
 import copyObj from "../common/copyObj.ts";
-import { CUDOutput, Deletable, Insertable, InsertParams, PropMap, RequiredRefQLOptions, RQLOutput, RQLParams, Selectable, Simplify, Updatable, UpdateParams } from "../common/types.ts";
+import { CUDOutput, Deletable, ExplicitOutputKeys, Insertable, InsertParams, PropMap, RequiredRefQLOptions, RQLOutput, RQLParams, Selectable, Simplify, Updatable, UpdateParams } from "../common/types.ts";
 import validateTable, { validateComponents } from "../common/validateTable.ts";
 import withDefaultOptions from "../common/withDefaultOptions.ts";
 import Prop from "../Prop/index.ts";
@@ -16,7 +16,7 @@ import { createUpdateRQLTag, UpdateRQLTag } from "../RQLTag/UpdateRQLTag.ts";
 import { isSQLTag } from "../SQLTag/index.ts";
 
 export interface Table<TableId extends string = any, Props = any> {
-  <Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Props, Components, RQLParams<TableId, Props, Components>, RQLOutput<TableId, Props, Components>>;
+  <Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Props, Components, RQLParams<TableId, Props, Components>, RQLOutput<TableId, Props, Components>, ExplicitOutputKeys<TableId, Props, Components>>;
   tableId: TableId;
   name: string;
   schema?: string;

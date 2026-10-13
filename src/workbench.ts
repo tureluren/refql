@@ -19,7 +19,7 @@ const querier = async (query: string, values: any[]) => {
 };
 
 
-const { tables } = RefQL ({
+const { sql, tables } = RefQL ({
   querier
 });
 
@@ -50,9 +50,21 @@ Player ([id.omit ()]).concat (Player ([id.omit ()])) ().then (([p]) => {
   console.log (p);
 });
 
-// An omitted prop does not trigger select-all when another prop is explicitly selected.
+// An explicit selection disables the final select-all fallback.
 Player ([id.omit ()]).concat (Player (["firstName"])) ().then (([p]) => {
   // Expected: { firstName }
+  console.log (p);
+});
+
+// An empty tag is the concat identity and does not restore id.
+Player ([id.omit ()]).concat (Player ([])) ().then (([p]) => {
+  // Expected: { birthday, cars, firstName, lastName, positionId, teamId }
+  console.log (p);
+});
+
+// A filter-only tag contributes its filter, but no selection fields.
+Player ([id.omit ()]).concat (Player ([sql`and player.id > 0`])) ().then (([p]) => {
+  // Expected: { birthday, cars, firstName, lastName, positionId, teamId }
   console.log (p);
 });
 
@@ -68,6 +80,21 @@ omitId.concat (selectId).concat (selectFirstName) ().then (([p]) => {
 
 // Right-associated Semigroup composition: same output as above.
 omitId.concat (selectId.concat (selectFirstName)) ().then (([p]) => {
+  // Expected: { id, firstName }
+  console.log (p);
+});
+
+const selection = Player (["id", "firstName"]);
+const empty = Player ([]);
+
+// Left Monoid identity.
+empty.concat (selection) ().then (([p]) => {
+  // Expected: { id, firstName }
+  console.log (p);
+});
+
+// Right Monoid identity.
+selection.concat (empty) ().then (([p]) => {
   // Expected: { id, firstName }
   console.log (p);
 });
