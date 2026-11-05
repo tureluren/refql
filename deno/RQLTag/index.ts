@@ -97,7 +97,10 @@ function projected(this: RQLTag) {
   const nodes = this.nodes.flatMap (node => {
     if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
       const prop = copyObj (node) as Prop | SQLProp;
-      prop.operations = prop.operations.filter (OrderBy.isOrderBy);
+      prop.operations = prop.operations.map (operation => {
+        if (OrderBy.isOrderBy (operation)) return operation;
+        return Object.assign (copyObj (operation), { suppressFilter: true });
+      });
       return [prop];
     }
 
@@ -205,7 +208,7 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
             delimiter,
             op.interpret (col, true)
           );
-        } else {
+        } else if (!(op as typeof op & { suppressFilter?: boolean }).suppressFilter) {
           propFilters = propFilters.join (
             filterIdx > 0 ? " " : "",
             op.interpret (col, filterIdx > 0)

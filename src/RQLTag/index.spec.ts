@@ -1130,6 +1130,82 @@ describe ("RQLTag type", () => {
     expect (goals).toEqual ([]);
   });
 
+  test ("filter-only relation constructors keep the normal select-all projection", async () => {
+    const ordinary = League.one ([
+      "id",
+      Team ([Team.props.id.eq (1)]),
+      League.props.id.eq (1)
+    ]);
+    const required = League.one ([
+      "id",
+      Team.required ([Team.props.id.eq (1)]),
+      League.props.id.eq (1)
+    ]);
+    const single = League.one ([
+      "id",
+      Team.one ([Team.props.id.eq (1)]),
+      League.props.id.eq (1)
+    ]);
+    const exists = League.one ([
+      "id",
+      Team.exists ([Team.props.id.eq (1)]),
+      League.props.id.eq (1)
+    ]);
+
+    type TeamRow = { active: boolean | null; id: number; leagueId: number | null; name: string };
+    type _Ordinary = Expect<Equal<Awaited<ReturnType<typeof ordinary>>, { id: number; teams: TeamRow[] }>>;
+    type _Required = Expect<Equal<Awaited<ReturnType<typeof required>>, { id: number; teams: TeamRow[] }>>;
+    type _Single = Expect<Equal<Awaited<ReturnType<typeof single>>, { id: number; teams: TeamRow }>>;
+    type _Exists = Expect<Equal<Awaited<ReturnType<typeof exists>>, { id: number; teams: TeamRow[] }>>;
+    const typeChecks: [_Ordinary, _Required, _Single, _Exists] = [true, true, true, true];
+
+    const ordinaryLeague = await ordinary ({});
+    const requiredLeague = await required ({});
+    const singleLeague = await single ({});
+    const existsLeague = await exists ({});
+    const expectedKeys = ["active", "id", "leagueId", "name"];
+
+    expect (typeChecks).toEqual ([true, true, true, true]);
+    expect (ordinaryLeague.teams.length).toBe (1);
+    expect (requiredLeague.teams.length).toBe (1);
+    expect (existsLeague.teams.length).toBe (10);
+    expect (Object.keys (ordinaryLeague.teams[0]).sort ()).toEqual (expectedKeys);
+    expect (Object.keys (requiredLeague.teams[0]).sort ()).toEqual (expectedKeys);
+    expect (Object.keys (singleLeague.teams).sort ()).toEqual (expectedKeys);
+    expect (Object.keys (existsLeague.teams[0]).sort ()).toEqual (expectedKeys);
+  });
+
+  test ("filter-only exists keeps select-all projection after concat in both orders", async () => {
+    const leagueFields = League (["id", "name"]);
+    const leagueWithTeamExists = League ([
+      Team.exists ([Team.props.id.eq (1)]),
+      League.props.id.eq (1)
+    ]);
+
+    const left = leagueFields.concat (leagueWithTeamExists);
+    const right = leagueWithTeamExists.concat (leagueFields);
+
+    type TeamRow = { active: boolean | null; id: number; leagueId: number | null; name: string };
+    type Expected = { id: number; name: string; teams: TeamRow[] }[];
+    type _Left = Expect<Equal<Awaited<ReturnType<typeof left>>, Expected>>;
+    type _Right = Expect<Equal<Awaited<ReturnType<typeof right>>, Expected>>;
+    const typeChecks: [_Left, _Right] = [true, true];
+
+    const [leftQuery] = left.compile ({});
+    const [rightQuery] = right.compile ({});
+    const leftResult = await left ({});
+    const rightResult = await right ({});
+    const expectedKeys = ["active", "id", "leagueId", "name"];
+
+    expect (typeChecks).toEqual ([true, true]);
+    expect (leftQuery.match (/and exists/g)?.length).toBe (1);
+    expect (rightQuery.match (/and exists/g)?.length).toBe (1);
+    expect (leftResult).toEqual (rightResult);
+    expect (leftResult.length).toBe (1);
+    expect (leftResult[0].teams.length).toBe (10);
+    expect (Object.keys (leftResult[0].teams[0]).sort ()).toEqual (expectedKeys);
+  });
+
   test ("exists filters the parent without filtering the ordinary team projection", async () => {
     const readLeague = League.one ([
       "id",
