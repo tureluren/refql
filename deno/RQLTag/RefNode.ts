@@ -11,6 +11,7 @@ import RQLNode, { rqlNodePrototype } from "./RQLNode.ts";
 
 interface RefNode extends RQLNode {
   joinLateral(): RQLTag;
+  requiredExists(): ReturnType<RQLTag["interpret"]>["tag"];
   tag: RQLTag;
   info: RefInfo;
   single: boolean;
@@ -20,7 +21,8 @@ const type = "refql/RefNode";
 
 const prototype = Object.assign ({}, rqlNodePrototype, {
   [refqlType]: type,
-  joinLateral
+  joinLateral,
+  requiredExists
 });
 
 
@@ -78,6 +80,31 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table, options: Required
   refNode.tag = tag;
 
   return refNode;
+}
+
+function requiredExists(this: RefNode) {
+  const { rRef, lRef, xTable, rxRef, lxRef } = this.info;
+
+  if (xTable && rxRef && lxRef) {
+    const join = rRef.reduce ((acc, rr, idx) => {
+      const kw = idx === 0 ? "on" : "and";
+      return acc.concat (sqlX`${Raw (`${kw} ${rxRef[idx].name} = ${rr.name}`)}`);
+    }, sqlX`join ${Raw (xTable)}`);
+
+    const where = lRef.reduce ((acc, lr, idx) => {
+      const kw = idx === 0 ? "where" : "and";
+      return acc.concat (sqlX`${Raw (`${kw} ${lxRef[idx].name} = ${lr.name}`)}`);
+    }, join);
+
+    return this.tag.interpret (where).tag;
+  }
+
+  const where = lRef.reduce ((acc, lr, idx) => {
+    const kw = idx === 0 ? "where" : "and";
+    return acc.concat (sqlX`${Raw (`${kw} ${rRef[idx].name} = ${lr.name}`)}`);
+  }, sqlX``);
+
+  return this.tag.interpret (where).tag;
 }
 
 function joinLateral(this: RefNode) {

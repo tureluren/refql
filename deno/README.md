@@ -368,6 +368,96 @@ const playerBelongsToManyGames = BelongsToMany ("games", "game", {
 
 ## Operator mix
 
+Use `.required()` to read only Games that contain a non-own Goal from the 80th minute onward:
+
+```ts
+const { Game, Goal, Player } = refql.tables.public;
+
+const readGamesWithLateGoals = Game ([
+  "id",
+  "result",
+  Goal ([
+    Goal.props.minute.gte (80),
+    Goal.props.ownGoal.eq (false),
+    Player (["firstName", "lastName"])
+  ]).required ()
+]);
+
+// run
+readGamesWithLateGoals ().then (console.log);
+
+// [
+//   {
+//     id: 12,
+//     result: "1 - 2",
+//     goals: [
+//       {
+//         minute: 84,
+//         ownGoal: false,
+//         player: { firstName: "Arthur", lastName: "Graham" }
+//       }
+//     ]
+//   },
+//   ...
+// ];
+```
+
+Use `.one()` for a Team detail query where the requested Team must exist:
+
+```ts
+const { League, Team, Player } = refql.tables.public;
+
+const readTeamById = Team ([
+  "id",
+  "name",
+  "active",
+  League (["name"]),
+  Player (["id", "firstName", "lastName"]),
+  Team.props.id.eq<{ teamId: number }> (p => p.teamId)
+]).one ();
+
+// run
+readTeamById ({ teamId: 1 }).then (console.log);
+
+// {
+//   id: 1,
+//   name: "FC Horgawid",
+//   active: true,
+//   league: { name: "Falkland Islands league" },
+//   players: [
+//     { id: 1, firstName: "Christine", lastName: "Hubbard" },
+//     { id: 2, firstName: "Emily", lastName: "Mendez" },
+//     ...
+//   ]
+// };
+```
+
+Use `.one(false)` when a Game may not have a Goal. Sorting by minute returns its latest Goal when one exists:
+
+```ts
+const { Goal, Player } = refql.tables.public;
+
+const readLatestGoal = Goal ([
+  "gameId",
+  Goal.props.minute.desc (),
+  Player (["firstName", "lastName"]),
+  Goal.props.gameId.eq<{ gameId: number }> (p => p.gameId)
+]).one (false);
+
+// run
+readLatestGoal ({ gameId: 42 }).then (console.log);
+
+// {
+//   gameId: 42,
+//   minute: 87,
+//   player: { firstName: "Arthur", lastName: "Graham" }
+// };
+
+readLatestGoal ({ gameId: 43 }).then (console.log);
+
+// null;
+```
+
 ```ts
 import { NumberProp } from "https://deno.land/x/refql/mod.ts";
 import refql from "./refql";

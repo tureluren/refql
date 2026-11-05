@@ -142,7 +142,7 @@ const makeTable = (options: RequiredRefQLOptions) => {
         const refNodes = Object.keys (properties)
           .map (key => properties[key as keyof typeof properties])
           .filter (prop => RefProp.isRefProp (prop) && comp.table.equals (prop.child))
-          .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, options), refProp as any, table as any, options)));
+          .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, options, comp.isRequired, comp.isOne), refProp as any, table as any, options)));
 
         if (!refNodes.length) {
           throw new Error (

@@ -70,7 +70,7 @@ export type Selectable<TableId extends string, T> =
   | keyof OnlyPropsOrSQLProps<T>
   | Prop<TableId>
   | SQLProp
-  | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
+  | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any, any, any, any, boolean, boolean>
   | Table<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
   | Pagination
   | SQLTag;
@@ -220,7 +220,7 @@ export type RQLOutput<
       : U extends Prop | SQLProp
         ? { as: U["as"]; type: U["output"]; nullable: false }
 
-      : U extends RQLTag<infer RefTableId>
+      : U extends RQLTag<infer RefTableId, any, any, any, any, any, infer IsOne, infer IsRequired>
         ? TableIds[RefTableId] extends RefProp<
             infer As, any, infer RelType, infer IsNullable
           >
@@ -229,8 +229,14 @@ export type RQLOutput<
                 as: As;
                 type: RelType extends "BelongsTo" | "HasOne"
                   ? U["output"]
-                  : U["output"][];
-                nullable: IsNullable;
+                  : IsOne extends true
+                    ? U["output"]
+                    : U["output"][];
+                nullable: IsRequired extends true
+                  ? false
+                  : RelType extends "BelongsTo" | "HasOne"
+                    ? IsNullable
+                    : IsOne;
               }
             : never
           : never

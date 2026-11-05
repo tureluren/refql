@@ -1,7 +1,7 @@
 import mariaDB from "mariadb";
 import mySQL from "mysql2";
 import pg from "pg";
-import { createRQLTag, isRQLTag } from ".";
+import { createRQLTag, isRQLTag, RQLTag } from ".";
 import BelongsTo from "../Prop/BelongsTo";
 import BelongsToMany from "../Prop/BelongsToMany";
 import BooleanProp from "../Prop/BooleanProp";
@@ -20,6 +20,7 @@ import pgQuerier from "../test/pgQuerier";
 import userConfig from "../test/userConfig";
 import Limit from "./Limit";
 import Offset from "./Offset";
+import RefNode from "./RefNode";
 
 describe ("RQLTag type", () => {
   let pool: any;
@@ -38,7 +39,7 @@ describe ("RQLTag type", () => {
 
   const { Table, sql, options, tables } = RefQL ({ querier });
 
-  const { Game, Goal, League, Rating, Team, GamePlayer, Player: PlayerLtd } = tables.public;
+  const { Assist, Game, Goal, League, Rating, Team, GamePlayer, Player: PlayerLtd } = tables.public;
 
   const isVeteran = BooleanProp ("isVeteran", sql<{ year: number }>`
     select case when extract(year from birthday) < ${p => p.year} then true else false end
@@ -1054,6 +1055,219 @@ describe ("RQLTag type", () => {
 
     expect (players.length).toBe (1);
     expect (players[0].team).toBe (null);
+  });
+
+  test ("required returns only games with non-own goals from minute 80", async () => {
+    const lateGoals = Goal ([
+      Goal.props.minute.gte (80),
+      Goal.props.ownGoal.eq (false),
+      Player (["firstName", "lastName"])
+    ]).required ();
+
+    const readGamesWithLateGoals = Game ([
+      "id",
+      "result",
+      lateGoals,
+      Limit (5)
+    ]);
+
+    const [query, values] = readGamesWithLateGoals.compile ({});
+    const games = await readGamesWithLateGoals ({});
+
+    expect (query).toContain ("and exists (select goal.minute");
+    expect (query).toContain ("goal.game_id = game.id");
+    expect (query).toContain ("goal.minute >= $1");
+    expect (query).toContain ("goal.own_goal = $2");
+    expect (values).toEqual ([80, false, 5]);
+    expect (games.length).toBeGreaterThan (0);
+    expect (games.every (game => game.goals.length > 0)).toBe (true);
+    expect (games.flatMap (game => game.goals).every (goal => goal.minute >= 80 && goal.ownGoal === false)).toBe (true);
+    expect (games.flatMap (game => game.goals).every (goal => goal.player.firstName.length > 0 && goal.player.lastName.length > 0)).toBe (true);
+  });
+
+  test ("nested required only bubbles through explicitly required relations", async () => {
+    const impossiblePlayers = Player ([
+      "id",
+      Player.props.id.eq (-1)
+    ]).required ();
+
+    const optionalTeams = Team (["id", impossiblePlayers]);
+    const requiredTeams = optionalTeams.required ();
+
+    const optionalLeagues = await League (["id", optionalTeams, Limit (1)]) ({});
+    const requiredLeagues = await League (["id", requiredTeams]) ({});
+
+    expect (optionalLeagues.length).toBe (1);
+    expect (optionalLeagues[0].teams).toEqual ([]);
+    expect (requiredLeagues).toEqual ([]);
+  });
+
+  test ("required works for singular football relations", async () => {
+    const missingLeague = League ([League.props.id.eq (-1)]).required ();
+    const teams = await Team (["id", missingLeague]) ({});
+
+    expect (teams).toEqual ([]);
+  });
+
+  test ("required works for goals, games and assists", async () => {
+    const impossibleGoal = Goal ([Goal.props.id.eq (-1)]).required ();
+    const impossibleGame = Game ([Game.props.id.eq (-1)]).required ();
+    const impossibleAssist = Assist ([Assist.props.id.eq (-1)]).required ();
+
+    const games = await Game (["id", impossibleGoal]) ({});
+    const leagues = await League (["id", impossibleGame]) ({});
+    const players = await Player (["id", impossibleGame]) ({});
+    const goals = await Goal (["id", impossibleAssist]) ({});
+
+    expect (games).toEqual ([]);
+    expect (leagues).toEqual ([]);
+    expect (players).toEqual ([]);
+    expect (goals).toEqual ([]);
+  });
+
+  test ("one returns one sorted object per parent", async () => {
+    const firstTeam = Team ([
+      "id",
+      "leagueId",
+      Team.props.id.asc ()
+    ]).one ();
+
+    const leagues = await League ([
+      "id",
+      firstTeam,
+      League.props.id.asc (),
+      Limit (3)
+    ]) ({});
+
+    expect (leagues.length).toBe (3);
+    expect (leagues.every (league => league.teams != null && !Array.isArray (league.teams))).toBe (true);
+    expect (leagues.map (league => league.teams!.leagueId)).toEqual (leagues.map (league => league.id));
+    expect (leagues.map (league => league.teams!.id)).toEqual ([1, 11, 21]);
+  });
+
+  test ("one directly returns a complete team detail", async () => {
+    const readTeamById = Team ([
+      "id",
+      "name",
+      "active",
+      League (["name"]),
+      Player (["id", "firstName", "lastName", Player.props.id.asc ()]),
+      Team.props.id.eq<{ teamId: number }> (p => p.teamId)
+    ]).one ();
+
+    const team = await readTeamById ({ teamId: 1 });
+
+    expect (Array.isArray (team)).toBe (false);
+    expect (team.id).toBe (1);
+    expect (team.name.length).toBeGreaterThan (0);
+    expect (team.active).toBe (true);
+    expect (team.league!.name.length).toBeGreaterThan (0);
+    expect (team.players.length).toBe (11);
+    expect (team.players.every (player => player.firstName.length > 0 && player.lastName.length > 0)).toBe (true);
+    expect (team.players.map (player => player.id)).toEqual ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  });
+
+  test ("one throws for no row while one(false) returns null", async () => {
+    const requiredTeam = Team (["id", Team.props.id.eq (-1)]).one ();
+    const optionalTeam = Team (["id", Team.props.id.eq (-1)]).one (false);
+
+    const requiredOutput = (value: Awaited<ReturnType<typeof requiredTeam>>) => value.id;
+    const optionalOutput = (value: Awaited<ReturnType<typeof optionalTeam>>) => value?.id;
+
+    expect (requiredOutput).toBeDefined ();
+    expect (optionalOutput).toBeDefined ();
+    await expect (requiredTeam ({})).rejects.toThrow ("Required one query returned no team row");
+    await expect (optionalTeam ({})).resolves.toBe (null);
+  });
+
+  test ("one(false) returns the latest goal of a game or null", async () => {
+    const [scoredGoal] = await Goal (["gameId", Limit (1)]) ({});
+
+    const readLatestGoal = Goal ([
+      "gameId",
+      Goal.props.minute.desc (),
+      Player (["firstName", "lastName"]),
+      Goal.props.gameId.eq<{ gameId: number }> (p => p.gameId)
+    ]).one (false);
+
+    const goals = await Goal ([
+      "minute",
+      Goal.props.gameId.eq (scoredGoal.gameId),
+      Goal.props.minute.desc ()
+    ]) ({});
+    const latestGoal = await readLatestGoal ({ gameId: scoredGoal.gameId });
+    const missingGoal = await readLatestGoal ({ gameId: -1 });
+
+    expect (latestGoal).not.toBe (null);
+    expect (latestGoal!.gameId).toBe (scoredGoal.gameId);
+    expect (latestGoal!.minute).toBe (goals[0].minute);
+    expect (latestGoal!.player.firstName.length).toBeGreaterThan (0);
+    expect (latestGoal!.player.lastName.length).toBeGreaterThan (0);
+    expect (missingGoal).toBe (null);
+  });
+
+  test ("nested one returns the first squad player and first goal", async () => {
+    const team = await Team ([
+      "id",
+      Player (["id", Player.props.id.asc ()]).one (),
+      Team.props.id.eq (1)
+    ]).one () ({});
+
+    const [game] = await Game ([
+      "id",
+      Goal (["id", Goal.props.minute.asc ()]).one (false),
+      Game.props.id.eq (1)
+    ]) ({});
+
+    expect (team!.players).not.toBe (null);
+    expect (Array.isArray (team!.players)).toBe (false);
+    expect (game.goals === null || !Array.isArray (game.goals)).toBe (true);
+  });
+
+  test ("one(false) returns null while one removes a parent for an empty relation", async () => {
+    const noPlayers = Player ([Player.props.id.eq (-1)]).required ();
+    const optionalTeam = Team (["id", noPlayers]).one (false);
+    const requiredTeam = Team (["id", noPlayers]).one ();
+
+    const [league] = await League (["id", optionalTeam, League.props.id.eq (1)]) ({});
+    const requiredLeagues = await League (["id", requiredTeam, League.props.id.eq (1)]) ({});
+
+    expect (league.teams).toBe (null);
+    expect (requiredLeagues).toEqual ([]);
+  });
+
+  test ("required and one are order independent", async () => {
+    const relation1 = Team (["id", Team.props.id.eq (-1)]).required ().one (false);
+    const relation2 = Team (["id", Team.props.id.eq (-1)]).one (false).required ();
+
+    const [query1, values1, next1] = League ([relation1]).compile ({});
+    const [query2, values2, next2] = League ([relation2]).compile ({});
+
+    expect ([query1, values1]).toEqual ([query2, values2]);
+    expect (next1.map (({ link, single }) => ({ link, single }))).toEqual (next2.map (({ link, single }) => ({ link, single })));
+    expect (await League ([relation1]) ({})).toEqual ([]);
+    expect (await League ([relation2]) ({})).toEqual ([]);
+  });
+
+  test ("required and one survive associative concat and identities", () => {
+    const a = League (["id", Team (["id"]).required ()]);
+    const b = League (["name", Team (["name"]).one ()]);
+    const c = League ([Team ([Team.props.active.eq (true)])]);
+    const empty = League ([]);
+
+    const left = a.concat (b).concat (c);
+    const right = a.concat (b.concat (c));
+
+    const compileShape = (tag: RQLTag) => {
+      const [query, values, next] = tag.compile ({});
+      return [query, values, next.map (({ link, single }) => ({ link, single }))];
+    };
+
+    expect (compileShape (left)).toEqual (compileShape (right));
+    expect (compileShape (empty.concat (left))).toEqual (compileShape (left));
+    expect (compileShape (left.concat (empty))).toEqual (compileShape (left));
+    expect (left.nodes.filter (RefNode.isRefNode)[0].tag.isRequired).toBe (true);
+    expect (left.nodes.filter (RefNode.isRefNode)[0].tag.isOne).toBe (true);
   });
 
   test ("errors", () => {
