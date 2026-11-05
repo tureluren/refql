@@ -18,7 +18,7 @@ const readPlayers = Player ([
 const players = await readPlayers ();
 ```
 
-<img width="480" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
+<img width="682" height="412" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
 
 ## Compare with other libraries
 The examples below select the same fields: a player's `id`, `firstName` and the `name` of its team. The database tables and relations are assumed to be defined already. U can use [schema introspection](#introspect-the-database-schema) to generate them automatically. The syntax differs between libraries and versions.
