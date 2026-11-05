@@ -466,7 +466,7 @@ const playerBelongsToManyGames = BelongsToMany ("games", "game", {
 
 ## Operator mix
 
-Use `.required()` to read only Games that contain a non-own Goal from the 80th minute onward:
+Use `required` to read only Games that contain a non-own Goal from the 80th minute onward:
 
 ```ts
 const { Game, Goal, Player } = refql.tables.public;
@@ -474,11 +474,11 @@ const { Game, Goal, Player } = refql.tables.public;
 const readGamesWithLateGoals = Game ([
   "id",
   "result",
-  Goal ([
+  Goal.required ([
     Goal.props.minute.gte (80),
     Goal.props.ownGoal.eq (false),
     Player (["firstName", "lastName"])
-  ]).required ()
+  ])
 ]);
 
 // run
@@ -500,19 +500,19 @@ readGamesWithLateGoals ().then (console.log);
 // ];
 ```
 
-Use `.one()` for a Team detail query where the requested Team must exist:
+Use `one` for a Team detail query where the requested Team must exist:
 
 ```ts
 const { League, Team, Player } = refql.tables.public;
 
-const readTeamById = Team ([
+const readTeamById = Team.one ([
   "id",
   "name",
   "active",
   League (["name"]),
   Player (["id", "firstName", "lastName"]),
   Team.props.id.eq<{ teamId: number }> (p => p.teamId)
-]).one ();
+]);
 
 // run
 readTeamById ({ teamId: 1 }).then (console.log);
@@ -530,17 +530,17 @@ readTeamById ({ teamId: 1 }).then (console.log);
 // };
 ```
 
-Use `.one(false)` when a Game may not have a Goal. Sorting by minute returns its latest Goal when one exists:
+Use `one` with `false` when a Game may not have a Goal. Sorting by minute returns its latest Goal when one exists:
 
 ```ts
 const { Goal, Player } = refql.tables.public;
 
-const readLatestGoal = Goal ([
+const readLatestGoal = Goal.one ([
   "gameId",
   Goal.props.minute.desc (),
   Player (["firstName", "lastName"]),
   Goal.props.gameId.eq<{ gameId: number }> (p => p.gameId)
-]).one (false);
+], false);
 
 // run
 readLatestGoal ({ gameId: 42 }).then (console.log);
@@ -554,6 +554,66 @@ readLatestGoal ({ gameId: 42 }).then (console.log);
 readLatestGoal ({ gameId: 43 }).then (console.log);
 
 // null;
+```
+
+Use `exists` to filter a parent independently from the projected relation. This returns every Team in a League, but only for Leagues having at least one active Team:
+
+```ts
+const { League, Team } = refql.tables.public;
+
+const readLeaguesWithAnActiveTeam = League ([
+  "id",
+  "name",
+  Team (["id", "name", "active"]),
+  Team.exists ([Team.props.active.eq (true)])
+]);
+
+// run
+readLeaguesWithAnActiveTeam ().then (console.log);
+
+// [
+//   {
+//     id: 1,
+//     name: "Falkland Islands league",
+//     teams: [
+//       { id: 1, name: "FC Horgawid", active: true },
+//       { id: 2, name: "FC Agecissak", active: false },
+//       ...
+//     ]
+//   },
+//   ...
+// ];
+```
+
+At the root, `exists` returns a boolean:
+
+```ts
+const hasActiveTeams = Team.exists ([Team.props.active.eq (true)]);
+
+hasActiveTeams ().then (console.log);
+
+// true;
+```
+
+Fragments for the same relation merge their selected fields. `one` wins over collection cardinality and `required` makes the merged relation mandatory, independent of fragment order or grouping:
+
+```ts
+const { Team, Player } = refql.tables.public;
+
+const readTeamWithFirstPlayer = Team.one ([
+  "id",
+  Player.one (["id", Player.props.id.asc ()]),
+  Player (["firstName", "lastName"]),
+  Team.props.id.eq (1)
+]);
+
+// run
+readTeamWithFirstPlayer ().then (console.log);
+
+// {
+//   id: 1,
+//   players: { id: 1, firstName: "Christine", lastName: "Hubbard" }
+// };
 ```
 
 ```ts

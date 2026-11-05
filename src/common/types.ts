@@ -70,7 +70,7 @@ export type Selectable<TableId extends string, T> =
   | keyof OnlyPropsOrSQLProps<T>
   | Prop<TableId>
   | SQLProp
-  | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any, any, any, any, boolean, boolean>
+  | RQLTag<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"], any, any, any, any, any, boolean, boolean, boolean>
   | Table<OnlyRefProps<T>[keyof OnlyRefProps<T>]["tableId"]>
   | Pagination
   | SQLTag;
@@ -205,60 +205,80 @@ type MergeByAsWithNullability<Union extends { as: string; type: any; nullable: b
     : UnionIfObject<TypesWithAs<Union, K>>;
 }>;
 
-export type RQLOutput<
+type AnyTrue<T> = true extends T ? true : false;
+
+type RelationComponents<T extends readonly unknown[], RefTableId extends string> = Extract<
+  T[number],
+  | RQLTag<RefTableId, any, any, any, any, any, any, any, any>
+  | Table<RefTableId, any>
+>;
+
+type RelationComponentOutput<Component> =
+  Component extends RQLTag<any, any, infer Components, any, infer Output, any, any, any, any>
+    ? Components extends []
+      ? {}
+      : Output
+    : Component extends Table<any, infer RefProps>
+      ? AllProps<RefProps>
+      : never;
+
+type RelationOutput<Components> = Simplify<UnionToIntersection<RelationComponentOutput<Components>>>;
+
+type RelationIsOne<Components> = AnyTrue<
+  Components extends RQLTag<any, any, any, any, any, any, infer IsOne, any, any>
+    ? IsOne
+    : false
+>;
+
+type RelationIsRequired<Components> = AnyTrue<
+  Components extends RQLTag<any, any, any, any, any, any, any, infer IsRequired, any>
+    ? IsRequired
+    : false
+>;
+
+type RelationEntries<S, T extends readonly unknown[]> =
+  OnlyRefProps<S>[keyof OnlyRefProps<S>] extends infer Relation
+    ? Relation extends RefProp<infer As, infer RefTableId, infer RelType, infer IsNullable>
+      ? RelationComponents<T, RefTableId> extends infer Components
+        ? [Components] extends [never]
+          ? never
+          : {
+              as: As;
+              type: RelType extends "BelongsTo" | "HasOne"
+                ? RelationOutput<Components>
+                : RelationIsOne<Components> extends true
+                  ? RelationOutput<Components>
+                  : RelationOutput<Components>[];
+              nullable: RelationIsRequired<Components> extends true
+                ? false
+                : RelType extends "BelongsTo" | "HasOne"
+                  ? IsNullable
+                  : RelationIsOne<Components>;
+            }
+        : never
+      : never
+    : never;
+
+type ScalarEntries<
   TableId extends string,
   S,
   T extends Selectable<TableId, S>[],
-  Props extends OnlyPropsOrSQLProps<S> = OnlyPropsOrSQLProps<S>,
-  TableIds extends TableIdMap<S> = TableIdMap<S>
-> = MergeByAsWithNullability<
-  FinalComponents<TableId, S, T>[number] extends infer U
-    ? U extends keyof Props
-      ? U extends string
-        ? { as: U; type: Props[U]["output"]; nullable: false }
-        : never
-      : U extends Prop | SQLProp
-        ? { as: U["as"]; type: U["output"]; nullable: false }
-
-      : U extends RQLTag<infer RefTableId, any, any, any, any, any, infer IsOne, infer IsRequired>
-        ? TableIds[RefTableId] extends RefProp<
-            infer As, any, infer RelType, infer IsNullable
-          >
-          ? As extends string
-            ? {
-                as: As;
-                type: RelType extends "BelongsTo" | "HasOne"
-                  ? U["output"]
-                  : IsOne extends true
-                    ? U["output"]
-                    : U["output"][];
-                nullable: IsRequired extends true
-                  ? false
-                  : RelType extends "BelongsTo" | "HasOne"
-                    ? IsNullable
-                    : IsOne;
-              }
-            : never
-          : never
-
-      : U extends Table<infer RefTableId, infer RefProps>
-        ? TableIds[RefTableId] extends RefProp<
-            infer As, any, infer RelType, infer IsNullable
-          >
-          ? As extends string
-            ? {
-                as: As;
-                type: RelType extends "BelongsTo" | "HasOne"
-                  ? AllProps<RefProps>
-                  : AllProps<RefProps>[];
-                nullable: IsNullable;
-              }
-            : never
-          : never
-
+  Props extends OnlyPropsOrSQLProps<S> = OnlyPropsOrSQLProps<S>
+> = FinalComponents<TableId, S, T>[number] extends infer U
+  ? U extends keyof Props
+    ? U extends string
+      ? { as: U; type: Props[U]["output"]; nullable: false }
       : never
-    : never
->;
+    : U extends Prop | SQLProp
+      ? { as: U["as"]; type: U["output"]; nullable: false }
+      : never
+  : never;
+
+export type RQLOutput<
+  TableId extends string,
+  S,
+  T extends Selectable<TableId, S>[]
+> = MergeByAsWithNullability<ScalarEntries<TableId, S, T> | RelationEntries<S, T>>;
 
 type ExplicitOutputKey<S, Component> = Component extends keyof OnlyPropsOrSQLProps<S>
   ? Component

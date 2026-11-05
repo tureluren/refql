@@ -1,4 +1,5 @@
 import { flConcat, refqlType } from "../common/consts.ts";
+import copyObj from "../common/copyObj.ts";
 import isEmptyTag from "../common/isEmptyTag.ts";
 import joinMembers from "../common/joinMembers.ts";
 import { ConcatRQLOutput, Querier, RefInfo, RefQLRows, RequiredRefQLOptions, RQLParams, Selectable, StringMap } from "../common/types.ts";
@@ -34,9 +35,10 @@ export interface RQLTag<
   Output = any,
   ExplicitKeys extends PropertyKey = never,
   One extends boolean = false,
-  Required extends boolean = false
+  Required extends boolean = false,
+  Exists extends boolean = false
 > extends RQLNode {
-    (params: {} extends Params ? Params | void : Params): Promise<One extends true ? Required extends true ? Output : Output | null : Output[]>;
+    (params: {} extends Params ? Params | void : Params): Promise<Exists extends true ? boolean : One extends true ? Required extends true ? Output : Output | null : Output[]>;
     tableId: TableId;
     props: Props;
     params: Params;
@@ -46,15 +48,15 @@ export interface RQLTag<
     options: RequiredRefQLOptions;
     isRequired: Required;
     isOne: One;
+    isExists: Exists;
     interpreted: InterpretedRQLTag<Params, Output>;
-    required(): RQLTag<TableId, Props, Components, Params, Output, ExplicitKeys, One, true>;
-    one<IsRequired extends boolean = true>(required?: IsRequired): RQLTag<TableId, Props, Components, Params, Output, ExplicitKeys, true, true extends Required | IsRequired ? true : false>;
-    concat<Components2 extends Selectable<TableId, Props>[], Params2, Output2, ExplicitKeys2 extends PropertyKey, One2 extends boolean, Required2 extends boolean>(other: RQLTag<TableId, Props, Components2, Params2, Output2, ExplicitKeys2, One2, Required2>): RQLTag<TableId, Props, [...Components, ...Components2], RQLParams<TableId, Props, [...Components, ...Components2]>, ConcatRQLOutput<TableId, Props, Components, Components2, Output, Output2, ExplicitKeys, ExplicitKeys2>, ExplicitKeys | ExplicitKeys2, true extends One | One2 ? true : false, true extends Required | Required2 ? true : false>;
+    projected(): RQLTag<TableId, Props, Components, Params, Output, ExplicitKeys, One, false, false>;
+    concat<Components2 extends Selectable<TableId, Props>[], Params2, Output2, ExplicitKeys2 extends PropertyKey, One2 extends boolean, Required2 extends boolean, Exists2 extends boolean>(other: RQLTag<TableId, Props, Components2, Params2, Output2, ExplicitKeys2, One2, Required2, Exists2>): RQLTag<TableId, Props, [...Components, ...Components2], RQLParams<TableId, Props, [...Components, ...Components2]>, ConcatRQLOutput<TableId, Props, Components, Components2, Output, Output2, ExplicitKeys, ExplicitKeys2>, ExplicitKeys | ExplicitKeys2, true extends One | One2 ? true : false, true extends Required | Required2 ? true : false, true extends Exists | Exists2 ? true : false>;
     [flConcat]: this["concat"];
     interpret(where?: SQLTag): InterpretedRQLTag<Params, Output>;
     compile(params: Params): [string, any[], Next[]];
     runRows(params: Params, querier?: Querier): Promise<Output[]>;
-    run(params: Params, querier?: Querier): Promise<One extends true ? Required extends true ? Output : Output | null : Output[]>;
+    run(params: Params, querier?: Querier): Promise<Exists extends true ? boolean : One extends true ? Required extends true ? Output : Output | null : Output[]>;
 }
 
 const type = "refql/RQLTag";
@@ -62,8 +64,7 @@ const type = "refql/RQLTag";
 let prototype = Object.assign ({}, rqlNodePrototype, {
   constructor: createRQLTag,
   [refqlType]: type,
-  required,
-  one,
+  projected,
   concat,
   [flConcat]: concat,
   interpret,
@@ -72,7 +73,7 @@ let prototype = Object.assign ({}, rqlNodePrototype, {
   run
 });
 
-export function createRQLTag(table: Table, nodes: RQLNode[], options: RequiredRefQLOptions, isRequired = false, isOne = false) {
+export function createRQLTag(table: Table, nodes: RQLNode[], options: RequiredRefQLOptions, isRequired = false, isOne = false, isExists = false) {
   const tag = ((params: any) => {
     return options.runner (tag, params);
   }) as RQLTag;
@@ -84,22 +85,32 @@ export function createRQLTag(table: Table, nodes: RQLNode[], options: RequiredRe
       nodes,
       options,
       isRequired,
-      isOne
+      isOne,
+      isExists
     })
   );
 
   return tag;
 }
 
-function required(this: RQLTag) {
-  return createRQLTag (this.table, this.nodes, this.options, true, this.isOne);
+function projected(this: RQLTag) {
+  const nodes = this.nodes.flatMap (node => {
+    if (Prop.isProp (node) || SQLProp.isSQLProp (node)) {
+      const prop = copyObj (node) as Prop | SQLProp;
+      prop.operations = prop.operations.filter (OrderBy.isOrderBy);
+      return [prop];
+    }
+
+    if (RefNode.isRefNode (node)) return [node.projected ()];
+    if (Limit.isLimit (node) || Offset.isOffset (node) || isSQLTag (node)) return [];
+    return [node];
+  });
+
+  return createRQLTag (this.table, nodes, this.options, false, this.isOne, false);
 }
 
-function one(this: RQLTag, required = true) {
-  return createRQLTag (this.table, this.nodes, this.options, this.isRequired || required, true);
-}
-
-type Deep = { [tableId: string]: RQLTag } & { nodes: RQLNode[]};
+type DeepRef = { tag: RQLTag; existsTags: RQLTag[] };
+type Deep = { [tableId: string]: DeepRef } & { nodes: RQLNode[]};
 
 const concatDeep = (nodes: RQLNode[]): Deep => {
   return nodes.reduce ((acc, node) => {
@@ -108,9 +119,12 @@ const concatDeep = (nodes: RQLNode[]): Deep => {
       const id = table.toString ();
 
       if (acc[id]) {
-        acc[id] = acc[id].concat (node.tag);
+        acc[id] = {
+          tag: acc[id].tag.concat (node.tag),
+          existsTags: acc[id].existsTags.concat (node.existsTags)
+        };
       } else {
-        acc[id] = node.tag;
+        acc[id] = { tag: node.tag, existsTags: node.existsTags };
       }
     } else {
       acc.nodes.push (node);
@@ -123,14 +137,23 @@ function concat(this: RQLTag, other: RQLTag) {
   if (!this.table.equals (other.table)) {
     throw new Error ("U can't concat RQLTags that come from different tables");
   }
+  if (this.isExists !== other.isExists) {
+    throw new Error ("U can't concat an exists RQLTag with a projected RQLTag");
+  }
 
   const { nodes, ...refs } = concatDeep (this.nodes.concat (other.nodes));
 
   const refNodes = Object.values (this.table.props)
     .filter (prop => RefProp.isRefProp (prop) && refs[prop.child.toString ()])
     .map ((prop: any) => {
-      const ref = refs[prop.child.toString ()];
-      return RefNode (createRQLTag (ref.table, ref.nodes, this.options, ref.isRequired, ref.isOne), prop, this.table, this.options);
+      const { tag, existsTags } = refs[prop.child.toString ()];
+      return RefNode (
+        createRQLTag (tag.table, tag.nodes, this.options, tag.isRequired, tag.isOne, false),
+        prop,
+        this.table,
+        this.options,
+        existsTags
+      );
     });
 
   return createRQLTag (
@@ -138,7 +161,8 @@ function concat(this: RQLTag, other: RQLTag) {
     [...nodes, ...refNodes as RefNode[]],
     this.options,
     this.isRequired || other.isRequired,
-    this.isOne || other.isOne
+    this.isOne || other.isOne,
+    this.isExists || other.isExists
   );
 }
 
@@ -204,6 +228,9 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
       if (node.tag.isRequired) {
         filters = filters.join (" ", sqlX`and exists (${node.requiredExists ()})`);
       }
+      for (const existsTag of node.existsTags) {
+        filters = filters.join (" ", sqlX`and exists (${node.requiredExists (existsTag)})`);
+      }
       caseOfRef (node.joinLateral (), node.info, node.single || node.tag.isOne);
 
     } else if (isSQLTag (node)) {
@@ -238,7 +265,7 @@ function interpret(this: RQLTag, where = sqlX`where 1 = 1`): InterpretedRQLTag {
     .concat (where)
     .join ("", filters)
     .concat (orderBies)
-    .concat (this.isOne ? sqlX`limit 1` : limit)
+    .concat (this.isExists || this.isOne ? sqlX`limit 1` : limit)
     .concat (offset);
 
   return {
@@ -307,8 +334,13 @@ async function runRows(this: RQLTag, params: StringMap, querier?: Querier): Prom
 }
 
 async function run(this: RQLTag, params: StringMap, querier?: Querier): Promise<any> {
-  const rows = await this.runRows (params, querier);
+  if (this.isExists) {
+    const [query, values] = this.compile (params);
+    const rows = await (querier || this.options.querier) (query, values);
+    return rows.length > 0;
+  }
 
+  const rows = await this.runRows (params, querier);
   if (!this.isOne) return rows;
   if (rows.length > 0) return rows[0];
   if (!this.isRequired) return null;

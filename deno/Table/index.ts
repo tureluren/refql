@@ -16,7 +16,10 @@ import { createUpdateRQLTag, UpdateRQLTag } from "../RQLTag/UpdateRQLTag.ts";
 import { isSQLTag } from "../SQLTag/index.ts";
 
 export interface Table<TableId extends string = any, Props = any> {
-  <Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Props, Components, RQLParams<TableId, Props, Components>, RQLOutput<TableId, Props, Components>, ExplicitOutputKeys<TableId, Props, Components>>;
+  <Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Props, Components, RQLParams<TableId, Props, Components>, RQLOutput<TableId, Props, Components>, ExplicitOutputKeys<TableId, Props, Components>, false, false, false>;
+  one<Components extends Selectable<TableId, Props>[], Required extends boolean = true>(components: Components, required?: Required): RQLTag<TableId, Props, Components, RQLParams<TableId, Props, Components>, RQLOutput<TableId, Props, Components>, ExplicitOutputKeys<TableId, Props, Components>, true, Required, false>;
+  required<Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Props, Components, RQLParams<TableId, Props, Components>, RQLOutput<TableId, Props, Components>, ExplicitOutputKeys<TableId, Props, Components>, false, true, false>;
+  exists<Components extends Selectable<TableId, Props>[]>(components: Components): RQLTag<TableId, Props, Components, RQLParams<TableId, Props, Components>, RQLOutput<TableId, Props, Components>, ExplicitOutputKeys<TableId, Props, Components>, false, false, true>;
   tableId: TableId;
   name: string;
   schema?: string;
@@ -69,6 +72,7 @@ const makeTable = (options: RequiredRefQLOptions) => {
   const prototype = Object.assign (Object.create (Function.prototype), {
     constructor: Table,
     [refqlType]: type,
+    one, required, exists,
     insert, update,
     delete: remove,
     equals, [flEquals]: equals,
@@ -95,7 +99,7 @@ const makeTable = (options: RequiredRefQLOptions) => {
 
       let nodes: RQLNode[] = [];
 
-      let rqlTagMap: { [key: string]: RQLTag } = {};
+      let rqlTagMap: { [key: string]: { projection: RQLTag; existsTags: RQLTag[] } } = {};
 
       for (const comp of components) {
         if (typeof comp === "string" && properties[comp]) {
@@ -127,9 +131,15 @@ const makeTable = (options: RequiredRefQLOptions) => {
           nodes.push (...refNodes);
         } else if (isRQLTag (comp)) {
           const tableKey = comp.table.toString ();
-          const rqlTag = rqlTagMap[tableKey];
-          rqlTagMap[tableKey] = rqlTag == null ? comp : rqlTag.concat (comp);
+          const projection = comp.isExists ? comp.projected () : comp;
+          const current = rqlTagMap[tableKey];
 
+          rqlTagMap[tableKey] = current == null
+            ? { projection, existsTags: comp.isExists ? [comp] : [] }
+            : {
+              projection: current.projection.concat (projection),
+              existsTags: comp.isExists ? current.existsTags.concat (comp) : current.existsTags
+            };
 
         } else if (isRQLNode (comp)) {
           nodes.push (comp);
@@ -138,15 +148,21 @@ const makeTable = (options: RequiredRefQLOptions) => {
         }
       }
 
-      Object.values (rqlTagMap).forEach (comp => {
+      Object.values (rqlTagMap).forEach (({ projection, existsTags }) => {
         const refNodes = Object.keys (properties)
           .map (key => properties[key as keyof typeof properties])
-          .filter (prop => RefProp.isRefProp (prop) && comp.table.equals (prop.child))
-          .map ((refProp => RefNode (createRQLTag (comp.table, comp.nodes, options, comp.isRequired, comp.isOne), refProp as any, table as any, options)));
+          .filter (prop => RefProp.isRefProp (prop) && projection.table.equals (prop.child))
+          .map ((refProp => RefNode (
+            createRQLTag (projection.table, projection.nodes, options, projection.isRequired, projection.isOne, false),
+            refProp as any,
+            table as any,
+            options,
+            existsTags
+          )));
 
         if (!refNodes.length) {
           throw new Error (
-            `${table.tableId} has no ref defined for: ${comp.table.tableId}`
+            `${table.tableId} has no ref defined for: ${projection.table.tableId}`
           );
         }
 
@@ -170,6 +186,21 @@ const makeTable = (options: RequiredRefQLOptions) => {
     table.props = properties;
 
     return table;
+  }
+
+  function one(this: Table, components: any, required = true) {
+    const tag = this (components);
+    return createRQLTag (tag.table, tag.nodes, options, required, true, false);
+  }
+
+  function required(this: Table, components: any) {
+    const tag = this (components);
+    return createRQLTag (tag.table, tag.nodes, options, true, false, false);
+  }
+
+  function exists(this: Table, components: any) {
+    const tag = this (components);
+    return createRQLTag (tag.table, tag.nodes, options, false, false, true);
   }
 
   function addProps<Props extends PropType<any>[]>(this: Table, props: Props) {

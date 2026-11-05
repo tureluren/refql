@@ -11,8 +11,10 @@ import RQLNode, { rqlNodePrototype } from "./RQLNode.ts";
 
 interface RefNode extends RQLNode {
   joinLateral(): RQLTag;
-  requiredExists(): ReturnType<RQLTag["interpret"]>["tag"];
+  requiredExists(tag?: RQLTag): ReturnType<RQLTag["interpret"]>["tag"];
+  projected(): RefNode;
   tag: RQLTag;
+  existsTags: RQLTag[];
   info: RefInfo;
   single: boolean;
 }
@@ -22,11 +24,12 @@ const type = "refql/RefNode";
 const prototype = Object.assign ({}, rqlNodePrototype, {
   [refqlType]: type,
   joinLateral,
-  requiredExists
+  requiredExists,
+  projected
 });
 
 
-function RefNode(tag: RQLTag, refProp: RefProp, parent: Table, options: RequiredRefQLOptions) {
+function RefNode(tag: RQLTag, refProp: RefProp, parent: Table, options: RequiredRefQLOptions, existsTags: RQLTag[] = []) {
   let refNode: RefNode = Object.create (prototype);
 
   const { as, rel, child, refInput } = refProp;
@@ -78,11 +81,21 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table, options: Required
   refNode.info = info;
   refNode.single = single;
   refNode.tag = tag;
+  refNode.existsTags = existsTags;
 
   return refNode;
 }
 
-function requiredExists(this: RefNode) {
+function projected(this: RefNode) {
+  const node: RefNode = Object.create (prototype);
+  Object.assign (node, this, {
+    tag: this.tag.projected (),
+    existsTags: []
+  });
+  return node;
+}
+
+function requiredExists(this: RefNode, tag = this.tag) {
   const { rRef, lRef, xTable, rxRef, lxRef } = this.info;
 
   if (xTable && rxRef && lxRef) {
@@ -96,7 +109,7 @@ function requiredExists(this: RefNode) {
       return acc.concat (sqlX`${Raw (`${kw} ${lxRef[idx].name} = ${lr.name}`)}`);
     }, join);
 
-    return this.tag.interpret (where).tag;
+    return tag.interpret (where).tag;
   }
 
   const where = lRef.reduce ((acc, lr, idx) => {
@@ -104,7 +117,7 @@ function requiredExists(this: RefNode) {
     return acc.concat (sqlX`${Raw (`${kw} ${rRef[idx].name} = ${lr.name}`)}`);
   }, sqlX``);
 
-  return this.tag.interpret (where).tag;
+  return tag.interpret (where).tag;
 }
 
 function joinLateral(this: RefNode) {
