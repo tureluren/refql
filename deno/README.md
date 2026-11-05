@@ -1,7 +1,103 @@
 # RefQL
-A library for composing and running database queries with rich IntelliSense and type safety.
+A library for writing type-safe relational queries in TypeScript, with rich IntelliSense and less boilerplate.
 
-<img width="682" height="412" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
+## Read related data
+Select the fields u need, including fields from referenced tables.
+
+```ts
+import refql from "./refql";
+
+const { Player, Team } = refql.tables.public;
+
+const readPlayers = Player ([
+  "id",
+  "firstName",
+  Team (["name"])
+]);
+
+const players = await readPlayers ();
+```
+
+<img width="480" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
+
+## Compare with other libraries
+The examples below select the same fields: a player's `id`, `firstName` and the `name` of its team. The database tables and relations are assumed to be defined already. U can use [schema introspection](#introspect-the-database-schema) to generate them automatically. The syntax differs between libraries and versions.
+
+### RefQL
+
+```ts
+const readPlayers = Player ([
+  "id",
+  "firstName",
+  Team (["name"])
+]);
+
+const players = await readPlayers ();
+```
+
+### Drizzle ORM (relational queries)
+
+```ts
+const readPlayers = db.query.player.findMany ({
+  columns: {
+    id: true,
+    firstName: true
+  },
+  with: {
+    team: {
+      columns: { name: true }
+    }
+  }
+});
+
+const players = await readPlayers;
+```
+
+### Kysely (PostgreSQL)
+
+```ts
+import { jsonObjectFrom } from "kysely/helpers/postgres";
+
+const readPlayers = db
+  .selectFrom ("player")
+  .select (eb => [
+    "player.id",
+    "player.firstName",
+    jsonObjectFrom (
+      eb.selectFrom ("team")
+        .select ("team.name")
+        .whereRef ("team.id", "=", "player.teamId")
+    ).as ("team")
+  ]);
+
+const players = await readPlayers.execute ();
+```
+
+### Prisma ORM (Prisma Client 7)
+
+```ts
+const readPlayers = prisma.player.findMany ({
+  select: {
+    id: true,
+    firstName: true,
+    team: {
+      select: { name: true }
+    }
+  }
+});
+
+const players = await readPlayers;
+```
+
+RefQL uses a shorter syntax for this example. U can select referenced tables directly, without writing `select`, `with` or joins. All four libraries support type-safe queries; this is a comparison of the API, not a performance benchmark.
+
+### Less syntactic noise
+
+With RefQL, u can select fields by just writing `"id"` and `"firstName"`, instead of `id: true` and `firstName: true` as in the Drizzle and Prisma examples above. This keeps the query shorter and avoids repeating `true` for every field.
+
+The difference becomes more noticeable when reading nested relations. U can see which fields and related tables are selected without going through extra configuration objects. RefQL keeps the focus on the data u want to read, while still providing TypeScript inference and IntelliSense.
+
+The Kysely example assumes `player.teamId` references `team.id`, and uses the PostgreSQL JSON helper to return a nested `team` object. The Prisma example uses the Prisma Client 7 API; Prisma ORM 8 has a different API.
 
 ## Installation
 ```bash
@@ -28,7 +124,9 @@ const refql = RefQL ({
 export default refql;
 ```
 
-## Introspect the database schema (PostgreSQL only; should be run separately from the main project)
+## Introspect the database schema
+
+Schema introspection currently only works with PostgreSQL and should be run separately from the main project.
 
 ```ts
 import refql from "./refql";
