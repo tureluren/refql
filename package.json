@@ -5,12 +5,15 @@
   "license": "MIT",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "hm-js": {
+    "sidecars": ["./refql.hm", "../.refql/client/index.hm"]
+  },
   "version": "5.1.20",
   "scripts": {
     "start": "NODE_ENV=refql nodemon src/workbench.ts",
     "introspect": "NODE_ENV=refql ts-node -r dotenv/config src/test/introspect.ts",
     "test": "NODE_ENV=refql jest --setupFiles dotenv/config --watch --detectOpenHandles",
-    "test:pg": "DB_TYPE=pg && npm run test",
+    "test:pg": "DB_TYPE=pg npm run test",
     "test:mysql": "DB_TYPE=mysql yarn test",
     "test:mariadb": "DB_TYPE=mariadb yarn test",
     "migrate": "node -r dotenv/config ./db/migrateDB.js",

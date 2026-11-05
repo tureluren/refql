@@ -1,0 +1,321 @@
+// ============================================================================
+// refql 5.x — Hindley-Milner type signatures for hm-js
+//
+// Format
+// ------
+//   • `Name :: Type`                          top-level value/binding
+//   • `Type#method :: Receiver ~> MethodType` instance method (chained)
+//   • `Type.static :: ...`                    static method on a type
+//
+// IMPORTANT — calling-convention
+// -------------------------------
+// In hm-js, JavaScript calls are tuple-applied: `f(a, b)` constructs
+// `Tuple[A, B]` and unifies it against the function parameter. So a
+// multi-argument JS function MUST be annotated in tuple form:
+//
+//     factory :: (A, B) -> C        // ← matches  factory(a, b)
+//     factory :: A -> B -> C        // ← matches  factory(a)(b)  (curried)
+//
+// Most refql factories accept their arguments uncurried, so they use the
+// `(A, B) -> C` form below.
+//
+// Loading
+// -------
+// The top-level `Name :: ...` bindings are loaded automatically because
+// `package.json` declares  `"hm-js": { "sidecars": ["./refql.hm", ...] }`.
+//
+// To additionally register `#method` chains (so `id.eq(...)`,
+// `tag.concat(...)`, etc. type-check on properly typed receivers), add
+// this directive at the top of the consumer JS file:
+//
+//     // ::types refql
+//     import { RefQL, BelongsTo, HasMany } from "refql";
+//
+// ============================================================================
+
+
+// ── Top-level factory: RefQL({ querier }) → { tables, Table, sql, ... } ────
+
+// `Tables` is declared in the companion sidecar
+// `node_modules/.refql/client/index.hm` — seeded as the polymorphic
+// placeholder `Tables :: a` by `bin/init-refql.js` and replaced by a
+// concrete `Tables :: { schemaA :: { ... }, ... }` record when consumers
+// run `introspect()`.  It must be declared in exactly ONE sidecar: hm-js
+// treats repeated top-level declarations as overloads (union), and a
+// `a | {...}` union would break property access on `tables`.
+
+RefQL :: { querier :: (String, [a]) -> Promise e [b], ...rest } -> { tables :: Tables, Table :: (String, [d]) -> Table p, sql :: ([String], ...) -> SQLTag p2 o2, options :: f, introspect :: () -> Promise e2 () }
+
+// `import RefQL from "refql"` resolves to the default export — give it the
+// same signature so consumers using the default-import form get the rich
+// return type (and, after introspect, the rich `Tables` schema).
+default :: { querier :: (String, [a]) -> Promise e [b], ...rest } -> { tables :: Tables, Table :: (String, [d]) -> Table p, sql :: ([String], ...) -> SQLTag p2 o2, options :: f, introspect :: () -> Promise e2 () }
+
+
+// ── Shared pattern: "value or function-of-params" ──────────────────────────
+//
+// Almost every refql node accepts EITHER a literal value of some type `t`
+// OR a function `params -> t`. Internally each node normalises both forms
+// to `params -> t`.  The pattern is written explicitly as `((p -> t) | t)`
+// with a SHARED `p` that also appears in the node's result type
+// (`Limit p`, `Prop t a p`, …).  When such nodes are passed inside a
+// `Table([...])` selector array whose host signature is
+// `[XSelector p] -> RQLTag p o`, all the callback params unify into ONE
+// params record — so hovering the resulting tag shows exactly which input
+// fields the query expects (e.g. `RQLTag { limit :: Number, q :: String } o`).
+
+
+// ── Source: legal column-source types for Prop's second argument ──────
+//
+// The second argument of `Prop` (and its typed variants) must be either
+// a column name (`String`) or a `SQLTag` (the result of `sql\`...\``).
+// Anything else (Number, Boolean, raw object, …) is rejected at the
+// call site by this constraint.
+
+::constraint Source s { s :: String | SQLTag a b }
+
+
+// ── Table ───────────────────────────────────────────────────────────────────────
+//
+// Table values are OVERLOADED — repeated `Table :: ...` declarations
+// register multiple call signatures.  The engine picks the matching branch
+// at each call site based on the actual argument shape:
+//
+//   • Build a query from selectables:        `Organisation([id, name])`
+//   • Run a query directly with params:      `Organisation({ id: 1 })`
+//
+// Method calls (`Organisation.insert([...])`, `.equals(...)`, etc.) still
+// resolve through the `Table#...` registry below.
+
+// Internal factory; users normally get `Table` from `RefQL(...)`.
+makeTable :: (a, String, [b]) -> Table c
+
+// A "selector" is anything you can pass inside `Table([...])`. The
+// introspect sidecar generates a per-table `<Name>Selector` union
+// (literal column names + Prop / RQLTag / Table sub-queries + paging
+// helpers) and the per-table overload
+//   `<Name> :: [<Name>Selector p] -> RQLTag p (Picked <Name>Row <Name>Selector)`
+// that drives hm-js's built-in `Picked` projection AND threads the shared
+// params var `p` from every selector callback into the tag's input type.
+// The bare `Table([...])` form below is the generic fallback used when a
+// Table has no introspect specialisation — both `p` (params) and `o`
+// (output) are left free for the call site to instantiate.
+Table :: [a] -> RQLTag p o
+
+Table#insert   :: Table p ~> [a] -> RQLTag q b
+Table#update   :: Table p ~> [a] -> RQLTag q b
+Table#delete   :: Table p ~> [a] -> RQLTag q b
+Table#addProps :: Table p ~> [a] -> Table p
+Table#equals   :: Table p ~> Table q -> Boolean
+Table#toString :: Table p ~> () -> String
+Table#tableId  :: String
+Table#name     :: String
+Table#schema   :: String
+// `.props` projects the Table's introspect-derived prop record. Each
+// field is a `Prop X` (chainable via `.eq`, `.iLike`, etc.). The exact
+// shape is filled in per-table by the introspect sidecar; here we leave
+// it as a free type variable so destructuring `const { id, name } = T.props`
+// always type-checks regardless of the underlying row record's literal
+// names. (The runtime validates field access.)
+Table#props    :: Table a ~> b
+
+
+// ── RQLTag ──────────────────────────────────────────────────────────────────
+//
+// Like `Table`, RQLTag values are overloaded between "callable as a query"
+// and "addressable for chaining".  The chained methods (`.concat`, `.run`,
+// etc.) are still registered via `RQLTag#...` below.
+
+createRQLTag :: (Table a, [b], c) -> RQLTag p o
+
+// `RQLTag` itself is a constructor (returned by `createRQLTag` / `Table([...])`).
+// The type is always bi-parameter: `p` (params record) and `o` (output row).
+// VALUES of type `RQLTag p o` are callable with params and return a Promise of
+// rows (`tag(params)`). hm-js encodes "a value of type T is callable" via
+// the `T() :: ...` instance-callable annotation.
+RQLTag :: (a, b) -> RQLTag a b
+RQLTag() :: p -> Promise e [o]
+
+// Methods on the tag (chainable / introspection).
+RQLTag#concat    :: RQLTag p1 r1 ~> RQLTag p2 r2 -> RQLTag (Merge p1 p2) (Merge r1 r2)
+RQLTag#run       :: RQLTag p o ~> (p, a) -> Promise e [o]
+RQLTag#compile   :: RQLTag p o ~> p -> (String, [a], [b])
+RQLTag#interpret :: RQLTag p o ~> p -> { tag :: SQLTag a b, next :: [c] }
+RQLTag#table     :: Table a
+RQLTag#nodes     :: [a]
+RQLTag#options   :: a
+RQLTag#tableId   :: String
+
+
+// ── SQLTag (params, output) ────────────────────────────────────────────────
+//
+// SQLTag is also overloaded: callable with params (returns a Promise) and
+// addressable as a value (for `.concat` / `.join`).
+
+createSQLTag :: ([a], b) -> SQLTag c d
+
+parse :: ([String], [a]) -> SQLTag b c
+
+// Same instance-callable trick as RQLTag: a value `tag :: SQLTag p o` can
+// be invoked as `tag(params)` and yields `Promise e [o]`. Like RQLTag, the
+// type is always bi-parameter.
+SQLTag :: (a, b) -> SQLTag a b
+SQLTag() :: p -> Promise e [o]
+
+SQLTag#concat    :: SQLTag p1 r1 ~> SQLTag p2 r2 -> SQLTag (Merge p1 p2) (Merge r1 r2)
+SQLTag#join      :: SQLTag p1 r1 ~> (a, SQLTag p2 r2) -> SQLTag (Merge p1 p2) (Merge r1 r2)
+SQLTag#run       :: SQLTag p o ~> (p, a) -> Promise e [o]
+SQLTag#compile   :: SQLTag p o ~> p -> (String, [a])
+SQLTag#interpret :: SQLTag p o ~> () -> { strings :: [a], values :: [b] }
+SQLTag#nodes     :: [a]
+SQLTag#options   :: a
+
+
+// ── Predicates ──────────────────────────────────────────────────────────────
+
+::narrow Boolean
+isEmptyTag :: a -> Boolean
+
+::narrow RQLTag
+isRQLTag   :: a -> Boolean
+
+::narrow SQLTag
+isSQLTag   :: a -> Boolean
+
+::narrow Boolean
+isSQLNode  :: a -> Boolean
+
+
+// ── Pagination nodes ────────────────────────────────────────────────────────
+//
+// The shared `p` links the callback's params to the node's type, letting
+// selector arrays accumulate every query input into one params record.
+Limit :: ((p -> Number) | Number) -> Limit p
+Offset :: ((p -> Number) | Number) -> Offset p
+
+
+// ── Generic selector base ──────────────────────────────────────────────────
+//
+// The generic, table-agnostic branches that every per-table `<Name>Selector`
+// union contains (props of the table's phantom tag + paging helpers + raw
+// SQL fragments).  The introspect sidecar declares each per-table union
+// as `<Name>Selector :: GenericSelector p <Name>Tag` and then appends the
+// table-specific branches (column-name literals + relation factories) via
+// a `::extend <Name>Selector ...` directive — keeping the auto-generated
+// file short while preserving validation precision.
+//
+// NOTE: `Limit p` comes FIRST so that `p` is the LEADING free variable of
+// the alias body — partial application (`GenericSelector p XTag`) binds
+// declared vars in order of first appearance, and the shared params var
+// must be the one that per-table aliases pin.
+GenericSelector :: (Limit p | Offset p | Prop tag a p | SQLTag p o)
+
+
+// ── Where / order / null operators (constructors used internally) ──────────
+
+Eq       :: ((p -> a) | a) -> Eq a p
+IsNull   :: a -> IsNull
+RefField :: (String, String) -> RefField
+RefNode  :: (a, b, c, d) -> RefNode
+
+
+// ── SQL nodes (interpolated values inside `sql\`...\``) ────────────────────
+
+Raw      :: ((p -> String) | String) -> Raw p
+Value    :: ((p -> a) | a) -> Value a p
+Values   :: ((p -> [a]) | [a]) -> Values a p
+Values2D :: ((p -> [[a]]) | [[a]]) -> Values2D a p
+
+
+// ── Property factories ─────────────────────────────────────────────────────
+//
+// The second argument is constrained by `Source` to a column name
+// (`String`) or a `SQLTag` — see the constraint near the top of this file.
+//
+// The first type parameter `t` is the *table tag* — a phantom marker
+// emitted per-table by the introspect sidecar (e.g. `OrganisationTag`).
+// It does not appear at runtime; its sole purpose is to prevent props
+// from one table from being used as selectors of another table.
+//
+// The third parameter `p` is the *params record* threaded from operand
+// callbacks (`.eq(p => p.id)` etc.) into the host query's input type.
+
+Prop        :: Source s => (String, s) -> Prop t a p
+
+BooleanProp :: Source s => (String, s) -> Prop t Boolean p
+NumberProp  :: Source s => (String, s) -> Prop t Number p
+StringProp  :: Source s => (String, s) -> Prop t String p
+DateProp    :: Source s => (String, s) -> Prop t Date p
+
+// SQL-backed prop (alias of Prop with SQLTag in the col slot).
+SQLProp     :: Source s => (String, s) -> Prop t b p
+
+// Reference prop with optional ref-input record.
+RefProp     :: (String, String, String, a, Boolean) -> Prop t b p
+
+// Phantom carrier for prop "type" tags.
+PropType    :: a -> PropType a
+
+
+// ── Reference-prop factories (relation kind baked in) ──────────────────────
+
+BelongsTo     :: (String, String, a) -> Prop t b p
+BelongsToMany :: (String, String, a) -> Prop t b p
+HasOne        :: (String, String, a) -> Prop t b p
+HasMany       :: (String, String, a) -> Prop t b p
+
+
+// ── Prop chain methods ─────────────────────────────────────────────────────
+//
+// Each returns a NEW Prop with the operation appended, preserving all of
+// `t` (table tag), `a` (column type) and `p` (params record).  Operands
+// accept a value or a `params -> value` callback; the callback's param
+// unifies with the Prop's shared `p`, so every `.eq(p => p.x)` in a query
+// contributes its accessed fields to the query's input params record.
+
+Prop#eq         :: Prop t a p ~> ((p -> a) | a) -> Prop t a p
+Prop#notEq      :: Prop t a p ~> ((p -> a) | a) -> Prop t a p
+Prop#isNull     :: Prop t a p ~> () -> Prop t a p
+Prop#notIsNull  :: Prop t a p ~> () -> Prop t a p
+
+Prop#like       :: Prop t a p ~> ((p -> String) | String) -> Prop t a p
+Prop#notLike    :: Prop t a p ~> ((p -> String) | String) -> Prop t a p
+Prop#iLike      :: Prop t a p ~> ((p -> String) | String) -> Prop t a p
+Prop#notILike   :: Prop t a p ~> ((p -> String) | String) -> Prop t a p
+
+Prop#in         :: Prop t a p ~> ((p -> [a]) | [a]) -> Prop t a p
+Prop#notIn      :: Prop t a p ~> ((p -> [a]) | [a]) -> Prop t a p
+
+Prop#gt         :: Prop t a p ~> ((p -> a) | a) -> Prop t a p
+Prop#gte        :: Prop t a p ~> ((p -> a) | a) -> Prop t a p
+Prop#lt         :: Prop t a p ~> ((p -> a) | a) -> Prop t a p
+Prop#lte        :: Prop t a p ~> ((p -> a) | a) -> Prop t a p
+
+Prop#asc            :: Prop t a p ~> () -> Prop t a p
+Prop#desc           :: Prop t a p ~> () -> Prop t a p
+Prop#ascNullsFirst  :: Prop t a p ~> () -> Prop t a p
+Prop#ascNullsLast   :: Prop t a p ~> () -> Prop t a p
+Prop#descNullsFirst :: Prop t a p ~> () -> Prop t a p
+Prop#descNullsLast  :: Prop t a p ~> () -> Prop t a p
+
+// or/and combine within a single table tag — combining props from
+// different tables is rejected by the phantom `t`.  Both sides share the
+// same `p`, merging their params contributions.  An SQL fragment
+// (`sql\`...\``) is also a legal operand — its params slot joins the
+// shared `p` too.
+Prop#or         :: Prop t a p ~> (Prop t b p | SQLTag p o) -> Prop t a p
+Prop#and        :: Prop t a p ~> (Prop t b p | SQLTag p o) -> Prop t a p
+
+Prop#omit       :: Prop t a p ~> () -> Prop t a p
+Prop#hasDefault :: Prop t a p ~> () -> Prop t a p
+Prop#nullable   :: Prop t a p ~> () -> Prop t a p
+Prop#arrayOf    :: Prop t a p ~> () -> Prop t [a] p
+
+Prop#interpret    :: Prop t a p ~> () -> Raw p2
+Prop#setTableName :: Prop t a p ~> String -> Prop t a p
+Prop#as              :: String
+Prop#col             :: String
+Prop#tableName       :: String
+Prop#operations      :: [a]
+Prop#isOmitted       :: Boolean
+Prop#hasDefaultValue :: Boolean
