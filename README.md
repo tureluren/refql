@@ -1,7 +1,103 @@
 # RefQL
-A library for composing and running database queries with rich IntelliSense and type safety.
+A library for writing type-safe relational queries in TypeScript, with rich IntelliSense and less boilerplate.
+
+## Read related data
+Select the fields u need, including fields from referenced tables.
+
+```ts
+import refql from "./refql";
+
+const { Player, Team } = refql.tables.public;
+
+const readPlayers = Player ([
+  "id",
+  "firstName",
+  Team (["name"])
+]);
+
+const players = await readPlayers ();
+```
 
 <img width="682" height="412" alt="RefQL example" src="https://raw.githubusercontent.com/tureluren/refql/main/example.gif">
+
+## Compare with other libraries
+The examples below select the same fields: a player's `id`, `firstName` and the `name` of its team. The database tables and relations are assumed to be defined already. U can use [schema introspection](#introspect-the-database-schema) to generate them automatically. The syntax differs between libraries and versions.
+
+### RefQL
+
+```ts
+const readPlayers = Player ([
+  "id",
+  "firstName",
+  Team (["name"])
+]);
+
+const players = await readPlayers ();
+```
+
+### Drizzle ORM (relational queries)
+
+```ts
+const readPlayers = db.query.player.findMany ({
+  columns: {
+    id: true,
+    firstName: true
+  },
+  with: {
+    team: {
+      columns: { name: true }
+    }
+  }
+});
+
+const players = await readPlayers;
+```
+
+### Kysely (PostgreSQL)
+
+```ts
+import { jsonObjectFrom } from "kysely/helpers/postgres";
+
+const readPlayers = db
+  .selectFrom ("player")
+  .select (eb => [
+    "player.id",
+    "player.firstName",
+    jsonObjectFrom (
+      eb.selectFrom ("team")
+        .select ("team.name")
+        .whereRef ("team.id", "=", "player.teamId")
+    ).as ("team")
+  ]);
+
+const players = await readPlayers.execute ();
+```
+
+### Prisma ORM (Prisma Client 7)
+
+```ts
+const readPlayers = prisma.player.findMany ({
+  select: {
+    id: true,
+    firstName: true,
+    team: {
+      select: { name: true }
+    }
+  }
+});
+
+const players = await readPlayers;
+```
+
+RefQL uses a shorter syntax for this example. U can select referenced tables directly, without writing `select`, `with` or joins. All four libraries support type-safe queries; this is a comparison of the API, not a performance benchmark.
+
+### Less syntactic noise
+
+With RefQL, u can select fields by just writing `"id"` and `"firstName"`, instead of `id: true` and `firstName: true` as in the Drizzle and Prisma examples above. This keeps the query shorter and avoids repeating `true` for every field.
+
+The difference becomes more noticeable when reading nested relations. U can see which fields and related tables are selected without going through extra configuration objects. RefQL keeps the focus on the data u want to read, while still providing TypeScript inference and IntelliSense.
+
+The Kysely example assumes `player.teamId` references `team.id`, and uses the PostgreSQL JSON helper to return a nested `team` object. The Prisma example uses the Prisma Client 7 API; Prisma ORM 8 has a different API.
 
 ## Installation
 ```bash
@@ -28,7 +124,9 @@ const refql = RefQL ({
 export default refql;
 ```
 
-## Introspect the database schema (PostgreSQL only; should be run separately from the main project)
+## Introspect the database schema
+
+Schema introspection currently only works with PostgreSQL and should be run separately from the main project.
 
 ```ts
 import refql from "./refql";
@@ -367,6 +465,156 @@ const playerBelongsToManyGames = BelongsToMany ("games", "game", {
 ```
 
 ## Operator mix
+
+Use `required` to read only Games that contain a non-own Goal from the 80th minute onward:
+
+```ts
+const { Game, Goal, Player } = refql.tables.public;
+
+const readGamesWithLateGoals = Game ([
+  "id",
+  "result",
+  Goal.required ([
+    Goal.props.minute.gte (80),
+    Goal.props.ownGoal.eq (false),
+    Player (["firstName", "lastName"])
+  ])
+]);
+
+// run
+readGamesWithLateGoals ().then (console.log);
+
+// [
+//   {
+//     id: 12,
+//     result: "1 - 2",
+//     goals: [
+//       {
+//         minute: 84,
+//         ownGoal: false,
+//         player: { firstName: "Arthur", lastName: "Graham" }
+//       }
+//     ]
+//   },
+//   ...
+// ];
+```
+
+Use `one` for a Team detail query where the requested Team must exist:
+
+```ts
+const { League, Team, Player } = refql.tables.public;
+
+const readTeamById = Team.one ([
+  "id",
+  "name",
+  "active",
+  League (["name"]),
+  Player (["id", "firstName", "lastName"]),
+  Team.props.id.eq<{ teamId: number }> (p => p.teamId)
+]);
+
+// run
+readTeamById ({ teamId: 1 }).then (console.log);
+
+// {
+//   id: 1,
+//   name: "FC Horgawid",
+//   active: true,
+//   league: { name: "Falkland Islands league" },
+//   players: [
+//     { id: 1, firstName: "Christine", lastName: "Hubbard" },
+//     { id: 2, firstName: "Emily", lastName: "Mendez" },
+//     ...
+//   ]
+// };
+```
+
+Use `one` with `false` when a Game may not have a Goal. Sorting by minute returns its latest Goal when one exists:
+
+```ts
+const { Goal, Player } = refql.tables.public;
+
+const readLatestGoal = Goal.one ([
+  "gameId",
+  Goal.props.minute.desc (),
+  Player (["firstName", "lastName"]),
+  Goal.props.gameId.eq<{ gameId: number }> (p => p.gameId)
+], false);
+
+// run
+readLatestGoal ({ gameId: 42 }).then (console.log);
+
+// {
+//   gameId: 42,
+//   minute: 87,
+//   player: { firstName: "Arthur", lastName: "Graham" }
+// };
+
+readLatestGoal ({ gameId: 43 }).then (console.log);
+
+// null;
+```
+
+Use `exists` to filter a parent independently from the projected relation. This returns every Team in a League, but only for Leagues having at least one active Team:
+
+```ts
+const { League, Team } = refql.tables.public;
+
+const readLeaguesWithAnActiveTeam = League ([
+  "id",
+  "name",
+  Team (["id", "name", "active"]),
+  Team.exists ([Team.props.active.eq (true)])
+]);
+
+// run
+readLeaguesWithAnActiveTeam ().then (console.log);
+
+// [
+//   {
+//     id: 1,
+//     name: "Falkland Islands league",
+//     teams: [
+//       { id: 1, name: "FC Horgawid", active: true },
+//       { id: 2, name: "FC Agecissak", active: false },
+//       ...
+//     ]
+//   },
+//   ...
+// ];
+```
+
+At the root, `exists` returns a boolean:
+
+```ts
+const hasActiveTeams = Team.exists ([Team.props.active.eq (true)]);
+
+hasActiveTeams ().then (console.log);
+
+// true;
+```
+
+Fragments for the same relation merge their selected fields. `one` wins over collection cardinality and `required` makes the merged relation mandatory, independent of fragment order or grouping:
+
+```ts
+const { Team, Player } = refql.tables.public;
+
+const readTeamWithFirstPlayer = Team.one ([
+  "id",
+  Player.one (["id", Player.props.id.asc ()]),
+  Player (["firstName", "lastName"]),
+  Team.props.id.eq (1)
+]);
+
+// run
+readTeamWithFirstPlayer ().then (console.log);
+
+// {
+//   id: 1,
+//   players: { id: 1, firstName: "Christine", lastName: "Hubbard" }
+// };
+```
 
 ```ts
 import { NumberProp } from "refql";

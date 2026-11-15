@@ -11,7 +11,10 @@ import RQLNode, { rqlNodePrototype } from "./RQLNode";
 
 interface RefNode extends RQLNode {
   joinLateral(): RQLTag;
+  requiredExists(tag?: RQLTag): ReturnType<RQLTag["interpret"]>["tag"];
+  projected(): RefNode;
   tag: RQLTag;
+  existsTags: RQLTag[];
   info: RefInfo;
   single: boolean;
 }
@@ -20,11 +23,13 @@ const type = "refql/RefNode";
 
 const prototype = Object.assign ({}, rqlNodePrototype, {
   [refqlType]: type,
-  joinLateral
+  joinLateral,
+  requiredExists,
+  projected
 });
 
 
-function RefNode(tag: RQLTag, refProp: RefProp, parent: Table, options: RequiredRefQLOptions) {
+function RefNode(tag: RQLTag, refProp: RefProp, parent: Table, options: RequiredRefQLOptions, existsTags: RQLTag[] = []) {
   let refNode: RefNode = Object.create (prototype);
 
   const { as, rel, child, refInput } = refProp;
@@ -76,8 +81,43 @@ function RefNode(tag: RQLTag, refProp: RefProp, parent: Table, options: Required
   refNode.info = info;
   refNode.single = single;
   refNode.tag = tag;
+  refNode.existsTags = existsTags;
 
   return refNode;
+}
+
+function projected(this: RefNode) {
+  const node: RefNode = Object.create (prototype);
+  Object.assign (node, this, {
+    tag: this.tag.projected (),
+    existsTags: []
+  });
+  return node;
+}
+
+function requiredExists(this: RefNode, tag = this.tag) {
+  const { rRef, lRef, xTable, rxRef, lxRef } = this.info;
+
+  if (xTable && rxRef && lxRef) {
+    const join = rRef.reduce ((acc, rr, idx) => {
+      const kw = idx === 0 ? "on" : "and";
+      return acc.concat (sqlX`${Raw (`${kw} ${rxRef[idx].name} = ${rr.name}`)}`);
+    }, sqlX`join ${Raw (xTable)}`);
+
+    const where = lRef.reduce ((acc, lr, idx) => {
+      const kw = idx === 0 ? "where" : "and";
+      return acc.concat (sqlX`${Raw (`${kw} ${lxRef[idx].name} = ${lr.name}`)}`);
+    }, join);
+
+    return tag.interpret (where).tag;
+  }
+
+  const where = lRef.reduce ((acc, lr, idx) => {
+    const kw = idx === 0 ? "where" : "and";
+    return acc.concat (sqlX`${Raw (`${kw} ${rRef[idx].name} = ${lr.name}`)}`);
+  }, sqlX``);
+
+  return tag.interpret (where).tag;
 }
 
 function joinLateral(this: RefNode) {
