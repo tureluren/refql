@@ -122,7 +122,7 @@ const headerHm = [
   "// Table or RQLTag, an SQL fragment, or paging helpers like Limit / Offset.",
   "// The shared `p` threads every selector callback's params record into",
   "// the produced tag's input type.",
-  "Selector :: (String | Prop t a p | RQLTag p o | Table b | Limit p | Offset p | SQLTag p o)",
+  "Selector :: (String | Prop t a p | RQLTag p o | RQLOne p o | RQLExists p o | Table b | Limit p | Offset p | SQLTag p o)",
   "",
   "// `Tables` is the type of the `tables` field returned by `RefQL(...)`.",
   "// `refql/refql.hm` declares it polymorphically as `Tables :: a`; this",
@@ -337,7 +337,7 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
           // recursive unions blow up combinatorially and freeze the LSP.
           // A free `a` is enough to discriminate factories.
           const relBranches = [...relPairs.keys ()].sort ().map (child => {
-            return `Table ${child} | RQLTag p (Picked ${child} a)`;
+            return `Table ${child} | RQLTag p (Picked ${child} a) | RQLOne p (Picked ${child} a) | RQLExists p (Picked ${child} a)`;
           }).join (" | ");
           // Per-table selector union: base alias pointing at the generic
           // branches (declared once in `refql.hm`) plus the table-specific
@@ -384,6 +384,9 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
             `${tableName}#insert   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${tableName}Row`,
             `${tableName}#update   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${tableName}Row`,
             `${tableName}#delete   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${tableName}Row`,
+            `${tableName}#one      :: ${tableName} ~> ([${tableName}Selector p], Boolean | Undefined) -> RQLOne p (Picked ${tableName}Row ${tableName}Selector)`,
+            `${tableName}#required :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p (Picked ${tableName}Row ${tableName}Selector)`,
+            `${tableName}#exists   :: ${tableName} ~> [${tableName}Selector p] -> RQLExists p (Picked ${tableName}Row ${tableName}Selector)`,
             `${tableName}#addProps :: ${tableName} ~> [a] -> ${tableName}`,
             `${tableName}#equals   :: ${tableName} ~> ${tableName} -> Boolean`,
             `${tableName}#toString :: ${tableName} ~> () -> String`,

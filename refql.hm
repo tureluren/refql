@@ -102,9 +102,33 @@ makeTable :: (a, String, [b]) -> Table c
 // (output) are left free for the call site to instantiate.
 Table :: [a] -> RQLTag p o
 
-Table#insert   :: Table p ~> [a] -> RQLTag q b
-Table#update   :: Table p ~> [a] -> RQLTag q b
-Table#delete   :: Table p ~> [a] -> RQLTag q b
+// A VALUE of type `Table r` is callable with selectors, like the generated
+// per-table overloads (`Teams ([...])`).  Lets generic code that receives a
+// table as a parameter (e.g. a CRUD helper `Repo :: Table r -> …`) build
+// queries on it; the result keeps the table's row type `r`.
+Table() :: [a] -> RQLTag p r
+
+// The row type `r` of the table flows into the tags its methods build.  A
+// destructured table value (`const { Teams } = tables.core`) is a union of
+// three faces; method calls resolve through its `Table TeamsRow` face, so
+// these generic methods — not the per-table shadows in the generated
+// client — decide the row type of `Teams.insert ([…])` and friends.
+Table#insert   :: Table r ~> [a] -> RQLTag p r
+Table#update   :: Table r ~> [a] -> RQLTag p r
+Table#delete   :: Table r ~> [a] -> RQLTag p r
+
+// `one`: at most one row.  RefQL throws when a required one (the default)
+// finds nothing and yields null for `one (…, false)`; hm-js has no
+// overloads on a Boolean literal, so the result is `o | Null` for both.
+// Nested inside another table's selectors it becomes a single-valued
+// relation (hm-js reads the cardinality off `RQLOne()`).
+Table#one      :: Table r ~> ([s], Boolean | Undefined) -> RQLOne p (Picked r s)
+// `required`: like a plain selection, but nested it keeps only parents that
+// have a matching related row.
+Table#required :: Table r ~> [s] -> RQLTag p (Picked r s)
+// `exists`: a Boolean at the root; nested a filter that adds no field (the
+// row slot only threads the selectors' params, `RQLExists()` ignores it).
+Table#exists   :: Table r ~> [s] -> RQLExists p (Picked r s)
 Table#addProps :: Table p ~> [a] -> Table p
 Table#equals   :: Table p ~> Table q -> Boolean
 Table#toString :: Table p ~> () -> String
@@ -137,6 +161,20 @@ RQLTag :: (a, b) -> RQLTag a b
 RQLTag() :: p -> Promise e [o]
 
 // Methods on the tag (chainable / introspection).
+RQLTag#isOne      :: Boolean
+RQLTag#isRequired :: Boolean
+RQLTag#isExists   :: Boolean
+
+// Single-row and existence queries (`Table#one`, `Table#exists`).  Same
+// params/row convention as `RQLTag p o`; only the call result differs.
+RQLOne :: (a, b) -> RQLOne a b
+RQLOne() :: p -> Promise e (o | Null)
+RQLOne#run :: RQLOne p o ~> (p, a) -> Promise e (o | Null)
+
+RQLExists :: (a, b) -> RQLExists a b
+RQLExists() :: p -> Promise e Boolean
+RQLExists#run :: RQLExists p o ~> (p, a) -> Promise e Boolean
+
 RQLTag#concat    :: RQLTag p1 r1 ~> RQLTag p2 r2 -> RQLTag (Merge p1 p2) (Merge r1 r2)
 RQLTag#run       :: RQLTag p o ~> (p, a) -> Promise e [o]
 RQLTag#compile   :: RQLTag p o ~> p -> (String, [a], [b])
