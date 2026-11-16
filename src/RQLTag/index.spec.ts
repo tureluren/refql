@@ -1442,6 +1442,14 @@ describe ("RQLTag type", () => {
     await expect (optionalTeam ({})).resolves.toBe (null);
   });
 
+  test ("one returns null for no row when throwOnEmptyOne is false", async () => {
+    const { tables: lenientTables } = RefQL ({ querier, throwOnEmptyOne: false });
+    const { Team: LenientTeam } = lenientTables.public;
+    const team = LenientTeam.one (["id", LenientTeam.props.id.eq (-1)]);
+
+    await expect (team ({})).resolves.toBe (null);
+  });
+
   test ("one(false) returns the latest goal of a game or null", async () => {
     const [scoredGoal] = await Goal (["gameId", Limit (1)]) ({});
 

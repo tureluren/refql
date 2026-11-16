@@ -8,4 +8,12 @@ describe ("withDefaultOptions", () => {
   test ("indexedParameters: false is preserved", () => {
     expect (withDefaultOptions ({ indexedParameters: false }).indexedParameters).toBe (false);
   });
+
+  test ("throwOnEmptyOne defaults to true", () => {
+    expect (withDefaultOptions ({}).throwOnEmptyOne).toBe (true);
+  });
+
+  test ("throwOnEmptyOne: false is preserved", () => {
+    expect (withDefaultOptions ({ throwOnEmptyOne: false }).throwOnEmptyOne).toBe (false);
+  });
 });

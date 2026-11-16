@@ -346,7 +346,7 @@ async function run(this: RQLTag, params: StringMap, querier?: Querier): Promise<
   const rows = await this.runRows (params, querier);
   if (!this.isOne) return rows;
   if (rows.length > 0) return rows[0];
-  if (!this.isRequired) return null;
+  if (!this.isRequired || !this.options.throwOnEmptyOne) return null;
 
   throw new Error (`Required one query returned no ${this.table.name} row`);
 }
