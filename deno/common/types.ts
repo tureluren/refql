@@ -332,6 +332,7 @@ export interface RefQLOptions {
   runner?: Runner;
   parameterSign?: string;
   indexedParameters?: boolean;
+  throwOnEmptyOne?: boolean;
   casing?: Casing;
   schemas?: string[];
 }
