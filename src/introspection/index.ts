@@ -42,6 +42,44 @@ function getRelationKey(tableName: string, lRef: string[], alias?: string): stri
   return prefix ? `${prefix}_${table}` : table;
 }
 
+/**
+ * Name of a table's row type in the hm-js sidecar: the singular of the
+ * table name (`SourceFixtures` → `SourceFixture`, `Teams` → `Team`), so
+ * consumers can write signatures like `RTask r Error [SourceFixture]`.
+ * When the singular equals the table name (`Player` for a table `player`)
+ * it would collide with the table value's own declaration (`Player :: Table
+ * …` — hm-js merges repeated top-level names into overloads), so it falls
+ * back to `${rowName}`.
+ */
+export function rowTypeName(tableName: string, reserved: ReadonlySet<string> = new Set ()): string {
+  const singular = pluralize.singular (tableName);
+  const usable = singular !== tableName && /^[A-Z]/.test (singular) && !reserved.has (singular);
+  return usable ? singular : `${tableName}Row`;
+}
+
+// Type names a row type may not take: everything refql.hm declares (read
+// from the package so it stays in sync; the list is the fallback) and the
+// names the generated sidecar emits itself.
+const REFQL_HM_FALLBACK = [
+  "RefQL", "Table", "RQLTag", "RQLOne", "RQLExists", "SQLTag", "Prop", "Source", "Selector",
+  "GenericSelector", "Tables", "Limit", "Offset", "Eq", "IsNull", "RefField", "RefNode", "Raw",
+  "Value", "Values", "Values2D", "BooleanProp", "NumberProp", "StringProp", "DateProp", "SQLProp",
+  "RefProp", "PropType", "BelongsTo", "BelongsToMany", "HasOne", "HasMany", "Picked", "Merge"
+];
+
+function refqlHmNames(): string[] {
+  try {
+    const source = fs.readFileSync (path.resolve (__dirname, "../../refql.hm"), "utf-8");
+    const names = new Set<string> (REFQL_HM_FALLBACK);
+    // `Name :: …` / `Name() :: …` declarations and `::constraint Name v { … }`.
+    for (const m of source.matchAll (/^([A-Z][A-Za-z0-9_]*)(?:\(\))?\s*::/gm)) names.add (m[1]);
+    for (const m of source.matchAll (/^::constraint\s+([A-Z][A-Za-z0-9_]*)\b/gm)) names.add (m[1]);
+    return [...names];
+  } catch {
+    return REFQL_HM_FALLBACK;
+  }
+}
+
 function refsAsString(refs: string[]): string {
   return `[${'"' + refs.join ('", "') + '"'}]`;
 }
@@ -153,6 +191,16 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
   const schemaNames = Object.keys (schemas)
     .filter (schema => options.schemas.length === 0 || options.schemas.includes (schema));
 
+  // Names a row type may not take (see `rowTypeName`): refql.hm's own names,
+  // every table value and the per-table `Tag`/`Selector` aliases.
+  const tableNames = schemaNames.flatMap (schema => schemas[schema].map (t => toPascalCase (t.table_name)));
+  const reserved = new Set<string> ([
+    ...refqlHmNames (),
+    ...tableNames,
+    ...tableNames.flatMap (t => [`${t}Tag`, `${t}Selector`])
+  ]);
+  const rowOf = (tableName: string) => rowTypeName (tableName, reserved);
+
   const schemaMap = await Promise.all (
     schemaNames.map (async schema => {
       const tables = schemas[schema];
@@ -160,6 +208,7 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
 
         tables.map (async ({ table_name: table, table_schema }) => {
           const tableName = toPascalCase (table);
+          const rowName = rowOf (tableName);
           const tableId = `"${table_schema}.${table}"`;
           const columns = await getColumns (sql, table);
           const foreignKeys = relationships.filter (rel => rel.table_name === table);
@@ -218,23 +267,23 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
 
             if (fk.unique) {
               const propertyName = toCamelCase (fk.table_name);
-              const childRow = `${toPascalCase (fk.table_name)}Row`;
+              const childRow = rowOf (toPascalCase (fk.table_name));
               props[propertyName] = [
                 `(0, HasOne_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })`,
                 `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasOne", true>;`,
                 `${propertyName} :: a`
               ];
-              rowShadows.push (`${tableName}Row#${propertyName} :: ${childRow}`);
+              rowShadows.push (`${rowName}#${propertyName} :: ${childRow}`);
 
             } else {
               const propertyName = pluralize (toCamelCase (fk.table_name));
-              const childRow = `${toPascalCase (fk.table_name)}Row`;
+              const childRow = rowOf (toPascalCase (fk.table_name));
               props[propertyName] = [
                 `(0, HasMany_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })`,
                 `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasMany", false>;`,
                 `${propertyName} :: a`
               ];
-              rowShadows.push (`${tableName}Row#${propertyName} :: [${childRow}]`);
+              rowShadows.push (`${rowName}#${propertyName} :: [${childRow}]`);
             }
           }
 
@@ -256,8 +305,8 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
               `${propertyName}: RefProp<"${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", "BelongsTo", ${nullable ? "true" : "false"}>;`,
               `${propertyName} :: a`
             ];
-            const childRowBT = `${toPascalCase (fk.foreign_table_name)}Row`;
-            rowShadows.push (`${tableName}Row#${propertyName} :: ${childRowBT}`);
+            const childRowBT = rowOf (toPascalCase (fk.foreign_table_name));
+            rowShadows.push (`${rowName}#${propertyName} :: ${childRowBT}`);
           }
 
           for (const fk of intermediateForeignKeys) {
@@ -276,8 +325,8 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
               `${propertyName}: RefProp<"${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", "BelongsToMany", false>;`,
               `${propertyName} :: a`
             ];
-            const childRowBTM = `${toPascalCase (rRel.foreign_table_name)}Row`;
-            rowShadows.push (`${tableName}Row#${propertyName} :: [${childRowBTM}]`);
+            const childRowBTM = rowOf (toPascalCase (rRel.foreign_table_name));
+            rowShadows.push (`${rowName}#${propertyName} :: [${childRowBTM}]`);
           }
 
           const interfaceProperties = Object.values (sortObject (props)) as string[][];
@@ -295,7 +344,8 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
             // Skip relation rows already typed as a bare type variable
             // (HasOne / HasMany / BelongsTo / BelongsToMany emit `:: a`).
             if (/^[a-z]$/.test (rhs.trim ())) return line;
-            return `${indent}${name} :: Prop ${tableName}Tag ${rhs} p`;
+            const valueType = rhs.includes ("|") ? `(${rhs.trim ()})` : rhs;
+            return `${indent}${name} :: Prop ${tableName}Tag ${valueType} p`;
           });
           const propsMethodRecord = propsHmListWithPropPrefix.length === 0
             ? "{}"
@@ -304,8 +354,8 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
           // Used as the row type of `RQLTag <Table>Row` and as the input
           // type for higher-level wrappers like a Repo abstraction.
           const rowAlias = colsHm.length === 0
-            ? `${tableName}Row :: {}`
-            : `${tableName}Row :: {\n  ${colsHm.map (c => `${c.name} :: ${c.hm}`).join (",\n  ")}\n}`;
+            ? `${rowName} :: {}`
+            : `${rowName} :: {\n  ${colsHm.map (c => `${c.name} :: ${c.hm}`).join (",\n  ")}\n}`;
 
           // Per-table Selector union: column-name string literals plus the
           // generic Selector branches.  Drives validation of `Foo([...])`.
@@ -320,7 +370,7 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
           // source of truth stays the FK metadata gathered above.
           const relPairs = new Map<string, boolean> (); // childRow -> isList (HasMany/BelongsToMany)
           for (const line of rowShadows) {
-            const m = line.match (/::\s*(\[)?\s*([A-Za-z0-9_$]+Row)\s*\]?\s*$/);
+            const m = line.match (/::\s*(\[)?\s*([A-Za-z0-9_$]+)\s*\]?\s*$/);
             if (!m) continue;
             const isList = !!m[1];
             const child = m[2];
@@ -369,24 +419,24 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
             // `${tableName}` value is a bare TCon; the two overloads make
             // it both addressable (hover/sigHelp constructor-callable
             // bridge) and callable as `Tab([selectors])`.
-            `${tableName} :: Table ${tableName}Row`,
+            `${tableName} :: Table ${rowName}`,
             // Calling the table with a list of selectors yields an RQLTag
             // whose row is the structural projection of the selectors
-            // against `${tableName}Row` — driven by hm-js's `Picked`
+            // against `${rowName}` — driven by hm-js's `Picked`
             // primitive.  The leading `p` slot is the params type of the
             // produced RQLTag — SHARED with the selector union so that
             // every callback passed to a selector contributes its
             // accessed fields to one merged params record on the tag.
-            `${tableName} :: [${tableName}Selector p] -> RQLTag p (Picked ${tableName}Row ${tableName}Selector)`,
+            `${tableName} :: [${tableName}Selector p] -> RQLTag p (Picked ${rowName} ${tableName}Selector)`,
             // Method shadows mirror `refql.hm`'s `Table#...` registry but
             // pinned to this table's TCon so chains type-check on the
             // concrete table value.
-            `${tableName}#insert   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${tableName}Row`,
-            `${tableName}#update   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${tableName}Row`,
-            `${tableName}#delete   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${tableName}Row`,
-            `${tableName}#one      :: ${tableName} ~> ([${tableName}Selector p], Boolean | Undefined) -> RQLOne p (Picked ${tableName}Row ${tableName}Selector)`,
-            `${tableName}#required :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p (Picked ${tableName}Row ${tableName}Selector)`,
-            `${tableName}#exists   :: ${tableName} ~> [${tableName}Selector p] -> RQLExists p (Picked ${tableName}Row ${tableName}Selector)`,
+            `${tableName}#insert   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${rowName}`,
+            `${tableName}#update   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${rowName}`,
+            `${tableName}#delete   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${rowName}`,
+            `${tableName}#one      :: ${tableName} ~> ([${tableName}Selector p], Boolean | Undefined) -> RQLOne p (Picked ${rowName} ${tableName}Selector)`,
+            `${tableName}#required :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p (Picked ${rowName} ${tableName}Selector)`,
+            `${tableName}#exists   :: ${tableName} ~> [${tableName}Selector p] -> RQLExists p (Picked ${rowName} ${tableName}Selector)`,
             `${tableName}#addProps :: ${tableName} ~> [a] -> ${tableName}`,
             `${tableName}#equals   :: ${tableName} ~> ${tableName} -> Boolean`,
             `${tableName}#toString :: ${tableName} ~> () -> String`,
@@ -411,11 +461,11 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
             // destructured value (`const { Organisation } =
             // tables.organisation`) supports:
             //   1. `Organisation.props` — typed record arm.
-            //   2. `Repo(Organisation)` — `Table ${tableName}Row` arm.
+            //   2. `Repo(Organisation)` — `Table ${rowName}` arm.
             //   3. `Organisation([selectors])` — callable arm with
             //      `Picked Row Selector` so hm-js's call-site projection
             //      narrows the result to the actually-selected columns.
-            `    ${tableName} :: ({ props :: ${propsMethodRecord} } | Table ${tableName}Row | ([${tableName}Selector p] -> RQLTag p (Picked ${tableName}Row ${tableName}Selector)))`,
+            `    ${tableName} :: ({ props :: ${propsMethodRecord} } | Table ${rowName} | ([${tableName}Selector p] -> RQLTag p (Picked ${rowName} ${tableName}Selector)))`,
             tableTopLevel
           ];
         }));
@@ -459,12 +509,27 @@ export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptio
 function mapPostgresTypeToPropType(pgType: string, nullable: boolean): string[] {
   const mapTo = () => {
     switch (pgType) {
+      case "smallint":
       case "integer":
       case "bigint":
+      case "real":
+      case "double precision":
+      // pg returns `numeric`/`decimal` (and `bigint`) as strings unless the
+      // consumer installs a type parser; RefQL types them as numbers, as it
+      // already did for `bigint`.
+      case "numeric":
+      case "decimal":
         return ["(0, NumberProp_1.default)", "number", "Number"];
       case "text":
       case "varchar":
       case "character varying":
+      case "character":
+      case "char":
+      case "uuid":
+      case "citext":
+      case "time without time zone":
+      case "time with time zone":
+      case "interval":
         return ["(0, StringProp_1.default)", "string", "String"];
       case "boolean":
         return ["(0, BooleanProp_1.default)", "boolean", "Boolean"];
@@ -472,14 +537,20 @@ function mapPostgresTypeToPropType(pgType: string, nullable: boolean): string[] 
       case "timestamp with time zone":
       case "date":
         return ["(0, DateProp_1.default)", "Date", "Date"];
+      case "json":
+      case "jsonb":
+        return ["(0, Prop_1.default)", "any", "Any"];
       default:
         return ["(0, Prop_1.default)", "any", "a"];
     }
   };
 
   const mapped = mapTo ();
+  // A nullable column may hold null: `X | Null` in the hm-js row (not for
+  // the untyped fallback `a` or `Any`, which already admit it).
+  const hm = nullable && /^[A-Z]/.test (mapped[2]) && mapped[2] !== "Any" ? `${mapped[2]} | Null` : mapped[2];
 
-  return [mapped[0], nullable ? `${mapped[1]} | null` : mapped[1], mapped[2]];
+  return [mapped[0], nullable ? `${mapped[1]} | null` : mapped[1], hm];
 }
 
 async function introspect(sql: typeof sqlX, options: RequiredRefQLOptions) {
