@@ -1,0 +1,580 @@
+import fs from "fs-extra.ts";
+import path from "path.ts";
+import pluralize from "pluralize.ts";
+import { sqlX } from "../SQLTag/sql.ts";
+import { toCamelCase, toPascalCase, toSnakeCase } from "../common/casing.ts";
+import sortObject from "../common/sortObj.ts";
+import { RequiredRefQLOptions } from "../common/types.ts";
+import { getColumns, getRelationships, getTables } from "./queries.ts";
+
+/**
+ * Generates a relation key name based on foreign key columns and related table name.
+ * If an alias is provided, it is used directly as the relation key.
+ *
+ * @param tableName - Name of the related table (e.g. 'Team')
+ * @param lRef - Array of foreign key column names (e.g. ['home_team_id'])
+ * @param alias - Optional manual alias to override inference (e.g. 'home_team')
+ * @returns A string to use as the property name for the related object (e.g. 'home_team')
+ */
+function getRelationKey(tableName: string, lRef: string[], alias?: string): string {
+  if (alias) {
+    return alias;
+  }
+
+  // to snake case and lower case to make it db casing independent
+  const table = toSnakeCase (tableName).toLowerCase ();
+  const normalizedLRefs = lRef.map (col => toSnakeCase (col).toLowerCase ());
+
+  // Find columns that contain the table name
+  const matchCols = normalizedLRefs.filter (col => col.includes (table));
+
+  if (matchCols.length === 0) {
+    // No column hints — just use the table name
+    return table;
+  }
+
+  // Use the first matched column to extract a prefix
+  const first = matchCols[0];
+
+  // Strip off _<table>_id or <table>_id suffix
+  const prefix = first.replace (new RegExp (`${table}(_)?id$`), "").replace (/_+$/, "");
+
+  return prefix ? `${prefix}_${table}` : table;
+}
+
+/**
+ * Name of a table's row type in the hm-js sidecar: the singular of the
+ * table name (`SourceFixtures` → `SourceFixture`, `Teams` → `Team`), so
+ * consumers can write signatures like `RTask r Error [SourceFixture]`.
+ * When the singular equals the table name (`Player` for a table `player`)
+ * it would collide with the table value's own declaration (`Player :: Table
+ * …` — hm-js merges repeated top-level names into overloads), so it falls
+ * back to `${rowName}`.
+ */
+export function rowTypeName(tableName: string, reserved: ReadonlySet<string> = new Set ()): string {
+  const singular = pluralize.singular (tableName);
+  const usable = singular !== tableName && /^[A-Z]/.test (singular) && !reserved.has (singular);
+  return usable ? singular : `${tableName}Row`;
+}
+
+// Type names a row type may not take: everything refql.hm declares (read
+// from the package so it stays in sync; the list is the fallback) and the
+// names the generated sidecar emits itself.
+const REFQL_HM_FALLBACK = [
+  "RefQL", "Table", "RQLTag", "RQLOne", "RQLExists", "SQLTag", "Prop", "Source", "Selector",
+  "GenericSelector", "Tables", "Limit", "Offset", "Eq", "IsNull", "RefField", "RefNode", "Raw",
+  "Value", "Values", "Values2D", "BooleanProp", "NumberProp", "StringProp", "DateProp", "SQLProp",
+  "RefProp", "PropType", "BelongsTo", "BelongsToMany", "HasOne", "HasMany", "Picked", "Merge"
+];
+
+function refqlHmNames(): string[] {
+  try {
+    const source = fs.readFileSync (path.resolve (__dirname, "../../refql.hm"), "utf-8");
+    const names = new Set<string> (REFQL_HM_FALLBACK);
+    // `Name :: …` / `Name() :: …` declarations and `::constraint Name v { … }`.
+    for (const m of source.matchAll (/^([A-Z][A-Za-z0-9_]*)(?:\(\))?\s*::/gm)) names.add (m[1]);
+    for (const m of source.matchAll (/^::constraint\s+([A-Z][A-Za-z0-9_]*)\b/gm)) names.add (m[1]);
+    return [...names];
+  } catch {
+    return REFQL_HM_FALLBACK;
+  }
+}
+
+function refsAsString(refs: string[]): string {
+  return `[${'"' + refs.join ('", "') + '"'}]`;
+}
+
+/** Drop duplicate `Row#name :: ...` shadow lines, keeping the first
+ *  occurrence per relation key.  Multiple FKs (e.g. a forward + a
+ *  reversed FK) can camelCase to the same property name; the props
+ *  record itself overwrites silently in that case, so we mirror the
+ *  same first-wins behaviour for the shadow declarations. */
+function dedupeShadows(lines: string[]): string[] {
+  const seen = new Set<string> ();
+  const out: string[] = [];
+  for (const line of lines) {
+    const m = line.match (/#([A-Za-z0-9_$]+)\s*::/);
+    const key = m ? m[1] : line;
+    if (seen.has (key)) continue;
+    seen.add (key);
+    out.push (line);
+  }
+  return out;
+}
+
+const inRefqlEnv = process.env.NODE_ENV === "refql";
+const prepath = inRefqlEnv ? "../.." : "refql/build";
+const outputDir = inRefqlEnv ? "./src/generated/client" : path.resolve (process.cwd (), "node_modules/.refql/client");
+
+const headerJs = [
+  `"use strict";`,
+  `var __importDefault = (this && this.__importDefault) || function (mod) {`,
+  `  return (mod && mod.__esModule) ? mod : { default: mod };`,
+  `};`,
+  `Object.defineProperty (exports, "__esModule", { value: true });`,
+  `exports.getTables = void 0;`,
+  `const Prop_1 = __importDefault (require ("${prepath}/Prop"));`,
+  `const BelongsTo_1 = __importDefault (require ("${prepath}/Prop/BelongsTo"));`,
+  `const BelongsToMany_1 = __importDefault (require ("${prepath}/Prop/BelongsToMany"));`,
+  `const BooleanProp_1 = __importDefault (require ("${prepath}/Prop/BooleanProp"));`,
+  `const DateProp_1 = __importDefault (require ("${prepath}/Prop/DateProp"));`,
+  `const HasMany_1 = __importDefault (require ("${prepath}/Prop/HasMany"));`,
+  `const HasOne_1 = __importDefault (require ("${prepath}/Prop/HasOne"));`,
+  `const NumberProp_1 = __importDefault (require ("${prepath}/Prop/NumberProp"));`,
+  `const StringProp_1 = __importDefault (require ("${prepath}/Prop/StringProp"));`,
+  "",
+  "const getTables = Table => {",
+  "  return {\n"
+];
+
+
+const headerTs = [
+  `import { PropMap } from "${prepath}/common/types.ts";`,
+  `import Prop from "${prepath}/Prop/index.ts";`,
+  `import PropType from "${prepath}/Prop/PropType.ts";`,
+  `import RefProp from "${prepath}/Prop/RefProp.ts";`,
+  `import { Table } from "${prepath}/Table/index.ts";`,
+  "export declare const getTables: (Table: <TableId extends string, Props extends PropType<any>[]>(name: TableId, props: Props) => Table<TableId, PropMap<TableId, Props>>) => {\n"
+];
+
+// hm-js annotation header — emitted into `<.refql>/client/index.hm` so that
+// hm-js automatically extends the base `refql.hm` sidecar with the
+// project-specific `Tables` schema.  Both files are listed in this
+// package's `package.json` `hinmil.sidecars` array; hm-js merges them in
+// order (later entries override earlier ones), so the polymorphic
+// placeholder `Tables :: a` declared in `refql.hm` is replaced by the
+// concrete record below as soon as the consumer runs `introspect()`.
+const headerHm = [
+  "// AUTO-GENERATED by refql introspect.  Do not edit by hand.",
+  "// Regenerate by re-running your project's `introspect()` call.",
+  "",
+  "// Pull in refql's own sidecar so peer type constructors used below",
+  "// (`Prop`, `RQLTag`, `SQLTag`, `Table`, `Limit`, `Offset`, `Picked`,",
+  "// `GenericSelector`, …) resolve when this file is opened directly",
+  "// in an editor for diagnostics/hover.  At consume time the sidecars",
+  "// are already merged via `package.json#hinmil.sidecars`.",
+  "::types refql",
+  "",
+  "// A 'selector' is anything that can appear inside `Table([...])` to",
+  "// build a query: a column-name string, a Prop (id, name, …), a sub-query",
+  "// Table or RQLTag, an SQL fragment, or paging helpers like Limit / Offset.",
+  "// The shared `p` threads every selector callback's params record into",
+  "// the produced tag's input type.",
+  "Selector :: (String | Prop t a p | RQLTag p o | RQLOne p o | RQLExists p o | Table b | Limit p | Offset p | SQLTag p o)",
+  "",
+  "// `Tables` is the type of the `tables` field returned by `RefQL(...)`.",
+  "// `refql/refql.hm` declares it polymorphically as `Tables :: a`; this",
+  "// concrete definition overrides that placeholder via multi-sidecar merge.",
+  "Tables :: {"
+];
+
+const footerHm = [
+  "}",
+  ""
+];
+
+const footerJs = [
+  "\n  };",
+  "};",
+  "",
+  "exports.getTables = getTables;"
+];
+
+export async function introspectPG(sql: typeof sqlX, options: RequiredRefQLOptions) {
+  let outputJs = headerJs.join ("\n");
+  let outputTs = headerTs.join ("\n");
+
+  const schemas = await getTables (sql);
+
+  const relationships = await getRelationships (sql);
+
+  const schemaNames = Object.keys (schemas)
+    .filter (schema => options.schemas.length === 0 || options.schemas.includes (schema));
+
+  // Names a row type may not take (see `rowTypeName`): refql.hm's own names,
+  // every table value and the per-table `Tag`/`Selector` aliases.
+  const tableNames = schemaNames.flatMap (schema => schemas[schema].map (t => toPascalCase (t.table_name)));
+  const reserved = new Set<string> ([
+    ...refqlHmNames (),
+    ...tableNames,
+    ...tableNames.flatMap (t => [`${t}Tag`, `${t}Selector`])
+  ]);
+  const rowOf = (tableName: string) => rowTypeName (tableName, reserved);
+
+  const schemaMap = await Promise.all (
+    schemaNames.map (async schema => {
+      const tables = schemas[schema];
+      const interfacesNew = await Promise.all (
+
+        tables.map (async ({ table_name: table, table_schema }) => {
+          const tableName = toPascalCase (table);
+          const rowName = rowOf (tableName);
+          const tableId = `"${table_schema}.${table}"`;
+          const columns = await getColumns (sql, table);
+          const foreignKeys = relationships.filter (rel => rel.table_name === table);
+          const reversedForeignKeys = relationships.filter (rel => rel.foreign_table_name === table);
+
+          const intermediateForeignKeys = relationships
+            .filter (rel => {
+              const table1 = options.toCase (`${table}_${rel.foreign_table_name}`);
+              const table2 = options.toCase (`${rel.foreign_table_name}_${table}`);
+              return rel.table_name === table1 || rel.table_name === table2;
+            })
+            .map (rRel => {
+              const lRel = relationships.find (rel => rel.table_name === rRel.table_name && rel.foreign_table_name === table);
+              return [lRel, rRel];
+            });
+
+          const props: {[propertyName: string]: string[]} = {};
+
+          // Track plain data columns separately so we can emit a per-table
+          // Row alias (raw shape, no relations) and a per-table Selector
+          // union containing the column-name string literals.  The latter
+          // makes `Foo(["id", "name"])` validate that selectors actually
+          // exist on the table and rejects typos like `"naame"`.
+          const colsHm: { name: string; hm: string }[] = [];
+
+          // Per-table relation shadows on the *Row* alias.  These are
+          // consumed by hm-js's `Picked` projection (`infer/calls.ts`)
+          // to resolve nested-call selectors like `Org([Loc([...])])`
+          // into the correct relation key + child row type, instead of
+          // emitting per-table selector unions enumerating every
+          // related row.
+          const rowShadows: string[] = [];
+
+          for (const col of columns) {
+            const propertyName = toCamelCase (col.column_name);
+            const nullable = col.is_nullable === "YES";
+            const hasDefault = col.column_default != null;
+
+            const [propTypeJs, propTypeTs, propTypeHm] = mapPostgresTypeToPropType (col.data_type, nullable);
+
+            props[propertyName] = [
+              `${propTypeJs} ("${propertyName}", "${col.column_name}")${hasDefault ? `.hasDefault ()` : nullable ? `.nullable ()` : ""}`,
+              `${propertyName}: Prop<${tableId}, "${propertyName}", ${propTypeTs}, {}, false, ${hasDefault ? "true" : "false"}, false>;`,
+              `${propertyName} :: ${propTypeHm}`
+            ];
+            colsHm.push ({ name: propertyName, hm: propTypeHm });
+          }
+
+
+          for (const fk of reversedForeignKeys) {
+            if (table === "user") {
+              // console.log (fk);
+            }
+            const lRef = fk.foreign_column_names;
+            const rRef = fk.column_names;
+
+            if (fk.unique) {
+              const propertyName = toCamelCase (fk.table_name);
+              const childRow = rowOf (toPascalCase (fk.table_name));
+              props[propertyName] = [
+                `(0, HasOne_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })`,
+                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasOne", true>;`,
+                `${propertyName} :: a`
+              ];
+              rowShadows.push (`${rowName}#${propertyName} :: ${childRow}`);
+
+            } else {
+              const propertyName = pluralize (toCamelCase (fk.table_name));
+              const childRow = rowOf (toPascalCase (fk.table_name));
+              props[propertyName] = [
+                `(0, HasMany_1.default) ("${propertyName}", "${fk.table_schema}.${fk.table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })`,
+                `${propertyName}: RefProp<"${propertyName}", "${fk.table_schema}.${fk.table_name}", "HasMany", false>;`,
+                `${propertyName} :: a`
+              ];
+              rowShadows.push (`${rowName}#${propertyName} :: [${childRow}]`);
+            }
+          }
+
+          // after reversedKeys to overwrite possible false HasOne's
+          for (const fk of foreignKeys) {
+            const lRef = fk.column_names;
+            const rRef = fk.foreign_column_names;
+
+            const propertyName = toCamelCase (getRelationKey (fk.foreign_table_name, lRef));
+
+            const cols = columns.filter (c => lRef.includes (c.column_name));
+
+            if (cols.length === 0) continue;
+
+            const nullable = cols.reduce ((acc, col) => acc || col.is_nullable === "YES", false) ;
+
+            props[propertyName] = [
+              `(0, BelongsTo_1.default) ("${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", { lRef: ${refsAsString (lRef)}, rRef: ${refsAsString (rRef)} })${nullable ? `.nullable ()` : ""}`,
+              `${propertyName}: RefProp<"${propertyName}", "${fk.foreign_table_schema}.${fk.foreign_table_name}", "BelongsTo", ${nullable ? "true" : "false"}>;`,
+              `${propertyName} :: a`
+            ];
+            const childRowBT = rowOf (toPascalCase (fk.foreign_table_name));
+            rowShadows.push (`${rowName}#${propertyName} :: ${childRowBT}`);
+          }
+
+          for (const fk of intermediateForeignKeys) {
+            const [lRel, rRel] = fk;
+            if (!lRel || !rRel) continue;
+            const lRef = lRel.foreign_column_names;
+            const lxRef = lRel.column_names;
+            const xTable = `${lRel.table_schema}.${lRel.table_name}`;
+            const rxRef = rRel.column_names;
+            const rRef = rRel.foreign_column_names;
+
+            const propertyName = pluralize (toCamelCase (rRel.foreign_table_name));
+
+            props[propertyName] = [
+              `(0, BelongsToMany_1.default) ("${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", { lRef: ${refsAsString (lRef)}, lxRef: ${refsAsString (lxRef)}, xTable: "${xTable}", rxRef: ${refsAsString (rxRef)}, rRef: ${refsAsString (rRef)} })`,
+              `${propertyName}: RefProp<"${propertyName}", "${rRel.foreign_table_schema}.${rRel.foreign_table_name}", "BelongsToMany", false>;`,
+              `${propertyName} :: a`
+            ];
+            const childRowBTM = rowOf (toPascalCase (rRel.foreign_table_name));
+            rowShadows.push (`${rowName}#${propertyName} :: [${childRowBTM}]`);
+          }
+
+          const interfaceProperties = Object.values (sortObject (props)) as string[][];
+
+          const propsHmList = interfaceProperties.map (([, , hm]) => hm).filter (Boolean);
+          // For the `.props` accessor each column is a refql `Prop X`
+          // (so `id.eq(...)`, `name.iLike(...)` etc. resolve via the
+          // `Prop#...` method registry).  Wrap each non-relation field
+          // (`name :: Number`) in `Prop`; relations (`name :: a`) stay
+          // unchanged.
+          const propsHmListWithPropPrefix = propsHmList.map (line => {
+            const m = line.match (/^(\s*)([A-Za-z0-9_$]+)\s*::\s*(.+)$/);
+            if (!m) return line;
+            const [, indent, name, rhs] = m;
+            // Skip relation rows already typed as a bare type variable
+            // (HasOne / HasMany / BelongsTo / BelongsToMany emit `:: a`).
+            if (/^[a-z]$/.test (rhs.trim ())) return line;
+            const valueType = rhs.includes ("|") ? `(${rhs.trim ()})` : rhs;
+            return `${indent}${name} :: Prop ${tableName}Tag ${valueType} p`;
+          });
+          const propsMethodRecord = propsHmListWithPropPrefix.length === 0
+            ? "{}"
+            : `{\n  ${propsHmListWithPropPrefix.join (",\n  ")}\n}`;
+          // Per-table Row alias: the raw column shape (no relations).
+          // Used as the row type of `RQLTag <Table>Row` and as the input
+          // type for higher-level wrappers like a Repo abstraction.
+          const rowAlias = colsHm.length === 0
+            ? `${rowName} :: {}`
+            : `${rowName} :: {\n  ${colsHm.map (c => `${c.name} :: ${c.hm}`).join (",\n  ")}\n}`;
+
+          // Per-table Selector union: column-name string literals plus the
+          // generic Selector branches.  Drives validation of `Foo([...])`.
+          //
+          // Nested-call relations (`Org([Loc([...])])`) are resolved by
+          // hm-js's `Picked` projection via the `Row#rel` method-shadows
+          // emitted alongside this row alias.
+          const colLiterals = colsHm.map (c => `'${c.name}'`).join (" | ");
+          // Per-relation selector branches: one pair of branches per
+          // *actual* relation on this row, recovered from `rowShadows`
+          // (the same data that drives the `Picked` projection), so the
+          // source of truth stays the FK metadata gathered above.
+          const relPairs = new Map<string, boolean> (); // childRow -> isList (HasMany/BelongsToMany)
+          for (const line of rowShadows) {
+            const m = line.match (/::\s*(\[)?\s*([A-Za-z0-9_$]+)\s*\]?\s*$/);
+            if (!m) continue;
+            const isList = !!m[1];
+            const child = m[2];
+            // If both list and single forms exist for the same child
+            // (rare cross-FK collision), prefer the list form — it's
+            // strictly more permissive at the consumer's call site.
+            if (!relPairs.has (child) || isList) relPairs.set (child, isList);
+          }
+          // The inner `Picked` carries a free type-var (`a`) instead of
+          // the child's own Selector alias.  Referencing
+          // `${child}Selector` here would create a *cyclic* alias graph,
+          // and hm-js's per-call cycle guard in `expandAliases` only
+          // fires after `mapType` has already walked siblings — so deep,
+          // recursive unions blow up combinatorially and freeze the LSP.
+          // A free `a` is enough to discriminate factories.
+          const relBranches = [...relPairs.keys ()].sort ().map (child => {
+            return `Table ${child} | RQLTag p (Picked ${child} a) | RQLOne p (Picked ${child} a) | RQLExists p (Picked ${child} a)`;
+          }).join (" | ");
+          // Per-table selector union: base alias pointing at the generic
+          // branches (declared once in `refql.hm`) plus the table-specific
+          // branches (column-name literals + per-relation factories) via
+          // a `::extend` directive.  hm-js's `applyAliasExtensions`
+          // flattens base + extension into a single union at
+          // alias-expansion time.
+          //
+          // `GenericSelector p <Tag>` partially applies the alias: `p` is
+          // the LEADING free var of the generic body, so the per-table
+          // alias pins the shared params var — host annotations
+          // `[XSelector p] -> RQLTag p …` then thread it through.
+          const extensionParts = [colLiterals, relBranches].filter (Boolean).join (" | ");
+          const selectorAlias = extensionParts
+            ? [
+              `${tableName}Selector :: GenericSelector p ${tableName}Tag`,
+              `::extend ${tableName}Selector ${extensionParts}`
+            ].join ("\n")
+            : `${tableName}Selector :: GenericSelector p ${tableName}Tag`;
+          // Phantom table-tag: a nominal zero-arg constructor used as the
+          // first parameter of `Prop` for every column of this table.
+          // Prevents cross-table mixing of Prop values.
+          const tableTagDecl = `${tableName}Tag :: () -> ${tableName}Tag`;
+
+          const tableTopLevel = [
+            tableTagDecl,
+            rowAlias,
+            selectorAlias,
+            // `${tableName}` value is a bare TCon; the two overloads make
+            // it both addressable (hover/sigHelp constructor-callable
+            // bridge) and callable as `Tab([selectors])`.
+            `${tableName} :: Table ${rowName}`,
+            // Calling the table with a list of selectors yields an RQLTag
+            // whose row is the structural projection of the selectors
+            // against `${rowName}` — driven by hm-js's `Picked`
+            // primitive.  The leading `p` slot is the params type of the
+            // produced RQLTag — SHARED with the selector union so that
+            // every callback passed to a selector contributes its
+            // accessed fields to one merged params record on the tag.
+            `${tableName} :: [${tableName}Selector p] -> RQLTag p (Picked ${rowName} ${tableName}Selector)`,
+            // Method shadows mirror `refql.hm`'s `Table#...` registry but
+            // pinned to this table's TCon so chains type-check on the
+            // concrete table value.
+            `${tableName}#insert   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${rowName}`,
+            `${tableName}#update   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${rowName}`,
+            `${tableName}#delete   :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p ${rowName}`,
+            `${tableName}#one      :: ${tableName} ~> ([${tableName}Selector p], Boolean | Undefined) -> RQLOne p (Picked ${rowName} ${tableName}Selector)`,
+            `${tableName}#required :: ${tableName} ~> [${tableName}Selector p] -> RQLTag p (Picked ${rowName} ${tableName}Selector)`,
+            `${tableName}#exists   :: ${tableName} ~> [${tableName}Selector p] -> RQLExists p (Picked ${rowName} ${tableName}Selector)`,
+            `${tableName}#addProps :: ${tableName} ~> [a] -> ${tableName}`,
+            `${tableName}#equals   :: ${tableName} ~> ${tableName} -> Boolean`,
+            `${tableName}#toString :: ${tableName} ~> () -> String`,
+            `${tableName}#tableId  :: String`,
+            `${tableName}#name     :: String`,
+            `${tableName}#schema   :: String`,
+            // `.props` projects the table's column record with each
+            // column as a `Prop X` so destructured columns expose the
+            // `Prop#...` methods (`.eq`, `.iLike`, `.asc`, …).
+            `${tableName}#props    :: ${tableName} ~> ${propsMethodRecord}`,
+            // Per-relation method shadows on the *Row* alias.  Consumed
+            // by hm-js's `Picked` projection to resolve nested-call
+            // selectors like `Org([Loc([...])])`.  Dedupe by relation
+            // key name so collisions emit a single shadow.
+            ...dedupeShadows (rowShadows)
+          ].join ("\n");
+
+          return [
+            `      ${tableName}: Table (${tableId}, [\n        ${interfaceProperties.map (([js]) => js).join (",\n        ")}\n      ])`,
+            `    ${tableName}: Table<"${table_schema}.${table}", {\n      ${interfaceProperties.map (([_js, ts]) => ts).join ("\n      ")}\n    }>;`,
+            // Schema-record field carries three union arms so a
+            // destructured value (`const { Organisation } =
+            // tables.organisation`) supports:
+            //   1. `Organisation.props` — typed record arm.
+            //   2. `Repo(Organisation)` — `Table ${rowName}` arm.
+            //   3. `Organisation([selectors])` — callable arm with
+            //      `Picked Row Selector` so hm-js's call-site projection
+            //      narrows the result to the actually-selected columns.
+            `    ${tableName} :: ({ props :: ${propsMethodRecord} } | Table ${rowName} | ([${tableName}Selector p] -> RQLTag p (Picked ${rowName} ${tableName}Selector)))`,
+            tableTopLevel
+          ];
+        }));
+
+      const schemaContent = [
+        `    ${schema}: {\n${interfacesNew.map (([js]) => js).join (",\n")}\n    }`,
+        `  ${schema}: {\n${interfacesNew.map (([_js, ts]) => ts).join ("\n")}\n  };`,
+        `  ${schema} :: {\n${interfacesNew.map (([, , hm]) => hm).join (",\n")}\n  }`,
+        // Top-level overload + method blocks for every table in this
+        // schema, joined as one string so the outer join can sit it
+        // outside the Tables record.
+        interfacesNew.map (([, , , top]) => top).filter (Boolean).join ("\n\n")
+      ];
+
+      return schemaContent;
+    })
+  );
+
+  outputJs += schemaMap.map (([js]) => js).join (",\n");
+  outputTs += schemaMap.map (([_js, ts]) => ts).join ("\n");
+  let outputHm = headerHm.join ("\n") + "\n";
+  outputHm += schemaMap.map (([, , hm]) => hm).join (",\n") + "\n";
+  outputHm += footerHm.join ("\n");
+  // Append per-table top-level overload + method blocks AFTER the
+  // Tables record closes.  These are top-level annotations and must
+  // not live inside the record.
+  const topLevelBlocks = schemaMap.map (([, , , top]) => top).filter (Boolean).join ("\n\n");
+  if (topLevelBlocks) {
+    outputHm += "\n\n// ── Per-table overloads + method shadows ───────────────────────────────────\n";
+    outputHm += topLevelBlocks + "\n";
+  }
+
+  // footer
+  outputJs += footerJs.join ("\n");
+  outputTs += "\n};";
+
+
+  return [outputJs, outputTs, outputHm];
+}
+
+function mapPostgresTypeToPropType(pgType: string, nullable: boolean): string[] {
+  const mapTo = () => {
+    switch (pgType) {
+      case "smallint":
+      case "integer":
+      case "bigint":
+      case "real":
+      case "double precision":
+      // pg returns `numeric`/`decimal` (and `bigint`) as strings unless the
+      // consumer installs a type parser; RefQL types them as numbers, as it
+      // already did for `bigint`.
+      case "numeric":
+      case "decimal":
+        return ["(0, NumberProp_1.default)", "number", "Number"];
+      case "text":
+      case "varchar":
+      case "character varying":
+      case "character":
+      case "char":
+      case "uuid":
+      case "citext":
+      case "time without time zone":
+      case "time with time zone":
+      case "interval":
+        return ["(0, StringProp_1.default)", "string", "String"];
+      case "boolean":
+        return ["(0, BooleanProp_1.default)", "boolean", "Boolean"];
+      case "timestamp without time zone":
+      case "timestamp with time zone":
+      case "date":
+        return ["(0, DateProp_1.default)", "Date", "Date"];
+      case "json":
+      case "jsonb":
+        return ["(0, Prop_1.default)", "any", "Any"];
+      default:
+        return ["(0, Prop_1.default)", "any", "a"];
+    }
+  };
+
+  const mapped = mapTo ();
+  // A nullable column may hold null: `X | Null` in the hm-js row (not for
+  // the untyped fallback `a` or `Any`, which already admit it).
+  const hm = nullable && /^[A-Z]/.test (mapped[2]) && mapped[2] !== "Any" ? `${mapped[2]} | Null` : mapped[2];
+
+  return [mapped[0], nullable ? `${mapped[1]} | null` : mapped[1], hm];
+}
+
+async function introspect(sql: typeof sqlX, options: RequiredRefQLOptions) {
+  const outputJsFile = `${outputDir}/index.js`;
+  const outputTsFile = `${outputDir}/index.d.ts`;
+  const originalJs = fs.readFileSync (outputJsFile, "utf-8");
+  const originalTs = fs.readFileSync (outputTsFile, "utf-8");
+
+  try {
+    const [outputJs, outputTs, outputHm] = await introspectPG (sql, options);
+    await fs.outputFile (outputJsFile, outputJs);
+    await fs.outputFile (outputTsFile, outputTs);
+    // Always emit the hm-js sidecar next to the generated client, in
+    // `<.refql>/client/index.hm`.  It is registered as the second entry
+    // of this package's `hinmil.sidecars` so hm-js merges it on top of
+    // `refql.hm` automatically.
+    const hmFile = path.resolve (outputDir, "index.hm");
+    await fs.outputFile (hmFile, outputHm);
+    console.log ("RefQL introspect completed!");
+  } catch (e: any) {
+    await fs.outputFile (outputJsFile, originalJs);
+    await fs.outputFile (outputTsFile, originalTs);
+    throw `RefQL introspect failed: ${e.message}`;
+  }
+}
+
+export default introspect;

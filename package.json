@@ -11,7 +11,7 @@
       "exclude": ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**", "**/coverage/**", "src/generated/**"]
     }
   },
-  "version": "5.1.25",
+  "version": "5.1.26",
   "scripts": {
     "start": "NODE_ENV=refql nodemon src/workbench.ts",
     "introspect": "NODE_ENV=refql ts-node -r dotenv/config src/test/introspect.ts",
