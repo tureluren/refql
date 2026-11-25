@@ -5,7 +5,7 @@
 // (`Prop`, `RQLTag`, `SQLTag`, `Table`, `Limit`, `Offset`, `Picked`,
 // `GenericSelector`, …) resolve when this file is opened directly
 // in an editor for diagnostics/hover.  At consume time the sidecars
-// are already merged via `package.json#hm-js.sidecars`.
+// are already merged via `package.json#hinmil.sidecars`.
 ::types refql
 
 // A 'selector' is anything that can appear inside `Table([...])` to

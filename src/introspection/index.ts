@@ -140,7 +140,7 @@ const headerTs = [
 // hm-js annotation header — emitted into `<.refql>/client/index.hm` so that
 // hm-js automatically extends the base `refql.hm` sidecar with the
 // project-specific `Tables` schema.  Both files are listed in this
-// package's `package.json` `hm-js.sidecars` array; hm-js merges them in
+// package's `package.json` `hinmil.sidecars` array; hm-js merges them in
 // order (later entries override earlier ones), so the polymorphic
 // placeholder `Tables :: a` declared in `refql.hm` is replaced by the
 // concrete record below as soon as the consumer runs `introspect()`.
@@ -152,7 +152,7 @@ const headerHm = [
   "// (`Prop`, `RQLTag`, `SQLTag`, `Table`, `Limit`, `Offset`, `Picked`,",
   "// `GenericSelector`, …) resolve when this file is opened directly",
   "// in an editor for diagnostics/hover.  At consume time the sidecars",
-  "// are already merged via `package.json#hm-js.sidecars`.",
+  "// are already merged via `package.json#hinmil.sidecars`.",
   "::types refql",
   "",
   "// A 'selector' is anything that can appear inside `Table([...])` to",
@@ -565,7 +565,7 @@ async function introspect(sql: typeof sqlX, options: RequiredRefQLOptions) {
     await fs.outputFile (outputTsFile, outputTs);
     // Always emit the hm-js sidecar next to the generated client, in
     // `<.refql>/client/index.hm`.  It is registered as the second entry
-    // of this package's `hm-js.sidecars` so hm-js merges it on top of
+    // of this package's `hinmil.sidecars` so hm-js merges it on top of
     // `refql.hm` automatically.
     const hmFile = path.resolve (outputDir, "index.hm");
     await fs.outputFile (hmFile, outputHm);

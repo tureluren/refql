@@ -5,8 +5,11 @@
   "license": "MIT",
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "hm-js": {
-    "sidecars": ["./refql.hm", "../.refql/client/index.hm"]
+  "hinmil": {
+    "sidecars": ["./refql.hm", "../.refql/client/index.hm"],
+    "files": {
+      "exclude": ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**", "**/coverage/**", "src/generated/**"]
+    }
   },
   "version": "5.1.25",
   "scripts": {
